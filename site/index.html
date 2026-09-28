@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The AI Solo Business Kit | 100 AI prompts + business spreadsheets</title>
-<meta name="description" content="100 copy-paste AI prompts plus ready-made profit, content and client-pipeline spreadsheets to run your one-person business. Works with ChatGPT, Claude and Gemini.">
-<meta property="og:title" content="The AI Solo Business Kit">
-<meta property="og:description" content="100 AI prompts + 3 business spreadsheets + a 7-day plan. Run your one-person business in less time.">
-<meta property="og:image" content="assets/preview-cover.png">
+<title>AI Business Toolkit | AI tools that fill your Google Sheets</title>
+<meta name="description" content="AI tools for solo business owners: content calendars, bookkeeping, lead follow-ups and email sequences, generated in seconds and saved to your Google Drive as ready-to-use Google Sheets.">
+<meta property="og:title" content="AI Business Toolkit">
+<meta property="og:description" content="Describe what you need. AI builds it. It lands in your Google Drive as a finished spreadsheet.">
+<meta property="og:image" content="assets/app-preview.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234F46E5'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>AI</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -113,219 +113,149 @@
     .tier.best { order: -1; }
     section { padding: 60px 0; }
   }
+
+  .shot { width: 100%; border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 30px 60px -20px rgba(79,70,229,.35); background: #fff; display: block; }
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .tool-ic { width: 44px; height: 44px; border-radius: 11px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; margin-bottom: 14px; }
+  .tool-ic svg { width: 22px; height: 22px; }
+  .cols { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .cols span { font-size: 12px; background: var(--bg-alt); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; color: var(--muted); }
+  .plan { max-width: 440px; margin: 0 auto; }
+  .plan .tier ul { flex: none; }
+  .plan .tier.best::before { display: none; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 900px) { .flow, .g2 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-<div class="banner" id="banner" hidden></div>
-
 <div class="wrap">
   <nav>
-    <a class="logo" href="#">AI Solo <span>Business Kit</span></a>
-    <a class="btn small" href="#pricing">Get the kit</a>
+    <a class="logo" href="#">AI <span>Business Toolkit</span></a>
+    <span><a class="btn ghost small" href="app.html" style="border:0">Sign in</a> <a class="btn small" href="#pricing">Get started</a></span>
   </nav>
 
   <header class="hero">
     <div>
-      <span class="eyebrow">For freelancers, solopreneurs &amp; side-hustlers</span>
-      <h1>Run your one-person business with <em>AI doing the heavy lifting.</em></h1>
-      <p class="lead">100 copy-paste prompts for marketing, sales, operations and money, plus 3 ready-made spreadsheets and a 7-day plan. Stop staring at a blank ChatGPT box and start getting real work done.</p>
+      <span class="eyebrow">For freelancers, solopreneurs &amp; small teams</span>
+      <h1>AI tools that do the work and <em>file it in your Google Drive.</em></h1>
+      <p class="lead">Describe what you need in plain English. The AI builds your content calendar, cleans up your books or writes your follow-up emails, and saves it to your Drive as a polished Google Sheet.</p>
       <div class="cta-row">
-        <a class="btn" href="#pricing">Get instant access: from $<span data-price="starter">19</span></a>
-        <a class="btn ghost" href="#inside">See what's inside</a>
+        <a class="btn" href="#pricing">Start for $<span data-price>29</span>/month</a>
+        <a class="btn ghost" href="#tools">See the tools</a>
       </div>
-      <p class="trust">⚡ Instant download · Works with ChatGPT, Claude &amp; Gemini · 30-day money-back guarantee</p>
+      <p class="trust">Powered by Claude · Saves to Google Sheets · Cancel anytime</p>
     </div>
     <div class="hero-img">
-      <img src="assets/preview-cover.png" alt="Cover of The AI Solo Business Kit">
-      <img class="back" src="assets/preview-prompts.png" alt="Example prompt page" loading="lazy">
+      <img class="shot" src="assets/app-preview.png" alt="The Content Planner tool showing a generated month of social posts">
     </div>
   </header>
 </div>
 
 <section class="alt">
   <div class="wrap">
-    <h2>You're the marketer, salesperson, accountant <em style="font-style:normal;color:var(--brand)">and</em> the talent.</h2>
-    <p class="sub">AI could take half of that off your plate, but only if you know what to ask it.</p>
-    <ul class="pain">
-      <li>You open ChatGPT, type something vague, and get generic, robotic output.</li>
-      <li>You post inconsistently because you never know what to say.</li>
-      <li>Leads slip through the cracks because follow-ups live in your head.</li>
-      <li>You don't really know if you made a profit last month.</li>
-    </ul>
-  </div>
-</section>
-
-<section id="inside">
-  <div class="wrap">
-    <h2>Everything you need, nothing you don't</h2>
-    <p class="sub">A complete toolkit you can use today. No course to sit through, no subscription.</p>
-    <div class="grid g4">
-      <div class="card"><div class="icon">100</div><h3>AI prompt library</h3><p>Proven prompts across 8 business areas, with fill-in-the-blank [BRACKETS] and a reusable context block.</p></div>
-      <div class="card"><div class="icon">$</div><h3>Profit &amp; Cash Flow Tracker</h3><p>Log sales and expenses; the dashboard calculates monthly profit, margin, tax set-aside and running cash.</p></div>
-      <div class="card"><div class="icon">📅</div><h3>Content Calendar</h3><p>365-day planner with platform, pillar and status dropdowns, plus an auto-updating pipeline summary.</p></div>
-      <div class="card"><div class="icon">🤝</div><h3>Client CRM &amp; Pipeline</h3><p>Track every lead by stage, see your weighted forecast and win rate, and never miss a follow-up.</p></div>
-    </div>
-    <div class="cats">
-      <div class="cat">Offer &amp; Positioning<small>12 prompts</small></div>
-      <div class="cat">Content &amp; Social<small>13 prompts</small></div>
-      <div class="cat">Email Marketing<small>12 prompts</small></div>
-      <div class="cat">Sales &amp; Clients<small>13 prompts</small></div>
-      <div class="cat">Operations<small>13 prompts</small></div>
-      <div class="cat">Money &amp; Finance<small>12 prompts</small></div>
-      <div class="cat">Customer Experience<small>12 prompts</small></div>
-      <div class="cat">Growth &amp; Strategy<small>13 prompts</small></div>
+    <h2>From idea to finished spreadsheet in under a minute</h2>
+    <p class="sub">No prompts to write and no templates to fill in.</p>
+    <div class="grid flow steps">
+      <div class="card"><h3>Pick a tool</h3><p>Content Planner, Bookkeeping Assistant, Lead Follow-up Writer or Email Sequence Writer.</p></div>
+      <div class="card"><h3>Answer a few questions</h3><p>Tell it about your business, or paste in your bank statement or lead notes. The AI does the rest.</p></div>
+      <div class="card"><h3>Save to Google Drive</h3><p>One click creates a formatted Google Sheet in your Drive, ready to filter, share and use.</p></div>
     </div>
   </div>
 </section>
 
-<section class="alt">
+<section id="tools">
   <div class="wrap">
-    <h2>Take a look inside</h2>
-    <p class="sub">A clean, printable PDF plus spreadsheets that work in Excel, Google Sheets, Numbers and LibreOffice.</p>
-    <div class="previews">
-      <figure><img src="assets/preview-cover.png" alt="Kit cover" loading="lazy"><figcaption>The playbook</figcaption></figure>
-      <figure><img src="assets/preview-plan.png" alt="7-day quick-start plan page" loading="lazy"><figcaption>7-day quick-start plan</figcaption></figure>
-      <figure><img src="assets/preview-prompts.png" alt="Prompt library page" loading="lazy"><figcaption>100 copy-paste prompts</figcaption></figure>
+    <h2>Four tools for the jobs that eat your week</h2>
+    <p class="sub">Each one returns a clean, organized table rather than a wall of chat text.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="tool-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+        <h3>Content Planner</h3>
+        <p>Up to a month of posts for the platforms you use, each with a scroll-stopping hook, a ready-to-post caption, a call to action and hashtags.</p>
+        <div class="cols"><span>Date</span><span>Platform</span><span>Pillar</span><span>Hook</span><span>Caption</span><span>CTA</span><span>Hashtags</span></div>
+      </div>
+      <div class="card">
+        <div class="tool-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Bookkeeping Assistant</h3>
+        <p>Paste rows from your bank statement. Get every transaction typed, categorized and flagged for tax deductibility, with a note on anything to check.</p>
+        <div class="cols"><span>Date</span><span>Description</span><span>Type</span><span>Category</span><span>Amount</span><span>Deductible?</span><span>Notes</span></div>
+      </div>
+      <div class="card">
+        <div class="tool-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <h3>Lead Follow-up Writer</h3>
+        <p>Paste your leads and notes in any format. Get a prioritized pipeline with the next step for each lead and a personal follow-up email ready to send.</p>
+        <div class="cols"><span>Name</span><span>Stage</span><span>Priority</span><span>Next action</span><span>Follow up by</span><span>Email draft</span></div>
+      </div>
+      <div class="card">
+        <div class="tool-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></div>
+        <h3>Email Sequence Writer</h3>
+        <p>Welcome, launch, abandoned-cart, win-back or onboarding sequences, fully written with subject lines, preview text and send days.</p>
+        <div class="cols"><span>Email</span><span>Send day</span><span>Goal</span><span>Subject</span><span>Preview</span><span>Body</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="pricing">
+  <div class="wrap">
+    <h2>One simple plan</h2>
+    <p class="sub">Every tool, every month. Cancel anytime from your account.</p>
+    <div class="plan">
+      <div class="tier best">
+        <h3>AI Business Toolkit</h3>
+        <div class="price">$<span data-price>29</span><s style="text-decoration:none;font-size:18px;color:var(--muted);font-weight:500"> / month</s></div>
+        <div class="note"><span data-runs>100</span> AI runs a month, enough for a new content plan every day</div>
+        <ul>
+          <li>All 4 AI tools</li>
+          <li><span data-runs>100</span> AI runs every month</li>
+          <li>Results saved to your Google Drive as formatted Google Sheets</li>
+          <li>CSV download for Excel</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <a class="btn" href="app.html">Get started</a>
+      </div>
     </div>
   </div>
 </section>
 
 <section>
-  <div class="wrap example">
-    <h2>Try one free</h2>
-    <p class="sub">Here's prompt 1.3 from the kit. Paste it into any AI assistant.</p>
-    <div class="label">Prompt</div>
-    <pre>Write 10 one-sentence value propositions for my offer using the formula: 'I help [WHO] get [RESULT] without [PAIN] in [TIMEFRAME].' Then pick the strongest one and explain why.</pre>
-    <p style="color:var(--muted);text-align:center;margin-top:18px">That's one of 100. Each one is written to get specific, usable output on the first try.</p>
-  </div>
-</section>
-
-<section class="alt">
-  <div class="wrap">
-    <h2>From download to results in 7 days</h2>
-    <p class="sub">The included quick-start plan takes about an hour a day.</p>
-    <div class="grid g3 steps">
-      <div class="card"><h3>Days 1–2: Get clear</h3><p>Nail your ideal customer, value proposition, offer and pricing tiers.</p></div>
-      <div class="card"><h3>Days 3–5: Get visible</h3><p>Set up your profit tracker, plan 30 days of content and write your email welcome sequence.</p></div>
-      <div class="card"><h3>Days 6–7: Get clients</h3><p>Fill your CRM, send your first outreach and automate your most repetitive task.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="pricing">
-  <div class="wrap">
-    <h2>Pick your kit</h2>
-    <p class="sub">One-time payment. Instant download. Free updates to this version.</p>
-    <div class="pricing">
-      <div class="tier">
-        <h3>Starter</h3>
-        <div class="price">$<span data-price="starter">19</span></div>
-        <div class="note">Just the prompts</div>
-        <ul>
-          <li>100-prompt library (PDF)</li>
-          <li>Business Context Block</li>
-          <li>5-part prompt formula</li>
-          <li class="no">3 business spreadsheets</li>
-          <li class="no">7-day quick-start plan</li>
-          <li class="no">Notion / CSV versions</li>
-        </ul>
-        <a class="btn ghost" data-tier="starter" href="#">Get Starter</a>
-      </div>
-      <div class="tier best">
-        <h3>Complete Kit</h3>
-        <div class="price">$<span data-price="complete">49</span></div>
-        <div class="note">Everything to run your business</div>
-        <ul>
-          <li>100-prompt library (PDF)</li>
-          <li>Profit &amp; Cash Flow Tracker</li>
-          <li>Content Calendar</li>
-          <li>Client CRM &amp; Pipeline</li>
-          <li>7-day quick-start plan</li>
-          <li class="no">Notion / CSV versions</li>
-        </ul>
-        <a class="btn" data-tier="complete" href="#">Get the Complete Kit</a>
-      </div>
-      <div class="tier">
-        <h3>Pro</h3>
-        <div class="price">$<span data-price="pro">97</span></div>
-        <div class="note">For agencies &amp; power users</div>
-        <ul>
-          <li>Everything in Complete</li>
-          <li>Notion-ready Markdown library</li>
-          <li>CSV for Airtable / databases</li>
-          <li>Commercial licence: use with unlimited clients</li>
-          <li>Hand customised sheets to clients</li>
-        </ul>
-        <a class="btn ghost" data-tier="pro" href="#">Get Pro</a>
-      </div>
-    </div>
-    <div class="guarantee">
-      <div class="seal">🛡️</div>
-      <p><strong>30-day, no-questions-asked guarantee.</strong> If the kit doesn't save you at least 5 hours in your first month, email us and we'll refund every cent.</p>
-    </div>
-  </div>
-</section>
-
-<section class="alt">
   <div class="wrap">
     <h2>Questions</h2>
     <p class="sub"></p>
-    <details><summary>Which AI tools does this work with?</summary><p>Any chat-based assistant: ChatGPT (free or paid), Claude, Gemini, Copilot and others. The prompts are plain text.</p></details>
-    <details><summary>Do I need Excel?</summary><p>No. The spreadsheets work in Excel, Google Sheets (File → Import), Apple Numbers and free LibreOffice.</p></details>
-    <details><summary>How do I get the files?</summary><p>Right after checkout you get a download link by email and on the confirmation page. It's a single zip file.</p></details>
-    <details><summary>I'm not techy. Is this for me?</summary><p>Yes, that's who it's built for. If you can copy and paste, you can use it. The 7-day plan tells you exactly which prompt to use when.</p></details>
-    <details><summary>Can I upgrade later?</summary><p>Yes. Email us with your receipt and pay only the difference.</p></details>
-    <details><summary>Can I resell it?</summary><p>No. The Starter and Complete kits are for your own business. The Pro licence lets you use the kit with unlimited clients and hand them customised spreadsheets, but not resell the kit itself.</p></details>
+    <details><summary>Do I need to know anything about AI?</summary><p>No. Each tool asks a few simple questions, and the AI instructions are built in. You never write a prompt.</p></details>
+    <details><summary>What can the app see in my Google Drive?</summary><p>Only the files it creates. It uses Google's most limited Drive permission, so it can't open or read anything else in your Drive. Your results go into a folder called “AI Business Toolkit”.</p></details>
+    <details><summary>Which AI does it use?</summary><p>Claude, by Anthropic. You don't need your own account or API key; it's included in your subscription.</p></details>
+    <details><summary>What counts as an AI run?</summary><p>Each time you click “Generate with AI” counts as one run. Saving to Drive and downloading CSVs are free. Runs reset on the 1st of every month.</p></details>
+    <details><summary>Can I use the results in Excel?</summary><p>Yes. Download any result as a CSV file that opens in Excel, or open the Google Sheet and choose File → Download → Microsoft Excel.</p></details>
+    <details><summary>How do I cancel?</summary><p>Click your account icon in the app and choose “Manage subscription”. You can cancel in two clicks and keep access until the end of your billing period.</p></details>
+    <details><summary>Is the bookkeeping output tax advice?</summary><p>No. It organizes and categorizes your transactions and flags items to check, but have a qualified accountant review your taxes.</p></details>
   </div>
 </section>
 
-<section class="final">
+<section class="alt final">
   <div class="wrap">
-    <h2>Give yourself an AI-powered back office</h2>
-    <p class="sub">For less than an hour of a freelancer's time.</p>
-    <a class="btn" data-tier="complete" href="#">Get the Complete Kit: $<span data-price="complete">49</span></a>
+    <h2>Get your week back</h2>
+    <p class="sub">Let AI do the planning, the bookkeeping and the follow-ups.</p>
+    <a class="btn" href="app.html">Start for $<span data-price>29</span>/month</a>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <span>© <span id="year"></span> <span data-store-name>The AI Solo Business Kit</span></span>
-    <span><a id="support" href="#">Support</a> · <a href="terms.html">Terms &amp; Refunds</a> · <a href="privacy.html">Privacy</a></span>
+    <span>© <span id="year"></span> <span data-store-name>AI Business Toolkit</span></span>
+    <span><a id="support" href="#" hidden>Support</a> <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></span>
   </div>
 </footer>
-
-<div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
 <script>
 (function () {
   var S = window.STORE || {};
   document.getElementById("year").textContent = new Date().getFullYear();
-
-  var banner = document.getElementById("banner");
-  if (S.launchBanner) { banner.textContent = S.launchBanner; banner.hidden = false; }
-
-  document.querySelectorAll("[data-price]").forEach(function (el) {
-    var p = S.prices && S.prices[el.dataset.price];
-    if (p != null) el.textContent = p;
-  });
+  document.querySelectorAll("[data-price]").forEach(function (el) { if (S.price != null) el.textContent = S.price; });
+  document.querySelectorAll("[data-runs]").forEach(function (el) { if (S.runsPerMonth != null) el.textContent = S.runsPerMonth; });
   document.querySelectorAll("[data-store-name]").forEach(function (el) { if (S.name) el.textContent = S.name; });
-  if (S.supportEmail) document.getElementById("support").href = "mailto:" + S.supportEmail;
-
-  var toast = document.getElementById("toast");
-  function show(msg) {
-    toast.textContent = msg; toast.style.display = "block";
-    clearTimeout(show.t); show.t = setTimeout(function () { toast.style.display = "none"; }, 4000);
-  }
-
-  document.querySelectorAll("[data-tier]").forEach(function (a) {
-    var url = S.checkout && S.checkout[a.dataset.tier];
-    if (url) { a.href = url; return; }
-    a.addEventListener("click", function (e) {
-      e.preventDefault();
-      show("Checkout isn't connected yet. Add your checkout link for '" + a.dataset.tier + "' in site/config.js.");
-    });
-  });
+  if (S.supportEmail) { var a = document.getElementById("support"); a.href = "mailto:" + S.supportEmail; a.hidden = false; a.insertAdjacentText("afterend", " · "); }
 })();
 </script>
 </body>

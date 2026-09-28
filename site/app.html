@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Business Toolkit | App</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234F46E5'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>AI</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f7fb; --panel: #ffffff; --text: #111827; --muted: #6b7280; --line: #e5e7eb; --line-strong: #d1d5db;
+    --brand: #4f46e5; --brand-dark: #4338ca; --brand-soft: #eef2ff; --ok: #16a34a; --ok-soft: #dcfce7;
+    --warn: #b45309; --warn-soft: #fef3c7; --err: #b91c1c; --err-soft: #fee2e2;
+    --shadow: 0 1px 2px rgba(16,24,40,.05), 0 8px 24px -12px rgba(16,24,40,.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0d14; --panel: #151827; --text: #f3f4f6; --muted: #9ca3af; --line: #262a3a; --line-strong: #353a50;
+      --brand: #818cf8; --brand-dark: #6366f1; --brand-soft: #1e2140; --ok: #4ade80; --ok-soft: #133224;
+      --warn: #fbbf24; --warn-soft: #3a2e10; --err: #f87171; --err-soft: #3b1515;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif; background: var(--bg); color: var(--text);
+         line-height: 1.5; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  a { color: var(--brand); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  [hidden] { display: none !important; }
+
+  .topbar { background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .topbar .in { max-width: 1180px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 16px; }
+  .logo { font-weight: 800; text-decoration: none; color: var(--text); display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+  .logo i { width: 30px; height: 30px; border-radius: 8px; background: var(--brand); color: #fff; display: grid; place-items: center; font-style: normal; font-size: 13px; }
+  .spacer { flex: 1; }
+  .usage { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+  .meter { width: 110px; height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .meter b { display: block; height: 100%; background: var(--brand); width: 0; transition: width .3s; }
+  .menu { position: relative; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); border: 0; font-weight: 700; cursor: pointer; }
+  .dropdown { position: absolute; right: 0; top: 42px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow);
+              min-width: 230px; padding: 6px; }
+  .dropdown .who { padding: 8px 10px 10px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); margin-bottom: 6px; word-break: break-all; }
+  .dropdown button { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .dropdown button:hover { background: var(--bg); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--brand); color: #fff; border: 0; border-radius: 10px;
+         padding: 11px 18px; font-weight: 600; font-size: 15px; cursor: pointer; text-decoration: none; transition: background .15s, transform .15s; }
+  .btn:hover { background: var(--brand-dark); }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn.secondary { background: var(--panel); color: var(--text); border: 1px solid var(--line-strong); }
+  .btn.secondary:hover { background: var(--bg); }
+  .btn.ghost { background: none; color: var(--muted); padding: 11px 10px; }
+  .btn.ghost:hover { color: var(--text); }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+
+  .banner { max-width: 1180px; margin: 16px auto 0; padding: 0 20px; }
+  .banner div { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; }
+  .center { max-width: 460px; margin: 60px auto; text-align: center; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+  .center .card { padding: 36px 30px; }
+  .center h1 { font-size: 26px; letter-spacing: -.02em; margin: 0 0 8px; }
+  .center p { color: var(--muted); margin: 0 0 24px; }
+  .gbtn { background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 10px; padding: 11px 18px; font-weight: 600; display: inline-flex; gap: 10px;
+          align-items: center; cursor: pointer; font-size: 15px; }
+  .gbtn:hover { background: #f8f9fa; }
+  .price { font-size: 40px; font-weight: 800; letter-spacing: -.03em; margin: 6px 0 2px; }
+  .price small { font-size: 16px; color: var(--muted); font-weight: 500; }
+  .checks { list-style: none; padding: 0; margin: 18px 0 26px; text-align: left; }
+  .checks li { padding: 5px 0 5px 26px; position: relative; font-size: 15px; }
+  .checks li::before { content: "✓"; position: absolute; left: 0; color: var(--ok); font-weight: 800; }
+
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
+  .tools { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 84px; }
+  .tools h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 4px 4px; }
+  .tool { display: flex; gap: 12px; align-items: flex-start; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+          padding: 12px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .tool:hover { border-color: var(--line-strong); }
+  .tool[aria-selected="true"] { border-color: var(--brand); background: var(--brand-soft); }
+  .tool .ic { width: 36px; height: 36px; border-radius: 9px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; flex: none; }
+  .tool[aria-selected="true"] .ic { background: var(--brand); color: #fff; }
+  .tool .ic svg { width: 19px; height: 19px; }
+  .tool b { display: block; font-size: 14px; }
+  .tool span { display: block; font-size: 13px; color: var(--muted); line-height: 1.35; margin-top: 2px; }
+
+  .workspace { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .panel { padding: 26px; }
+  .panel h1 { font-size: 22px; letter-spacing: -.02em; margin: 0 0 4px; }
+  .panel .sub { color: var(--muted); margin: 0 0 22px; }
+  form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 14px; font-weight: 600; }
+  .field label em { font-style: normal; font-weight: 400; color: var(--muted); }
+  input[type=text], input[type=number], input[type=date], select, textarea {
+    background: var(--panel); border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 12px; font-size: 15px; width: 100%; }
+  textarea { resize: vertical; min-height: 84px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); outline-offset: -1px; border-color: transparent; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips label { font-weight: 500; font-size: 14px; border: 1px solid var(--line-strong); border-radius: 99px; padding: 6px 12px; cursor: pointer; user-select: none; }
+  .chips input { position: absolute; opacity: 0; pointer-events: none; }
+  .chips input:checked + span { color: var(--brand); }
+  .chips label:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); }
+  .chips label:has(input:focus-visible) { outline: 2px solid var(--brand); }
+  .actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .hint { font-size: 13px; color: var(--muted); }
+
+  .working { display: flex; align-items: center; gap: 14px; padding: 22px 26px; }
+  .spinner { width: 22px; height: 22px; border: 3px solid var(--brand-soft); border-top-color: var(--brand); border-radius: 50%; animation: spin .8s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .working b { display: block; }
+  .working span { color: var(--muted); font-size: 14px; }
+
+  .result-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 20px 22px; border-bottom: 1px solid var(--line); }
+  .result-title { flex: 1 1 280px; min-width: 0; }
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .result-head h2 { margin: 0; font-size: 18px; }
+  .result-head .count { color: var(--muted); font-size: 14px; }
+  .table-wrap { overflow: auto; max-height: 560px; }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 14px; }
+  th { position: sticky; top: 0; background: var(--panel); text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase;
+       letter-spacing: .05em; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; z-index: 1; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; min-width: 110px; }
+  td.long { min-width: 320px; white-space: pre-wrap; }
+  tr:hover td { background: var(--bg); }
+  .saved { display: flex; align-items: center; gap: 10px; background: var(--ok-soft); color: var(--ok); padding: 12px 22px; font-size: 14px; font-weight: 500; }
+  .saved a { color: inherit; font-weight: 700; }
+  .error { background: var(--err-soft); color: var(--err); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 18px; border-radius: 10px;
+           font-size: 14px; max-width: 90vw; z-index: 10; box-shadow: var(--shadow); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .tools { position: static; }
+    form { grid-template-columns: 1fr; }
+    .usage .meter { display: none; }
+    .panel { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="in">
+    <a class="logo" href="index.html"><i>AI</i><span data-store-name>AI Business Toolkit</span></a>
+    <div class="spacer"></div>
+    <div class="usage" id="usage" hidden><div class="meter"><b id="meterBar"></b></div><span id="usageText"></span></div>
+    <div class="menu" id="menu" hidden>
+      <button class="avatar" id="avatar" aria-haspopup="true" aria-expanded="false"></button>
+      <div class="dropdown" id="dropdown" hidden>
+        <div class="who" id="who"></div>
+        <button id="manageBtn">Manage subscription</button>
+        <button id="signOutBtn">Sign out</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="banner" id="previewBanner" hidden><div><strong>Preview mode.</strong> Sign-in, billing and AI aren't connected yet, so the tools show sample results. See the README's go-live setup.</div></div>
+
+<main>
+  <!-- Signed out -->
+  <section class="center" id="viewSignIn" hidden>
+    <div class="card">
+      <h1>Welcome back</h1>
+      <p>Sign in with Google to use your AI tools. Results save straight to your Google Drive.</p>
+      <button class="gbtn" id="signInBtn">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>
+        Sign in with Google
+      </button>
+      <p class="hint" style="margin:18px 0 0">New here? <a href="index.html#pricing">See plans</a></p>
+    </div>
+  </section>
+
+  <!-- Signed in, no subscription -->
+  <section class="center" id="viewSubscribe" hidden>
+    <div class="card">
+      <h1>Start your subscription</h1>
+      <p>You're signed in as <strong id="subEmail"></strong>. Subscribe to unlock all the tools.</p>
+      <div class="price">$<span data-price></span><small> / month</small></div>
+      <ul class="checks">
+        <li>All 4 AI tools</li>
+        <li><span data-runs></span> AI runs every month</li>
+        <li>Formatted Google Sheets saved to your Drive</li>
+        <li>Cancel anytime</li>
+      </ul>
+      <a class="btn" id="subscribeBtn" href="#" style="width:100%">Subscribe</a>
+      <p class="hint" style="margin:14px 0 0">Use the same email at checkout. Already subscribed? <a href="#" id="recheckBtn">Refresh</a></p>
+    </div>
+  </section>
+
+  <!-- App -->
+  <section class="layout" id="viewApp" hidden>
+    <nav class="tools" aria-label="Tools">
+      <h2>Tools</h2>
+      <div id="toolList" role="tablist"></div>
+    </nav>
+    <div class="workspace">
+      <div class="card panel">
+        <h1 id="toolName"></h1>
+        <p class="sub" id="toolTagline"></p>
+        <form id="toolForm" novalidate></form>
+      </div>
+      <div class="card working" id="working" hidden>
+        <div class="spinner"></div>
+        <div><b id="workingTitle">Working on it…</b><span id="workingText">This usually takes 20–60 seconds.</span></div>
+      </div>
+      <div class="card" id="result" hidden>
+        <div class="result-head">
+          <div class="result-title"><h2 id="resultTitle"></h2><div class="count" id="resultCount"></div></div>
+          <div class="result-actions">
+            <button class="btn secondary" id="csvBtn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              CSV
+            </button>
+            <button class="btn" id="driveBtn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l-4-4-4 4M12 12v9"/><path d="M20.4 18.4A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 3 16.3"/></svg>
+              <span id="driveLabel">Save to Google Drive</span>
+            </button>
+          </div>
+        </div>
+        <div class="saved" id="saved" hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+          <span>Saved to your Drive in the “<span data-store-name>AI Business Toolkit</span>” folder. <a id="sheetLink" target="_blank" rel="noopener">Open in Google Sheets →</a></span>
+        </div>
+        <div class="table-wrap"><table id="resultTable"></table></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

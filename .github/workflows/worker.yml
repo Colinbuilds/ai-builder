@@ -1,0 +1,50 @@
+name: Test and deploy API server
+
+on:
+  push:
+    branches: [main]
+    paths: ["worker/**", ".github/workflows/worker.yml"]
+  pull_request:
+    paths: ["worker/**", "site/tools.json"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: worker/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip until Cloudflare is set up
+        if: env.HAS_CLOUDFLARE != 'true'
+        run: echo "::notice::CLOUDFLARE_API_TOKEN secret not set yet, so the API server was not deployed. See README → Go-live setup."
+      - uses: cloudflare/wrangler-action@v3
+        if: env.HAS_CLOUDFLARE == 'true'
+        with:
+          workingDirectory: worker
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --var GOOGLE_CLIENT_ID:${{ vars.GOOGLE_CLIENT_ID }}
+          secrets: |
+            ANTHROPIC_API_KEY
+            STRIPE_SECRET_KEY
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
