@@ -8,6 +8,6 @@ compatibility_flags = ["nodejs_compat"]
 GOOGLE_CLIENT_ID = "set-by-deploy-workflow"
 # Where the web app is hosted (comma-separate several origins)
 ALLOWED_ORIGIN = "https://colinbuilds.github.io"
-APP_URL = "https://colinbuilds.github.io/ai-builder/app.html"
+APP_URL = "https://colinbuilds.github.io/ai-builder/site/app.html"
 CLAUDE_MODEL = "claude-opus-5"
 MONTHLY_RUN_LIMIT = "100"
