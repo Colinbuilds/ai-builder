@@ -20,6 +20,6 @@ window.STORE = {
   // formUrl ends in /formResponse; fields are the form's "entry.123456" ids.
   waitlist: {
     formUrl: "",
-    fields: { email: "", niche: "", business: "", name: "" },
+    fields: { email: "", niche: "", business: "", name: "", source: "" },
   },
 };

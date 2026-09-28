@@ -5,6 +5,15 @@
   var S = (window.STORE && window.STORE.waitlist) || {};
   var form = document.getElementById("waitlist");
   if (!form) return;
+
+  // Remember where the visitor came from (?src=reddit or ?utm_source=facebook) for this visit.
+  var source = "direct";
+  try {
+    var q = new URLSearchParams(location.search);
+    var fromUrl = (q.get("src") || q.get("utm_source") || "").slice(0, 40);
+    if (fromUrl) sessionStorage.setItem("src", fromUrl);
+    source = sessionStorage.getItem("src") || (document.referrer ? new URL(document.referrer).hostname : "direct");
+  } catch (e) {}
   var niche = form.dataset.niche;
   var btn = form.querySelector("button");
   var msg = document.getElementById("waitlistMsg");
@@ -33,6 +42,7 @@
     body.append(S.fields.email, email);
     if (S.fields.niche) body.append(S.fields.niche, niche);
     if (S.fields.business) body.append(S.fields.business, form.elements.business.value);
+    if (S.fields.source) body.append(S.fields.source, source);
     if (S.fields.name && form.elements.name.value.trim()) body.append(S.fields.name, form.elements.name.value.trim());
     btn.disabled = true;
     btn.textContent = "Joining…";
