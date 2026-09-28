@@ -1,0 +1,43 @@
+{
+  "content-planner": {
+    "title": "October Content Plan: Home Fitness for Busy Parents",
+    "columns": ["Date", "Day", "Platform", "Pillar", "Hook", "Caption", "Call to action", "Hashtags"],
+    "rows": [
+      ["2026-10-01", "Thursday", "Instagram", "Educational", "You don't need an hour. You need 12 minutes and a kitchen chair.", "Most parents I coach think fitness means a gym membership and a free evening. Neither exists right now, and that's fine. Here's the 12-minute chair circuit my clients do while the pasta boils: 10 incline push-ups, 15 chair squats, 20-second plank, repeat three times. Save this for tonight.", "Save this and try it tonight", "#homeworkout #busyparents #fitmom #fitdad"],
+      ["2026-10-02", "Friday", "TikTok", "Story", "My client lost 9 pounds without ever leaving her living room.", "Sarah has three kids under 7 and hadn't worked out since 2019. We started with two 15-minute sessions a week. Twelve weeks later she's stronger, sleeping better, and chasing her toddler without getting winded. No gym. No 5am alarms.", "Follow for her full routine", "#transformation #homefitness #parentlife"],
+      ["2026-10-03", "Saturday", "Instagram", "Proof / results", "3 things every one of my successful clients had in common", "It wasn't motivation. It was: 1) a fixed 15-minute slot in the calendar, 2) workouts that needed zero setup, 3) someone checking in weekly. Motivation fades. Systems don't.", "Comment SYSTEM for my free planner", "#fitnesscoach #habits #parentsoninstagram"],
+      ["2026-10-04", "Sunday", "Facebook", "Offer", "6 spots left in the October Kitchen-Floor Fitness program", "Six weeks, three 20-minute workouts a week, done at home with no equipment. Weekly check-ins and a private group of parents in the same boat. We start Monday the 12th and I cap it at 10 people so everyone gets real coaching.", "Reply 'IN' or tap the link to grab a spot", ""],
+      ["2026-10-05", "Monday", "Instagram", "Educational", "Stop doing crunches. Do this instead.", "Crunches load your neck and do little for the deep core muscles that protect your back. Try dead bugs: lie on your back, arms up, knees at 90°, and slowly lower opposite arm and leg. 3 sets of 8 per side. Your lower back will thank you.", "Share with a parent who has back pain", "#corestrength #backpain #homeworkout"]
+    ]
+  },
+  "bookkeeping": {
+    "title": "March Transactions: Freelance Design",
+    "columns": ["Date", "Description", "Type", "Category", "Amount", "Tax deductible?", "Notes"],
+    "rows": [
+      ["03/02", "STRIPE PAYOUT", "Income", "Sales", "1240.00", "No", "Client payments via Stripe"],
+      ["03/04", "ADOBE *CREATIVE CLOUD", "Expense", "Software & subscriptions", "-54.99", "Likely", ""],
+      ["03/05", "UBER TRIP", "Expense", "Travel", "-18.20", "Maybe", "Deductible only if the trip was for business. Note the purpose."],
+      ["03/09", "GOOGLE *WORKSPACE", "Expense", "Software & subscriptions", "-7.20", "Likely", ""],
+      ["03/12", "TRANSFER TO SAVINGS", "Transfer", "Owner transfer", "-500.00", "No", "Not an expense; money moved between your own accounts"],
+      ["03/15", "UPWORK ESCROW RELEASE", "Income", "Sales", "860.00", "No", ""],
+      ["03/21", "META ADS", "Expense", "Advertising", "-75.00", "Likely", ""]
+    ]
+  },
+  "lead-followup": {
+    "title": "Pipeline Follow-ups: Dental Website Redesigns",
+    "columns": ["Name", "Company", "Stage", "Priority", "Next action", "Follow up by", "Email subject", "Email draft"],
+    "rows": [
+      ["Sarah Lee", "Bright Smiles Dental", "Proposal sent", "High", "Send a 2-option quote with a payment plan", "Today", "Two options for Bright Smiles", "Hi Sarah,\n\nThanks again for the call last week. I know budget was on your mind, so I've put together two options: the full redesign at $3,000, or a phased version at $1,800 now with the booking system added next quarter. Both can be split into monthly payments.\n\nWould a 15-minute call on Thursday work to pick the right one?\n\nBest,\nAlex"],
+      ["Mike", "Downtown Dental", "Contacted", "Medium", "Send 3 relevant portfolio examples", "Tomorrow", "Dental sites I've built", "Hi Mike,\n\nGreat to hear back from you. Here are three dental practice sites I've redesigned, including one that doubled online bookings in 60 days: [link 1], [link 2], [link 3].\n\nHappy to share what I'd change on your current site. Want me to send over a quick 5-point audit?\n\nAlex"]
+    ]
+  },
+  "email-sequence": {
+    "title": "Welcome Sequence: 12-Week Family Meal Plan",
+    "columns": ["Email", "Send on day", "Goal", "Subject line", "Preview text", "Body"],
+    "rows": [
+      ["1", "0", "Deliver the freebie and a quick win", "Your meal planner is here", "Plus the 10-minute trick that saves Sunday", "Hi there,\n\nYour free weekly meal planner is attached. Print it, stick it on the fridge, and you're already ahead of most families.\n\nOne tip before you start: plan just 4 dinners, not 7. Leftovers and a pizza night fill the rest, and you'll actually stick to it.\n\nTalk soon,\nJen"],
+      ["2", "2", "Build trust with my story", "The night I served cereal for dinner", "Again.", "Three years ago, I served my kids cereal for dinner three nights in one week. Not my proudest moment.\n\nThe problem wasn't cooking. It was deciding. So I built a simple system: one planning session, one shopping list, and meals that reuse ingredients.\n\nThat system became the 12-Week Family Meal Plan. More on that soon.\n\nJen"],
+      ["3", "4", "Soft offer", "12 weeks of dinners, already planned", "Every recipe, every shopping list", "If the free planner helped, you'll love the full version.\n\nThe 12-Week Family Meal Plan gives you every dinner, a printable shopping list for each week, and prep tips that cut weeknight cooking to 30 minutes.\n\nIt's $27, and it's yours to keep.\n\n[Get the 12-Week Plan]\n\nJen"]
+    ]
+  }
+}

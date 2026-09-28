@@ -1,18 +1,18 @@
-// Store settings. This is the only file you need to edit to go live.
-//
-// Checkout URLs: create one product per tier on Gumroad, Lemon Squeezy, Payhip or
-// Stripe Payment Links, upload the matching zip from dist/ as the file to deliver,
-// and paste each product's checkout link below.
+// App settings. See README.md → "Go-live setup" for where each value comes from.
 window.STORE = {
-  name: "The AI Solo Business Kit",
-  supportEmail: "support@example.com",
-  checkout: {
-    starter: "",   // $19: dist/ai-solo-business-kit-starter.zip
-    complete: "",  // $49: dist/ai-solo-business-kit-complete.zip
-    pro: "",       // $97: dist/ai-solo-business-kit-pro.zip
-  },
-  prices: { starter: 19, complete: 49, pro: 97 },
-  // Optional launch discount shown on the page. Set to null to hide it.
-  // e.g. "Launch week: use code LAUNCH20 for 20% off". Create the code at checkout first.
-  launchBanner: null,
+  name: "AI Business Toolkit",
+  supportEmail: "",
+
+  // Monthly plan shown on the site. The real price is whatever you set in Stripe.
+  price: 29,
+  runsPerMonth: 100,
+
+  // Stripe payment link for the monthly subscription.
+  subscribeUrl: "",
+
+  // URL of the deployed API server (Cloudflare Worker), e.g. https://ai-toolkit-api.<you>.workers.dev
+  apiBase: "",
+
+  // Google OAuth client ID (for "Sign in with Google" and saving to Drive).
+  googleClientId: "",
 };

@@ -1,0 +1,17 @@
+{
+  "name": "ai-toolkit-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "wrangler deploy --dry-run --outdir .build",
+    "deploy": "wrangler deploy",
+    "export-tools": "node scripts/export-tools.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}
