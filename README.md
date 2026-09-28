@@ -11,8 +11,8 @@ A subscription web app with four AI tools for solo business owners. Customers si
 
 **Plan:** $29/month for 100 AI runs, billed by Stripe. Change `price`/`runsPerMonth` in `site/config.js` and `MONTHLY_RUN_LIMIT` in `worker/wrangler.toml`.
 
-- Live site: https://colinbuilds.github.io/ai-builder/
-- App: https://colinbuilds.github.io/ai-builder/app.html (shows **preview mode** with sample results until go-live setup is done)
+- Live site: https://colinbuilds.github.io/ai-builder/ (redirects to `/site/`)
+- App: https://colinbuilds.github.io/ai-builder/site/app.html (shows **preview mode** with sample results until go-live setup is done)
 
 ## How it works
 
@@ -54,12 +54,12 @@ Accounts and keys only the owner can create. Each step takes about 5 minutes.
 1. **Anthropic (the AI).** At [console.anthropic.com](https://console.anthropic.com), add billing credits, then go to **API keys → Create key**. Save the key for step 5.
 2. **Stripe (billing).** With the Stripe connector on claude.ai, Claude can create the product, the $29/month price and the payment link for you. To do it by hand:
    - Create a product "AI Business Toolkit" with a **recurring monthly** price.
-   - Create a **Payment link** for it. Under *After payment*, redirect to `https://colinbuilds.github.io/ai-builder/app.html`.
+   - Create a **Payment link** for it. Under *After payment*, redirect to `https://colinbuilds.github.io/ai-builder/site/app.html`.
    - Go to **Settings → Billing → Customer portal** and turn it on so customers can cancel.
    - Go to **Developers → API keys** and copy the **secret key** for step 5.
 3. **Google sign-in.** At [console.cloud.google.com](https://console.cloud.google.com):
    - Create a project, then under **APIs & Services → Library** enable **Google Drive API** and **Google Sheets API**.
-   - Set up the **OAuth consent screen**: External, with app name, support email, home page `https://colinbuilds.github.io/ai-builder/` and privacy policy `https://colinbuilds.github.io/ai-builder/privacy.html`. Add the scopes `email`, `profile` and `.../auth/drive.file`, then **Publish app**.
+   - Set up the **OAuth consent screen**: External, with app name, support email, home page `https://colinbuilds.github.io/ai-builder/site/` and privacy policy `https://colinbuilds.github.io/ai-builder/site/privacy.html`. Add the scopes `email`, `profile` and `.../auth/drive.file`, then **Publish app**.
    - Go to **Credentials → Create credentials → OAuth client ID → Web application**, and add the authorized JavaScript origin `https://colinbuilds.github.io`. Copy the **Client ID**.
 4. **Cloudflare (API server hosting, free tier).** Sign up at [dash.cloudflare.com](https://dash.cloudflare.com). Copy your **Account ID** from the Workers page. Then go to **My Profile → API Tokens → Create Token** and use the *Edit Cloudflare Workers* template.
 5. **GitHub.** In the repo, go to **Settings → Secrets and variables → Actions**.
