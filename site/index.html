@@ -124,14 +124,18 @@
   .plan .tier ul { flex: none; }
   .plan .tier.best::before { display: none; }
   .g2 { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 900px) { .flow, .g2 { grid-template-columns: 1fr; } }
+  .ind { text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
+  .ind:hover { border-color: var(--brand); transform: translateY(-2px); }
+  .ind .tag { font-size: 12px; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: .06em; }
+  .ind h3 { margin: 6px 0 4px; }
+  @media (max-width: 900px) { .flow, .g2 { grid-template-columns: 1fr; } .g4 { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <nav>
     <a class="logo" href="#">AI <span>Business Toolkit</span></a>
-    <span><a class="btn ghost small" href="app.html" style="border:0">Sign in</a> <a class="btn small" href="#pricing">Get started</a></span>
+    <span><a class="btn ghost small" href="app.html" style="border:0">Sign in</a> <a class="btn small" href="#industries">Find your industry</a></span>
   </nav>
 
   <header class="hero">
@@ -192,6 +196,23 @@
         <p>Welcome, launch, abandoned-cart, win-back or onboarding sequences, fully written with subject lines, preview text and send days.</p>
         <div class="cols"><span>Email</span><span>Send day</span><span>Goal</span><span>Subject</span><span>Preview</span><span>Body</span></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="industries">
+  <div class="wrap">
+    <h2>Built for your industry</h2>
+    <p class="sub">Each edition speaks your trade's language and comes with a free calculator you can use right now.</p>
+    <div class="grid g4">
+      <a class="card ind" href="quotecloser/"><span class="tag">Trades</span><h3>QuoteCloser</h3><p>Win more of the jobs you've already quoted</p></a>
+      <a class="card ind" href="cleanquote/"><span class="tag">Cleaning</span><h3>CleanQuote</h3><p>Price jobs in seconds and keep recurring clients</p></a>
+      <a class="card ind" href="clientflow/"><span class="tag">Freelancers</span><h3>ClientFlow</h3><p>Win projects and get paid on time</p></a>
+      <a class="card ind" href="raisedesk/"><span class="tag">Startups</span><h3>Raise Desk</h3><p>Run your fundraise like a sales pipeline</p></a>
+      <a class="card ind" href="rebook/"><span class="tag">Salons & spas</span><h3>Rebook</h3><p>Fill empty chairs and win back regulars</p></a>
+      <a class="card ind" href="coachdesk/"><span class="tag">Coaches & trainers</span><h3>CoachDesk</h3><p>Keep clients longer and fill programs</p></a>
+      <a class="card ind" href="landlordkit/"><span class="tag">Landlords</span><h3>LandlordKit</h3><p>Run your rentals in minutes a week</p></a>
+      <a class="card ind" href="listingdesk/"><span class="tag">Real estate</span><h3>ListingDesk</h3><p>Follow up with every lead and past client</p></a>
     </div>
   </div>
 </section>
