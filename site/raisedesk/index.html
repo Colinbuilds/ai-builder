@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raise Desk | Run your fundraise like a sales pipeline</title>
+<meta name="description" content="Free fundraise calculator for dilution, runway and investor pipeline, plus AI tools for investor outreach, follow-ups and monthly updates.">
+<link rel="canonical" href="https://colinbuilds.github.io/ai-builder/site/raisedesk/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://colinbuilds.github.io/ai-builder/site/raisedesk/">
+<meta property="og:title" content="Raise Desk | Run your fundraise like a sales pipeline">
+<meta property="og:description" content="Free fundraise calculator for dilution, runway and investor pipeline, plus AI tools for investor outreach, follow-ups and monthly updates.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234F46E5'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>R</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/niche.css">
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="./"><i>R</i>Raise Desk</a>
+    <a class="btn small" href="#join">Get early access</a>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <span class="eyebrow">For pre-seed &amp; seed founders</span>
+      <h1>Run your fundraise like a <em>sales pipeline.</em></h1>
+      <p class="lead">Know exactly how many investors you need to reach, write outreach that gets meetings, follow up without being annoying, and send investor updates in minutes.</p>
+      <div class="cta-row">
+        <a class="btn" href="#join">Join the waitlist</a>
+        <a class="btn ghost" href="#calculator">Try the free calculator</a>
+      </div>
+      <p class="trust">Free calculator · No sign-up needed · Built for pre-seed &amp; seed founders</p>
+    </div>
+    <div class="calc-card" id="calculator">
+      <h2 id="calcTitle"></h2>
+      <p class="intro">See your dilution, runway and how many investors you need to contact.</p>
+      <div id="calc" data-calc="raise-math"></div>
+    </div>
+  </header>
+</div>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Sound familiar?</h2>
+    <p class="sub">You're great at the work. It's everything around it that eats your week.</p>
+    <ul class="pains">
+      <li>Your investor list lives in a messy spreadsheet and your head.</li>
+      <li>&quot;Keep me posted&quot; investors fall through the cracks.</li>
+      <li>Writing a personal note to 150 investors takes weeks.</li>
+      <li>Monthly updates slip, and so does investor trust.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>What Raise Desk will do for you</h2>
+    <p class="sub">Four AI tools built for pre-seed &amp; seed founders. Answer a few questions, get finished work, saved to your Google Drive.</p>
+    <div class="grid">
+      <div class="card"><span class="soon">Coming soon</span><h3>Investor Pipeline</h3><p>Paste names and notes and get a prioritized tracker with stage and next step.</p></div>
+      <div class="card"><span class="soon">Coming soon</span><h3>Outreach Writer</h3><p>Personalized cold emails and warm-intro requests your connectors can forward.</p></div>
+      <div class="card"><span class="soon">Coming soon</span><h3>Follow-ups</h3><p>Timely nudges for investors who went quiet or asked you to keep them posted.</p></div>
+      <div class="card"><span class="soon">Coming soon</span><h3>Investor Updates</h3><p>Paste your metrics and wins and get a clean monthly update.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="sub">No prompts to write and nothing new to learn.</p>
+    <div class="grid steps">
+      <div class="card"><h3>Pick a tool</h3><p>Choose what you need done: a quote, a follow-up, a post, a reply.</p></div>
+      <div class="card"><h3>Answer a few questions</h3><p>Plain-English questions about the job or the customer. Paste in notes if you have them.</p></div>
+      <div class="card"><h3>Use it right away</h3><p>Copy it, send it, or save it to Google Sheets in one click. Edit anything you like.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="join">
+  <div class="wrap">
+    <div class="join">
+      <h2>Get early access</h2>
+      <p class="price">Planned price <strong>$49/month</strong>. Waitlist members get first access and a founding-member discount.</p>
+      <form id="waitlist" data-niche="raisedesk" novalidate>
+        <label>Email<input type="email" name="email" autocomplete="email" required placeholder="you@business.com"></label>
+        <label>Your business<select name="business"><option>Pre-seed</option><option>Seed</option><option>Series A</option><option>Not raising yet</option></select></label>
+        <label>First name <span style="font-weight:400;color:var(--muted)">(optional)</span><input type="text" name="name" autocomplete="given-name"></label>
+        <button class="btn" type="submit">Join the waitlist</button>
+        <p class="fine">No spam. One email when it opens. Unsubscribe anytime.</p>
+      </form>
+      <div class="msg" id="waitlistMsg" role="status" hidden></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <p class="sub"></p>
+    <details><summary>Is this a CRM?</summary><p>It's lighter than a CRM: your pipeline lives in a Google Sheet you own, and AI does the writing and the reminders.</p></details>
+    <details><summary>Is my data shared with investors?</summary><p>No. Nothing is sent anywhere unless you send it.</p></details>
+    <details><summary>Is the calculator financial advice?</summary><p>No. It's simplified math for planning; talk to your lawyer about terms.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>Also for other industries:</div>
+    <div class="others">
+        <a href="../quotecloser/">QuoteCloser <span>· Trades</span></a>
+        <a href="../cleanquote/">CleanQuote <span>· Cleaning</span></a>
+        <a href="../clientflow/">ClientFlow <span>· Freelancers</span></a>
+        <a href="../rebook/">Rebook <span>· Salons &amp; spas</span></a>
+        <a href="../coachdesk/">CoachDesk <span>· Coaches &amp; trainers</span></a>
+        <a href="../landlordkit/">LandlordKit <span>· Landlords</span></a>
+        <a href="../listingdesk/">ListingDesk <span>· Real estate</span></a>
+    </div>
+    <div class="row">
+      <span>© <span id="year"></span> Raise Desk</span>
+      <span><a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../config.js"></script>
+<script src="../assets/calculators.js"></script>
+<script src="../assets/waitlist.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  var box = document.getElementById("calc");
+  document.getElementById("calcTitle").textContent = Calculators.CALCS[box.dataset.calc].title;
+  Calculators.render(box, box.dataset.calc);
+</script>
+</body>
+</html>

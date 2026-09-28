@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LandlordKit | Run your rentals in minutes a week</title>
+<meta name="description" content="Free rental cash flow calculator, plus AI tools for listings, maintenance replies, tenant notices and Schedule E expense sorting.">
+<link rel="canonical" href="https://colinbuilds.github.io/ai-builder/site/landlordkit/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://colinbuilds.github.io/ai-builder/site/landlordkit/">
+<meta property="og:title" content="LandlordKit | Run your rentals in minutes a week">
+<meta property="og:description" content="Free rental cash flow calculator, plus AI tools for listings, maintenance replies, tenant notices and Schedule E expense sorting.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234F46E5'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>L</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/niche.css">
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="./"><i>L</i>LandlordKit</a>
+    <a class="btn small" href="#join">Get early access</a>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <span class="eyebrow">For small landlords</span>
+      <h1>Run your rentals in <em>minutes a week.</em></h1>
+      <p class="lead">Listings that fill vacancies, clear replies to maintenance requests, professional notices and renewals, and expenses sorted for tax time.</p>
+      <div class="cta-row">
+        <a class="btn" href="#join">Join the waitlist</a>
+        <a class="btn ghost" href="#calculator">Try the free calculator</a>
+      </div>
+      <p class="trust">Free calculator · No sign-up needed · Built for small landlords with 1–20 units</p>
+    </div>
+    <div class="calc-card" id="calculator">
+      <h2 id="calcTitle"></h2>
+      <p class="intro">Check a rental's monthly cash flow, cap rate and cash-on-cash return.</p>
+      <div id="calc" data-calc="rental-cashflow"></div>
+    </div>
+  </header>
+</div>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Sound familiar?</h2>
+    <p class="sub">You're great at the work. It's everything around it that eats your week.</p>
+    <ul class="pains">
+      <li>Vacancy listings take forever to write and still get the wrong applicants.</li>
+      <li>Maintenance texts arrive at 10pm and you're not sure how to reply.</li>
+      <li>Renewal and rent-change letters need to sound professional.</li>
+      <li>Tax time means a shoebox of receipts.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>What LandlordKit will do for you</h2>
+    <p class="sub">Four AI tools built for small landlords with 1–20 units. Answer a few questions, get finished work, saved to your Google Drive.</p>
+    <div class="grid">
+      <div class="card"><span class="soon">Coming soon</span><h3>Listing Writer</h3><p>Clear, accurate rental listings that highlight what renters care about.</p></div>
+      <div class="card"><span class="soon">Coming soon</span><h3>Tenant Replies</h3><p>Calm, professional replies to maintenance requests and questions.</p></div>
+      <div class="card"><span class="soon">Coming soon</span><h3>Notices &amp; Renewals</h3><p>Draft renewal offers and notices to review against your local rules.</p></div>
+      <div class="card"><span class="soon">Coming soon</span><h3>Expense Sorter</h3><p>Paste your transactions and get them sorted into Schedule E categories.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="sub">No prompts to write and nothing new to learn.</p>
+    <div class="grid steps">
+      <div class="card"><h3>Pick a tool</h3><p>Choose what you need done: a quote, a follow-up, a post, a reply.</p></div>
+      <div class="card"><h3>Answer a few questions</h3><p>Plain-English questions about the job or the customer. Paste in notes if you have them.</p></div>
+      <div class="card"><h3>Use it right away</h3><p>Copy it, send it, or save it to Google Sheets in one click. Edit anything you like.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="join">
+  <div class="wrap">
+    <div class="join">
+      <h2>Get early access</h2>
+      <p class="price">Planned price <strong>$19/month</strong>. Waitlist members get first access and a founding-member discount.</p>
+      <form id="waitlist" data-niche="landlordkit" novalidate>
+        <label>Email<input type="email" name="email" autocomplete="email" required placeholder="you@business.com"></label>
+        <label>Your business<select name="business"><option>1 unit</option><option>2–4 units</option><option>5–20 units</option><option>20+ units</option></select></label>
+        <label>First name <span style="font-weight:400;color:var(--muted)">(optional)</span><input type="text" name="name" autocomplete="given-name"></label>
+        <button class="btn" type="submit">Join the waitlist</button>
+        <p class="fine">No spam. One email when it opens. Unsubscribe anytime.</p>
+      </form>
+      <div class="msg" id="waitlistMsg" role="status" hidden></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <p class="sub"></p>
+    <details><summary>Does it screen tenants?</summary><p>No. Screening decisions stay with you. LandlordKit helps with writing, organizing and bookkeeping.</p></details>
+    <details><summary>Are the notices legally valid?</summary><p>They're drafts. Rules vary by state and city, so check them against local law or with a lawyer before sending.</p></details>
+    <details><summary>Is the calculator free?</summary><p>Yes, free with no sign-up.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>Also for other industries:</div>
+    <div class="others">
+        <a href="../quotecloser/">QuoteCloser <span>· Trades</span></a>
+        <a href="../cleanquote/">CleanQuote <span>· Cleaning</span></a>
+        <a href="../clientflow/">ClientFlow <span>· Freelancers</span></a>
+        <a href="../raisedesk/">Raise Desk <span>· Startups</span></a>
+        <a href="../rebook/">Rebook <span>· Salons &amp; spas</span></a>
+        <a href="../coachdesk/">CoachDesk <span>· Coaches &amp; trainers</span></a>
+        <a href="../listingdesk/">ListingDesk <span>· Real estate</span></a>
+    </div>
+    <div class="row">
+      <span>© <span id="year"></span> LandlordKit</span>
+      <span><a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../config.js"></script>
+<script src="../assets/calculators.js"></script>
+<script src="../assets/waitlist.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  var box = document.getElementById("calc");
+  document.getElementById("calcTitle").textContent = Calculators.CALCS[box.dataset.calc].title;
+  Calculators.render(box, box.dataset.calc);
+</script>
+</body>
+</html>
