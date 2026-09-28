@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The AI Solo Business Kit | 100 AI prompts + business spreadsheets</title>
+<meta name="description" content="100 copy-paste AI prompts plus ready-made profit, content and client-pipeline spreadsheets to run your one-person business. Works with ChatGPT, Claude and Gemini.">
+<meta property="og:title" content="The AI Solo Business Kit">
+<meta property="og:description" content="100 AI prompts + 3 business spreadsheets + a 7-day plan. Run your one-person business in less time.">
+<meta property="og:image" content="assets/preview-cover.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234F46E5'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>AI</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff; --bg-alt: #f7f7fb; --text: #111827; --muted: #6b7280; --line: #e5e7eb;
+    --brand: #4f46e5; --brand-dark: #4338ca; --brand-soft: #eef2ff; --accent: #16a34a; --card: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0d14; --bg-alt: #121521; --text: #f3f4f6; --muted: #9ca3af; --line: #262a3a;
+      --brand: #818cf8; --brand-dark: #6366f1; --brand-soft: #1e2140; --accent: #4ade80; --card: #151827;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif; background: var(--bg);
+         color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  .banner { background: var(--brand); color: #fff; text-align: center; font-size: 14px; font-weight: 600; padding: 8px 16px; }
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; }
+  .logo { font-weight: 800; font-size: 18px; color: var(--text); text-decoration: none; }
+  .logo span { color: var(--brand); }
+  .btn { display: inline-block; background: var(--brand); color: #fff; text-decoration: none; font-weight: 700;
+         padding: 14px 26px; border-radius: 12px; border: 0; cursor: pointer; font-size: 16px;
+         transition: transform .15s, background .15s; text-align: center; }
+  .btn:hover { background: var(--brand-dark); transform: translateY(-1px); }
+  .btn.ghost { background: transparent; color: var(--brand); border: 2px solid var(--brand); }
+  .btn.small { padding: 9px 16px; font-size: 14px; }
+  header.hero { padding: 48px 0 72px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+  .eyebrow { display: inline-block; background: var(--brand-soft); color: var(--brand); font-weight: 600; font-size: 13px;
+             padding: 6px 12px; border-radius: 999px; margin-bottom: 18px; }
+  h1 { font-size: clamp(34px, 5vw, 54px); line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 18px; }
+  h1 em { font-style: normal; color: var(--brand); }
+  .lead { font-size: 19px; color: var(--muted); margin: 0 0 28px; max-width: 34em; }
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .trust { margin-top: 18px; font-size: 14px; color: var(--muted); }
+  .hero-img { position: relative; }
+  .hero-img img { width: 100%; border-radius: 14px; box-shadow: 0 30px 60px -20px rgba(79,70,229,.35), 0 0 0 1px var(--line); background: #fff; }
+  .hero-img img.back { position: absolute; width: 70%; right: -6%; bottom: -10%; transform: rotate(4deg); }
+  section { padding: 80px 0; }
+  section.alt { background: var(--bg-alt); }
+  h2 { font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 14px; text-align: center; }
+  .sub { text-align: center; color: var(--muted); font-size: 18px; max-width: 40em; margin: 0 auto 48px; }
+  .grid { display: grid; gap: 20px; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  .card h3 { margin: 0 0 8px; font-size: 18px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .icon { width: 42px; height: 42px; border-radius: 10px; background: var(--brand-soft); color: var(--brand);
+          display: grid; place-items: center; font-weight: 800; margin-bottom: 14px; }
+  .pain { list-style: none; padding: 0; margin: 0 auto; max-width: 640px; }
+  .pain li { padding: 14px 18px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; background: var(--card); }
+  .pain li::before { content: "✕"; color: #ef4444; font-weight: 800; margin-right: 12px; }
+  .cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
+  .cat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-weight: 600; font-size: 15px; }
+  .cat small { display: block; color: var(--muted); font-weight: 500; }
+  .previews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .previews figure { margin: 0; }
+  .previews img { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+  .previews figcaption { text-align: center; color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .example { max-width: 760px; margin: 0 auto; }
+  .example pre { white-space: pre-wrap; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 12px; padding: 18px;
+                 font-size: 14px; line-height: 1.55; margin: 0 0 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .example .label { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+  .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch; }
+  .tier { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 30px 26px; display: flex; flex-direction: column; }
+  .tier.best { border: 2px solid var(--brand); box-shadow: 0 20px 40px -20px rgba(79,70,229,.45); position: relative; }
+  .tier.best::before { content: "Most popular"; position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: var(--brand);
+                       color: #fff; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+  .tier h3 { margin: 0; font-size: 20px; }
+  .tier .price { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; margin: 10px 0 2px; }
+  .tier .price s { font-size: 20px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .tier .note { color: var(--muted); font-size: 14px; margin-bottom: 18px; }
+  .tier ul { list-style: none; padding: 0; margin: 0 0 24px; flex: 1; }
+  .tier li { padding: 6px 0 6px 26px; position: relative; font-size: 15px; }
+  .tier li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 800; }
+  .tier li.no { color: var(--muted); }
+  .tier li.no::before { content: "–"; color: var(--muted); }
+  .guarantee { display: flex; gap: 18px; align-items: center; max-width: 720px; margin: 40px auto 0; padding: 22px; border: 1px dashed var(--brand);
+               border-radius: 16px; background: var(--brand-soft); }
+  .guarantee .seal { font-size: 34px; }
+  .guarantee p { margin: 0; }
+  .steps { counter-reset: s; }
+  .steps .card { position: relative; padding-top: 28px; }
+  .steps .card::before { counter-increment: s; content: counter(s); position: absolute; top: -14px; left: 24px; width: 30px; height: 30px; border-radius: 50%;
+                         background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+  details { border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; background: var(--card); max-width: 760px; margin-left: auto; margin-right: auto; }
+  summary { font-weight: 600; cursor: pointer; }
+  details p { color: var(--muted); margin: 10px 0 0; }
+  .final { text-align: center; }
+  footer { border-top: 1px solid var(--line); padding: 30px 0; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 18px; border-radius: 10px;
+           font-size: 14px; max-width: 90vw; display: none; z-index: 10; }
+  @media (max-width: 900px) {
+    header.hero { grid-template-columns: 1fr; padding-top: 24px; }
+    .hero-img { max-width: 420px; margin: 0 auto 30px; }
+    .g3, .g4, .pricing, .previews { grid-template-columns: 1fr; }
+    .cats { grid-template-columns: 1fr 1fr; }
+    .tier.best { order: -1; }
+    section { padding: 60px 0; }
+  }
+</style>
+</head>
+<body>
+<div class="banner" id="banner" hidden></div>
+
+<div class="wrap">
+  <nav>
+    <a class="logo" href="#">AI Solo <span>Business Kit</span></a>
+    <a class="btn small" href="#pricing">Get the kit</a>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <span class="eyebrow">For freelancers, solopreneurs &amp; side-hustlers</span>
+      <h1>Run your one-person business with <em>AI doing the heavy lifting.</em></h1>
+      <p class="lead">100 copy-paste prompts for marketing, sales, operations and money, plus 3 ready-made spreadsheets and a 7-day plan. Stop staring at a blank ChatGPT box and start getting real work done.</p>
+      <div class="cta-row">
+        <a class="btn" href="#pricing">Get instant access: from $<span data-price="starter">19</span></a>
+        <a class="btn ghost" href="#inside">See what's inside</a>
+      </div>
+      <p class="trust">⚡ Instant download · Works with ChatGPT, Claude &amp; Gemini · 30-day money-back guarantee</p>
+    </div>
+    <div class="hero-img">
+      <img src="assets/preview-cover.png" alt="Cover of The AI Solo Business Kit">
+      <img class="back" src="assets/preview-prompts.png" alt="Example prompt page" loading="lazy">
+    </div>
+  </header>
+</div>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>You're the marketer, salesperson, accountant <em style="font-style:normal;color:var(--brand)">and</em> the talent.</h2>
+    <p class="sub">AI could take half of that off your plate, but only if you know what to ask it.</p>
+    <ul class="pain">
+      <li>You open ChatGPT, type something vague, and get generic, robotic output.</li>
+      <li>You post inconsistently because you never know what to say.</li>
+      <li>Leads slip through the cracks because follow-ups live in your head.</li>
+      <li>You don't really know if you made a profit last month.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="inside">
+  <div class="wrap">
+    <h2>Everything you need, nothing you don't</h2>
+    <p class="sub">A complete toolkit you can use today. No course to sit through, no subscription.</p>
+    <div class="grid g4">
+      <div class="card"><div class="icon">100</div><h3>AI prompt library</h3><p>Proven prompts across 8 business areas, with fill-in-the-blank [BRACKETS] and a reusable context block.</p></div>
+      <div class="card"><div class="icon">$</div><h3>Profit &amp; Cash Flow Tracker</h3><p>Log sales and expenses; the dashboard calculates monthly profit, margin, tax set-aside and running cash.</p></div>
+      <div class="card"><div class="icon">📅</div><h3>Content Calendar</h3><p>365-day planner with platform, pillar and status dropdowns, plus an auto-updating pipeline summary.</p></div>
+      <div class="card"><div class="icon">🤝</div><h3>Client CRM &amp; Pipeline</h3><p>Track every lead by stage, see your weighted forecast and win rate, and never miss a follow-up.</p></div>
+    </div>
+    <div class="cats">
+      <div class="cat">Offer &amp; Positioning<small>12 prompts</small></div>
+      <div class="cat">Content &amp; Social<small>13 prompts</small></div>
+      <div class="cat">Email Marketing<small>12 prompts</small></div>
+      <div class="cat">Sales &amp; Clients<small>13 prompts</small></div>
+      <div class="cat">Operations<small>13 prompts</small></div>
+      <div class="cat">Money &amp; Finance<small>12 prompts</small></div>
+      <div class="cat">Customer Experience<small>12 prompts</small></div>
+      <div class="cat">Growth &amp; Strategy<small>13 prompts</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Take a look inside</h2>
+    <p class="sub">A clean, printable PDF plus spreadsheets that work in Excel, Google Sheets, Numbers and LibreOffice.</p>
+    <div class="previews">
+      <figure><img src="assets/preview-cover.png" alt="Kit cover" loading="lazy"><figcaption>The playbook</figcaption></figure>
+      <figure><img src="assets/preview-plan.png" alt="7-day quick-start plan page" loading="lazy"><figcaption>7-day quick-start plan</figcaption></figure>
+      <figure><img src="assets/preview-prompts.png" alt="Prompt library page" loading="lazy"><figcaption>100 copy-paste prompts</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap example">
+    <h2>Try one free</h2>
+    <p class="sub">Here's prompt 1.3 from the kit. Paste it into any AI assistant.</p>
+    <div class="label">Prompt</div>
+    <pre>Write 10 one-sentence value propositions for my offer using the formula: 'I help [WHO] get [RESULT] without [PAIN] in [TIMEFRAME].' Then pick the strongest one and explain why.</pre>
+    <p style="color:var(--muted);text-align:center;margin-top:18px">That's one of 100. Each one is written to get specific, usable output on the first try.</p>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>From download to results in 7 days</h2>
+    <p class="sub">The included quick-start plan takes about an hour a day.</p>
+    <div class="grid g3 steps">
+      <div class="card"><h3>Days 1–2: Get clear</h3><p>Nail your ideal customer, value proposition, offer and pricing tiers.</p></div>
+      <div class="card"><h3>Days 3–5: Get visible</h3><p>Set up your profit tracker, plan 30 days of content and write your email welcome sequence.</p></div>
+      <div class="card"><h3>Days 6–7: Get clients</h3><p>Fill your CRM, send your first outreach and automate your most repetitive task.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <h2>Pick your kit</h2>
+    <p class="sub">One-time payment. Instant download. Free updates to this version.</p>
+    <div class="pricing">
+      <div class="tier">
+        <h3>Starter</h3>
+        <div class="price">$<span data-price="starter">19</span></div>
+        <div class="note">Just the prompts</div>
+        <ul>
+          <li>100-prompt library (PDF)</li>
+          <li>Business Context Block</li>
+          <li>5-part prompt formula</li>
+          <li class="no">3 business spreadsheets</li>
+          <li class="no">7-day quick-start plan</li>
+          <li class="no">Notion / CSV versions</li>
+        </ul>
+        <a class="btn ghost" data-tier="starter" href="#">Get Starter</a>
+      </div>
+      <div class="tier best">
+        <h3>Complete Kit</h3>
+        <div class="price">$<span data-price="complete">49</span></div>
+        <div class="note">Everything to run your business</div>
+        <ul>
+          <li>100-prompt library (PDF)</li>
+          <li>Profit &amp; Cash Flow Tracker</li>
+          <li>Content Calendar</li>
+          <li>Client CRM &amp; Pipeline</li>
+          <li>7-day quick-start plan</li>
+          <li class="no">Notion / CSV versions</li>
+        </ul>
+        <a class="btn" data-tier="complete" href="#">Get the Complete Kit</a>
+      </div>
+      <div class="tier">
+        <h3>Pro</h3>
+        <div class="price">$<span data-price="pro">97</span></div>
+        <div class="note">For agencies &amp; power users</div>
+        <ul>
+          <li>Everything in Complete</li>
+          <li>Notion-ready Markdown library</li>
+          <li>CSV for Airtable / databases</li>
+          <li>Commercial licence: use with unlimited clients</li>
+          <li>Hand customised sheets to clients</li>
+        </ul>
+        <a class="btn ghost" data-tier="pro" href="#">Get Pro</a>
+      </div>
+    </div>
+    <div class="guarantee">
+      <div class="seal">🛡️</div>
+      <p><strong>30-day, no-questions-asked guarantee.</strong> If the kit doesn't save you at least 5 hours in your first month, email us and we'll refund every cent.</p>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <p class="sub"></p>
+    <details><summary>Which AI tools does this work with?</summary><p>Any chat-based assistant: ChatGPT (free or paid), Claude, Gemini, Copilot and others. The prompts are plain text.</p></details>
+    <details><summary>Do I need Excel?</summary><p>No. The spreadsheets work in Excel, Google Sheets (File → Import), Apple Numbers and free LibreOffice.</p></details>
+    <details><summary>How do I get the files?</summary><p>Right after checkout you get a download link by email and on the confirmation page. It's a single zip file.</p></details>
+    <details><summary>I'm not techy. Is this for me?</summary><p>Yes, that's who it's built for. If you can copy and paste, you can use it. The 7-day plan tells you exactly which prompt to use when.</p></details>
+    <details><summary>Can I upgrade later?</summary><p>Yes. Email us with your receipt and pay only the difference.</p></details>
+    <details><summary>Can I resell it?</summary><p>No. The Starter and Complete kits are for your own business. The Pro licence lets you use the kit with unlimited clients and hand them customised spreadsheets, but not resell the kit itself.</p></details>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>Give yourself an AI-powered back office</h2>
+    <p class="sub">For less than an hour of a freelancer's time.</p>
+    <a class="btn" data-tier="complete" href="#">Get the Complete Kit: $<span data-price="complete">49</span></a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="year"></span> <span data-store-name>The AI Solo Business Kit</span></span>
+    <span><a id="support" href="#">Support</a> · <a href="terms.html">Terms &amp; Refunds</a> · <a href="privacy.html">Privacy</a></span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  var S = window.STORE || {};
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  var banner = document.getElementById("banner");
+  if (S.launchBanner) { banner.textContent = S.launchBanner; banner.hidden = false; }
+
+  document.querySelectorAll("[data-price]").forEach(function (el) {
+    var p = S.prices && S.prices[el.dataset.price];
+    if (p != null) el.textContent = p;
+  });
+  document.querySelectorAll("[data-store-name]").forEach(function (el) { if (S.name) el.textContent = S.name; });
+  if (S.supportEmail) document.getElementById("support").href = "mailto:" + S.supportEmail;
+
+  var toast = document.getElementById("toast");
+  function show(msg) {
+    toast.textContent = msg; toast.style.display = "block";
+    clearTimeout(show.t); show.t = setTimeout(function () { toast.style.display = "none"; }, 4000);
+  }
+
+  document.querySelectorAll("[data-tier]").forEach(function (a) {
+    var url = S.checkout && S.checkout[a.dataset.tier];
+    if (url) { a.href = url; return; }
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      show("Checkout isn't connected yet. Add your checkout link for '" + a.dataset.tier + "' in site/config.js.");
+    });
+  });
+})();
+</script>
+</body>
+</html>
