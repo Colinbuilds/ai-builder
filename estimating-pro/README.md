@@ -9,7 +9,7 @@ Roofing and exterior estimating app for BTR Contracting (Omaha, NE). The full sp
 | 1 | Scaffold, auth (Admin / Estimator / Viewer), Prisma schema, seed from `/data`, price library browse/search | **Done** |
 | 2 | Price sheet upload/parse (ZIP case), review/diff, date status, coverage parsing | **Done** |
 | 3 | Customers + projects with job workflow stages, intake checklist, readiness, Form 17 | **Done** |
-| 4 | Job communication: per-job chat, forwarding address + Gmail/M365 pull, email summaries, "Catch me up" | Next |
+| 4 | Job communication: per-job chat, forwarding address + Gmail/M365 pull, email summaries, "Catch me up" | **Done** |
 | 5–11 | Documents/extraction, calc engine, estimate builder, labor, rules, AI assistant, outputs + proposals | |
 | 12 | Job costing and profit analysis | |
 | 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
@@ -63,6 +63,22 @@ The seed is safe to re-run. It updates existing sheets, items, and rules instead
 - **Form 17:** public + tax-exempt jobs show a red banner until someone records the date Form 17 was executed with the owner.
 - Viewers can read jobs but can't edit, and never see contract amounts.
 
+## Residential and commercial
+
+Every job is Residential or Commercial. The header switch (All / Residential / Commercial) filters the job list and sets the default for new jobs.
+- **Residential:** homeowner as the primary contact (reused if the phone/email already exists), insurance claim fields (carrier, claim #, date of loss, adjuster, deductible), residential lead sources, steep-slope default.
+- **Commercial:** client company, bid due date, public/tax-exempt with Form 17, prevailing wage, bid and P&P bonds, retainage, low-slope default.
+
+## Job communication (Phase 4)
+
+Each job has tabs: Overview, Team chat, Email, Documents, Estimates.
+- **Team chat:** internal per-job thread with replies, edits, and @mentions (first name, full name, or email). It updates every 5 seconds. Unread counts and @mentions show on the dashboard and the job tab.
+- **Email:** three ways in, de-duplicated by Message-ID, with attachments saved to the job:
+  - **Forwarding address:** every job has one (`job-<token>@INBOUND_EMAIL_DOMAIN`). Point your inbound email provider's webhook (Postmark JSON or a generic JSON body) at `POST /api/inbound-email` with `x-webhook-secret: $INBOUND_EMAIL_WEBHOOK_SECRET`.
+  - **Mailbox pull:** read-only Gmail / Microsoft 365. Each user connects their own mailbox, and tokens are encrypted at rest with AES-256-GCM. The default search is the claim #, AccuLynx #, or street address.
+  - **Paste:** copy an email in by hand.
+- **AI summaries:** each email gets a short summary with its asks and every stated figure, labeled "not verified". **Catch me up** writes a brief of the job (since you last looked, or the whole job) from the timeline, chat, email, intake gaps, and readiness blockers, and saves it with the time range it covers. All AI calls use CLAUDE.md as the system prompt, `claude-opus-5-5` (override with `ANTHROPIC_MODEL`), server-side refusal fallback (`fallbacks: "default"`), and treat a refusal as an error instead of saving partial output. Without `ANTHROPIC_API_KEY` the AI buttons are disabled; nothing is faked.
+
 ## Environment variables
 
 | Name | Used for |
@@ -72,7 +88,8 @@ The seed is safe to re-run. It updates existing sheets, items, and rules instead
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | First admin, created by the seed if missing |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | AI features (Phase 4+) |
 | `STORAGE_DRIVER`, `UPLOAD_DIR` | File storage; `local` writes to `./uploads` (S3 arrives in Phase 5) |
-| `INBOUND_EMAIL_*`, `GOOGLE_*`, `MS_*` | Job email capture (Phase 4) |
+| `INBOUND_EMAIL_DOMAIN`, `INBOUND_EMAIL_WEBHOOK_SECRET` | Job forwarding addresses and the inbound webhook |
+| `APP_URL`, `GOOGLE_CLIENT_ID/SECRET`, `MS_CLIENT_ID/SECRET` | Mailbox connect (OAuth redirect is `APP_URL/api/mail/{google,microsoft}/callback`) |
 
 ## Tests
 

@@ -4,20 +4,21 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { INTAKE_FIELDS, parseScopes, SCOPE_LABEL } from "@/lib/projects/intake";
 import { computeReadiness } from "@/lib/projects/readiness";
-import { loadReadinessInput, refreshReadiness } from "@/lib/projects/service";
-import { showForm17Banner } from "@/lib/projects/workflow";
+import { loadReadinessInput } from "@/lib/projects/service";
+import { aiConfigured } from "@/lib/ai/claude";
+import { CatchUp } from "@/components/comms/catch-up";
 import { ProjectForm } from "@/components/projects/project-form";
 import { StageControl } from "@/components/projects/stage-control";
-import { Form17Banner } from "@/components/projects/form17-panel";
 import { IntakeRow } from "@/components/projects/intake-row";
 import { AddContact } from "@/components/projects/add-contact";
-import { ReadinessBadge, StageBadge } from "@/components/projects/badges";
+import { ReadinessBadge } from "@/components/projects/badges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatUsd } from "@/lib/utils";
 import { updateDetailsAction, removeProjectContactAction } from "../actions";
 
 const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+const fmt = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" });
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -38,7 +39,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   // Readiness is recomputed on every view so sheet expirations are picked up the day they happen.
   const { readiness, blockers } = computeReadiness(await loadReadinessInput(id));
-  if (readiness !== project.readiness) await refreshReadiness(id);
+  const latestSummary = await prisma.jobSummary.findFirst({
+    where: { projectId: id, kind: "CATCH_UP", createdById: user.id },
+    include: { createdBy: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+  });
 
   const [companies, users, allContacts] = await Promise.all([
     prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
@@ -51,56 +56,18 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Link href="/" className="text-sm text-muted-foreground">
-          ← Jobs
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">{project.name}</h1>
-          <Badge variant="outline">{project.market === "RESIDENTIAL" ? "Residential" : "Commercial"}</Badge>
-          <StageBadge stage={project.status} />
-          <ReadinessBadge readiness={readiness} />
-          {project.isInsuranceClaim && <Badge variant="blue">Insurance claim</Badge>}
-          {project.prevailingWage && <Badge variant="outline">Prevailing wage</Badge>}
-          {project.bidBondRequired && <Badge variant="outline">Bid bond</Badge>}
-          {project.perfBondRequired && <Badge variant="outline">P&amp;P bond</Badge>}
-          {project.isPublic && <Badge variant="outline">Public</Badge>}
-          {project.isTaxExempt && <Badge variant="outline">Tax-exempt</Badge>}
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {[project.address, project.clientCompany?.name, scopes.map((s) => SCOPE_LABEL[s]).join(", ")].filter(Boolean).join(" · ")}
-          {project.bidDueDate && ` · bid due ${formatDate(project.bidDueDate)}`}
-          {project.acculynxJobNumber && ` · AccuLynx #${project.acculynxJobNumber}`}
-        </p>
-        {project.status === "LOST" && project.lostReason && <p className="text-sm">Lost: {project.lostReason}</p>}
-        {project.isInsuranceClaim && (
-          <p className="text-sm">
-            <span className="font-medium">Claim:</span>{" "}
-            {[
-              project.insuranceCarrier,
-              project.claimNumber && `#${project.claimNumber}`,
-              project.dateOfLoss && `loss ${formatDate(project.dateOfLoss)}`,
-              canEdit && project.deductible != null && `deductible ${formatUsd(project.deductible)}`,
-              project.adjusterName && `adjuster ${project.adjusterName}`,
-              project.adjusterPhone,
-              project.adjusterEmail,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        )}
-        {project.market === "COMMERCIAL" && project.retainagePct != null && canEdit && (
-          <p className="text-sm text-muted-foreground">Retainage {project.retainagePct}%</p>
-        )}
-      </div>
-
-      {showForm17Banner(project) && <Form17Banner id={project.id} canEdit={canEdit} />}
-      {project.form17Status === "EXECUTED" && (
-        <p className="text-sm text-green-800 dark:text-green-300">
-          Form 17 executed {formatDate(project.form17ExecutedAt)} (recorded by {project.form17ExecutedBy})
-          {project.form17Note && ` — ${project.form17Note}`}
-        </p>
-      )}
+      <CatchUp
+        projectId={project.id}
+        aiReady={aiConfigured()}
+        latest={
+          latestSummary && {
+            content: latestSummary.content,
+            createdAt: fmt(latestSummary.createdAt),
+            coversFrom: latestSummary.coversFrom ? fmt(latestSummary.coversFrom) : null,
+            by: latestSummary.createdBy?.name ?? null,
+          }
+        }
+      />
 
       {canEdit && (
         <section className="rounded-md border p-4">

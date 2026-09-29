@@ -11,6 +11,7 @@ import { Input, Select } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate, formatUsd } from "@/lib/utils";
 import { getMarketView } from "@/lib/market";
+import { unreadCounts } from "@/lib/comms/chat";
 
 type SP = Promise<{ stage?: string; q?: string; mine?: string }>;
 const OPEN: Stage[] = ["LEAD", "ESTIMATING", "SUBMITTED", "SOLD", "SCHEDULED", "IN_PRODUCTION", "COMPLETE", "INVOICED"];
@@ -39,6 +40,7 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
     }),
     prisma.project.groupBy({ by: ["status"], _count: true, where: view !== "ALL" ? { market: view } : {} }),
   ]);
+  const unread = await unreadCounts(user.id, projects.map((p) => p.id));
   const count = (s: Stage) => counts.find((c) => c.status === s)?._count ?? 0;
   const today = new Date();
 
@@ -109,6 +111,14 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
                     {view === "ALL" && <Badge variant="outline">{p.market === "RESIDENTIAL" ? "Res" : "Com"}</Badge>}
                     {p.address}
                     {showForm17Banner(p) && <Badge variant="red">Form 17 pending</Badge>}
+                    {unread[p.id] && (
+                      <Link href={`/projects/${p.id}/chat`}>
+                        <Badge variant={unread[p.id].mentioned ? "red" : "blue"}>
+                          {unread[p.id].unread} new message{unread[p.id].unread === 1 ? "" : "s"}
+                          {unread[p.id].mentioned ? " · @you" : ""}
+                        </Badge>
+                      </Link>
+                    )}
                     {p.bidBondRequired && <Badge variant="outline">Bid bond</Badge>}
                   </div>
                 </TD>

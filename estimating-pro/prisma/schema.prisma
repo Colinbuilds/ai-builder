@@ -26,15 +26,17 @@ model User {
   role         Role     @default(ESTIMATOR)
   createdAt    DateTime @default(now())
 
-  messages          JobMessage[]
-  summaries         JobSummary[]
-  auditLogs         AuditLog[]
-  estimates         Estimate[]
-  emailsAdded       JobEmail[]
-  sheetImports      SheetImport[]
-  activity          ProjectActivity[]
-  salesProjects     Project[]         @relation("ProjectSalesperson")
-  estimatorProjects Project[]         @relation("ProjectEstimator")
+  messages           JobMessage[]
+  summaries          JobSummary[]
+  auditLogs          AuditLog[]
+  estimates          Estimate[]
+  emailsAdded        JobEmail[]
+  sheetImports       SheetImport[]
+  activity           ProjectActivity[]
+  salesProjects      Project[]           @relation("ProjectSalesperson")
+  estimatorProjects  Project[]           @relation("ProjectEstimator")
+  projectViews       ProjectView[]
+  mailboxConnections MailboxConnection[]
 }
 
 // ---------- Price library ----------
@@ -225,6 +227,9 @@ model Project {
   summaries    JobSummary[]
   contacts     ProjectContact[]
   activity     ProjectActivity[]
+  views        ProjectView[]
+  // search words for pulling this job's email from a connected mailbox (defaults to name/claim #/address)
+  mailQuery    String?
 }
 
 // Timeline of everything that happened on a job: stage changes, intake edits, Form 17, overrides.
@@ -360,6 +365,8 @@ model Document {
   pages         Int?
   extractedText String?
   uploadedAt    DateTime     @default(now())
+  jobEmailId    String?
+  jobEmail      JobEmail?    @relation(fields: [jobEmailId], references: [id], onDelete: SetNull)
 
   measurements Measurement[]
 }
@@ -559,6 +566,7 @@ model JobMessage {
   authorId  String
   author    User         @relation(fields: [authorId], references: [id])
   body      String
+  mentions  Json? // user ids @mentioned
   parentId  String? // reply-to
   parent    JobMessage?  @relation("Replies", fields: [parentId], references: [id], onDelete: SetNull)
   replies   JobMessage[] @relation("Replies")
@@ -576,21 +584,22 @@ enum EmailSource {
 
 // External email attached to a job (GC, owner, supplier, subs).
 model JobEmail {
-  id         String      @id @default(cuid())
-  projectId  String
-  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  source     EmailSource
-  externalId String? // Message-ID / provider id, for de-duplication
-  threadId   String?
-  fromAddr   String
-  toAddrs    String?
-  subject    String
-  sentAt     DateTime
-  bodyText   String
-  summary    String? // AI one-paragraph summary of this email
-  addedById  String?
-  addedBy    User?       @relation(fields: [addedById], references: [id])
-  createdAt  DateTime    @default(now())
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  source      EmailSource
+  externalId  String? // Message-ID / provider id, for de-duplication
+  threadId    String?
+  fromAddr    String
+  toAddrs     String?
+  subject     String
+  sentAt      DateTime
+  bodyText    String
+  summary     String? // AI one-paragraph summary of this email
+  addedById   String?
+  addedBy     User?       @relation(fields: [addedById], references: [id])
+  createdAt   DateTime    @default(now())
+  attachments Document[]
 
   @@unique([projectId, externalId])
   @@index([projectId, sentAt])
@@ -614,4 +623,37 @@ model JobSummary {
   createdById String?
   createdBy   User?       @relation(fields: [createdById], references: [id])
   createdAt   DateTime    @default(now())
+}
+
+// When each user last looked at a job's chat and its catch-up, for unread counts and "since you last looked".
+model ProjectView {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatReadAt DateTime  @default(now())
+  caughtUpAt DateTime?
+
+  @@unique([projectId, userId])
+}
+
+enum MailProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+// A user's connected mailbox for pulling job emails. Tokens are encrypted at rest.
+model MailboxConnection {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     MailProvider
+  email        String
+  accessToken  String // encrypted
+  refreshToken String? // encrypted
+  expiresAt    DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@unique([userId, provider])
 }

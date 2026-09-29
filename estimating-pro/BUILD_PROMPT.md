@@ -277,6 +277,25 @@ Goal: BTR runs every job in this app instead of AccuLynx. The modules below are 
 - **Migration off AccuLynx:** import existing contacts, open jobs, and history from AccuLynx exports (CSV). Keep the AccuLynx copy output (§9) until the cutover date.
 - **Integrations that need BTR's accounts or approval** (ABC ordering API, EagleView, CompanyCam, QuickBooks, payment processor, e-signature): each is built behind a setting and works without the integration (manual entry/upload) until credentials are added.
 
+#### 14. Integrations
+Everything BTR already uses stays connected. Each integration is built behind a setting and has a manual fallback (upload, CSV, email), so the app works before any credentials are added. Admins see status and setup steps on **Settings → Integrations**.
+
+| System | What it does in the app | Needs | Fallback until connected |
+|---|---|---|---|
+| **Google Drive** | Import plans, specs, EagleView PDFs, and photos into a job's Documents. Save proposals, estimate PDFs, and change orders to the job's Drive folder. | Google OAuth client (drive.file / drive.readonly) | Upload files directly |
+| **QuickBooks Online** | Sync customers, invoices, payments, and vendor bills (job costing by customer/project). Pull actual costs into §12. | Intuit developer app + BTR company connect (OAuth 2.0) | CSV export/import |
+| **EagleView** | Order roof/walls reports from the job, receive them when ready, and feed §3 extraction. | EagleView API credentials (account approval) | Upload the PDF/XML report |
+| **ABC Supply (myABCsupply)** | Branch #112 pricing and item lookup, place material orders from the estimate, track order and delivery status, and import invoices for job costing. | ABC Supply API partner access for BTR's account | Email/PDF order; price-sheet upload (§1); invoice CSV import |
+| **Change-order / project platforms** — Buildertrend (residential builders) and Procore (commercial GCs) | Link the job to the builder's/GC's project and pull change orders, RFIs, submittals, and schedule dates. Push BTR change orders and invoices where the platform allows. | Each platform's API app + the GC/builder granting BTR access to their project | Upload or forward the CO/RFI PDFs (job email address) |
+| **Gmail / Microsoft 365** | Pull job email (§11). | Google/Microsoft OAuth client | Forwarding address, paste-in |
+| **CompanyCam** | Show job photos (§13). | CompanyCam API token | Upload photos |
+
+Rules for every integration:
+- Credentials live in server environment variables or encrypted in the database, never in the browser.
+- Imports are de-duplicated by the source system's ID.
+- Everything pulled in is logged on the job timeline with its source.
+- Numbers from outside systems keep their source label; they're never treated as verified BTR pricing unless they come from a loaded price sheet.
+
 ---
 
 ### Acceptance tests (must pass — use real data from `/data`)
@@ -299,8 +318,8 @@ Goal: BTR runs every job in this app instead of AccuLynx. The modules below are 
 1. Scaffold, auth, Prisma schema, seed from `/data`, price library browse/search ✅
 2. Price sheet upload/parse (including the ZIP case), review/diff, date status ✅
 3. Customers/contacts + projects with the full job workflow stages, intake checklist, readiness engine, Form 17 logic ✅
-4. Job communication: per-job chat, email capture (forwarding address + Gmail/M365 pull), per-email summaries, "Catch me up"
-5. Document upload + Claude extraction + confirmation queue
+4. Job communication: per-job chat, email capture (forwarding address + Gmail/M365 pull), per-email summaries, "Catch me up" ✅
+5. Document upload + Claude extraction + confirmation queue, Google Drive import, EagleView upload/API, Integrations settings page
 6. Calc engine + unit tests (acceptance tests 2–9)
 7. Estimate builder UI, waste gate, substitutions, revisions
 8. Labor + labor standards library
@@ -308,9 +327,9 @@ Goal: BTR runs every job in this app instead of AccuLynx. The modules below are 
 10. AI assistant with tools + server-side validation
 11. Outputs: AccuLynx copy, CSV, BTR PDF, internal takeoff PDF, customer proposal with e-signature
 12. Job costing and profit analysis (§12), including actual-cost entry, ABC invoice CSV import, per-job P&L, and cross-job reports with calibration/bid tabs
-13. Material orders and deliveries (§13)
+13. Material orders and deliveries (§13), ABC Supply integration
 14. Production scheduling, crews/subs, work orders, timesheets
-15. Invoicing, payments, change orders/supplements, QuickBooks sync
+15. Invoicing, payments, change orders/supplements, QuickBooks sync, Buildertrend/Procore change-order sync
 16. Tasks/reminders, dashboards and reports, commissions
 17. CompanyCam and EagleView links, customer portal, field mobile view
 18. AccuLynx data migration and cutover
