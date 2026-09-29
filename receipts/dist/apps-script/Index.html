@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <?!= include_('UiStyles'); ?>
+  <style>html, body { margin: 0; height: 100%; }</style>
+</head>
+<body>
+  <div id="app"></div>
+  <?!= include_('CoreClient'); ?>
+  <?!= include_('UiScript'); ?>
+  <script>
+    JobReceiptsApp.mount(document.getElementById("app"), { api: JobReceiptsApp.appsScriptApi() });
+  </script>
+</body>
+</html>
