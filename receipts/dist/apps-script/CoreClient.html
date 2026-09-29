@@ -2,7 +2,7 @@
 // Pricing: turns an extracted receipt into cost, markup, billed price and profit.
 // Plain function declarations so the same file runs in Google Apps Script and Node tests.
 
-var DEFAULT_MARKUP_PERCENT = 15;
+var DEFAULT_MARKUP_PERCENT = 28;
 
 // Rounds half-cents up (627.555 -> 627.56). Shifting through the exponent avoids
 // binary float error: 627.555 * 100 is 62755.49999... but Number("627.555e2") is 62755.5.
@@ -17,7 +17,7 @@ function roundCents(n) {
 /**
  * Price a receipt.
  * receipt: { vendor, items: [{ description, qty, lineTotal, vendor? , markupPercent? }], tax, total }
- * options: { markupPercent (default 15), includeTaxInCost (default true) }
+ * options: { markupPercent (default 28), includeTaxInCost (default true) }
  *
  * Sales tax paid at the store is a real cost to the business, so by default it is
  * spread across the lines in proportion to their pre-tax amount; the last line

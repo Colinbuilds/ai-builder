@@ -13,7 +13,7 @@ function createMockApi(opts) {
   function build(sample, i) {
     var x = normalizeExtraction(Object.assign({ isReceipt: true, jobGuess: "", notes: "" }, sample.extracted));
     var m = resolveJob(x, sample.source, jobs);
-    var priced = priceReceipt(x, { markupPercent: 15 });
+    var priced = priceReceipt(x, { markupPercent: DEFAULT_MARKUP_PERCENT });
     return {
       id: sample.id, createdAt: new Date(clock - (3 - i) * 36e5).toISOString(), uploadedBy: emails[x.employee] || user, employee: x.employee,
       source: sample.source.via === "Email" ? "upload" : "upload", status: m.confident && !x.flags.length ? "ready" : "needs_review",
@@ -21,7 +21,7 @@ function createMockApi(opts) {
       note: sample.source.body || "", suggestedAction: sample.action === "needs_review" ? "" : sample.action,
       extracted: x, match: { confident: m.confident, score: m.score, aiSuggestion: m.aiSuggestion || "",
         candidates: (m.candidates || []).map(function (c) { return { id: c.job.id, name: c.job.name, score: c.score }; }) },
-      markupPercent: 15, cost: priced.totals.cost, billed: priced.totals.billed, profit: priced.totals.profit, fileId: "",
+      markupPercent: DEFAULT_MARKUP_PERCENT, cost: priced.totals.cost, billed: priced.totals.billed, profit: priced.totals.profit, fileId: "",
     };
   }
 
@@ -44,7 +44,7 @@ function createMockApi(opts) {
 
   var handlers = {
     apiBootstrap: function () {
-      return { user: user, admin: admin, company: SAMPLE_COMPANY.name, companyAddress: SAMPLE_COMPANY.address, defaultMarkup: 15, jobs: jobs, receipts: visible() };
+      return { user: user, admin: admin, company: SAMPLE_COMPANY.name, companyAddress: SAMPLE_COMPANY.address, defaultMarkup: DEFAULT_MARKUP_PERCENT, jobs: jobs, receipts: visible() };
     },
     apiReceipts: visible,
     apiReceiptFile: function () { return null; },
@@ -54,10 +54,10 @@ function createMockApi(opts) {
       var x = normalizeExtraction({ isReceipt: true, employee: "", jobName: "", address: "", jobGuess: "", vendor: "Menards", date: "2026-09-29", receiptNumber: "118-3399",
         items: [{ description: "2x4x8 SPF Stud", qty: 20, unit: "ea", lineTotal: 79.8 }, { description: "GRK R4 Screws 3\" 100ct", qty: 2, unit: "box", lineTotal: 49.96 }],
         subtotal: 129.76, tax: 9.08, total: 138.84, notes: "" });
-      var priced = priceReceipt(x, { markupPercent: 15 });
+      var priced = priceReceipt(x, { markupPercent: DEFAULT_MARKUP_PERCENT });
       var r = { id: "u" + receipts.length, createdAt: new Date(clock + receipts.length * 6e4).toISOString(), uploadedBy: user, employee: user.split("@")[0], source: "upload",
         status: "ready", jobId: j.id, jobName: j.name, note: input.note || "", suggestedAction: input.suggestedAction || "", extracted: x,
-        match: { confident: true, score: 1, candidates: [] }, markupPercent: 15, cost: priced.totals.cost, billed: priced.totals.billed, profit: priced.totals.profit };
+        match: { confident: true, score: 1, candidates: [] }, markupPercent: DEFAULT_MARKUP_PERCENT, cost: priced.totals.cost, billed: priced.totals.billed, profit: priced.totals.profit };
       receipts.push(r);
       return admin ? r : employeeView(r);
     },
@@ -84,7 +84,7 @@ function createMockApi(opts) {
     apiRetry: function (id) { return find(id); },
     apiSettings: function () {
       return { quickbooks: { connected: false, authUrl: "#connect" }, ai: true,
-        admins: ["office@samplecontracting.com"], defaultMarkup: 15, changeOrderTemplate: true };
+        admins: ["office@samplecontracting.com"], defaultMarkup: DEFAULT_MARKUP_PERCENT, changeOrderTemplate: true };
     },
   };
 
