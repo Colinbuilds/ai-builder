@@ -1,5 +1,6 @@
 // Project data operations. Every change writes to the job's activity timeline and recomputes readiness.
 import { prisma } from "@/lib/db";
+import { normEmail, phoneKey } from "@/lib/customers";
 import { sheetDateStatus } from "@/lib/sheets/date-status";
 import { INTAKE_BY_KEY, INTAKE_FIELDS, parseScopes, reconcileIntake, type Scope } from "./intake";
 import { computeReadiness, type ReadinessInput } from "./readiness";
@@ -27,6 +28,7 @@ const CONSTRUCTION_LABEL: Record<ConstructionType, string> = { NEW: "New constru
 
 export type ProjectInput = {
   name: string;
+  market?: "RESIDENTIAL" | "COMMERCIAL";
   address?: string | null;
   buildingUse?: string | null;
   constructionType?: ConstructionType | null;
@@ -39,10 +41,27 @@ export type ProjectInput = {
   clientCompanyId?: string | null;
   salespersonId?: string | null;
   estimatorId?: string | null;
+  // residential
+  isInsuranceClaim?: boolean;
+  insuranceCarrier?: string | null;
+  claimNumber?: string | null;
+  dateOfLoss?: Date | null;
+  adjusterName?: string | null;
+  adjusterPhone?: string | null;
+  adjusterEmail?: string | null;
+  deductible?: number | null;
+  // commercial
+  bidBondRequired?: boolean;
+  perfBondRequired?: boolean;
+  prevailingWage?: boolean;
+  retainagePct?: number | null;
 };
 
-export async function createProject(input: ProjectInput, actor: Actor) {
+export type HomeownerInput = { firstName: string; lastName: string; phone?: string | null; email?: string | null };
+
+export async function createProject(input: ProjectInput, actor: Actor, homeowner?: HomeownerInput | null) {
   if (!input.name.trim()) throw new ProjectError(["Project name is required."]);
+  if (input.market === "RESIDENTIAL" && input.isTaxExempt) throw new ProjectError(["Residential jobs can't be tax-exempt."]);
   const project = await prisma.project.create({
     data: {
       ...input,
@@ -72,7 +91,34 @@ export async function createProject(input: ProjectInput, actor: Actor) {
       };
     }),
   });
-  await activity(project.id, actor.id, "created", `${actor.name} created the job`, { scopes: input.scopes });
+  await activity(project.id, actor.id, "created", `${actor.name} created the job`, { scopes: input.scopes, market: project.market });
+  if (homeowner?.firstName.trim() && homeowner.lastName.trim()) {
+    // Reuse an existing contact with the same phone or email rather than creating a duplicate.
+    const pk = phoneKey(homeowner.phone);
+    const email = normEmail(homeowner.email);
+    const existing =
+      (pk || email) &&
+      (await prisma.contact.findFirst({ where: { OR: [...(pk ? [{ phoneKey: pk }] : []), ...(email ? [{ email }] : [])] } }));
+    const contact =
+      existing ||
+      (await prisma.contact.create({
+        data: {
+          firstName: homeowner.firstName.trim(),
+          lastName: homeowner.lastName.trim(),
+          phone: homeowner.phone?.trim() || null,
+          phoneKey: pk,
+          email,
+          address: input.address ?? null,
+        },
+      }));
+    await prisma.projectContact.create({ data: { projectId: project.id, contactId: contact.id, role: "HOMEOWNER", isPrimary: true } });
+    await activity(
+      project.id,
+      actor.id,
+      "contact",
+      `${existing ? "Linked existing" : "Added"} homeowner ${contact.firstName} ${contact.lastName}`,
+    );
+  }
   if (project.form17Status === "PENDING")
     await activity(project.id, null, "form17", "Public, tax-exempt job: Nebraska Form 17 required before materials are purchased (PUB-01)");
   await refreshReadiness(project.id);
@@ -83,6 +129,7 @@ export async function updateProjectDetails(id: string, patch: Partial<ProjectInp
   const before = await prisma.project.findUniqueOrThrow({ where: { id } });
   const isPublic = patch.isPublic ?? before.isPublic;
   const isTaxExempt = patch.isTaxExempt ?? before.isTaxExempt;
+  if ((patch.market ?? before.market) === "RESIDENTIAL" && isTaxExempt) throw new ProjectError(["Residential jobs can't be tax-exempt."]);
   const data = {
     ...patch,
     ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),

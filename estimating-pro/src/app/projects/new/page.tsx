@@ -1,10 +1,12 @@
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ProjectForm } from "@/components/projects/project-form";
+import { getMarketView } from "@/lib/market";
 import { createProjectAction } from "../actions";
 
 export default async function NewProjectPage() {
   const me = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const view = await getMarketView();
   const [companies, users] = await Promise.all([
     prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.user.findMany({ where: { role: { not: "VIEWER" } }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
@@ -20,7 +22,8 @@ export default async function NewProjectPage() {
       </div>
       <ProjectForm
         action={createProjectAction}
-        values={{ estimatorId: me.id }}
+        values={{ estimatorId: me.id, salespersonId: me.id, market: view === "RESIDENTIAL" ? "RESIDENTIAL" : "COMMERCIAL" }}
+        isNew
         companies={companies}
         users={users}
         submitLabel="Create job"

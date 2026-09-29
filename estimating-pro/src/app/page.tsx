@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatUsd } from "@/lib/utils";
+import { getMarketView } from "@/lib/market";
 
 type SP = Promise<{ stage?: string; q?: string; mine?: string }>;
 const OPEN: Stage[] = ["LEAD", "ESTIMATING", "SUBMITTED", "SOLD", "SCHEDULED", "IN_PRODUCTION", "COMPLETE", "INVOICED"];
@@ -17,8 +18,10 @@ const OPEN: Stage[] = ["LEAD", "ESTIMATING", "SUBMITTED", "SOLD", "SCHEDULED", "
 export default async function Dashboard({ searchParams }: { searchParams: SP }) {
   const user = await requireUser();
   const sp = await searchParams;
+  const view = await getMarketView();
   const stage = STAGES.includes(sp.stage as Stage) ? (sp.stage as Stage) : null;
   const where: Prisma.ProjectWhereInput = {
+    ...(view !== "ALL" ? { market: view } : {}),
     status: stage ? stage : sp.stage === "all" ? undefined : { in: OPEN },
     ...(sp.q ? { OR: [{ name: { contains: sp.q } }, { address: { contains: sp.q } }, { acculynxJobNumber: { contains: sp.q } }] } : {}),
     ...(sp.mine ? { OR: [{ salespersonId: user.id }, { estimatorId: user.id }] } : {}),
@@ -26,11 +29,15 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
   const [projects, counts] = await Promise.all([
     prisma.project.findMany({
       where,
-      include: { clientCompany: { select: { name: true } }, estimator: { select: { name: true } } },
+      include: {
+        clientCompany: { select: { name: true } },
+        estimator: { select: { name: true } },
+        contacts: { where: { isPrimary: true }, include: { contact: true }, take: 1 },
+      },
       orderBy: [{ bidDueDate: { sort: "asc", nulls: "last" } }, { updatedAt: "desc" }],
       take: 200,
     }),
-    prisma.project.groupBy({ by: ["status"], _count: true }),
+    prisma.project.groupBy({ by: ["status"], _count: true, where: view !== "ALL" ? { market: view } : {} }),
   ]);
   const count = (s: Stage) => counts.find((c) => c.status === s)?._count ?? 0;
   const today = new Date();
@@ -38,7 +45,9 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Jobs</h1>
+        <h1 className="text-2xl font-semibold">
+          {view === "RESIDENTIAL" ? "Residential jobs" : view === "COMMERCIAL" ? "Commercial jobs" : "Jobs"}
+        </h1>
         {user.role !== "VIEWER" && (
           <Button asChild>
             <Link href="/projects/new">New job</Link>
@@ -80,9 +89,9 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
         <THead>
           <TR>
             <TH>Job</TH>
-            <TH>Client</TH>
+            <TH>{view === "RESIDENTIAL" ? "Homeowner" : view === "COMMERCIAL" ? "Client" : "Customer"}</TH>
             <TH>Stage</TH>
-            <TH>Bid due</TH>
+            <TH>{view === "RESIDENTIAL" ? "Claim" : "Bid due"}</TH>
             <TH>Readiness</TH>
             <TH>Estimator</TH>
           </TR>
@@ -97,15 +106,38 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
                     {p.name}
                   </Link>
                   <div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
+                    {view === "ALL" && <Badge variant="outline">{p.market === "RESIDENTIAL" ? "Res" : "Com"}</Badge>}
                     {p.address}
                     {showForm17Banner(p) && <Badge variant="red">Form 17 pending</Badge>}
+                    {p.bidBondRequired && <Badge variant="outline">Bid bond</Badge>}
                   </div>
                 </TD>
-                <TD>{p.clientCompany?.name ?? "—"}</TD>
+                <TD>
+                  {p.clientCompany?.name ??
+                    (p.contacts[0] ? `${p.contacts[0].contact.firstName} ${p.contacts[0].contact.lastName}` : "—")}
+                  {p.market === "RESIDENTIAL" && p.contacts[0]?.contact.phone && (
+                    <div className="text-xs text-muted-foreground">{p.contacts[0].contact.phone}</div>
+                  )}
+                </TD>
                 <TD>
                   <StageBadge stage={p.status} />
                 </TD>
-                <TD className={overdue ? "font-semibold text-destructive" : ""}>{formatDate(p.bidDueDate)}</TD>
+                {p.market === "RESIDENTIAL" ? (
+                  <TD className="text-xs">
+                    {p.isInsuranceClaim ? (
+                      <>
+                        {p.insuranceCarrier ?? "Insurance"} {p.claimNumber && `#${p.claimNumber}`}
+                        {p.deductible != null && user.role !== "VIEWER" && (
+                          <div className="text-muted-foreground">Ded. {formatUsd(p.deductible)}</div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">Retail</span>
+                    )}
+                  </TD>
+                ) : (
+                  <TD className={overdue ? "font-semibold text-destructive" : ""}>{formatDate(p.bidDueDate)}</TD>
+                )}
                 <TD>
                   <ReadinessBadge readiness={p.readiness} />
                 </TD>

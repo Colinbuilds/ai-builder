@@ -105,3 +105,27 @@ describe("customers", () => {
     expect(companyKey("Kiewit Building Group")).not.toBe(companyKey("Kiewit"));
   });
 });
+
+describe("residential jobs", () => {
+  it("adds the homeowner as the primary contact and reuses an existing contact with the same phone", async () => {
+    const a = await actor();
+    const base = { market: "RESIDENTIAL" as const, scopes: ["STEEP" as const], isPublic: false, isTaxExempt: false };
+    const p1 = await createProject({ ...base, name: "TEST_ONLY Johnson hail", isInsuranceClaim: true, claimNumber: "TEST-1" }, a, {
+      firstName: "Dana",
+      lastName: "Johnson",
+      phone: "(402) 555-0142",
+    });
+    const pc = await prisma.projectContact.findFirstOrThrow({ where: { projectId: p1.id }, include: { contact: true } });
+    expect(pc).toMatchObject({ role: "HOMEOWNER", isPrimary: true, contact: { firstName: "Dana", phoneKey: "4025550142" } });
+
+    const p2 = await createProject({ ...base, name: "TEST_ONLY Johnson gutters" }, a, { firstName: "D", lastName: "Johnson", phone: "402.555.0142" });
+    const pc2 = await prisma.projectContact.findFirstOrThrow({ where: { projectId: p2.id } });
+    expect(pc2.contactId).toBe(pc.contactId);
+  });
+
+  it("can't be tax-exempt", async () => {
+    await expect(
+      createProject({ name: "TEST_ONLY x", market: "RESIDENTIAL", scopes: ["STEEP"], isPublic: false, isTaxExempt: true }, await actor()),
+    ).rejects.toThrow(/can't be tax-exempt/);
+  });
+});

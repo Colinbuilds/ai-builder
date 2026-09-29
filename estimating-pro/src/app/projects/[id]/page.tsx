@@ -57,8 +57,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold">{project.name}</h1>
+          <Badge variant="outline">{project.market === "RESIDENTIAL" ? "Residential" : "Commercial"}</Badge>
           <StageBadge stage={project.status} />
           <ReadinessBadge readiness={readiness} />
+          {project.isInsuranceClaim && <Badge variant="blue">Insurance claim</Badge>}
+          {project.prevailingWage && <Badge variant="outline">Prevailing wage</Badge>}
+          {project.bidBondRequired && <Badge variant="outline">Bid bond</Badge>}
+          {project.perfBondRequired && <Badge variant="outline">P&amp;P bond</Badge>}
           {project.isPublic && <Badge variant="outline">Public</Badge>}
           {project.isTaxExempt && <Badge variant="outline">Tax-exempt</Badge>}
         </div>
@@ -68,6 +73,25 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           {project.acculynxJobNumber && ` · AccuLynx #${project.acculynxJobNumber}`}
         </p>
         {project.status === "LOST" && project.lostReason && <p className="text-sm">Lost: {project.lostReason}</p>}
+        {project.isInsuranceClaim && (
+          <p className="text-sm">
+            <span className="font-medium">Claim:</span>{" "}
+            {[
+              project.insuranceCarrier,
+              project.claimNumber && `#${project.claimNumber}`,
+              project.dateOfLoss && `loss ${formatDate(project.dateOfLoss)}`,
+              canEdit && project.deductible != null && `deductible ${formatUsd(project.deductible)}`,
+              project.adjusterName && `adjuster ${project.adjusterName}`,
+              project.adjusterPhone,
+              project.adjusterEmail,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
+        {project.market === "COMMERCIAL" && project.retainagePct != null && canEdit && (
+          <p className="text-sm text-muted-foreground">Retainage {project.retainagePct}%</p>
+        )}
       </div>
 
       {showForm17Banner(project) && <Form17Banner id={project.id} canEdit={canEdit} />}
@@ -215,6 +239,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               ...project,
               scopes,
               bidDueDate: iso(project.bidDueDate),
+              dateOfLoss: iso(project.dateOfLoss),
               contractSignedAt: iso(project.contractSignedAt),
             }}
           />

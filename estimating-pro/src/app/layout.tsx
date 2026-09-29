@@ -4,6 +4,8 @@ import "./globals.css";
 import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/app/actions";
 import { Button } from "@/components/ui/button";
+import { MarketSwitch } from "@/components/market-switch";
+import { getMarketView } from "@/lib/market";
 
 export const metadata: Metadata = {
   title: "Estimating Pro — BTR Contracting",
@@ -12,12 +14,13 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
+  const view = await getMarketView();
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
         {user && (
           <header className="border-b">
-            <nav className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3 text-sm">
+            <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 text-sm">
               <Link href="/" className="font-semibold">
                 Estimating Pro
               </Link>
@@ -38,7 +41,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   Users
                 </Link>
               )}
-              <span className="ml-auto text-muted-foreground">
+              <span className="ml-auto">
+                <MarketSwitch view={view} />
+              </span>
+              <span className="text-muted-foreground">
                 {user.name} · {user.role.toLowerCase()}
               </span>
               <form action={logout}>

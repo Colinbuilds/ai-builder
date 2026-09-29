@@ -152,6 +152,13 @@ enum ProjectStatus {
   LOST
 }
 
+// Two sides of the business. Residential: homeowners, insurance claims, deposits.
+// Commercial: GCs/owners, bid dates, public bids, bonds, retainage, pay apps.
+enum Market {
+  RESIDENTIAL
+  COMMERCIAL
+}
+
 enum Readiness {
   NOT_READY
   BUDGET
@@ -161,6 +168,7 @@ enum Readiness {
 model Project {
   id                String            @id @default(cuid())
   name              String
+  market            Market            @default(COMMERCIAL)
   address           String?
   buildingUse       String?
   constructionType  ConstructionType?
@@ -181,6 +189,20 @@ model Project {
   readiness         Readiness         @default(NOT_READY)
   contractAmount    Float?
   contractSignedAt  DateTime?
+  // Residential insurance restoration
+  isInsuranceClaim  Boolean           @default(false)
+  insuranceCarrier  String?
+  claimNumber       String?
+  dateOfLoss        DateTime?
+  adjusterName      String?
+  adjusterPhone     String?
+  adjusterEmail     String?
+  deductible        Float?
+  // Commercial
+  bidBondRequired   Boolean           @default(false)
+  perfBondRequired  Boolean           @default(false)
+  prevailingWage    Boolean           @default(false)
+  retainagePct      Float?
   clientCompanyId   String?
   clientCompany     Company?          @relation(fields: [clientCompanyId], references: [id])
   salespersonId     String?

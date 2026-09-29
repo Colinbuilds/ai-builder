@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useFormAction } from "@/components/use-form-action";
 import type { ActionResult } from "@/app/projects/actions";
 import { SCOPES, SCOPE_LABEL } from "@/lib/projects/intake";
+import { MARKET_DEFAULTS, type Market } from "@/lib/market-shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
 import { Problems } from "./problems";
@@ -10,6 +12,7 @@ import { Problems } from "./problems";
 type Opt = { id: string; name: string };
 export type ProjectFormValues = {
   id?: string;
+  market?: Market;
   name?: string;
   address?: string | null;
   buildingUse?: string | null;
@@ -25,6 +28,18 @@ export type ProjectFormValues = {
   estimatorId?: string | null;
   contractAmount?: number | null;
   contractSignedAt?: string | null;
+  isInsuranceClaim?: boolean;
+  insuranceCarrier?: string | null;
+  claimNumber?: string | null;
+  dateOfLoss?: string | null;
+  adjusterName?: string | null;
+  adjusterPhone?: string | null;
+  adjusterEmail?: string | null;
+  deductible?: number | null;
+  bidBondRequired?: boolean;
+  perfBondRequired?: boolean;
+  prevailingWage?: boolean;
+  retainagePct?: number | null;
 };
 
 export function ProjectForm({
@@ -33,6 +48,7 @@ export function ProjectForm({
   companies,
   users,
   showContract = false,
+  isNew = false,
   submitLabel,
 }: {
   action: (s: ActionResult, f: FormData) => Promise<ActionResult>;
@@ -40,72 +56,161 @@ export function ProjectForm({
   companies: Opt[];
   users: Opt[];
   showContract?: boolean;
+  isNew?: boolean;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useFormAction(action, null);
   const v = values;
+  const [market, setMarket] = useState<Market>(v.market ?? "COMMERCIAL");
+  const [scopes, setScopes] = useState<string[]>(v.scopes ?? MARKET_DEFAULTS[v.market ?? "COMMERCIAL"].scopes);
+  const [insurance, setInsurance] = useState(!!v.isInsuranceClaim);
+  const res = market === "RESIDENTIAL";
+
+  const pickMarket = (m: Market) => {
+    setMarket(m);
+    if (isNew) setScopes(MARKET_DEFAULTS[m].scopes);
+  };
+
   return (
     <form onSubmit={formAction} className="grid gap-3 sm:grid-cols-2">
       {v.id && <input type="hidden" name="id" value={v.id} />}
+      <div className="flex gap-2 sm:col-span-2" role="radiogroup" aria-label="Market">
+        {(["RESIDENTIAL", "COMMERCIAL"] as const).map((m) => (
+          <label
+            key={m}
+            className={`flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm ${market === m ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+          >
+            <input type="radio" name="market" value={m} checked={market === m} onChange={() => pickMarket(m)} className="sr-only" />
+            {m === "RESIDENTIAL" ? "Residential" : "Commercial"}
+          </label>
+        ))}
+      </div>
+
       <Field label="Job name" className="sm:col-span-2">
-        <Input name="name" defaultValue={v.name} required placeholder="e.g. Fontenelle Hills Apartments — Bldg C reroof" />
+        <Input
+          name="name"
+          defaultValue={v.name}
+          required
+          placeholder={res ? "e.g. Johnson — hail reroof + gutters" : "e.g. Fontenelle Hills Apartments — Bldg C reroof"}
+        />
       </Field>
-      <Field label="Address">
+      <Field label={res ? "Property address" : "Job site address"}>
         <Input name="address" defaultValue={v.address ?? ""} />
       </Field>
-      <Field label="Client (GC / owner / property manager)">
-        <Select name="clientCompanyId" defaultValue={v.clientCompanyId ?? ""}>
-          <option value="">— none / homeowner —</option>
-          {companies.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+
+      {res && isNew ? (
+        <fieldset className="grid grid-cols-2 gap-2">
+          <legend className="mb-1 text-sm font-medium">Homeowner</legend>
+          <Input name="hoFirstName" placeholder="First name" />
+          <Input name="hoLastName" placeholder="Last name" />
+          <Input name="hoPhone" placeholder="Phone" />
+          <Input name="hoEmail" type="email" placeholder="Email" />
+        </fieldset>
+      ) : (
+        <Field label={res ? "Company (property manager / builder), if any" : "Client (GC / owner / property manager)"}>
+          <Select name="clientCompanyId" defaultValue={v.clientCompanyId ?? ""}>
+            <option value="">— none —</option>
+            {companies.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+
       <Field label="Building use">
-        <Input name="buildingUse" defaultValue={v.buildingUse ?? ""} placeholder="Multi-family, retail, school…" />
+        <Input
+          name="buildingUse"
+          defaultValue={v.buildingUse ?? (isNew && res ? "Single-family residence" : "")}
+          placeholder={res ? "Single-family, townhome, detached garage…" : "Multi-family, retail, school…"}
+        />
       </Field>
       <Field label="New construction or reroof">
-        <Select name="constructionType" defaultValue={v.constructionType ?? ""}>
+        <Select name="constructionType" defaultValue={v.constructionType ?? (isNew && res ? "REROOF" : "")}>
           <option value="">— not known yet —</option>
           <option value="NEW">New construction</option>
           <option value="REROOF">Reroof / re-side</option>
         </Select>
       </Field>
+
       <fieldset className="sm:col-span-2">
         <legend className="mb-1 text-sm font-medium">Scopes (decides which intake fields apply)</legend>
         <div className="flex flex-wrap gap-4">
           {SCOPES.map((s) => (
             <label key={s} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="scopes" value={s} defaultChecked={v.scopes?.includes(s)} />
+              <input
+                type="checkbox"
+                name="scopes"
+                value={s}
+                checked={scopes.includes(s)}
+                onChange={(e) => setScopes(e.target.checked ? [...scopes, s] : scopes.filter((x) => x !== s))}
+              />
               {SCOPE_LABEL[s]}
             </label>
           ))}
         </div>
       </fieldset>
-      <div className="flex flex-wrap gap-6 sm:col-span-2">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="isPublic" defaultChecked={v.isPublic} /> Public / government job
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="isTaxExempt" defaultChecked={v.isTaxExempt} /> Tax-exempt
-        </label>
-      </div>
-      <Field label="Bid due">
-        <Input name="bidDueDate" type="date" defaultValue={v.bidDueDate ?? ""} />
-      </Field>
+
+      {res ? (
+        <fieldset className="grid gap-3 rounded-md border p-3 sm:col-span-2 sm:grid-cols-2">
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <input type="checkbox" name="isInsuranceClaim" checked={insurance} onChange={(e) => setInsurance(e.target.checked)} />
+            Insurance claim
+          </label>
+          {insurance && (
+            <>
+              <Input name="insuranceCarrier" defaultValue={v.insuranceCarrier ?? ""} placeholder="Carrier" />
+              <Input name="claimNumber" defaultValue={v.claimNumber ?? ""} placeholder="Claim #" />
+              <Field label="Date of loss">
+                <Input name="dateOfLoss" type="date" defaultValue={v.dateOfLoss ?? ""} />
+              </Field>
+              <Field label="Deductible">
+                <Input name="deductible" inputMode="decimal" defaultValue={v.deductible ?? ""} />
+              </Field>
+              <Input name="adjusterName" defaultValue={v.adjusterName ?? ""} placeholder="Adjuster name" />
+              <Input name="adjusterPhone" defaultValue={v.adjusterPhone ?? ""} placeholder="Adjuster phone" />
+              <Input name="adjusterEmail" defaultValue={v.adjusterEmail ?? ""} placeholder="Adjuster email" className="sm:col-span-2" />
+            </>
+          )}
+        </fieldset>
+      ) : (
+        <fieldset className="grid gap-3 rounded-md border p-3 sm:col-span-2 sm:grid-cols-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="isPublic" defaultChecked={v.isPublic} /> Public / government job
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="isTaxExempt" defaultChecked={v.isTaxExempt} /> Tax-exempt
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="prevailingWage" defaultChecked={v.prevailingWage} /> Prevailing wage
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="bidBondRequired" defaultChecked={v.bidBondRequired} /> Bid bond required
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="perfBondRequired" defaultChecked={v.perfBondRequired} /> Performance / payment bond
+          </label>
+          <Field label="Retainage %">
+            <Input name="retainagePct" inputMode="decimal" defaultValue={v.retainagePct ?? ""} placeholder="Per contract" />
+          </Field>
+        </fieldset>
+      )}
+
+      {!res && (
+        <Field label="Bid due">
+          <Input name="bidDueDate" type="date" defaultValue={v.bidDueDate ?? ""} />
+        </Field>
+      )}
       <Field label="AccuLynx job #">
         <Input name="acculynxJobNumber" defaultValue={v.acculynxJobNumber ?? ""} />
       </Field>
       <Field label="Lead source">
-        <Input name="leadSource" defaultValue={v.leadSource ?? ""} placeholder="GC invite, repeat client, referral…" list="lead-sources" />
-        <datalist id="lead-sources">
-          <option value="GC bid invite" />
-          <option value="Public bid advertisement" />
-          <option value="Repeat client" />
-          <option value="Referral" />
-          <option value="Website" />
+        <Input name="leadSource" defaultValue={v.leadSource ?? ""} list={`lead-sources-${market}`} />
+        <datalist id={`lead-sources-${market}`}>
+          {MARKET_DEFAULTS[market].leadSources.map((s) => (
+            <option key={s} value={s} />
+          ))}
         </datalist>
       </Field>
       <div className="grid grid-cols-2 gap-3">

@@ -34,22 +34,42 @@ const money = (f: FormData, k: string) => {
   return Number.isFinite(n) ? n : NaN;
 };
 
+const num = (f: FormData, k: string) => {
+  const v = money(f, k);
+  return v == null || Number.isNaN(v) ? null : v;
+};
+
 function detailsFromForm(f: FormData): ProjectInput {
   const ct = str(f, "constructionType");
+  const market = str(f, "market") === "RESIDENTIAL" ? "RESIDENTIAL" : "COMMERCIAL";
+  const res = market === "RESIDENTIAL";
   return {
     name: str(f, "name") ?? "",
+    market,
     address: str(f, "address"),
     buildingUse: str(f, "buildingUse"),
     constructionType: ct === "NEW" || ct === "REROOF" ? ct : null,
     scopes: parseScopes(f.getAll("scopes")),
     isPublic: f.get("isPublic") === "on",
-    isTaxExempt: f.get("isTaxExempt") === "on",
+    isTaxExempt: !res && f.get("isTaxExempt") === "on",
     bidDueDate: date(f, "bidDueDate"),
     acculynxJobNumber: str(f, "acculynxJobNumber"),
     leadSource: str(f, "leadSource"),
     clientCompanyId: str(f, "clientCompanyId"),
     salespersonId: str(f, "salespersonId"),
     estimatorId: str(f, "estimatorId"),
+    isInsuranceClaim: res && f.get("isInsuranceClaim") === "on",
+    insuranceCarrier: res ? str(f, "insuranceCarrier") : null,
+    claimNumber: res ? str(f, "claimNumber") : null,
+    dateOfLoss: res ? date(f, "dateOfLoss") : null,
+    adjusterName: res ? str(f, "adjusterName") : null,
+    adjusterPhone: res ? str(f, "adjusterPhone") : null,
+    adjusterEmail: res ? str(f, "adjusterEmail") : null,
+    deductible: res ? num(f, "deductible") : null,
+    bidBondRequired: !res && f.get("bidBondRequired") === "on",
+    perfBondRequired: !res && f.get("perfBondRequired") === "on",
+    prevailingWage: !res && f.get("prevailingWage") === "on",
+    retainagePct: res ? null : num(f, "retainagePct"),
   };
 }
 
@@ -64,7 +84,13 @@ export async function createProjectAction(_: ActionResult, f: FormData): Promise
   if (!input.scopes.length) return { problems: ["Pick at least one scope."] };
   let id: string;
   try {
-    ({ id } = await createProject(input, user));
+    const homeowner =
+      input.market === "RESIDENTIAL" && str(f, "hoFirstName") && str(f, "hoLastName")
+        ? { firstName: str(f, "hoFirstName")!, lastName: str(f, "hoLastName")!, phone: str(f, "hoPhone"), email: str(f, "hoEmail") }
+        : null;
+    if (input.market === "RESIDENTIAL" && !homeowner && !input.clientCompanyId)
+      return { problems: ["Enter the homeowner's first and last name."] };
+    ({ id } = await createProject(input, user, homeowner));
   } catch (e) {
     return fail(e);
   }
@@ -147,6 +173,17 @@ export async function addProjectContactAction(_: ActionResult, f: FormData): Pro
   });
   revalidatePath(`/projects/${projectId}`);
   return { problems: [], ok: true };
+}
+
+export async function setMarketView(f: FormData) {
+  const v = String(f.get("market"));
+  const { cookies } = await import("next/headers");
+  (await cookies()).set("ep_market", ["RESIDENTIAL", "COMMERCIAL"].includes(v) ? v : "ALL", {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  revalidatePath("/", "layout");
 }
 
 export async function removeProjectContactAction(f: FormData) {
