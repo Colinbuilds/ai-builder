@@ -11,7 +11,8 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 3 | Customers + projects with job workflow stages, intake checklist, readiness, Form 17 | **Done** |
 | 4 | Job communication: per-job chat, forwarding address + Gmail/M365 pull, email summaries, "Catch me up" | **Done** |
 | 5 | Documents, EagleView/plan extraction, confirmation queue, Google Drive import, Integrations page | **Done** |
-| 6–11 | Calc engine, estimate builder, labor, rules, AI assistant, outputs + proposals | Next |
+| 6 | Calc engine: steep, low-slope, deck, siding, pricing & totals (pure TypeScript, unit-tested) | **Done** |
+| 7–11 | Estimate builder, labor, rules, AI assistant, outputs + proposals | Next |
 | 12 | Job costing and profit analysis | |
 | 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
 | 19 | End-to-end test | |
@@ -115,7 +116,7 @@ npm test        # Vitest; builds a fresh prisma/test.db from /data and seeds it
 npm run lint    # TypeScript typecheck
 ```
 
-Covers acceptance tests 1–3 (seed counts, cap nail and coil nail lookups), 6 (coverage parser), 8 (sheet date status), 11 (Form 17 banner), and 12 (readiness can't reach BID_READY with missing/placeholder/pending lines, unapproved waste, or an expired sheet), plus the upload → review → apply flow, stage gates, and intake relevance.
+Covers acceptance tests 1–9 (seed counts, item lookups, 32.4 SQ nails, 25 LF/BD hip & ridge, coverage parser, SID-01 siding area, sheet date status, MISSING_ITEM totals), 11 (Form 17 banner), and 12 (readiness can't reach BID_READY with missing/placeholder/pending lines, unapproved waste, or an expired sheet), plus the upload → review → apply flow, stage gates, and intake relevance.
 
 ## Deploy (Vercel + Neon, or Railway)
 

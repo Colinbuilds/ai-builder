@@ -322,7 +322,7 @@ Rules for every integration:
 3. Customers/contacts + projects with the full job workflow stages, intake checklist, readiness engine, Form 17 logic ✅
 4. Job communication: per-job chat, email capture (forwarding address + Gmail/M365 pull), per-email summaries, "Catch me up" ✅
 5. Document upload + Claude extraction + confirmation queue, Google Drive import, EagleView upload/API, Integrations settings page ✅
-6. Calc engine + unit tests (acceptance tests 2–9)
+6. Calc engine + unit tests (acceptance tests 2–9) ✅
 7. Estimate builder UI, waste gate, substitutions, revisions
 8. Labor + labor standards library
 9. Rules engine
