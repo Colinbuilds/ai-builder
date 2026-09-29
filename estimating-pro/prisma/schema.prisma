@@ -26,12 +26,15 @@ model User {
   role         Role     @default(ESTIMATOR)
   createdAt    DateTime @default(now())
 
-  messages     JobMessage[]
-  summaries    JobSummary[]
-  auditLogs    AuditLog[]
-  estimates    Estimate[]
-  emailsAdded  JobEmail[]
-  sheetImports SheetImport[]
+  messages          JobMessage[]
+  summaries         JobSummary[]
+  auditLogs         AuditLog[]
+  estimates         Estimate[]
+  emailsAdded       JobEmail[]
+  sheetImports      SheetImport[]
+  activity          ProjectActivity[]
+  salesProjects     Project[]         @relation("ProjectSalesperson")
+  estimatorProjects Project[]         @relation("ProjectEstimator")
 }
 
 // ---------- Price library ----------
@@ -134,11 +137,18 @@ enum Form17Status {
   EXECUTED
 }
 
+// Job workflow (BUILD_PROMPT §13). LOST can be reached from any stage before SOLD.
 enum ProjectStatus {
   LEAD
   ESTIMATING
   SUBMITTED
-  WON
+  SOLD
+  SCHEDULED
+  IN_PRODUCTION
+  COMPLETE
+  INVOICED
+  PAID
+  CLOSED
   LOST
 }
 
@@ -152,16 +162,31 @@ model Project {
   id                String            @id @default(cuid())
   name              String
   address           String?
-  client            String?
   buildingUse       String?
   constructionType  ConstructionType?
+  // STEEP | LOW_SLOPE | DECK | SIDING | PANELS — drives which intake fields apply
+  scopes            Json?
   isPublic          Boolean           @default(false)
   isTaxExempt       Boolean           @default(false)
   form17Status      Form17Status      @default(NOT_REQUIRED)
+  form17ExecutedAt  DateTime?
+  form17ExecutedBy  String?
+  form17Note        String?
   bidDueDate        DateTime?
   acculynxJobNumber String?
+  leadSource        String?
   status            ProjectStatus     @default(LEAD)
+  statusChangedAt   DateTime          @default(now())
+  lostReason        String?
   readiness         Readiness         @default(NOT_READY)
+  contractAmount    Float?
+  contractSignedAt  DateTime?
+  clientCompanyId   String?
+  clientCompany     Company?          @relation(fields: [clientCompanyId], references: [id])
+  salespersonId     String?
+  salesperson       User?             @relation("ProjectSalesperson", fields: [salespersonId], references: [id])
+  estimatorId       String?
+  estimator         User?             @relation("ProjectEstimator", fields: [estimatorId], references: [id])
   // inbound address token for forwarding job emails (e.g. job-<token>@…)
   emailToken        String            @unique @default(cuid())
   createdAt         DateTime          @default(now())
@@ -176,6 +201,94 @@ model Project {
   messages     JobMessage[]
   emails       JobEmail[]
   summaries    JobSummary[]
+  contacts     ProjectContact[]
+  activity     ProjectActivity[]
+}
+
+// Timeline of everything that happened on a job: stage changes, intake edits, Form 17, overrides.
+model ProjectActivity {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  kind      String // created | stage | intake | form17 | details | contact | override
+  text      String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  @@index([projectId, createdAt])
+}
+
+// ---------- Customers (CRM) ----------
+
+enum CompanyType {
+  GC
+  OWNER
+  PROPERTY_MANAGER
+  PUBLIC_AGENCY
+  ARCHITECT
+  SUBCONTRACTOR
+  SUPPLIER
+  OTHER
+}
+
+model Company {
+  id        String      @id @default(cuid())
+  name      String
+  type      CompanyType @default(OTHER)
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  createdAt DateTime    @default(now())
+
+  contacts Contact[]
+  projects Project[]
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  title     String?
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  email     String?
+  phone     String?
+  // digits only, for duplicate detection
+  phoneKey  String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  projects ProjectContact[]
+
+  @@index([email])
+  @@index([phoneKey])
+}
+
+enum ContactRole {
+  HOMEOWNER
+  OWNER_REP
+  GC_PM
+  SUPERINTENDENT
+  PROPERTY_MANAGER
+  ARCHITECT
+  BILLING
+  OTHER
+}
+
+model ProjectContact {
+  id        String      @id @default(cuid())
+  projectId String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  role      ContactRole @default(OTHER)
+  isPrimary Boolean     @default(false)
+
+  @@unique([projectId, contactId])
 }
 
 enum FieldStatus {
@@ -196,6 +309,10 @@ model IntakeField {
   sourceDocId String?
   sourcePage  Int?
   approvedBy  String?
+  note        String?
+  // set when the field was marked N/A automatically because it's outside the job's scopes
+  autoNa      Boolean     @default(false)
+  updatedAt   DateTime    @updatedAt
 
   @@unique([projectId, key])
 }

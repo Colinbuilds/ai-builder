@@ -8,8 +8,8 @@ Roofing and exterior estimating app for BTR Contracting (Omaha, NE). The full sp
 |---|---|---|
 | 1 | Scaffold, auth (Admin / Estimator / Viewer), Prisma schema, seed from `/data`, price library browse/search | **Done** |
 | 2 | Price sheet upload/parse (ZIP case), review/diff, date status, coverage parsing | **Done** |
-| 3 | Customers + projects with job workflow stages, intake checklist, readiness, Form 17 | Next |
-| 4 | Job communication: per-job chat, forwarding address + Gmail/M365 pull, email summaries, "Catch me up" | |
+| 3 | Customers + projects with job workflow stages, intake checklist, readiness, Form 17 | **Done** |
+| 4 | Job communication: per-job chat, forwarding address + Gmail/M365 pull, email summaries, "Catch me up" | Next |
 | 5–11 | Documents/extraction, calc engine, estimate builder, labor, rules, AI assistant, outputs + proposals | |
 | 12 | Job costing and profit analysis | |
 | 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
@@ -44,6 +44,25 @@ The seed is safe to re-run. It updates existing sheets, items, and rules instead
 - The seed never overwrites a sheet that was replaced by an upload, or coverage a user entered.
 - Test fixtures in `test/fixtures/` are TEST_ONLY files generated from real rows in `data/`. Regenerate them with `node test/fixtures/make-fixtures.mjs`.
 
+## Jobs and customers (Phase 3)
+
+- **Customers:** companies (GC, owner, property manager, public agency…) and contacts. Homeowners are contacts without a company. New entries are checked for duplicates by email, phone (digits only), name, or company name (ignoring word order, punctuation, and Inc/LLC/Co); you can use the match or save anyway.
+- **Jobs:** the dashboard lists open jobs by bid due date, with stage counts, readiness, and a Form 17 pending flag. The scopes picked on a job (steep, low-slope, deck, siding, panels) decide which of the 20 CLAUDE.md §4 intake fields apply. The rest are marked N/A automatically, and come back as MISSING if the scope changes. Address, building use, and new/reroof fill their intake fields directly.
+- **Intake:** each field is Verified, Missing, Assumed, or N/A. An assumption needs a value plus the basis for it, and shows NOT FOR FINAL BID. Every change is on the job's activity timeline.
+- **Readiness** is computed on every view, never set by hand:
+  - NOT_READY: any relevant intake field MISSING, no estimate, estimate lines MISSING / CALL / PENDING_AI or priced from an EXPIRED sheet, missing labor, or any live sheet EXPIRED.
+  - BUDGET: a number exists but rests on assumptions, placeholders, or unapproved waste.
+  - BID_READY: nothing missing or assumed.
+  
+  "Why not bid ready?" lists each blocker with a link to fix it.
+- **Stages:** Lead → Estimating → Submitted → Sold → Scheduled → In production → Complete → Invoiced → Paid → Closed, plus Lost. Gates:
+  - Submitting a NOT_READY estimate needs an override with a reason (logged).
+  - Sold needs a contract amount.
+  - Scheduling needs a signed contract and, on public tax-exempt jobs, Form 17 executed. That gate can't be overridden (PUB-01).
+  - Lost and backward moves need a reason.
+- **Form 17:** public + tax-exempt jobs show a red banner until someone records the date Form 17 was executed with the owner.
+- Viewers can read jobs but can't edit, and never see contract amounts.
+
 ## Environment variables
 
 | Name | Used for |
@@ -62,7 +81,7 @@ npm test        # Vitest; builds a fresh prisma/test.db from /data and seeds it
 npm run lint    # TypeScript typecheck
 ```
 
-Covers acceptance tests 1–3 (seed counts, cap nail and coil nail lookups), 6 (coverage parser), and 8 (sheet date status), plus the upload → review → apply flow against the TEST_ONLY fixtures.
+Covers acceptance tests 1–3 (seed counts, cap nail and coil nail lookups), 6 (coverage parser), 8 (sheet date status), 11 (Form 17 banner), and 12 (readiness can't reach BID_READY with missing/placeholder/pending lines, unapproved waste, or an expired sheet), plus the upload → review → apply flow, stage gates, and intake relevance.
 
 ## Deploy (Vercel + Neon, or Railway)
 

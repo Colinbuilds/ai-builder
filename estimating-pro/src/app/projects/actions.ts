@@ -1,0 +1,159 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
+import { parseScopes } from "@/lib/projects/intake";
+import { STAGES, type Stage } from "@/lib/projects/workflow";
+import {
+  changeStage,
+  createProject,
+  executeForm17,
+  ProjectError,
+  updateIntakeField,
+  updateProjectDetails,
+  type ProjectInput,
+} from "@/lib/projects/service";
+
+const EDITORS = ["ADMIN", "ESTIMATOR"] as const;
+export type ActionResult = { problems: string[]; overridable?: boolean; ok?: boolean } | null;
+
+const str = (f: FormData, k: string) => {
+  const v = f.get(k);
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+};
+const date = (f: FormData, k: string) => {
+  const v = str(f, k);
+  return v ? new Date(`${v}T00:00:00Z`) : null;
+};
+const money = (f: FormData, k: string) => {
+  const v = str(f, k);
+  if (v == null) return null;
+  const n = Number(v.replace(/[$,\s]/g, ""));
+  return Number.isFinite(n) ? n : NaN;
+};
+
+function detailsFromForm(f: FormData): ProjectInput {
+  const ct = str(f, "constructionType");
+  return {
+    name: str(f, "name") ?? "",
+    address: str(f, "address"),
+    buildingUse: str(f, "buildingUse"),
+    constructionType: ct === "NEW" || ct === "REROOF" ? ct : null,
+    scopes: parseScopes(f.getAll("scopes")),
+    isPublic: f.get("isPublic") === "on",
+    isTaxExempt: f.get("isTaxExempt") === "on",
+    bidDueDate: date(f, "bidDueDate"),
+    acculynxJobNumber: str(f, "acculynxJobNumber"),
+    leadSource: str(f, "leadSource"),
+    clientCompanyId: str(f, "clientCompanyId"),
+    salespersonId: str(f, "salespersonId"),
+    estimatorId: str(f, "estimatorId"),
+  };
+}
+
+const fail = (e: unknown): ActionResult => {
+  if (e instanceof ProjectError) return { problems: e.problems, overridable: e.overridable };
+  throw e;
+};
+
+export async function createProjectAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+  const user = await requireUser([...EDITORS]);
+  const input = detailsFromForm(f);
+  if (!input.scopes.length) return { problems: ["Pick at least one scope."] };
+  let id: string;
+  try {
+    ({ id } = await createProject(input, user));
+  } catch (e) {
+    return fail(e);
+  }
+  redirect(`/projects/${id}`);
+}
+
+export async function updateDetailsAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+  const user = await requireUser([...EDITORS]);
+  const id = String(f.get("id"));
+  const input = detailsFromForm(f);
+  if (!input.scopes.length) return { problems: ["Pick at least one scope."] };
+  const contractAmount = money(f, "contractAmount");
+  if (Number.isNaN(contractAmount)) return { problems: ["Contract amount must be a number."] };
+  try {
+    await updateProjectDetails(id, { ...input, contractAmount, contractSignedAt: date(f, "contractSignedAt") }, user);
+  } catch (e) {
+    return fail(e);
+  }
+  revalidatePath(`/projects/${id}`);
+  return { problems: [], ok: true };
+}
+
+export async function updateIntakeAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+  const user = await requireUser([...EDITORS]);
+  const id = String(f.get("projectId"));
+  const status = String(f.get("status")) as "VERIFIED" | "MISSING" | "ASSUMED" | "NOT_APPLICABLE";
+  try {
+    await updateIntakeField(id, String(f.get("key")), { value: str(f, "value"), unit: str(f, "unit"), status, note: str(f, "note") }, user);
+  } catch (e) {
+    return fail(e);
+  }
+  revalidatePath(`/projects/${id}`);
+  return { problems: [], ok: true };
+}
+
+export async function changeStageAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+  const user = await requireUser([...EDITORS]);
+  const id = String(f.get("id"));
+  const to = String(f.get("to")) as Stage;
+  if (!STAGES.includes(to)) return { problems: ["Pick a stage."] };
+  try {
+    await changeStage(id, to, { reason: str(f, "reason") ?? undefined, override: f.get("override") === "on" }, user);
+  } catch (e) {
+    return fail(e);
+  }
+  revalidatePath(`/projects/${id}`);
+  revalidatePath("/");
+  return { problems: [], ok: true };
+}
+
+export async function executeForm17Action(_: ActionResult, f: FormData): Promise<ActionResult> {
+  const user = await requireUser([...EDITORS]);
+  const id = String(f.get("id"));
+  const executedAt = date(f, "executedAt");
+  if (!executedAt) return { problems: ["Enter the date Form 17 was executed."] };
+  try {
+    await executeForm17(id, { executedAt, note: str(f, "note") }, user);
+  } catch (e) {
+    return fail(e);
+  }
+  revalidatePath(`/projects/${id}`);
+  revalidatePath("/");
+  return { problems: [], ok: true };
+}
+
+export async function addProjectContactAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+  const user = await requireUser([...EDITORS]);
+  const projectId = String(f.get("projectId"));
+  const contactId = str(f, "contactId");
+  const role = String(f.get("role"));
+  if (!contactId) return { problems: ["Pick a contact."] };
+  const exists = await prisma.projectContact.findUnique({ where: { projectId_contactId: { projectId, contactId } } });
+  if (exists) return { problems: ["That contact is already on this job."] };
+  const c = await prisma.projectContact.create({
+    data: { projectId, contactId, role: role as never, isPrimary: f.get("isPrimary") === "on" },
+    include: { contact: true },
+  });
+  await prisma.projectActivity.create({
+    data: { projectId, userId: user.id, kind: "contact", text: `${user.name} added ${c.contact.firstName} ${c.contact.lastName} (${role.replace(/_/g, " ").toLowerCase()})` },
+  });
+  revalidatePath(`/projects/${projectId}`);
+  return { problems: [], ok: true };
+}
+
+export async function removeProjectContactAction(f: FormData) {
+  const user = await requireUser([...EDITORS]);
+  const pc = await prisma.projectContact.delete({ where: { id: String(f.get("id")) }, include: { contact: true } });
+  await prisma.projectActivity.create({
+    data: { projectId: pc.projectId, userId: user.id, kind: "contact", text: `${user.name} removed ${pc.contact.firstName} ${pc.contact.lastName}` },
+  });
+  revalidatePath(`/projects/${pc.projectId}`);
+}

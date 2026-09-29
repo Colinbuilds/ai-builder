@@ -1,60 +1,127 @@
 import Link from "next/link";
+import { Prisma } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { listSheets } from "@/lib/price";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { STAGES, STAGE_LABEL, showForm17Banner, type Stage } from "@/lib/projects/workflow";
 import { SheetDateBanner } from "@/components/sheet-banner";
+import { ReadinessBadge, StageBadge } from "@/components/projects/badges";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input, Select } from "@/components/ui/input";
+import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
+import { formatDate } from "@/lib/utils";
 
-// Dashboard. The project list, readiness badges, and job chat arrive in Phases 3–4.
-export default async function Home() {
+type SP = Promise<{ stage?: string; q?: string; mine?: string }>;
+const OPEN: Stage[] = ["LEAD", "ESTIMATING", "SUBMITTED", "SOLD", "SCHEDULED", "IN_PRODUCTION", "COMPLETE", "INVOICED"];
+
+export default async function Dashboard({ searchParams }: { searchParams: SP }) {
   const user = await requireUser();
-  const [sheets, callCount, ruleCount] = await Promise.all([
-    listSheets(),
-    prisma.priceItem.count({ where: { priceStatus: "CALL", sheet: { isActive: true } } }),
-    prisma.rule.count({ where: { active: true } }),
+  const sp = await searchParams;
+  const stage = STAGES.includes(sp.stage as Stage) ? (sp.stage as Stage) : null;
+  const where: Prisma.ProjectWhereInput = {
+    status: stage ? stage : sp.stage === "all" ? undefined : { in: OPEN },
+    ...(sp.q ? { OR: [{ name: { contains: sp.q } }, { address: { contains: sp.q } }, { acculynxJobNumber: { contains: sp.q } }] } : {}),
+    ...(sp.mine ? { OR: [{ salespersonId: user.id }, { estimatorId: user.id }] } : {}),
+  };
+  const [projects, counts] = await Promise.all([
+    prisma.project.findMany({
+      where,
+      include: { clientCompany: { select: { name: true } }, estimator: { select: { name: true } } },
+      orderBy: [{ bidDueDate: { sort: "asc", nulls: "last" } }, { updatedAt: "desc" }],
+      take: 200,
+    }),
+    prisma.project.groupBy({ by: ["status"], _count: true }),
   ]);
-  const loaded = sheets.filter((s) => s.isLoaded);
-  const itemCount = loaded.reduce((n, s) => n + s._count.items, 0);
+  const count = (s: Stage) => counts.find((c) => c.status === s)?._count ?? 0;
+  const today = new Date();
+
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Welcome, {user.name}</h1>
-      <SheetDateBanner />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Price items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold tabular-nums">{itemCount}</p>
-            <p className="text-sm text-muted-foreground">
-              across {loaded.length} sheets · <Link href="/library?status=CALL">{callCount} CALL for price</Link>
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Sheets not loaded</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold tabular-nums">{sheets.length - loaded.length}</p>
-            <p className="text-sm text-muted-foreground">
-              {sheets
-                .filter((s) => !s.isLoaded)
-                .map((s) => s.name)
-                .join(", ") || "None"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Company rules</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold tabular-nums">{ruleCount}</p>
-            <p className="text-sm text-muted-foreground">seeded from company_rules.json</p>
-          </CardContent>
-        </Card>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-2xl font-semibold">Jobs</h1>
+        {user.role !== "VIEWER" && (
+          <Button asChild>
+            <Link href="/projects/new">New job</Link>
+          </Button>
+        )}
       </div>
+      <SheetDateBanner />
+
+      <div className="flex flex-wrap gap-2 text-sm">
+        {OPEN.map((s) => (
+          <Link
+            key={s}
+            href={`/?stage=${s}`}
+            className={`rounded-md border px-3 py-1 ${stage === s ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+          >
+            {STAGE_LABEL[s]} <span className="tabular-nums opacity-70">{count(s)}</span>
+          </Link>
+        ))}
+      </div>
+
+      <form className="flex flex-wrap items-center gap-2" method="get">
+        <Input name="q" defaultValue={sp.q} placeholder="Job name, address, AccuLynx #" className="w-72" />
+        <Select name="stage" defaultValue={sp.stage ?? ""}>
+          <option value="">Open jobs</option>
+          <option value="all">All jobs</option>
+          {STAGES.map((s) => (
+            <option key={s} value={s}>
+              {STAGE_LABEL[s]}
+            </option>
+          ))}
+        </Select>
+        <label className="flex items-center gap-1 text-sm">
+          <input type="checkbox" name="mine" defaultChecked={!!sp.mine} /> Mine
+        </label>
+        <Button variant="outline">Filter</Button>
+      </form>
+
+      <Table>
+        <THead>
+          <TR>
+            <TH>Job</TH>
+            <TH>Client</TH>
+            <TH>Stage</TH>
+            <TH>Bid due</TH>
+            <TH>Readiness</TH>
+            <TH>Estimator</TH>
+          </TR>
+        </THead>
+        <TBody>
+          {projects.map((p) => {
+            const overdue = p.bidDueDate && p.bidDueDate < today && ["LEAD", "ESTIMATING"].includes(p.status);
+            return (
+              <TR key={p.id}>
+                <TD>
+                  <Link href={`/projects/${p.id}`} className="font-medium hover:underline">
+                    {p.name}
+                  </Link>
+                  <div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
+                    {p.address}
+                    {showForm17Banner(p) && <Badge variant="red">Form 17 pending</Badge>}
+                  </div>
+                </TD>
+                <TD>{p.clientCompany?.name ?? "—"}</TD>
+                <TD>
+                  <StageBadge stage={p.status} />
+                </TD>
+                <TD className={overdue ? "font-semibold text-destructive" : ""}>{formatDate(p.bidDueDate)}</TD>
+                <TD>
+                  <ReadinessBadge readiness={p.readiness} />
+                </TD>
+                <TD>{p.estimator?.name ?? "—"}</TD>
+              </TR>
+            );
+          })}
+          {projects.length === 0 && (
+            <TR>
+              <TD colSpan={6} className="py-8 text-center text-muted-foreground">
+                No jobs here yet.
+              </TD>
+            </TR>
+          )}
+        </TBody>
+      </Table>
     </div>
   );
 }

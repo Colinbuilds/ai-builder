@@ -42,7 +42,7 @@ These files are the source of truth. Do not invent prices, item numbers, coverag
 - **Project**
   - Identity: name, address, client/GC, buildingUse, constructionType (NEW | REROOF), isPublic, isTaxExempt, form17Status (NOT_REQUIRED | PENDING | EXECUTED), bidDueDate, acculynxJobNumber, status (Lead | Estimating | Submitted | Won | Lost)
   - Readiness: readiness (NOT_READY | BUDGET | BID_READY)
-- **IntakeField** — projectId, key (the 19 intake fields in CLAUDE.md §4), value, unit, status (VERIFIED | MISSING | ASSUMED | NOT_APPLICABLE), sourceDocId, sourcePage, approvedBy
+- **IntakeField** — projectId, key (the intake fields in CLAUDE.md §4 — it lists 20, and CLAUDE.md is the source of truth), value, unit, status (VERIFIED | MISSING | ASSUMED | NOT_APPLICABLE), sourceDocId, sourcePage, approvedBy
 - **Document** — projectId, type (EAGLEVIEW | PLANS | SPECS | MFR_DATA | SUB_PROPOSAL | CHANGE_ORDER | PHOTO | OTHER), fileUrl, pages, extractedText
 - **Measurement**
   - projectId, key (see list below), value, unit, facet/elevation (optional)
@@ -97,7 +97,7 @@ These files are the source of truth. Do not invent prices, item numbers, coverag
 
 #### 2. Projects and intake
 - **Dashboard:** project list with status, bid due date, readiness badge, and sheet-status warnings.
-- **New project wizard.** On creation, generate the missing-information checklist from the 19 intake fields; each field is VERIFIED / MISSING / ASSUMED / N/A.
+- **New project wizard.** On creation, generate the missing-information checklist from the 20 intake fields in CLAUDE.md §4; each field is VERIFIED / MISSING / ASSUMED / N/A.
 - **Public + tax-exempt jobs** get a persistent Form 17 banner until form17Status = EXECUTED.
 - **Readiness** is computed, not set by hand:
   - BID_READY only when there are zero MISSING intake fields relevant to the scope, zero MISSING/PLACEHOLDER/PENDING_AI lines, all waste approved, labor complete, and no EXPIRED sheets.
@@ -298,7 +298,7 @@ Goal: BTR runs every job in this app instead of AccuLynx. The modules below are 
 ### Build order — stop after each phase, run it, show me, and wait for my go-ahead
 1. Scaffold, auth, Prisma schema, seed from `/data`, price library browse/search ✅
 2. Price sheet upload/parse (including the ZIP case), review/diff, date status ✅
-3. Customers/contacts + projects with the full job workflow stages, intake checklist, readiness engine, Form 17 logic
+3. Customers/contacts + projects with the full job workflow stages, intake checklist, readiness engine, Form 17 logic ✅
 4. Job communication: per-job chat, email capture (forwarding address + Gmail/M365 pull), per-email summaries, "Catch me up"
 5. Document upload + Claude extraction + confirmation queue
 6. Calc engine + unit tests (acceptance tests 2–9)

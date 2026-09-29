@@ -21,6 +21,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/" className="font-semibold">
                 Estimating Pro
               </Link>
+              <Link href="/" className="text-muted-foreground hover:text-foreground">
+                Jobs
+              </Link>
+              <Link href="/customers" className="text-muted-foreground hover:text-foreground">
+                Customers
+              </Link>
               <Link href="/library" className="text-muted-foreground hover:text-foreground">
                 Price library
               </Link>
