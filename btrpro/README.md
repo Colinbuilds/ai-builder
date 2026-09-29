@@ -140,11 +140,23 @@ npm run lint    # TypeScript typecheck
 
 Covers acceptance tests 1–9 (seed counts, item lookups, 32.4 SQ nails, 25 LF/BD hip & ridge, coverage parser, SID-01 siding area, sheet date status, MISSING_ITEM totals), 11 (Form 17 banner), and 12 (readiness can't reach BID_READY with missing/placeholder/pending lines, unapproved waste, or an expired sheet), plus the upload → review → apply flow, stage gates, and intake relevance.
 
-## Deploy (Vercel + Neon, or Railway)
+## Deploy (Railway — simplest)
 
-1. In `prisma/schema.prisma`, change `provider = "sqlite"` to `"postgresql"`.
-2. Set `DATABASE_URL` (Neon or Railway Postgres) and `AUTH_SECRET` in the host's environment.
-3. Build command: `npx prisma db push && npm run build`. Run `npm run db:seed` once against the production database.
+BTRpro ships with a `Dockerfile` and `railway.json`. SQLite and uploaded files live on a persistent volume, so there's no separate database to set up.
+
+1. In Railway: **New Project → Deploy from GitHub repo →** `colinbuilds/ai-builder`, branch `claude/gracious-fermat-v8y4oh` (or `main` once merged).
+2. Service **Settings → Root Directory:** `btrpro`.
+3. **Add a Volume** mounted at `/data`.
+4. **Variables:**
+   - `AUTH_SECRET`: a long random string (`openssl rand -base64 32`).
+   - `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`: the first admin login. The password must be 12+ characters; production refuses to start with the default.
+   - `APP_URL`: the public URL from step 5.
+   - Optional: `ANTHROPIC_API_KEY` for the AI features, plus any integration keys from `.env.example`.
+5. **Settings → Networking → Generate Domain.** Open it and sign in.
+
+Each start runs `prisma db push` (schema), then the idempotent seed (price sheets, rules, first admin), then the server. The same image runs on Render or Fly.io: mount a disk at `/data` and set the same variables.
+
+For larger teams, move to Postgres: change `provider` in `prisma/schema.prisma` to `postgresql`, set `DATABASE_URL`, and set `STORAGE_DRIVER=s3` for files.
 
 ## Data rules baked into the app
 

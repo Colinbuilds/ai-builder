@@ -126,6 +126,8 @@ async function main() {
   const email = process.env.SEED_ADMIN_EMAIL ?? "admin@btrcontracting.local";
   const password = process.env.SEED_ADMIN_PASSWORD ?? "change-me-now";
   if (!(await prisma.user.findUnique({ where: { email } }))) {
+    if (process.env.NODE_ENV === "production" && (!process.env.SEED_ADMIN_PASSWORD || password.length < 12))
+      throw new Error("Set SEED_ADMIN_PASSWORD (12+ characters) before the first production start.");
     await prisma.user.create({
       data: { name: "Admin", email, role: "ADMIN", passwordHash: await bcrypt.hash(password, 10) },
     });
