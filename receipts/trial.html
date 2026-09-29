@@ -1,0 +1,287 @@
+<title>JobReceipts Trial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ui/app.css">
+<style>
+  :root { --tbg: #f3f5f7; --tink: #16202b; --tmuted: #5d6b7a; --tline: #dde3ea; --twarn: #9a5b00; --twarn-soft: #fdf1dc; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tbg: #0e141b; --tink: #e7edf3; --tmuted: #9aa8b6; --tline: #253241; --twarn: #f0b457; --twarn-soft: #33260f; color-scheme: dark; } }
+  :root[data-theme="dark"] { --tbg: #0e141b; --tink: #e7edf3; --tmuted: #9aa8b6; --tline: #253241; --twarn: #f0b457; --twarn-soft: #33260f; color-scheme: dark; }
+  body { background: var(--tbg); color: var(--tink); font-family: "IBM Plex Sans", system-ui, sans-serif; }
+  .stage { max-width: 1240px; margin: 0 auto; }
+  .notice { margin: 16px; padding: 14px 16px; border-radius: 10px; background: var(--twarn-soft); color: var(--twarn); font-size: 15px; }
+</style>
+
+<div class="stage">
+  <div id="notice" class="notice" hidden></div>
+  <div id="app"><div class="jr"><div class="jr-app"><div class="jr-main"><div class="jr-empty">Loading JobReceipts…</div></div></div></div></div>
+</div>
+
+<script src="core/pricing.js"></script>
+<script src="core/match.js"></script>
+<script src="core/documents.js"></script>
+<script src="core/quickbooks.js"></script>
+<script src="core/extract.js"></script>
+<script src="ui/app.js"></script>
+<script>
+(function () {
+  "use strict";
+  // Trial back end: receipts live in this artifact's database, photos are read by Claude on the
+  // sender's account, and only the artifact's owner sees everyone's receipts and the money.
+  var noticeEl = document.getElementById("notice");
+  function notice(msg) { noticeEl.textContent = msg; noticeEl.hidden = !msg; }
+  function use(name) { return window.claude && window.claude.use ? window.claude.use(name).catch(function () { return null; }) : Promise.resolve(null); }
+  function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+  function today() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+
+  Promise.all(["db", "sample", "user", "downloads"].map(use)).then(function (caps) {
+    var db = caps[0], sample = caps[1], user = caps[2], downloads = caps[3];
+    if (!db || !user) { notice("Open this page from its claude.ai link to use it."); return; }
+    return Promise.all([user.me(), user.isOwner()]).then(function (r) { start(db, sample, user, downloads, r[0], r[1]); });
+  });
+
+  function start(db, sample, user, downloads, me, owner) {
+    var uid = me.id;
+    if (!uid) { notice("Sign in to claude.ai to add receipts."); return; }
+    var admin = owner;
+    var rows = {};        // receipt id -> row (row.owner = the uploader's id, which is also their folder)
+    var names = {};       // uploader id -> display name
+    var settings = { jobs: [], company: { name: "", address: "" } };
+    var myDocExists = null;
+    var app = null, lastSig = null;
+
+    function display(id) { return names[id] || (id === uid ? me.name : "") || "Employee"; }
+    function resolveNames() {
+      var ids = Object.keys(rows).map(function (k) { return rows[k].owner; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+      return ids.length ? user.profiles(ids).then(function (ps) { ids.forEach(function (id) { names[id] = ps[id] && ps[id].name; }); }) : Promise.resolve();
+    }
+    function jobs() {
+      var set = {};
+      (settings.jobs || []).forEach(function (n) { if (n) set[n] = 1; });
+      Object.keys(rows).forEach(function (k) { if (rows[k].jobName) set[rows[k].jobName] = 1; });
+      return Object.keys(set).sort().map(function (n) { return { id: n, name: n }; });
+    }
+    function view(r) {
+      var out = clone(r);
+      out.uploadedBy = display(r.owner);
+      out.employee = r.employee || display(r.owner);
+      if (out.status === "reading" && Date.now() - Date.parse(out.createdAt) > 3 * 60 * 1000) { out.status = "error"; out.error = "Reading didn't finish."; }
+      if (admin) return out;
+      return { id: out.id, createdAt: out.createdAt, status: out.status, jobName: out.jobName, note: out.note, vendor: out.extracted && out.extracted.vendor,
+        total: out.extracted && out.extracted.total, items: out.extracted ? out.extracted.items.length : 0, error: out.error, action: out.status === "approved" ? out.action : "" };
+    }
+    function list() {
+      return Object.keys(rows).map(function (k) { return view(rows[k]); }).sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+    }
+
+    // ---- storage: one document per person (receipts/<id>) holding their receipts; photos beside it
+    function ingest(docId, data) {
+      var map = (data && data.receipts) || {};
+      Object.keys(rows).forEach(function (k) { if (rows[k].owner === docId && !map[k]) delete rows[k]; });
+      Object.keys(map).forEach(function (k) { rows[k] = Object.assign(clone(map[k]), { owner: docId }); });
+    }
+    function writeRow(r) {
+      var body = clone(r); delete body.owner;
+      var patch = { receipts: {} }; patch.receipts[r.id] = body;
+      var ref = db.doc("receipts/" + r.owner);
+      rows[r.id] = r;
+      if (r.owner === uid && myDocExists === false) return ref.set(patch).then(function () { myDocExists = true; });
+      return ref.update(patch).catch(function (e) {
+        if (e && e.code === "invalid_argument" && r.owner === uid) return ref.set(Object.assign({ receipts: {} }, patch)).then(function () { myDocExists = true; });
+        throw e;
+      });
+    }
+    function friendlyDbError(e) {
+      if (e && e.code === "invalid_argument") return new Error("You don't have permission to save receipts here. Ask the owner to share it with you so you can edit.");
+      if (e && e.code === "quota_exceeded") return new Error("The trial's storage is full. Ask the owner to delete old receipts.");
+      return new Error("Couldn't save. Check your connection and try again.");
+    }
+
+    // ---- photos: kept small enough for one database document
+    function loadImage(src) { return new Promise(function (ok, no) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = no; i.src = src; }); }
+    function shrink(dataUrl) {
+      return loadImage(dataUrl).then(function (img) {
+        var side = 1600, q = 0.8, out;
+        for (var i = 0; i < 8; i++) {
+          var s = Math.min(1, side / Math.max(img.width, img.height)), c = document.createElement("canvas");
+          c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          out = c.toDataURL("image/jpeg", q);
+          if (out.length < 240000) return out;
+          if (q > 0.55) q -= 0.1; else side = Math.round(side * 0.8);
+        }
+        return out;
+      });
+    }
+    function dataUrlToBlob(u) {
+      var parts = u.split(","), bin = atob(parts[1]), arr = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new Blob([arr], { type: parts[0].split(":")[1].split(";")[0] });
+    }
+    function photoRef(r) { return db.doc("receipts/" + r.owner + "/photos/" + r.id); }
+
+    // ---- AI reading, on the account of whoever runs it
+    var AI_ERRORS = {
+      not_granted: "Claude wasn't allowed to read it. Allow it when asked, or the office can read it later.",
+      sampling_disabled: "Claude isn't available on this account. The office can read it later.",
+      rate_limited: "Too many receipts at once, or your Claude usage limit was reached. Try again in a few minutes.",
+      image_rejected: "That photo couldn't be read. Take a clearer photo.",
+      images_unavailable: "Reading photos isn't available in this app. Try from a browser.",
+      refused: "Claude couldn't read this photo. The office can enter it by hand.",
+      invalid_json: "The reading came back incomplete. Try reading it again.",
+    };
+    function readWithAi(r, blob) {
+      if (!sample) return Promise.reject(new Error("AI reading isn't available here. The office can read it later."));
+      var prompt = RECEIPT_INSTRUCTIONS +
+        "\n\nThe photo was sent from the company's receipt app by: " + (display(r.owner) || "an employee") +
+        "\n\nJob folders:\n" + (jobs().map(function (j) { return "- " + j.name; }).join("\n") || "(none yet)") +
+        "\n\nReply with only one JSON object that matches this JSON Schema (every field is required):\n" + JSON.stringify(RECEIPT_SCHEMA);
+      return sample.json(prompt, { images: [blob], modelTier: "default", cache: false }).then(function (raw) {
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw { code: "invalid_json" };
+        var x = normalizeExtraction(raw);
+        if (!x.employee) { x.employee = display(r.owner); x.flags = x.flags.filter(function (f) { return f !== "Employee not found."; }); }
+        var m = resolveJob(x, {}, jobs());
+        r.extracted = x;
+        r.employee = x.employee;
+        r.match = { confident: !!m.confident, score: m.score || 0, aiSuggestion: m.aiSuggestion || "",
+          candidates: (m.candidates || []).map(function (c) { return { id: c.job.id, name: c.job.name, score: c.score }; }) };
+        if (m.confident && m.job) { r.jobId = r.jobName = m.job.name; }
+        else if (!r.match.candidates.length && (x.jobName || x.address)) {
+          r.jobId = r.jobName = x.jobName || x.address;
+          r.match.confident = true;
+          x.flags.push("New job “" + r.jobName + "” from the receipt. Check the name before approving.");
+        } else { r.jobId = r.jobName = ""; }
+        var p = priceReceipt(x, { markupPercent: r.markupPercent });
+        r.cost = p.totals.cost; r.billed = p.totals.billed; r.profit = p.totals.profit;
+        r.status = r.jobId && !x.flags.length ? "ready" : "needs_review";
+        r.error = "";
+      }, function (e) { throw new Error(AI_ERRORS[e && e.code] || "Couldn't read the receipt right now. The office can read it again later."); });
+    }
+    function readAndSave(r, blob) {
+      return readWithAi(r, blob).catch(function (e) { r.status = "error"; r.error = e.message; })
+        .then(function () { return writeRow(r); });
+    }
+
+    var handlers = {
+      apiBootstrap: function () {
+        return { user: me.name || "You", admin: admin, company: settings.company.name, companyAddress: settings.company.address,
+          defaultMarkup: DEFAULT_MARKUP_PERCENT, jobs: jobs(), receipts: list(), canDownloadDocs: !!downloads };
+      },
+      apiReceipts: function () { return list(); },
+      apiReceiptFile: function (id) {
+        var r = rows[id];
+        return r ? photoRef(r).get().then(function (s) { return s.exists ? { dataUrl: s.data().dataUrl, mimeType: "image/jpeg" } : null; }) : null;
+      },
+      apiUpload: function (input) {
+        if (!/^image\//.test(input.mimeType || "")) throw new Error("In the trial, send a photo of the receipt (not a PDF).");
+        var id = "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        var r = { id: id, owner: uid, createdAt: new Date().toISOString(), employee: "", status: "reading", jobId: "", jobName: "", note: "", suggestedAction: "",
+          extracted: null, match: null, markupPercent: DEFAULT_MARKUP_PERCENT, cost: 0, billed: 0, profit: 0, fileId: id, error: "" };
+        var photo;
+        var ready = myDocExists === null ? db.doc("receipts/" + uid).get().then(function (s) { myDocExists = s.exists; }) : Promise.resolve();
+        return ready
+          .then(function () { return shrink("data:" + input.mimeType + ";base64," + input.base64); })
+          .then(function (small) { photo = small; return writeRow(r); })
+          .then(function () { return photoRef(r).set({ dataUrl: photo }); })
+          .catch(function (e) { delete rows[id]; throw friendlyDbError(e); })
+          .then(function () { return readAndSave(r, dataUrlToBlob(photo)); })
+          .then(function () { var v = view(r); return admin ? Object.assign(v, { vendor: v.extracted && v.extracted.vendor, total: v.extracted && v.extracted.total }) : v; });
+      },
+      apiSaveDraft: function (id, patch) {
+        var r = clone(rows[id]);
+        if (!r) throw new Error("That receipt is gone.");
+        if (patch.jobId) { r.jobId = r.jobName = patch.jobId; r.match = Object.assign(r.match || {}, { confident: true }); }
+        if (patch.extracted) r.extracted = normalizeExtraction(patch.extracted);
+        if (patch.markupPercent != null) r.markupPercent = Number(patch.markupPercent);
+        var p = priceReceipt(r.extracted, { markupPercent: r.markupPercent });
+        r.cost = p.totals.cost; r.billed = p.totals.billed; r.profit = p.totals.profit;
+        if (r.status !== "error") r.status = r.jobId && r.cost > 0 ? "ready" : "needs_review";
+        return writeRow(r).then(function () { return view(r); });
+      },
+      apiApprove: function (id, o) {
+        var r = clone(rows[id]);
+        if (!r) throw new Error("That receipt is gone.");
+        if (r.status === "approved") throw new Error("This receipt is already approved.");
+        if (!r.jobId) throw new Error("Pick the job first.");
+        var p = priceReceipt(r.extracted, { markupPercent: o.markupPercent });
+        if (!(p.totals.cost > 0)) throw new Error("This receipt has no prices yet. Type in what each line cost, then approve.");
+        var number = "";
+        if (o.action === "change_order") {
+          number = 1 + Object.keys(rows).filter(function (k) { return rows[k].status === "approved" && rows[k].action === "change_order" && rows[k].jobName === r.jobName; }).length;
+        }
+        var date = today();
+        r.status = "approved"; r.action = o.action; r.markupPercent = o.markupPercent;
+        r.cost = p.totals.cost; r.billed = p.totals.billed; r.profit = p.totals.profit;
+        r.doc = { number: number, date: date, projectManager: o.projectManager || "", description: o.description || "", reason: o.reason || "",
+          contractPrice: o.contractPrice == null ? null : o.contractPrice };
+        r.docName = documentName(o.action, r.jobName, { number: number, date: date });
+        r.approvedBy = me.name || "the office"; r.approvedAt = new Date().toISOString();
+        var saveJob = settings.jobs.indexOf(r.jobName) < 0 && admin
+          ? db.doc("settings/jobs").set({ list: settings.jobs.concat([r.jobName]).sort() }).catch(function () {}) : Promise.resolve();
+        return Promise.all([writeRow(r), saveJob]).then(function () { return { receipt: view(r), docUrl: "" }; }, function (e) { throw friendlyDbError(e); });
+      },
+      apiRetry: function (id) {
+        var r = clone(rows[id]);
+        return photoRef(r).get().then(function (s) {
+          if (!s.exists) throw new Error("The photo for this receipt is missing.");
+          r.status = "reading";
+          return readAndSave(r, dataUrlToBlob(s.data().dataUrl));
+        }).then(function () { if (r.status === "error") throw new Error(r.error); return view(r); });
+      },
+      apiSettings: function () {
+        return { quickbooks: { connected: false, reason: "Not connected in the trial. The installed app sends estimates and invoices to QuickBooks Online." },
+          ai: !!sample, changeOrderTemplate: false, defaultMarkup: DEFAULT_MARKUP_PERCENT, admins: [],
+          hint: "Default markup: " + DEFAULT_MARKUP_PERCENT + "%. You (the owner) are the office and see every receipt; everyone you share this with sees only their own. Receipts are read by Claude on the account of whoever sends them." };
+      },
+      apiDownloadDoc: function (id) {
+        var r = rows[id];
+        if (!downloads) throw new Error("Downloads aren't available here.");
+        var p = priceReceipt(r.extracted, { markupPercent: r.markupPercent });
+        var info = r.doc || {};
+        var doc = buildCustomerDocument(r.action, { id: r.jobName, name: r.jobName }, p, info);
+        var html = "<!doctype html><html><head><meta charset=utf-8><title>" + escapeHtml(r.docName) + "</title><style>" + DOC_CSS + "</style></head><body>" +
+          renderDocumentHtml(doc, settings.company) + "</body></html>";
+        return downloads.save({ filename: r.docName.replace(/#/g, "No. ").replace(/[\\/:*?"<>|]+/g, "-") + ".html", data: html }).then(function () { return "Saved " + r.docName + "."; }, function (e) {
+          if (e && e.code === "declined") return "";
+          throw new Error("Couldn't save the file here.");
+        });
+      },
+    };
+    var DOC_CSS = "body{font:14px/1.45 Arial,Helvetica,sans-serif;color:#111;margin:32px;max-width:820px}.dochead{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px}" +
+      "h2{margin:0;font-size:22px}h3{font-size:15px;margin:20px 0 6px}table{width:100%;border-collapse:collapse;margin-bottom:8px}th,td{border:1px solid #bbb;padding:6px 8px;text-align:left;vertical-align:top}" +
+      "table.kv th{background:#f2f2f2;width:22%}.n{text-align:right;white-space:nowrap}tfoot td{font-weight:bold}table.sign td{height:70px;vertical-align:bottom;width:50%}.terms{margin-top:24px}";
+
+    var api = { call: function (name) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return new Promise(function (ok, no) {
+        try { Promise.resolve(handlers[name].apply(null, args)).then(function (v) { ok(clone(v)); }, no); } catch (e) { no(e); }
+      });
+    } };
+
+    function signature() { return Object.keys(rows).sort().map(function (k) { return k + ":" + rows[k].status + ":" + (rows[k].extracted ? 1 : 0); }).join("|"); }
+    function changed() {
+      var sig = signature();
+      if (sig === lastSig) return;
+      lastSig = sig;
+      resolveNames().then(function () {
+        if (!app) { notice(""); app = JobReceiptsApp.mount(document.getElementById("app"), { api: api }); }
+        else if (app.boot) app.reload();
+      });
+    }
+
+    db.doc("settings/jobs").onSnapshot(function (s) { settings.jobs = (s.exists && s.data().list) || []; });
+    db.doc("settings/company").onSnapshot(function (s) { if (s.exists) settings.company = { name: s.data().name || "", address: s.data().address || "" }; });
+    function fail() { notice("Couldn't load receipts. Reload the page to try again."); }
+    if (admin) {
+      db.collection("receipts").onSnapshot(function (snap) {
+        snap.docs.forEach(function (d) { ingest(d.id, d.data()); });
+        var ids = snap.docs.map(function (d) { return d.id; });
+        Object.keys(rows).forEach(function (k) { if (ids.indexOf(rows[k].owner) < 0) delete rows[k]; });
+        myDocExists = ids.indexOf(uid) >= 0;
+        changed();
+      }, fail);
+    } else {
+      db.doc("receipts/" + uid).onSnapshot(function (s) { myDocExists = s.exists; ingest(uid, s.exists ? s.data() : null); changed(); }, fail);
+    }
+  }
+})();
+</script>

@@ -73,7 +73,7 @@
       boot: null,
       view: opts.view || null,
       selectedId: opts.selectedId || null,
-      form: Object.assign({ jobQuery: "", jobId: "", file: null, suggestedAction: "", note: "", sending: false, message: "" }, opts.preset || {}),
+      form: Object.assign({ file: null, sending: false, message: "" }, opts.preset || {}),
       drafts: {},
       files: {},
       settings: null,
@@ -146,38 +146,15 @@
 
     function viewNew() {
       var f = S.form;
-      var chosen = f.jobId && job(f.jobId);
-      var h = '<section class="jr-card" aria-labelledby="new-h"><h2 id="new-h">Add a receipt</h2>';
-      h += '<div class="jr-field"><span>1. Job</span>';
-      if (chosen) {
-        h += '<div class="jr-chip"><span>' + esc(chosen.name) + '</span><button type="button" data-act="clear-job">Change</button></div>';
+      var h = '<section class="jr-card jr-add" aria-labelledby="new-h"><h2 id="new-h">Add a receipt</h2>';
+      if (f.sending) {
+        h += (f.file && f.file.previewUrl ? '<img class="jr-thumb" alt="Receipt photo" src="' + f.file.previewUrl + '">' : "") +
+          '<div class="jr-ok" role="status">Reading the receipt… this takes a few seconds.</div>';
       } else {
-        h += '<input type="search" id="job-search" placeholder="Search by name or address" autocomplete="off" value="' + esc(f.jobQuery) + '">';
-        var jobs = (S.boot.jobs || []).map(function (j) { return { job: j, score: f.jobQuery ? scoreJob(f.jobQuery, j.name) : 0 }; });
-        if (f.jobQuery) jobs = jobs.filter(function (x) { return x.score > 0 || x.job.name.toLowerCase().indexOf(f.jobQuery.toLowerCase()) >= 0; })
-          .sort(function (a, b) { return b.score - a.score; });
-        h += '<div class="jr-joblist" role="listbox" aria-label="Jobs">' + (jobs.slice(0, 6).map(function (x) {
-          return '<button type="button" class="jr-job" role="option" aria-selected="false" data-act="pick-job" data-id="' + esc(x.job.id) + '">' + esc(x.job.name) + "</button>";
-        }).join("") || '<div class="jr-empty">No job matches that. Check the spelling or ask the office.</div>') + "</div>";
+        h += '<label class="jr-btn block jr-add-btn" for="receipt-file">Add receipt<input type="file" id="receipt-file" accept="image/*,application/pdf" aria-label="Add receipt: take or choose a photo"></label>';
       }
-      h += "</div>";
-      h += '<div class="jr-field"><span>2. Receipt photo</span>';
-      if (f.file) {
-        h += (f.file.previewUrl ? '<img class="jr-thumb" alt="Receipt photo" src="' + f.file.previewUrl + '">' : '<div class="jr-chip"><span>' + esc(f.file.fileName) + "</span></div>") +
-          '<button type="button" class="jr-btn secondary" data-act="clear-file">Retake</button>';
-      } else {
-        h += '<label class="jr-photo" for="receipt-file"><strong>Take a photo</strong>or choose a picture or PDF<input type="file" id="receipt-file" accept="image/*,application/pdf" capture="environment"></label>';
-      }
-      h += "</div>";
-      h += '<div class="jr-field"><span>3. What is it for?</span><div class="jr-seg" role="radiogroup">' +
-        [["invoice", "Regular job materials"], ["change_order", "Extra work (change order)"], ["", "Not sure"]].map(function (o, i) {
-          return '<label class="jr-opt"><input type="radio" name="kind" id="kind-' + i + '" value="' + o[0] + '"' + (f.suggestedAction === o[0] ? " checked" : "") + ">" + esc(o[1]) + "</label>";
-        }).join("") + "</div></div>";
-      h += '<label class="jr-field" for="receipt-note"><span>Note for the office <span class="jr-hint">(optional)</span></span><textarea id="receipt-note" placeholder="e.g. rotted decking on back slope, customer approved">' + esc(f.note) + "</textarea></label>";
       if (f.message) h += '<div class="' + (f.messageKind === "ok" ? "jr-ok" : "jr-err") + '" role="status">' + esc(f.message) + "</div>";
-      h += '<button type="button" class="jr-btn block" data-act="send" ' + (f.sending || !f.jobId || !f.file ? "disabled" : "") + ">" +
-        (f.sending ? "Reading receipt…" : "Send receipt") + "</button>";
-      h += '<p class="jr-hint">The office sees the receipt right away. Keep the paper copy until it shows Approved.</p></section>';
+      h += '<p class="jr-hint">Take a photo of the receipt or pick one from your phone. The job, store and materials are read from the receipt. Keep the paper copy until it shows Approved.</p></section>';
       return h;
     }
 
@@ -289,6 +266,7 @@
       h += '<div id="jr-preview" style="display:flex;flex-direction:column;gap:12px">' + previewHtml(r, d, priced, approved) + "</div>";
       if (approved) {
         h += '<div class="jr-ok">Approved as ' + esc(ACTION_TEXT[r.action] || r.action) + (r.docName ? ": " + esc(r.docName) : "") + (r.approvedBy ? " · by " + esc(r.approvedBy) : "") + "</div>";
+        if (S.boot.canDownloadDocs) h += '<div class="jr-actions"><button type="button" class="jr-btn secondary" data-act="download-doc" data-id="' + esc(r.id) + '">Download ' + esc((ACTION_TEXT[r.action] || "document").toLowerCase()) + "</button></div>";
       } else {
         var priced0 = !(priced.totals.cost > 0);
         var ready = !!(d.jobId && d.action && d.items.length) && !priced0;
@@ -354,7 +332,7 @@
         (q.connected ? '<span class="jr-pill approved">Connected</span>' : q.authUrl ? '<a class="jr-btn" href="' + esc(q.authUrl) + '" target="_blank" rel="noopener">Connect QuickBooks</a>' : '<span class="jr-pill review">Needs setup</span>') + "</div>";
       h += '<div class="jr-qline"><span>AI receipt reading<small>' + (s.ai ? "On" : "Add your Anthropic API key in Script properties") + "</small></span>" + (s.ai ? '<span class="jr-pill approved">On</span>' : '<span class="jr-pill review">Off</span>') + "</div>";
       h += '<div class="jr-qline"><span>Change order template<small>' + (s.changeOrderTemplate ? "Using your Google Doc template" : "Using the built-in layout") + "</small></span></div>";
-      h += '<p class="jr-hint">Default markup: ' + esc(s.defaultMarkup) + "% · Admins: " + esc(s.admins.join(", ") || "only the person who installed the app") + ". Change these in Script properties.</p></section>";
+      h += '<p class="jr-hint">' + (s.hint ? esc(s.hint) : "Default markup: " + esc(s.defaultMarkup) + "% · Admins: " + esc(s.admins.join(", ") || "only the person who installed the app") + ". Change these in Script properties.") + "</p></section>";
       return h;
     }
 
@@ -382,27 +360,16 @@
       if (!t || opts.readOnly) return;
       var act = t.dataset.act;
       if (act === "tab") { S.view = t.dataset.view; renderView(); }
-      else if (act === "pick-job") { S.form.jobId = t.dataset.id; S.form.message = ""; renderView(); }
-      else if (act === "clear-job") { S.form.jobId = ""; renderView(); }
-      else if (act === "clear-file") { S.form.file = null; renderView(); }
       else if (act === "select") { S.selectedId = t.dataset.id; renderView(); }
       else if (act === "send") send();
       else if (act === "approve") approve(t.dataset.id);
       else if (act === "retry") retry(t.dataset.id);
+      else if (act === "download-doc") api.call("apiDownloadDoc", t.dataset.id).then(function (m) { if (m) toast(m); }, function (err) { toast(err.message); });
     });
 
     el.addEventListener("input", function (e) {
       if (opts.readOnly) return;
       var t = e.target;
-      if (t.id === "job-search") {
-        S.form.jobQuery = t.value;
-        var main = el.querySelector("#jr-main");
-        var pos = t.selectionStart;
-        main.innerHTML = viewNew() + (S.boot.admin ? "" : viewMine(true));
-        var s2 = el.querySelector("#job-search"); s2.focus(); s2.setSelectionRange(pos, pos);
-        return;
-      }
-      if (t.id === "receipt-note") { S.form.note = t.value; return; }
       if (t.id === "filter-q") { S.filter.q = t.value; var p = t.selectionStart; renderView(); var f = el.querySelector("#filter-q"); f.focus(); f.setSelectionRange(p, p); return; }
       var r = byId(S.selectedId);
       if (!r) return;
@@ -428,8 +395,8 @@
       if (opts.readOnly) return;
       var t = e.target;
       if (t.id === "receipt-file" && t.files && t.files[0]) {
-        readFileForUpload(t.files[0]).then(function (f) { S.form.file = f; S.form.message = ""; renderView(); }, function (err) { S.form.message = err.message; S.form.messageKind = "err"; renderView(); });
-      } else if (t.name === "kind") { S.form.suggestedAction = t.value; }
+        readFileForUpload(t.files[0]).then(function (f) { S.form.file = f; S.form.message = ""; send(); }, function (err) { S.form.message = err.message; S.form.messageKind = "err"; renderView(); });
+      }
       else if (t.id === "filter-status") { S.filter.status = t.value; renderView(); }
       else if (t.id === "d-job") { draftFor(byId(S.selectedId)).jobId = t.value; rerenderDetail(); }
       else if (t.name === "d-action") { draftFor(byId(S.selectedId)).action = t.value; rerenderDetail(); }
@@ -442,13 +409,14 @@
     function send() {
       var f = S.form;
       f.sending = true; f.message = ""; renderView();
-      api.call("apiUpload", { base64: f.file.base64, mimeType: f.file.mimeType, fileName: f.file.fileName, jobId: f.jobId, note: f.note, suggestedAction: f.suggestedAction })
+      api.call("apiUpload", { base64: f.file.base64, mimeType: f.file.mimeType, fileName: f.file.fileName })
         .then(function (r) {
-          S.form = { jobQuery: "", jobId: "", file: null, suggestedAction: "", note: "", sending: false,
-            message: r.status === "error" ? "Saved, but it couldn't be read: " + (r.error || "") + " The office will check it." : "Sent. " + (r.vendor ? r.vendor + " · " + money(r.total) + ". " : "") + "The office will review it.",
+          S.form = { file: null, sending: false,
+            message: r.status === "error" ? "Saved, but it couldn't be read: " + (r.error || "") + " The office will check it."
+              : "Sent. " + [r.vendor, r.total ? money(r.total) : "", r.jobName].filter(Boolean).join(" · ") + ". The office will review it.",
             messageKind: r.status === "error" ? "err" : "ok" };
           return refresh();
-        }, function (err) { f.sending = false; f.message = err.message; f.messageKind = "err"; renderView(); });
+        }, function (err) { S.form = { file: null, sending: false, message: err.message, messageKind: "err" }; renderView(); });
     }
 
     function approve(id) {
@@ -477,6 +445,7 @@
     // ---------------------------------------------------------------- start
     // Stable outer .jr (theme tokens + toast); only .jr-app is re-rendered.
     el.innerHTML = '<div class="jr"><div class="jr-app"><div class="jr-main"><div class="jr-empty">Loading…</div></div></div></div>';
+    S.reload = refresh; // lets a live back end show new receipts as they arrive
     var start = opts.boot ? Promise.resolve(opts.boot) : api.call("apiBootstrap");
     start.then(function (b) { S.boot = b; if (opts.settings) S.settings = opts.settings; renderShell(); if (opts.after) opts.after(S); },
       function (err) { appRoot().innerHTML = '<div class="jr-main"><div class="jr-err">' + esc(err.message) + "</div></div>"; });

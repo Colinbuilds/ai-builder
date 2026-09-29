@@ -104,25 +104,25 @@ function apiBootstrap() {
 
 /**
  * Employee upload from the phone.
- * input: { base64, mimeType, fileName, jobId, note, suggestedAction }
+ * input: { base64, mimeType, fileName } plus optional { jobId, note, suggestedAction }.
+ * Without a jobId the job is read from the receipt (PO/job field or address).
  */
 function apiUpload(input) {
   var email = requireUser_();
   if (!input || !input.base64) throw new Error("Take or choose a photo of the receipt first.");
-  if (!input.jobId) throw new Error("Pick the job this receipt is for.");
-  var job = jobById_(input.jobId);
+  var job = input.jobId ? jobById_(input.jobId) : null;
   var blob = Utilities.newBlob(Utilities.base64Decode(input.base64), input.mimeType || "image/jpeg",
     (input.fileName || "receipt") .replace(/[\\/:*?"<>|]+/g, "-"));
   var name = email.split("@")[0];
   var receipt = {
-    source: "upload", uploadedBy: email, employee: "", status: STATUS.READING, jobId: job.id, jobName: job.name,
+    source: "upload", uploadedBy: email, employee: "", status: STATUS.READING, jobId: job ? job.id : "", jobName: job ? job.name : "",
     note: String(input.note || "").slice(0, 1000), suggestedAction: input.suggestedAction || "",
   };
   saveReceipt_(receipt);
   try {
     processReceiptFile_(receipt, blob, {
-      from: name, subject: "Receipt for " + job.name, body: receipt.note, receivedAt: new Date().toISOString(),
-    }, job.id);
+      from: name, subject: job ? "Receipt for " + job.name : "", body: receipt.note, receivedAt: new Date().toISOString(),
+    }, job ? job.id : null);
   } catch (e) {
     receipt.status = STATUS.ERROR;
     receipt.error = String(e.message || e);
