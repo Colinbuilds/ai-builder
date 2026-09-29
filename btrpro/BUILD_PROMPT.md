@@ -326,7 +326,7 @@ Rules for every integration:
 7. Estimate builder UI, waste gate, substitutions, revisions ✅
 8. Labor + labor standards library ✅
 9. Rules engine ✅
-10. AI assistant with tools + server-side validation
+10. AI assistant with tools + server-side validation ✅
 11. Outputs: AccuLynx copy, CSV, BTR PDF, internal takeoff PDF, customer proposal with e-signature
 12. Job costing and profit analysis (§12), including actual-cost entry, ABC invoice CSV import, per-job P&L, and cross-job reports with calibration/bid tabs
 13. Material orders and deliveries (§13), ABC Supply integration

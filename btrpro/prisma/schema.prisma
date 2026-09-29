@@ -732,3 +732,16 @@ model IntegrationConnection {
 
   @@index([provider, userId])
 }
+
+// Per-job AI estimator assistant conversation (shared by the team on that job).
+model AssistantMessage {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String?
+  role      String // user | assistant
+  content   String
+  toolTrace Json? // tools called during this turn: [{ name, input, ok }]
+  createdAt DateTime @default(now())
+
+  @@index([projectId, createdAt])
+}

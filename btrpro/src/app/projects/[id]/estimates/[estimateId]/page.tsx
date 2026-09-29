@@ -210,7 +210,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
                     </TD>
                     {!locked && (
                       <TD>
-                        <LineActions lineId={l.id} quantity={l.quantity} />
+                        <LineActions lineId={l.id} quantity={l.quantity} pendingAi={l.sourceStatus === "PENDING_AI"} />
                       </TD>
                     )}
                   </TR>

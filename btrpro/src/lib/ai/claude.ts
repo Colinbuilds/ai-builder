@@ -27,6 +27,9 @@ export function setAiClientForTests(c: AiClient | null) {
   override = c;
 }
 let real: Anthropic | null = null;
+export function aiClient(): AiClient {
+  return client();
+}
 function client(): AiClient {
   if (override) return override;
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) throw new AiUnavailableError();
@@ -43,7 +46,8 @@ export function estimatorSystemPrompt() {
 type Effort = "low" | "medium" | "high" | "xhigh" | "max";
 type Msg = Anthropic.Beta.BetaMessageParam;
 
-function system(task: string): Anthropic.Beta.BetaTextBlockParam[] {
+export const FALLBACK_BETAS = [FALLBACK_BETA];
+export function system(task: string): Anthropic.Beta.BetaTextBlockParam[] {
   // Stable prefix first (cached), task-specific instructions after it.
   return [
     { type: "text", text: estimatorSystemPrompt(), cache_control: { type: "ephemeral" } },

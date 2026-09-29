@@ -13,7 +13,8 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 5 | Documents, EagleView/plan extraction, confirmation queue, Google Drive import, Integrations page | **Done** |
 | 6 | Calc engine: steep, low-slope, deck, siding, pricing & totals (pure TypeScript, unit-tested) | **Done** |
 | 7–9 | Estimate builder, labor + standards library, rules engine | **Done** |
-| 10–11 | AI estimator assistant, outputs + proposals | Next |
+| 10 | AI estimator assistant (tools, validation, quick actions) | **Done** |
+| 11 | Outputs (AccuLynx copy, order CSV, estimate & takeoff PDFs) + customer proposals with e-signature | Next |
 | 12 | Job costing and profit analysis | |
 | 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
 | 19 | End-to-end test | |
@@ -107,6 +108,14 @@ Each job has tabs: Overview, Team chat, Email, Documents, Estimates.
 - **Revisions:** "Create next revision" copies and locks the previous one. Compare shows quantity/price/total changes.
 - **Labor:** hours = qty ÷ production rate; cost = hours × $/hr × (1 + burden). Rates come from the **Labor standards** library (starts empty), a stated source, or an approved placeholder.
 - **Totals:** materials, general conditions, labor, contingency, and grand total. Lines without a number are excluded, and the estimate is flagged INCOMPLETE.
+
+## AI estimator assistant (Phase 10)
+
+The **AI assistant** tab on each job is a streaming chat with a shared per-job history (Admins/Estimators).
+- **Tools:** Claude works through tools (search price items, get item, measurements, intake, sheet status, run the calculator, propose lines, open items, job chat/email, list/read documents, propose scope) rather than raw data. It sees only prices and item numbers the tools return.
+- **Proposed lines** land on the estimate as **AI suggestion** (PENDING_AI) with no total, and count only after a person clicks Accept (which re-checks the sheet). The server rejects any proposal whose item number isn't on a sheet or whose price or UOM doesn't match (acceptance test 10).
+- **Quick actions:** Start project, What's missing?, Review change order, Compare sub proposals, Write scope.
+- **Every request** carries CLAUDE.md as the system prompt plus a live job snapshot, uses adaptive thinking at high effort with server-side refusal fallback, validates each tool input before running it, and stops cleanly on a refusal or a truncated tool call.
 
 ## Environment variables
 

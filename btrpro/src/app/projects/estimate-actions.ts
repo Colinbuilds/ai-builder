@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import {
   addLine,
   createEstimate,
+  decideAiLine,
   createRevision,
   deleteLine,
   EstimateError,
@@ -137,6 +138,7 @@ export async function lineAction(f: FormData): Promise<string | null> {
   try {
     if (kind === "delete") await deleteLine(lineId, a);
     else if (kind === "quantity") await overrideQuantity(lineId, Number(String(f.get("quantity")).replace(/,/g, "")), String(f.get("reason") ?? ""), a);
+    else if (kind === "accept_ai" || kind === "reject_ai") await decideAiLine(lineId, kind === "accept_ai", a);
     else if (kind === "substitute") await substituteLine(lineId, String(f.get("itemNumber") ?? ""), String(f.get("reason") ?? ""), a);
   } catch (e) {
     return msg(e);

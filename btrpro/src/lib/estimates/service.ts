@@ -402,3 +402,25 @@ export async function diffEstimates(aId: string, bId: string) {
 }
 
 export const scopesOf = (p: { scopes: unknown }) => parseScopes(p.scopes);
+
+/** A person accepts or rejects an AI-proposed line. Accepting re-checks it against the live sheets. */
+export async function decideAiLine(lineId: string, accept: boolean, actor: Actor) {
+  const l = await prisma.estimateLine.findUniqueOrThrow({ where: { id: lineId }, include: { estimate: true } });
+  assertEditable(l.estimate);
+  if (l.sourceStatus !== "PENDING_AI") throw new EstimateError("That line isn't an AI suggestion.");
+  if (!accept) {
+    await prisma.estimateLine.delete({ where: { id: lineId } });
+    await log(l.estimate.projectId, actor, `${actor.name} rejected AI suggestion "${l.itemName}"`);
+  } else {
+    const it = l.supplierItemNumber ? (await liveItems([l.supplierItemNumber])).get(l.supplierItemNumber) : undefined;
+    if (l.supplierItemNumber && !it) throw new EstimateError(`${l.supplierItemNumber} is no longer on a loaded sheet.`);
+    if (it && l.unitCost != null && it.unitPrice !== l.unitCost) throw new EstimateError("The sheet price changed since the suggestion. Reject it and ask again.");
+    const priced = it ? priceStatusFor(l.quantity, it, it.itemNumber) : { sourceStatus: "MISSING_PRICE" as const, unitCost: null, total: null };
+    await prisma.estimateLine.update({
+      where: { id: lineId },
+      data: { sourceStatus: priced.sourceStatus, unitCost: priced.unitCost, total: priced.total, note: `${l.note ?? ""} · accepted by ${actor.name}`.trim() },
+    });
+    await log(l.estimate.projectId, actor, `${actor.name} accepted AI suggestion "${l.itemName}"`);
+  }
+  await refreshReadiness(l.estimate.projectId);
+}

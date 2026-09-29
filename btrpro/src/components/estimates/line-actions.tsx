@@ -6,7 +6,7 @@ import { ItemPicker } from "./item-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export function LineActions({ lineId, quantity }: { lineId: string; quantity: number | null }) {
+export function LineActions({ lineId, quantity, pendingAi }: { lineId: string; quantity: number | null; pendingAi?: boolean }) {
   const [mode, setMode] = useState<null | "quantity" | "substitute">(null);
   const [qty, setQty] = useState(quantity != null ? String(quantity) : "");
   const [reason, setReason] = useState("");
@@ -23,6 +23,18 @@ export function LineActions({ lineId, quantity }: { lineId: string; quantity: nu
       setErr(e);
       if (!e) setMode(null);
     });
+  if (pendingAi && !mode)
+    return (
+      <div className="flex gap-2 text-xs">
+        <Button size="sm" disabled={pending} onClick={() => send("accept_ai")}>
+          Accept
+        </Button>
+        <Button size="sm" variant="ghost" disabled={pending} onClick={() => send("reject_ai")}>
+          Reject
+        </Button>
+        {err && <span className="text-destructive">{err}</span>}
+      </div>
+    );
   if (!mode)
     return (
       <div className="flex gap-2 text-xs">
