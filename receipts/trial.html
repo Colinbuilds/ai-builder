@@ -22,6 +22,8 @@
 <script src="core/quickbooks.js"></script>
 <script src="core/extract.js"></script>
 <script src="ui/app.js"></script>
+<!-- ocr/ is built by scripts/fetch-ocr.sh and published next to this page. -->
+<script src="ocr/tesseract.min.js"></script>
 <script>
 (function () {
   "use strict";
@@ -124,18 +126,45 @@
       not_granted: "Claude wasn't allowed to read it. Allow it when asked, or the office can read it later.",
       sampling_disabled: "Claude isn't available on this account. The office can read it later.",
       rate_limited: "Too many receipts at once, or your Claude usage limit was reached. Try again in a few minutes.",
-      image_rejected: "That photo couldn't be read. Take a clearer photo.",
-      images_unavailable: "The photo is saved, but this Claude app can't send photos to Claude. Open this page at claude.ai in Chrome, Edge or Safari and tap Read it again.",
+      images_unavailable: "The photo is saved, but it couldn't be read here. Open this page at claude.ai in Chrome, Edge or Safari and tap Read it again.",
+      image_rejected: "No text could be read from that photo. Take a clearer, closer photo of the receipt.",
       refused: "Claude couldn't read this photo. The office can enter it by hand.",
       invalid_json: "The reading came back incomplete. Try reading it again.",
     };
+    // Where this viewer can't send photos to Claude (the Claude desktop app), read the photo's text
+    // on this device first and send Claude the text instead.
+    var ocrWorker = null;
+    function abs(path) { return new URL(path, location.href).href; }
+    function photoText(blob) {
+      if (typeof Tesseract === "undefined") return Promise.reject({ code: "images_unavailable" });
+      // The English model ships as base64 text (the host serves no .gz files) and is handed to the worker directly.
+      ocrWorker = ocrWorker || fetch(abs("ocr/lang/eng-traineddata-gz.b64.txt")).then(function (r) { if (!r.ok) throw new Error("model"); return r.text(); }).then(function (b64) {
+        var bin = atob(b64.trim()), data = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) data[i] = bin.charCodeAt(i);
+        return Tesseract.createWorker([{ code: "eng", data: data }], 1, { workerPath: abs("ocr/worker.min.js"), corePath: abs("ocr/core"), cacheMethod: "none" });
+      });
+      return ocrWorker.then(function (w) { return w.recognize(blob); }).then(function (res) {
+        var text = String(res && res.data && res.data.text || "").trim();
+        if (text.length < 20) throw { code: "image_rejected" };
+        return text;
+      }, function () { ocrWorker = null; throw { code: "images_unavailable" }; });
+    }
+    function canSendPhotos() {
+      return sample.limits().then(function (l) { return !!(l && l.images); }, function () { return false; });
+    }
     function readWithAi(r, blob) {
       if (!sample) return Promise.reject(new Error("AI reading isn't available here. The office can read it later."));
-      var prompt = RECEIPT_INSTRUCTIONS +
+      return canSendPhotos().then(function (photos) {
+        return photos ? readReceipt(r, blob, null) : photoText(blob).then(function (text) { return readReceipt(r, null, text); },
+          function (e) { throw new Error(AI_ERRORS[e && e.code] || AI_ERRORS.images_unavailable); });
+      });
+    }
+    function readReceipt(r, blob, text) {
+      var prompt = RECEIPT_INSTRUCTIONS + (text ? "\n\nThe receipt photo can't be attached here. This is the text read from it by OCR, line by line; OCR can misread characters, so use the totals to check line prices and explain anything uncertain in notes:\n---\n" + text.slice(0, 12000) + "\n---" : "") +
         "\n\nThe photo was sent from the company's receipt app by: " + (display(r.owner) || "an employee") +
         "\n\nJob folders:\n" + (jobs().map(function (j) { return "- " + j.name; }).join("\n") || "(none yet)") +
         "\n\nReply with only one JSON object that matches this JSON Schema (every field is required):\n" + JSON.stringify(RECEIPT_SCHEMA);
-      return sample.json(prompt, { images: [blob], modelTier: "default", cache: false }).then(function (raw) {
+      return sample.json(prompt, blob ? { images: [blob], modelTier: "default", cache: false } : { modelTier: "default", cache: false }).then(function (raw) {
         if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw { code: "invalid_json" };
         var x = normalizeExtraction(raw);
         if (!x.employee) { x.employee = display(r.owner); x.flags = x.flags.filter(function (f) { return f !== "Employee not found."; }); }
