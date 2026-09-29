@@ -289,9 +289,11 @@
       if (approved) {
         h += '<div class="jr-ok">Approved as ' + esc(ACTION_TEXT[r.action] || r.action) + (r.docName ? ": " + esc(r.docName) : "") + (r.approvedBy ? " · by " + esc(r.approvedBy) : "") + "</div>";
       } else {
-        var ready = !!(d.jobId && d.action && d.items.length);
+        var priced0 = !(priced.totals.cost > 0);
+        var ready = !!(d.jobId && d.action && d.items.length) && !priced0;
         h += '<div class="jr-actions"><button type="button" class="jr-btn" data-act="approve" data-id="' + esc(r.id) + '" ' + (ready && !S.busy ? "" : "disabled") + ">" +
-          (S.busy ? "Creating…" : d.action === "invoice" ? "Approve & create invoice" : d.action === "change_order" ? "Approve & create change order" : "Choose change order or invoice") + "</button></div>";
+          (S.busy ? "Creating…" : !d.action ? "Choose change order or invoice" : priced0 ? "Type in the costs to approve" :
+            d.action === "invoice" ? "Approve & create invoice" : "Approve & create change order") + "</button></div>";
       }
       return h + "</section>";
     }
@@ -451,8 +453,11 @@
     function approve(id) {
       var r = byId(id), d = draftFor(r);
       S.busy = true; rerenderDetail();
+      var sub = roundCents(d.items.reduce(function (s, i) { return s + Number(i.lineTotal || 0); }, 0));
+      // A ticket printed without prices has no total; the office's typed costs become it.
+      var edited = Object.assign({}, r.extracted, { items: d.items, tax: d.tax, subtotal: sub, total: r.extracted.total || roundCents(sub + Number(d.tax || 0)) });
       var save = d.dirty || d.jobId !== r.jobId || Number(d.markup) !== r.markupPercent
-        ? api.call("apiSaveDraft", id, { jobId: d.jobId, markupPercent: Number(d.markup), extracted: d.dirty ? Object.assign({}, r.extracted, { items: d.items, tax: d.tax, subtotal: d.items.reduce(function (s, i) { return s + Number(i.lineTotal || 0); }, 0) }) : null })
+        ? api.call("apiSaveDraft", id, { jobId: d.jobId, markupPercent: Number(d.markup), extracted: d.dirty ? edited : null })
         : Promise.resolve();
       save.then(function () {
         return api.call("apiApprove", id, { action: d.action, markupPercent: Number(d.markup), description: d.description, reason: d.reason,

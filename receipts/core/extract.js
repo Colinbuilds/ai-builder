@@ -10,7 +10,7 @@ var RECEIPT_IMAGE_TYPES = { "image/jpeg": 1, "image/png": 1, "image/gif": 1, "im
 var RECEIPT_SCHEMA = {
   type: "object",
   properties: {
-    isReceipt: { type: "boolean", description: "False if the file is not a purchase receipt or invoice from a supplier" },
+    isReceipt: { type: "boolean", description: "False if the file is not a supplier receipt, invoice, delivery ticket or packing slip" },
     employee: { type: "string", description: "Person who bought the materials; empty if unknown" },
     jobName: { type: "string", description: "Job, customer or project name as written; empty if none" },
     address: { type: "string", description: "Job site address as written; empty if none" },
@@ -26,7 +26,7 @@ var RECEIPT_SCHEMA = {
           description: { type: "string" },
           qty: { type: "number" },
           unit: { type: "string", description: "Unit such as ea, bdl, sht, rl, box, ft; empty if none" },
-          lineTotal: { type: "number", description: "Extended price for the line after any line discount, before tax" },
+          lineTotal: { type: "number", description: "Extended price for the line after any line discount, before tax; 0 if no price is printed" },
         },
         required: ["description", "qty", "unit", "lineTotal"],
         additionalProperties: false,
@@ -50,7 +50,10 @@ var RECEIPT_INSTRUCTIONS = [
   "- tax is the total sales tax charged. subtotal is before tax. total is the amount charged.",
   "- employee: the buyer's name from the receipt (customer, picked up by, signature, account contact) or else the email sender's name.",
   "- jobName and address: copy what the receipt or email says (PO/job field, delivery address, subject line). Do not invent them.",
+  "- A bill-to or ship-to address under the buyer's own company name (their office or shop, common on pickups) is not a job site; leave address empty unless it is a job site.",
   "- jobGuess: pick the exact matching folder name from the job list only if you are confident; otherwise leave it empty.",
+  "- Delivery tickets, pick tickets and packing slips often show no prices. Read them anyway: use 0 for any price that isn't printed and say so in notes.",
+  "- Include handwritten additions as items and mention them in notes.",
   "- Never guess numbers. If something is unreadable, put your best reading and explain it in notes.",
 ].join("\n");
 
@@ -136,6 +139,12 @@ function normalizeExtraction(x) {
   var flags = [];
   if (!out.isReceipt) flags.push("This doesn't look like a receipt.");
   if (!out.items.length) flags.push("No line items found.");
+  var unpriced = items.filter(function (it) { return !it.lineTotal; });
+  if (items.length && unpriced.length === items.length) {
+    flags.push("No prices on this receipt (delivery tickets and packing slips usually have none). Type in what each line cost before approving.");
+  } else if (unpriced.length) {
+    flags.push("No price on: " + unpriced.map(function (it) { return it.description; }).join("; ") + ". Type in what it cost before approving.");
+  }
   var itemsSum = roundCents(items.reduce(function (s, it) { return s + it.lineTotal; }, 0));
   if (out.subtotal && Math.abs(itemsSum - out.subtotal) > 0.05) {
     flags.push("Line items add up to " + formatMoney(itemsSum) + " but the subtotal is " + formatMoney(out.subtotal) + ".");

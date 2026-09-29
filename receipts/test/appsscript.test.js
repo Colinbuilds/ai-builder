@@ -188,6 +188,21 @@ test("wrong job picked: AI disagreement goes to review; admin fixes the job befo
   assert.equal(fixed.status, "ready");
 });
 
+test("delivery ticket with no prices: goes to review and can't be approved until the office types in costs", () => {
+  const ticket = { ...RECEIPT, items: RECEIPT.items.map((i) => ({ ...i, lineTotal: 0 })), subtotal: 0, tax: 0, total: 0 };
+  const { ctx, jobs } = setup({ claudeReply: ticket });
+  const up = upload(ctx, jobs.harvest.getId());
+  assert.equal(up.status, "needs_review");
+  assert.ok(up.extracted.flags.some((f) => /^No prices on this receipt/.test(f)));
+  assert.throws(() => ctx.apiApprove(up.id, { action: "change_order", markupPercent: 15 }), /no prices yet/);
+  const priced = { ...ticket, items: RECEIPT.items, subtotal: 247.78, total: 247.78 };
+  const saved = ctx.apiSaveDraft(up.id, { extracted: priced });
+  assert.equal(saved.status, "ready");
+  assert.equal(saved.cost, 247.78);
+  const res = ctx.apiApprove(up.id, { action: "invoice", markupPercent: 15, date: "2026-09-29" });
+  assert.equal(res.receipt.billed, 284.95);
+});
+
 test("QuickBooks not connected yet: documents are still created and the receipt is marked", () => {
   const { g, ctx, qbo, jobs } = setup({ qboConnected: false });
   g._.setUser("jake@acme.test"); const up = upload(ctx, jobs.harvest.getId());

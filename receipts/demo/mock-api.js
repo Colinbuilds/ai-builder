@@ -74,6 +74,7 @@ function createMockApi(opts) {
       var r = find(id);
       if (!r.jobId) throw new Error("Pick the job first.");
       var p = priceReceipt(r.extracted, { markupPercent: o.markupPercent });
+      if (!(p.totals.cost > 0)) throw new Error("This receipt has no prices yet. Type in what each line cost, then approve.");
       var number = o.action === "change_order" ? nextChangeOrderNumber(["CO#1 Gutter upgrade", "Change Order #2 - Skylight"]) : 1048;
       r.status = "approved"; r.action = o.action; r.markupPercent = o.markupPercent;
       r.cost = p.totals.cost; r.billed = p.totals.billed; r.profit = p.totals.profit;

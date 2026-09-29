@@ -153,7 +153,7 @@ function apiSaveDraft(id, patch) {
   if (patch.markupPercent != null) r.markupPercent = Number(patch.markupPercent);
   var priced = priceReceipt(r.extracted, { markupPercent: r.markupPercent, includeTaxInCost: settingBool_("INCLUDE_TAX_IN_COST") });
   r.cost = priced.totals.cost; r.billed = priced.totals.billed; r.profit = priced.totals.profit;
-  if (r.status !== STATUS.ERROR) r.status = r.jobId ? STATUS.READY : STATUS.REVIEW;
+  if (r.status !== STATUS.ERROR) r.status = r.jobId && r.cost > 0 ? STATUS.READY : STATUS.REVIEW;
   return saveReceipt_(r);
 }
 
@@ -174,6 +174,7 @@ function apiApprove(id, opts) {
     var jobFolder = DriveApp.getFolderById(job.id);
     var markup = opts.markupPercent != null ? Number(opts.markupPercent) : r.markupPercent;
     var priced = priceReceipt(r.extracted, { markupPercent: markup, includeTaxInCost: settingBool_("INCLUDE_TAX_IN_COST") });
+    if (!(priced.totals.cost > 0)) throw new Error("This receipt has no prices yet. Type in what each line cost, then approve.");
     var date = opts.date || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
 
     var number = "";

@@ -70,6 +70,16 @@ test("parse: math that doesn't add up and missing fields are flagged", () => {
   assert.ok(x.flags.includes("Line 2 is smudged"));
 });
 
+test("parse: a delivery ticket with no prices is flagged, and so is a single unpriced line", () => {
+  const ticket = { ...good, items: good.items.map((i) => ({ ...i, lineTotal: 0 })), subtotal: 0, tax: 0, total: 0, notes: "" };
+  const x = C.parseReceiptResponse(200, reply(ticket));
+  assert.equal(x.items.length, 2);
+  assert.ok(x.flags.some((f) => /^No prices on this receipt/.test(f)));
+  const one = C.normalizeExtraction({ ...good, items: [good.items[0], { ...good.items[1], lineTotal: 0 }], subtotal: 510, total: 562.36 });
+  assert.ok(one.flags.includes("No price on: OSB. Type in what it cost before approving."));
+  assert.match(C.RECEIPT_INSTRUCTIONS, /Delivery tickets/);
+});
+
 test("parse: errors, refusals and truncation become readable messages", () => {
   assert.throws(() => C.parseReceiptResponse(429, {}), /busy/);
   assert.throws(() => C.parseReceiptResponse(400, { error: { message: "bad image" } }), /400\): bad image/);
