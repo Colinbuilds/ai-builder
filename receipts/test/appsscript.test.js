@@ -203,6 +203,16 @@ test("delivery ticket with no prices: goes to review and can't be approved until
   assert.equal(res.receipt.billed, 284.95);
 });
 
+test("phone upload without a buyer name on the receipt: the uploader is the employee, no review needed", () => {
+  const { g, ctx, jobs } = setup({ claudeReply: { ...RECEIPT, employee: "" } });
+  g._.setUser("jake@acme.test");
+  upload(ctx, jobs.harvest.getId());
+  g._.setUser("office@acme.test");
+  const r = ctx.apiReceipts()[0];
+  assert.equal(r.employee, "jake@acme.test");
+  assert.equal(r.status, "ready");
+});
+
 test("QuickBooks not connected yet: documents are still created and the receipt is marked", () => {
   const { g, ctx, qbo, jobs } = setup({ qboConnected: false });
   g._.setUser("jake@acme.test"); const up = upload(ctx, jobs.harvest.getId());
