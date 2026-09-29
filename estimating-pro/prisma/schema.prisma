@@ -1,0 +1,445 @@
+// Estimating Pro data model. SQLite for local dev; switch provider to
+// "postgresql" for production (see README). Enums and Json need Prisma >= 6.2.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Users ----------
+
+enum Role {
+  ADMIN
+  ESTIMATOR
+  VIEWER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ESTIMATOR)
+  createdAt    DateTime @default(now())
+
+  messages    JobMessage[]
+  summaries   JobSummary[]
+  auditLogs   AuditLog[]
+  estimates   Estimate[]
+  emailsAdded JobEmail[]
+}
+
+// ---------- Price library ----------
+
+enum PriceStatus {
+  LISTED
+  CALL
+}
+
+enum CoverageSource {
+  PARSED_FROM_DESCRIPTION
+  USER_ENTERED
+  MANUFACTURER_DOC
+}
+
+model PriceSheet {
+  id             String    @id @default(cuid())
+  code           String // MH/EL/SS/HP/HS/NX/LP… — one active version per code
+  name           String
+  sourceFile     String?
+  account        String?
+  salesRep       String?
+  effectiveDate  DateTime?
+  expirationDate DateTime?
+  scope          String?
+  warning        String?
+  // false = placeholder record with no items (e.g. LP SmartSide until uploaded)
+  isLoaded       Boolean   @default(true)
+  isActive       Boolean   @default(true)
+  uploadedAt     DateTime  @default(now())
+
+  items PriceItem[]
+
+  @@index([code, isActive])
+}
+
+model PriceItem {
+  id             String          @id @default(cuid())
+  sheetId        String
+  sheet          PriceSheet      @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  section        String
+  itemNumber     String
+  description    String
+  unitPrice      Float? // null when priceStatus = CALL
+  uom            String // exactly as listed on the sheet; never converted
+  priceStatus    PriceStatus     @default(LISTED)
+  coverageQty    Float?
+  coverageUnit   String?
+  coverageSource CoverageSource?
+  tags           Json?
+
+  estimateLines EstimateLine[]
+
+  @@unique([sheetId, itemNumber])
+  @@index([itemNumber])
+}
+
+// ---------- Projects & intake ----------
+
+enum ConstructionType {
+  NEW
+  REROOF
+}
+
+enum Form17Status {
+  NOT_REQUIRED
+  PENDING
+  EXECUTED
+}
+
+enum ProjectStatus {
+  LEAD
+  ESTIMATING
+  SUBMITTED
+  WON
+  LOST
+}
+
+enum Readiness {
+  NOT_READY
+  BUDGET
+  BID_READY
+}
+
+model Project {
+  id                String            @id @default(cuid())
+  name              String
+  address           String?
+  client            String?
+  buildingUse       String?
+  constructionType  ConstructionType?
+  isPublic          Boolean           @default(false)
+  isTaxExempt       Boolean           @default(false)
+  form17Status      Form17Status      @default(NOT_REQUIRED)
+  bidDueDate        DateTime?
+  acculynxJobNumber String?
+  status            ProjectStatus     @default(LEAD)
+  readiness         Readiness         @default(NOT_READY)
+  // inbound address token for forwarding job emails (e.g. job-<token>@…)
+  emailToken        String            @unique @default(cuid())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  intake       IntakeField[]
+  documents    Document[]
+  measurements Measurement[]
+  estimates    Estimate[]
+  openItems    OpenItem[]
+  bidResults   BidResult[]
+  messages     JobMessage[]
+  emails       JobEmail[]
+  summaries    JobSummary[]
+}
+
+enum FieldStatus {
+  VERIFIED
+  MISSING
+  ASSUMED
+  NOT_APPLICABLE
+}
+
+model IntakeField {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key         String // one of the 19 intake keys in CLAUDE.md §4
+  value       String?
+  unit        String?
+  status      FieldStatus @default(MISSING)
+  sourceDocId String?
+  sourcePage  Int?
+  approvedBy  String?
+
+  @@unique([projectId, key])
+}
+
+enum DocumentType {
+  EAGLEVIEW
+  PLANS
+  SPECS
+  MFR_DATA
+  SUB_PROPOSAL
+  CHANGE_ORDER
+  PHOTO
+  OTHER
+}
+
+model Document {
+  id            String       @id @default(cuid())
+  projectId     String
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type          DocumentType @default(OTHER)
+  fileName      String
+  fileUrl       String
+  pages         Int?
+  extractedText String?
+  uploadedAt    DateTime     @default(now())
+
+  measurements Measurement[]
+}
+
+enum MeasurementStatus {
+  EXTRACTED_PENDING
+  CONFIRMED
+  REJECTED
+  USER_ENTERED
+}
+
+model Measurement {
+  id          String            @id @default(cuid())
+  projectId   String
+  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key         String // roof_total_sf, siding_sf, … (see BUILD_PROMPT.md)
+  value       Float?
+  unit        String?
+  facet       String?
+  sourceDocId String?
+  sourceDoc   Document?         @relation(fields: [sourceDocId], references: [id], onDelete: SetNull)
+  sourcePage  Int?
+  status      MeasurementStatus @default(EXTRACTED_PENDING)
+  confirmedBy String?
+}
+
+// ---------- Estimates ----------
+
+enum ScopeType {
+  STEEP
+  LOW_SLOPE
+  DECK
+  SIDING
+  PANELS
+  MIXED
+}
+
+enum LineSection {
+  MATERIAL_ROOFING
+  MATERIAL_DECK
+  MATERIAL_SIDING
+  GENERAL_CONDITIONS
+  LABOR
+}
+
+enum SourceStatus {
+  VERIFIED
+  SHEET_STALE
+  SHEET_EXPIRED
+  CALL_FOR_PRICE
+  MISSING_ITEM
+  MISSING_PRICE
+  PLACEHOLDER
+  ASSUMPTION_APPROVED
+  PENDING_AI
+  MISSING
+}
+
+model Estimate {
+  id                String    @id @default(cuid())
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name              String // Rev 1, Rev 2…
+  scopeType         ScopeType
+  wastePctBySection Json?
+  wasteApproved     Boolean   @default(false)
+  contingencyPct    Float?
+  notes             String?
+  createdById       String?
+  createdBy         User?     @relation(fields: [createdById], references: [id])
+  locked            Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+
+  lines      EstimateLine[]
+  laborLines LaborLine[]
+  openItems  OpenItem[]
+  scopeItems ScopeItem[]
+}
+
+model EstimateLine {
+  id                 String       @id @default(cuid())
+  estimateId         String
+  estimate           Estimate     @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  section            LineSection
+  itemName           String
+  priceItemId        String?
+  priceItem          PriceItem?   @relation(fields: [priceItemId], references: [id])
+  supplierItemNumber String?
+  quantity           Float?
+  unit               String?
+  unitCost           Float?
+  total              Float?
+  formula            String?
+  formulaInputs      Json?
+  sourceStatus       SourceStatus @default(MISSING)
+  ruleId             String?
+  substitution       Boolean      @default(false)
+  sortOrder          Int          @default(0)
+}
+
+model LaborLine {
+  id             String       @id @default(cuid())
+  estimateId     String
+  estimate       Estimate     @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  task           String
+  crewSize       Int?
+  productionRate Float?
+  productionUnit String?
+  laborHours     Float?
+  hourlyRate     Float?
+  burdenPct      Float?
+  total          Float?
+  sourceStatus   SourceStatus @default(MISSING)
+}
+
+// Company library — starts EMPTY. Never seeded with invented rates.
+model LaborStandard {
+  id             String   @id @default(cuid())
+  task           String
+  productionRate Float
+  unit           String
+  crewSize       Int?
+  hourlyRate     Float?
+  burdenPct      Float?
+  source         String
+  enteredBy      String
+  createdAt      DateTime @default(now())
+}
+
+model Rule {
+  id         String  @id // e.g. ROOF-03
+  scope      String
+  text       String
+  formula    String?
+  itemNumber String?
+  extra      Json? // default_items, check, logic from company_rules.json
+  locked     Boolean @default(false)
+  active     Boolean @default(true)
+}
+
+model OpenItem {
+  id         String    @id @default(cuid())
+  projectId  String?
+  project    Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  estimateId String?
+  estimate   Estimate? @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  text       String
+  owner      String?
+  resolved   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+}
+
+enum ScopeItemType {
+  WE_WILL
+  WE_WILL_NOT
+}
+
+model ScopeItem {
+  id         String        @id @default(cuid())
+  estimateId String
+  estimate   Estimate      @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  type       ScopeItemType
+  text       String
+  sortOrder  Int           @default(0)
+}
+
+model BidResult {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ourBid    Float?
+  won       Boolean?
+  bidTabs   Json? // [{ bidder, amount }]
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  entity    String // PriceItem, Rule, Estimate…
+  entityId  String
+  action    String
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+}
+
+// ---------- Job communication (per-project chat + email) ----------
+
+// Internal team chat, one thread per job, replacing internal email chains.
+model JobMessage {
+  id        String       @id @default(cuid())
+  projectId String
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User         @relation(fields: [authorId], references: [id])
+  body      String
+  parentId  String? // reply-to
+  parent    JobMessage?  @relation("Replies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   JobMessage[] @relation("Replies")
+  createdAt DateTime     @default(now())
+  editedAt  DateTime?
+
+  @@index([projectId, createdAt])
+}
+
+enum EmailSource {
+  FORWARDED // sent to the job's inbound address
+  GMAIL // pulled from a connected mailbox
+  MANUAL // pasted in
+}
+
+// External email attached to a job (GC, owner, supplier, subs).
+model JobEmail {
+  id         String      @id @default(cuid())
+  projectId  String
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  source     EmailSource
+  externalId String? // Message-ID / provider id, for de-duplication
+  threadId   String?
+  fromAddr   String
+  toAddrs    String?
+  subject    String
+  sentAt     DateTime
+  bodyText   String
+  summary    String? // AI one-paragraph summary of this email
+  addedById  String?
+  addedBy    User?       @relation(fields: [addedById], references: [id])
+  createdAt  DateTime    @default(now())
+
+  @@unique([projectId, externalId])
+  @@index([projectId, sentAt])
+}
+
+enum SummaryKind {
+  CATCH_UP // whole job: chat + emails + estimate status + open items
+  EMAIL_THREAD
+}
+
+// Stored AI summaries so anyone can get caught up on a job.
+model JobSummary {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kind        SummaryKind
+  threadId    String?
+  content     String
+  coversFrom  DateTime?
+  coversTo    DateTime
+  createdById String?
+  createdBy   User?       @relation(fields: [createdById], references: [id])
+  createdAt   DateTime    @default(now())
+}

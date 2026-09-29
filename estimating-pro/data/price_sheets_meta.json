@@ -1,0 +1,64 @@
+{
+  "sheets": {
+    "HP": {
+      "sheet_name": "BTR - Hardie Primed",
+      "source_file": "BTR  Hardie Primed.pdf",
+      "account": "2057372-2 BTR Contracting-Shop",
+      "sales_rep": "Michael Poe",
+      "effective": "2026-05-19",
+      "expiration": "2027-03-31",
+      "scope": "James Hardie primed plank, panels, shingles, trim, soffit, accessories"
+    },
+    "HS": {
+      "sheet_name": "BTR - Hardie Statement",
+      "source_file": "BTR  Hardie statement.pdf",
+      "account": "2182359-2 Jims Roofing & Contrctng",
+      "sales_rep": "Ray McAtee",
+      "effective": "2026-05-19",
+      "expiration": "2026-12-31",
+      "scope": "James Hardie Statement collection plank, panels, shingles, trim, soffit, fasteners, accessories",
+      "warning": "Sheet is issued to account 2182359-2 (Jims Roofing & Contrctng), not BTR's 2057372-2. Confirm pricing applies to BTR before bid use."
+    },
+    "MH": {
+      "sheet_name": "BTR - Mulehide",
+      "source_file": "BTR  Mulehide 1.pdf",
+      "account": "2057372-2 BTR Contracting-Shop",
+      "sales_rep": "Michael Poe",
+      "effective": "2026-05-19",
+      "expiration": "2026-12-31",
+      "scope": "Mule-Hide EPDM, TPO, accessories, insulation, cover board, fasteners, plates, bars, vapor barrier, primers"
+    },
+    "EL": {
+      "sheet_name": "BTR - Elevate",
+      "source_file": "BTR  Elevate.pdf",
+      "account": "2057372-2 BTR Contracting-Shop",
+      "sales_rep": "Michael Poe",
+      "effective": "2026-05-19",
+      "expiration": "2026-12-31",
+      "scope": "Elevate EPDM, TPO, adhesives, sealants, primers, rolls, tapes, fasteners, plates, ISO, accessories, vapor barrier"
+    },
+    "NX": {
+      "sheet_name": "BTR - Norandex",
+      "source_file": "BTR  Norandex.pdf",
+      "account": "2057372-2 BTR Contracting-Shop",
+      "sales_rep": "Michael Poe",
+      "effective": "2026-06-01",
+      "expiration": "2028-12-31",
+      "scope": "Norandex vinyl siding, accessories, soffit, trim coil, mouldings, house wrap, tape, sealants, nails, insulation"
+    },
+    "SS": {
+      "sheet_name": "BTR - Steep Slope",
+      "source_file": "BTR  Steep slope.pdf",
+      "account": "2057372-2 BTR Contracting-Shop",
+      "sales_rep": "Michael Poe",
+      "effective": "2026-05-19",
+      "expiration": "2026-12-31",
+      "scope": "Malarkey, IKO, Tamko, Atlas, CertainTeed, GAF, Owens Corning, underlayment, ice & water, metals, penetrations, ventilation, nails, skylights, mod bit"
+    }
+  },
+  "supplier_common": {
+    "supplier": "ABC Supply Branch 112, 13251 Lynam Dr, Omaha NE",
+    "phone": "402-734-1414",
+    "note": "Credit card surcharge up to 3% where permitted; no surcharge on debit/ACH/check/cash."
+  }
+}
