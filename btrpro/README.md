@@ -1,4 +1,4 @@
-# Estimating Pro
+# BTRpro
 
 Roofing and exterior estimating app for BTR Contracting (Omaha, NE). The full spec is in [`BUILD_PROMPT.md`](BUILD_PROMPT.md). The estimator rules, which also become the AI system prompt, are in [`CLAUDE.md`](CLAUDE.md). The source-of-truth price data is in [`data/`](data/).
 
@@ -22,7 +22,7 @@ The full schema, including the job chat/email models, is already in `prisma/sche
 Requires Node 22.
 
 ```bash
-cd estimating-pro
+cd btrpro
 cp .env.example .env          # then set AUTH_SECRET (openssl rand -base64 32)
 npm install                   # also runs prisma generate
 npm run db:push               # creates prisma/dev.db (SQLite)

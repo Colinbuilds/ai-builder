@@ -1,4 +1,4 @@
-# BUILD PROMPT — Estimating Pro app
+# BUILD PROMPT — BTRpro app
 
 > Put this whole folder (`CLAUDE.md`, `BUILD_PROMPT.md`, `data/`) in an empty project folder, open Claude Code there, and paste the prompt below.
 
@@ -6,7 +6,7 @@
 
 ## Prompt to paste into Claude Code
 
-Build **Estimating Pro**, a production web app for BTR Contracting's roofing and exterior estimating team in Omaha, NE.
+Build **BTRpro**, a production web app for BTR Contracting's roofing and exterior estimating team in Omaha, NE.
 
 **Read these files first, in full, before writing any code:**
 1. `CLAUDE.md` is the complete estimator knowledge base and behavior rules. It becomes the system prompt for every AI call in the app, and you must follow it while building.

@@ -1,18 +1,18 @@
-name: Estimating Pro checks
+name: BTRpro checks
 
 on:
   push:
     branches: [main]
-    paths: ["estimating-pro/**", ".github/workflows/estimating-pro.yml"]
+    paths: ["btrpro/**", ".github/workflows/btrpro.yml"]
   pull_request:
-    paths: ["estimating-pro/**", ".github/workflows/estimating-pro.yml"]
+    paths: ["btrpro/**", ".github/workflows/btrpro.yml"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: estimating-pro
+        working-directory: btrpro
     env:
       DATABASE_URL: file:./dev.db
     steps:
@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: estimating-pro/package-lock.json
+          cache-dependency-path: btrpro/package-lock.json
       - run: npm ci
       - run: npm run lint
       - run: npm test

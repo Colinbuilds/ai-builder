@@ -1,5 +1,5 @@
 // Regenerates the TEST_ONLY price-sheet fixtures from real rows in data/price_items.json.
-// Run from estimating-pro/: node test/fixtures/make-fixtures.mjs  (needs Playwright's Chromium for the PDF)
+// Run from btrpro/: node test/fixtures/make-fixtures.mjs  (needs Playwright's Chromium for the PDF)
 import { readFileSync, writeFileSync } from "node:fs";
 import JSZip from "jszip";
 

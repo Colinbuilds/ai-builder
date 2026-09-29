@@ -8,7 +8,7 @@ import { MarketSwitch } from "@/components/market-switch";
 import { getMarketView } from "@/lib/market";
 
 export const metadata: Metadata = {
-  title: "Estimating Pro — BTR Contracting",
+  title: "BTRpro — BTR Contracting",
   description: "Roofing and exterior estimating for BTR Contracting",
 };
 
@@ -22,7 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <header className="border-b">
             <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 text-sm">
               <Link href="/" className="font-semibold">
-                Estimating Pro
+                BTRpro
               </Link>
               <Link href="/" className="text-muted-foreground hover:text-foreground">
                 Jobs

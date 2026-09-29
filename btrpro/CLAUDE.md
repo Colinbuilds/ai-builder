@@ -1,4 +1,4 @@
-# CLAUDE.md — Estimating Pro (BTR Contracting)
+# CLAUDE.md — BTRpro (BTR Contracting)
 
 This file is the estimating brain of the app. It is loaded as the system prompt for every AI call in the app, and Claude Code must follow it while building the app. Do not paraphrase or weaken it.
 

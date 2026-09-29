@@ -24,11 +24,17 @@ export async function extractSheetText(bytes: Uint8Array, fileName: string): Pro
 
 /** Rebuilds text lines from PDF glyph positions (items on the same baseline form one line). */
 export async function pdfToText(bytes: Uint8Array): Promise<string> {
+  return (await pdfPages(bytes)).join("\n");
+}
+
+/** Text of each page, in order (index 0 = page 1). */
+export async function pdfPages(bytes: Uint8Array): Promise<string[]> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const task = pdfjs.getDocument({ data: new Uint8Array(bytes), useSystemFonts: true });
   const doc = await task.promise;
-  const out: string[] = [];
+  const pages: string[] = [];
   for (let p = 1; p <= doc.numPages; p++) {
+    const out: string[] = [];
     const page = await doc.getPage(p);
     const content = await page.getTextContent();
     const lines: { y: number; parts: { x: number; s: string }[] }[] = [];
@@ -42,7 +48,8 @@ export async function pdfToText(bytes: Uint8Array): Promise<string> {
     }
     lines.sort((a, b) => b.y - a.y);
     for (const l of lines) out.push(l.parts.sort((a, b) => a.x - b.x).map((q) => q.s.trim()).join(" "));
+    pages.push(out.join("\n"));
   }
   await task.destroy();
-  return out.join("\n");
+  return pages;
 }

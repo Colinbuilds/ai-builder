@@ -1,4 +1,4 @@
-// Estimating Pro data model. SQLite for local dev; switch provider to
+// BTRpro data model. SQLite for local dev; switch provider to
 // "postgresql" for production (see README). Enums and Json need Prisma >= 6.2.
 
 generator client {
@@ -363,12 +363,19 @@ model Document {
   fileName      String
   fileUrl       String
   pages         Int?
-  extractedText String?
+  extractedText String? // pages separated by \f (form feed)
+  source        String       @default("UPLOAD") // UPLOAD | EMAIL | DRIVE | EAGLEVIEW
+  externalId    String? // Drive file id, EagleView report id … for de-duplication
+  contentType   String?
+  sizeBytes     Int?
+  uploadedById  String?
   uploadedAt    DateTime     @default(now())
   jobEmailId    String?
   jobEmail      JobEmail?    @relation(fields: [jobEmailId], references: [id], onDelete: SetNull)
 
   measurements Measurement[]
+  facts        ExtractedFact[]
+  runs         ExtractionRun[]
 }
 
 enum MeasurementStatus {
@@ -379,18 +386,23 @@ enum MeasurementStatus {
 }
 
 model Measurement {
-  id          String            @id @default(cuid())
-  projectId   String
-  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  key         String // roof_total_sf, siding_sf, … (see BUILD_PROMPT.md)
-  value       Float?
-  unit        String?
-  facet       String?
-  sourceDocId String?
-  sourceDoc   Document?         @relation(fields: [sourceDocId], references: [id], onDelete: SetNull)
-  sourcePage  Int?
-  status      MeasurementStatus @default(EXTRACTED_PENDING)
-  confirmedBy String?
+  id             String            @id @default(cuid())
+  projectId      String
+  project        Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key            String // roof_total_sf, siding_sf, … (see BUILD_PROMPT.md)
+  value          Float?
+  unit           String?
+  facet          String?
+  sourceDocId    String?
+  sourceDoc      Document?         @relation(fields: [sourceDocId], references: [id], onDelete: SetNull)
+  sourcePage     Int?
+  status         MeasurementStatus @default(EXTRACTED_PENDING)
+  confirmedBy    String?
+  extractedValue Float? // what the AI read, kept when a person edits the value
+  quote          String? // text on the page the value came from
+  note           String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 }
 
 // ---------- Estimates ----------
@@ -656,4 +668,54 @@ model MailboxConnection {
   createdAt    DateTime     @default(now())
 
   @@unique([userId, provider])
+}
+
+enum FactStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+// Non-numeric facts read from plans/specs (roof system, warranty, deck type, spec sections…).
+// Confirming one fills the matching intake field as VERIFIED with its source page.
+model ExtractedFact {
+  id         String     @id @default(cuid())
+  projectId  String
+  documentId String
+  document   Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  key        String // intake key, or "spec_section"
+  value      String
+  page       Int?
+  quote      String?
+  status     FactStatus @default(PENDING)
+  decidedBy  String?
+  createdAt  DateTime   @default(now())
+}
+
+model ExtractionRun {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  kind       String // EAGLEVIEW | PLANS_SPECS
+  status     String // OK | FAILED
+  message    String?
+  model      String?
+  createdAt  DateTime @default(now())
+}
+
+// OAuth/API connections for integrations (Drive, QuickBooks, Procore, Buildertrend, CompanyCam, EagleView, ABC).
+// userId null = company-wide connection. Secrets encrypted at rest.
+model IntegrationConnection {
+  id           String    @id @default(cuid())
+  provider     String
+  userId       String?
+  accountLabel String?
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  extra        Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([provider, userId])
 }
