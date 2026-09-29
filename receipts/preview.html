@@ -1,0 +1,281 @@
+<title>JobReceipts Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: a job-site ledger. Header + build status, then one row per receipt: paper receipt → what was read → pricing, with the customer document and QuickBooks entries under it. */
+  :root {
+    --bg: #f3f5f7; --panel: #ffffff; --ink: #16202b; --muted: #5d6b7a; --line: #dde3ea; --line-strong: #c6d0da;
+    --accent: #1d5fb8; --accent-soft: #e6eefa; --paper: #fbfaf6; --paper-ink: #2b2b2b;
+    --good: #1f7a45; --good-soft: #e3f3e9; --warn: #9a5b00; --warn-soft: #fdf1dc; --todo: #6b7785; --todo-soft: #eef1f4;
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e141b; --panel: #151e28; --ink: #e7edf3; --muted: #9aa8b6; --line: #253241; --line-strong: #33445a;
+      --accent: #6fa3ec; --accent-soft: #19283c; --paper: #efece4; --paper-ink: #2b2b2b;
+      --good: #5ccc8a; --good-soft: #14301f; --warn: #f0b457; --warn-soft: #33260f; --todo: #8e9aa8; --todo-soft: #1c2631;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e141b; --panel: #151e28; --ink: #e7edf3; --muted: #9aa8b6; --line: #253241; --line-strong: #33445a;
+    --accent: #6fa3ec; --accent-soft: #19283c; --paper: #efece4; --paper-ink: #2b2b2b;
+    --good: #5ccc8a; --good-soft: #14301f; --warn: #f0b457; --warn-soft: #33260f; --todo: #8e9aa8; --todo-soft: #1c2631;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 60px; display: flex; flex-direction: column; gap: 28px; }
+  h1, h2, h3 { font-family: var(--display); letter-spacing: -0.01em; text-wrap: balance; margin: 0; }
+  h1 { font-size: 30px; font-weight: 800; }
+  h2 { font-size: 20px; font-weight: 700; }
+  h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+  .num, td.n, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  header.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+  .sub { color: var(--muted); margin: 6px 0 0; max-width: 62ch; }
+  .ro { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+
+  .status { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+  .step { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; padding: 8px 10px; border-radius: 8px; background: var(--todo-soft); color: var(--todo); }
+  .step b { font-weight: 600; color: var(--ink); display: block; }
+  .step.done { background: var(--good-soft); color: var(--good); }
+  .step.now { background: var(--warn-soft); color: var(--warn); }
+  .step .dot { font-family: var(--mono); font-size: 12px; margin-top: 2px; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .flow span { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; color: var(--ink); }
+
+  .receipt-row { display: flex; flex-direction: column; gap: 14px; }
+  .row-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .pill { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; }
+  .pill.co { background: var(--accent-soft); color: var(--accent); }
+  .pill.inv { background: var(--good-soft); color: var(--good); }
+  .pill.rev { background: var(--warn-soft); color: var(--warn); }
+  .meta { color: var(--muted); font-size: 13px; }
+
+  .grid3 { display: grid; grid-template-columns: 250px minmax(0, 1fr) minmax(0, 1.35fr); gap: 14px; align-items: start; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+  /* Thermal paper receipt: stays light in both themes, like real paper. */
+  .paper { background: var(--paper); color: var(--paper-ink); font-family: var(--mono); font-size: 12px; line-height: 1.45; padding: 16px 14px 20px;
+           border-radius: 3px; box-shadow: 0 1px 0 rgba(0,0,0,.08), 0 10px 24px -14px rgba(0,0,0,.35);
+           mask: linear-gradient(#000 0 0) top/100% calc(100% - 6px) no-repeat, radial-gradient(circle 6px at 50% 100%, transparent 96%, #000) bottom/12px 7px repeat-x; }
+  .paper .v { text-align: center; font-weight: 500; font-size: 13px; }
+  .paper .c { text-align: center; }
+  .paper hr { border: 0; border-top: 1px dashed #9a978f; margin: 8px 0; }
+  .paper .it { display: flex; justify-content: space-between; gap: 8px; }
+  .paper .it span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .src { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+  .src q { color: var(--ink); font-style: italic; quotes: "“" "”"; }
+
+  dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 14px; }
+  dl.kv dt { color: var(--muted); }
+  dl.kv dd { margin: 0; overflow-wrap: anywhere; }
+  .match { border-radius: 8px; padding: 10px 12px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .match.ok { background: var(--good-soft); }
+  .match.low { background: var(--warn-soft); }
+  .match .job { font-weight: 600; }
+  .cands { list-style: none; padding: 0; margin: 4px 0 0; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+  .cands li { display: flex; justify-content: space-between; gap: 10px; }
+
+  .tbl { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th.n, td.n { text-align: right; white-space: nowrap; }
+  tfoot td { border-bottom: 0; font-weight: 600; }
+  .totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .t { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .t span { display: block; font-size: 12px; color: var(--muted); }
+  .t strong { font-family: var(--mono); font-size: 17px; font-variant-numeric: tabular-nums; }
+  .t.profit strong { color: var(--good); }
+  .note { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+  /* Customer document (what the customer receives) */
+  .docwrap { background: var(--bg); border-radius: 10px; padding: 12px; overflow-x: auto; }
+  .doc { background: #fff; color: #1b1b1b; border: 1px solid #d9dde2; border-radius: 4px; padding: 20px; font-size: 12.5px; min-width: 440px; }
+  .doc .dochead { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 2px solid #1b1b1b; padding-bottom: 8px; margin-bottom: 10px; }
+  .doc h2 { font-size: 16px; text-transform: uppercase; letter-spacing: .06em; }
+  .doc h3 { color: #555; margin: 12px 0 4px; font-size: 11px; }
+  .doc table { font-size: 12px; }
+  .doc th { color: #555; border-color: #c9ced4; }
+  .doc td { border-color: #e3e6ea; }
+  .doc table.kv th { width: 30%; text-align: left; background: #f4f5f7; }
+  .doc table.kv td, .doc table.kv th { border: 1px solid #dfe2e6; padding: 5px 7px; font-size: 12px; }
+  .doc .n { text-align: right; font-family: var(--mono); }
+  .doc table.sign td { border: 0; border-top: 1px solid #1b1b1b; padding-top: 4px; width: 50%; color: #555; font-size: 11px; }
+  .doc table.sign { margin-top: 26px; border-spacing: 24px 0; border-collapse: separate; }
+  .doc .terms { color: #555; }
+  .docname { font-size: 13px; color: var(--muted); }
+  .docname b { color: var(--ink); font-weight: 600; }
+
+  .qbo { display: flex; flex-direction: column; gap: 8px; }
+  .qline { display: flex; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font-size: 14px; }
+  .qline small { display: block; color: var(--muted); font-size: 12.5px; }
+  .hold { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 12px; font-size: 14px; }
+
+  @media (max-width: 1000px) { .grid3 { grid-template-columns: 220px minmax(0, 1fr); } .grid3 > :last-child { grid-column: 1 / -1; } .grid2 { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .grid3 { grid-template-columns: 1fr; } .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); } h1 { font-size: 25px; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>JobReceipts</h1>
+      <p class="sub">Receipts come in by email or photo. The AI reads the employee, job and materials, matches the job folder, prices it at your markup, and prepares a change order or invoice plus the QuickBooks entries. Everything below is made-up sample data.</p>
+    </div>
+    <span class="ro">Build preview · read only</span>
+  </header>
+
+  <section class="status" aria-label="Build progress">
+    <h3>Build progress</h3>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <div class="flow" aria-label="How a receipt moves">
+    <span>Email or photo</span>→<span>AI reads receipt</span>→<span>Match job folder</span>→<span>Price at markup</span>→<span>Change order or invoice</span>→<span>QuickBooks Online</span>
+  </div>
+
+  <main id="receipts" style="display:flex;flex-direction:column;gap:40px"></main>
+</div>
+
+<script src="core/pricing.js"></script>
+<script src="core/match.js"></script>
+<script src="core/documents.js"></script>
+<script src="core/quickbooks.js"></script>
+<script src="core/extract.js"></script>
+<script src="demo/samples.js"></script>
+<script>
+(function () {
+  "use strict";
+  var MARKUP = 15;
+  var BUILD = [
+    ["done", "Pricing & profit", "Cost, 15% markup, billed, profit"],
+    ["done", "Job matching", "Name and/or address → job folder"],
+    ["done", "Change orders & invoices", "Named like the job folder"],
+    ["done", "QuickBooks entries", "Estimate / Invoice + job-cost expense"],
+    ["done", "AI receipt reading", "Photo or PDF → line items + checks"],
+    ["now", "Email & upload intake", "Receipts inbox + phone upload"],
+    ["todo", "Review & approve screen", "Change markup, pick CO or invoice"],
+    ["todo", "Connect QuickBooks", "Sign in to your QuickBooks Online"],
+  ];
+
+  function el(tag, cls, html) { var n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; }
+  var esc = escapeHtml;
+
+  var steps = document.getElementById("steps");
+  BUILD.forEach(function (s) {
+    var mark = s[0] === "done" ? "✓" : s[0] === "now" ? "●" : "○";
+    steps.appendChild(el("div", "step " + s[0], '<span class="dot">' + mark + "</span><span><b>" + esc(s[1]) + "</b>" + esc(s[2]) + "</span>"));
+  });
+
+  var root = document.getElementById("receipts");
+  SAMPLE_RECEIPTS.forEach(function (r, idx) {
+    var x = r.extracted;
+    var checked = normalizeExtraction(Object.assign({ isReceipt: true, jobGuess: "", notes: "" }, x));
+    var match = resolveJob(checked, r.source, SAMPLE_JOBS);
+    var priced = priceReceipt({ vendor: x.vendor, items: x.items, tax: x.tax, total: x.total }, { markupPercent: MARKUP });
+    var kind = r.action;
+    if (!match.confident) kind = "needs_review";
+
+    var row = el("section", "receipt-row");
+    var pill = kind === "change_order" ? '<span class="pill co">Change order</span>'
+      : kind === "invoice" ? '<span class="pill inv">Invoice</span>' : '<span class="pill rev">Needs review</span>';
+    row.appendChild(el("div", "row-head", "<h2>Receipt " + (idx + 1) + " · " + esc(x.vendor) + "</h2>" + pill +
+      '<span class="meta">' + esc(r.source.via) + " from " + esc(r.source.from) + " · " + esc(r.source.received) + "</span>"));
+
+    // 1. The receipt as it came in
+    var paper = '<div class="paper"><div class="v">' + esc(x.vendor.toUpperCase()) + '</div><div class="c">' + esc(x.date) + " · #" + esc(x.receiptNumber) + "</div><hr>";
+    x.items.forEach(function (it) {
+      paper += '<div class="it"><span>' + esc(it.qty + " " + it.unit + " " + it.description) + "</span><span>" + it.lineTotal.toFixed(2) + "</span></div>";
+    });
+    paper += '<hr><div class="it"><span>SUBTOTAL</span><span>' + x.subtotal.toFixed(2) + '</span></div><div class="it"><span>TAX</span><span>' + x.tax.toFixed(2) +
+      '</span></div><div class="it"><b>TOTAL</b><b>' + x.total.toFixed(2) + "</b></div></div>";
+    var col1 = el("div", "", paper);
+    col1.style.display = "flex"; col1.style.flexDirection = "column"; col1.style.gap = "10px";
+    var src = el("div", "src");
+    if (r.source.subject) src.appendChild(el("span", "", "Subject: <q>" + esc(r.source.subject) + "</q>"));
+    if (r.source.body) src.appendChild(el("span", "", "Message: <q>" + esc(r.source.body) + "</q>"));
+    col1.appendChild(src);
+
+    // 2. What the AI read + job match
+    var col2 = el("div", "card");
+    col2.appendChild(el("h3", "", "What it read"));
+    col2.appendChild(el("dl", "kv", "<dt>Employee</dt><dd>" + esc(x.employee) + "</dd><dt>Job name</dt><dd>" + esc(x.jobName || "—") +
+      "</dd><dt>Address</dt><dd>" + esc(x.address || "—") + "</dd><dt>Vendor</dt><dd>" + esc(x.vendor) + "</dd><dt>Date</dt><dd>" + esc(x.date) + "</dd>"));
+    col2.appendChild(el("h3", "", "Checks"));
+    col2.appendChild(el("div", "match " + (checked.flags.length ? "low" : "ok"), checked.flags.length
+      ? checked.flags.map(esc).join("<br>")
+      : "Line items add up to the subtotal, and subtotal + tax equals the total."));
+    col2.appendChild(el("h3", "", "Job folder"));
+    var m = el("div", "match " + (match.confident ? "ok" : "low"));
+    if (match.confident) {
+      m.innerHTML = '<span class="job">' + esc(match.job.name) + '</span><span class="meta">Matched ' + Math.round(match.score * 100) + "% · filed in this job's Receipts folder</span>";
+    } else {
+      m.innerHTML = '<span class="job">Not sure which job</span><span class="meta">Held for you to pick. Closest matches:</span>';
+      var ul = el("ul", "cands");
+      match.candidates.slice(0, 3).forEach(function (c) {
+        ul.appendChild(el("li", "", "<span>" + esc(c.job.name) + '</span><span class="mono">' + Math.round(c.score * 100) + "%</span>"));
+      });
+      m.appendChild(ul);
+    }
+    col2.appendChild(m);
+
+    // 3. Pricing (internal)
+    var col3 = el("div", "card");
+    col3.appendChild(el("h3", "", "Pricing · internal only"));
+    var rows = priced.lines.map(function (l) {
+      return "<tr><td>" + esc(l.vendor) + "</td><td>" + esc(l.description) + '</td><td class="n">' + formatMoney(l.cost) + '</td><td class="n">' +
+        l.markupPercent + '%</td><td class="n">' + formatMoney(l.billed) + '</td><td class="n">' + formatMoney(l.profit) + "</td></tr>";
+    }).join("");
+    col3.appendChild(el("div", "tbl", '<table><thead><tr><th>Vendor</th><th>Item</th><th class="n">Cost</th><th class="n">Markup</th><th class="n">Billed</th><th class="n">Profit</th></tr></thead><tbody>' + rows + "</tbody></table>"));
+    var t = priced.totals;
+    col3.appendChild(el("div", "totals",
+      '<div class="t"><span>Cost (incl. tax)</span><strong>' + formatMoney(t.cost) + '</strong></div><div class="t"><span>Markup</span><strong>' + MARKUP +
+      '%</strong></div><div class="t"><span>Total billed</span><strong>' + formatMoney(t.billed) + '</strong></div><div class="t profit"><span>Profit · ' + t.marginPercent +
+      "% margin</span><strong>" + formatMoney(t.profit) + "</strong></div>"));
+    col3.appendChild(el("p", "note", "Sales tax you paid is counted in cost and spread across the lines. Markup is 15% by default and can be changed per receipt or per line."));
+
+    var grid = el("div", "grid3");
+    grid.appendChild(col1); grid.appendChild(col2); grid.appendChild(col3);
+    row.appendChild(grid);
+
+    // Customer document + QuickBooks
+    var bottom = el("div", "grid2");
+    if (kind === "needs_review") {
+      bottom.appendChild(el("div", "card", '<h3>Customer document</h3><div class="hold">Waiting for you to confirm the job. Nothing is created or sent to QuickBooks until you approve it.</div>'));
+      bottom.appendChild(el("div", "card", '<h3>QuickBooks Online</h3><div class="hold">On hold until the job is confirmed.</div>'));
+    } else {
+      var number = kind === "change_order" ? nextChangeOrderNumber(["CO#1 Gutter upgrade", "Change Order #2 - Skylight"]) : "1047";
+      var doc = buildCustomerDocument(kind, match.job, priced, {
+        number: number, date: x.date, projectManager: "Luis Ortega",
+        description: "Additional materials: " + priced.lines.map(function (l) { return l.description; }).slice(0, 2).join(", ") + (priced.lines.length > 2 ? " and more" : ""),
+        reason: r.reason, contractPrice: kind === "change_order" ? 18450 : null,
+        summary: kind === "change_order" ? "Decking replacement" : "",
+      });
+      var dcard = el("div", "card");
+      dcard.appendChild(el("h3", "", kind === "change_order" ? "Change order · what the customer sees" : "Invoice · what the customer sees"));
+      dcard.appendChild(el("div", "docname", "Saved as <b>" + esc(doc.name) + "</b>"));
+      dcard.appendChild(el("div", "docwrap", renderDocumentHtml(doc, SAMPLE_COMPANY)));
+      bottom.appendChild(dcard);
+
+      var qcard = el("div", "card");
+      qcard.appendChild(el("h3", "", "QuickBooks Online · sent on approval"));
+      var q = el("div", "qbo");
+      qboPlan(kind, priced, match.job, {}).forEach(function (p) {
+        q.appendChild(el("div", "qline", "<span>" + esc(p.label) + "<small>" + (p.vendor ? "Vendor: " + esc(p.vendor) + " · " : "") + "Customer: " + esc(p.customer) +
+          (p.lines ? " · " + p.lines + " lines, each naming the vendor" : "") + '</small></span><span class="num">' + formatMoney(p.amount) + "</span>"));
+      });
+      qcard.appendChild(q);
+      qcard.appendChild(el("p", "note", "The customer in QuickBooks uses the job folder name. If it doesn't exist yet, it's created. The expense records your real cost against the job so job profit reports are accurate."));
+      bottom.appendChild(qcard);
+    }
+    row.appendChild(bottom);
+    root.appendChild(row);
+  });
+})();
+</script>
