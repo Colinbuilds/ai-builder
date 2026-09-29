@@ -63,6 +63,11 @@ function processReceiptFile_(receipt, blob, context, chosenJobId) {
   } else {
     match = resolveJob(extracted, context, jobs);
   }
+  // A phone upload already tells us who bought it, even when the receipt doesn't.
+  if (!extracted.employee && receipt.uploadedBy) {
+    extracted.employee = receipt.uploadedBy;
+    extracted.flags = extracted.flags.filter(function (f) { return f !== "Employee not found."; });
+  }
   var priced = priceReceipt(extracted, { markupPercent: settingNumber_("DEFAULT_MARKUP_PERCENT"), includeTaxInCost: settingBool_("INCLUDE_TAX_IN_COST") });
 
   receipt.extracted = extracted;

@@ -15,7 +15,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, "../demo/samples.js"), "utf
 
 const sample = (i) => {
   const x = C.SAMPLE_RECEIPTS[i].extracted;
-  return C.priceReceipt({ vendor: x.vendor, items: x.items, tax: x.tax, total: x.total });
+  return C.priceReceipt({ vendor: x.vendor, items: x.items, tax: x.tax, total: x.total }, { markupPercent: 15 });
 };
 const sum = (arr, f) => Math.round(arr.reduce((s, v) => s + f(v), 0) * 100) / 100;
 
@@ -27,6 +27,15 @@ test("rounding: half cents round up, float noise and tiny numbers handled", () =
   assert.equal(C.roundCents("12.3"), 12.3);
   assert.equal(C.formatMoney(1299.39), "$1,299.39");
   assert.equal(C.formatMoney(-5), "-$5.00");
+});
+
+test("pricing: the standard markup is 28%", () => {
+  const x = C.SAMPLE_RECEIPTS[0].extracted;
+  const p = C.priceReceipt({ vendor: x.vendor, items: x.items, tax: x.tax });
+  assert.equal(C.DEFAULT_MARKUP_PERCENT, 28);
+  assert.ok(p.lines.every((l) => l.markupPercent === 28));
+  assert.equal(p.totals.billed, 1446.27);
+  assert.equal(p.totals.profit, 316.37);
 });
 
 test("pricing: tax spread into cost, 15% markup, totals add up", () => {

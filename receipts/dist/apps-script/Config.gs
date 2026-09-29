@@ -10,7 +10,7 @@ var SETTING_DEFAULTS = {
   RECEIPTS_SUBFOLDER: "Receipts",
   CHANGE_ORDERS_PATH: "Project Management/Change Orders",
   INVOICES_SUBFOLDER: "Invoices",
-  DEFAULT_MARKUP_PERCENT: "15",
+  DEFAULT_MARKUP_PERCENT: "28",
   INCLUDE_TAX_IN_COST: "true",
   DB_SPREADSHEET_ID: "",           // created by setup()
   ANTHROPIC_API_KEY: "",

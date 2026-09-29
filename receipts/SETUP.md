@@ -32,7 +32,7 @@ Optional settings, with their defaults:
 
 | Property | Default | Meaning |
 |---|---|---|
-| `DEFAULT_MARKUP_PERCENT` | `15` | Starting markup on every receipt (changeable per receipt) |
+| `DEFAULT_MARKUP_PERCENT` | `28` | Starting markup on every receipt (changeable per receipt) |
 | `INCLUDE_TAX_IN_COST` | `true` | Count sales tax paid as part of your cost |
 | `RECEIPTS_SUBFOLDER` | `Receipts` | Where approved receipts are filed inside each job folder |
 | `CHANGE_ORDERS_PATH` | `Project Management/Change Orders` | Where change orders are saved inside each job folder |
