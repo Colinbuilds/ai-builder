@@ -1,0 +1,104 @@
+<!doctype html>
+<!-- Generated from receipts/try.html by receipts/build.mjs. Edit that file, then run: node build.mjs -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JobReceipts Test Drive</title>
+<meta name="description" content="Try JobReceipts with sample receipts: send one from an employee's phone, then price and approve it as a change order or invoice from the office view.">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../receipts/ui/app.css">
+<style>
+  /* Test-drive wrapper: a slim control strip above the real app. */
+  :root { --tbg: #e9edf2; --tink: #16202b; --tmuted: #5d6b7a; --tline: #c6d0da; --tacc: #1d5fb8; --tacc-ink: #ffffff; --tbody: "IBM Plex Sans", system-ui, sans-serif; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tbg: #0a0f15; --tink: #e7edf3; --tmuted: #9aa8b6; --tline: #33445a; --tacc: #6fa3ec; --tacc-ink: #0e141b; color-scheme: dark; } }
+  :root[data-theme="dark"] { --tbg: #0a0f15; --tink: #e7edf3; --tmuted: #9aa8b6; --tline: #33445a; --tacc: #6fa3ec; --tacc-ink: #0e141b; color-scheme: dark; }
+  body { background: var(--tbg); color: var(--tink); font-family: var(--tbody); }
+  .strip { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 10px; padding-inline: 16px; border-bottom: 1px solid var(--tline); }
+  .strip b { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--tmuted); }
+  .roles { display: flex; gap: 6px; flex-wrap: wrap; }
+  .roles button, .reset { font: inherit; font-size: 14px; border: 1px solid var(--tline); background: transparent; color: var(--tink); border-radius: 999px; padding: 6px 14px; cursor: pointer; min-height: 36px; }
+  .roles button[aria-pressed="true"] { background: var(--tacc); color: var(--tacc-ink); border-color: var(--tacc); font-weight: 600; }
+  .roles button:focus-visible, .reset:focus-visible { outline: 2px solid var(--tacc); outline-offset: 2px; }
+  .note { font-size: 13px; color: var(--tmuted); flex: 1 1 320px; margin: 0; }
+  .stage { max-width: 1240px; margin: 0 auto; }
+  .stage.phone { max-width: 430px; padding-block: 16px; }
+  .stage.phone #app { border: 6px solid var(--tink); border-radius: 28px; overflow: hidden; }
+</style>
+
+<div class="strip">
+  <b><a href="../" style="color:inherit">JobReceipts</a> · Test drive</b>
+  <div class="roles" role="group" aria-label="View as">
+    <button type="button" id="as-employee" aria-pressed="false">Employee's phone (Jake)</button>
+    <button type="button" id="as-office" aria-pressed="true">Office (admin)</button>
+  </div>
+  <button type="button" class="reset" id="reset">Start over</button>
+  <p class="note">Sample jobs and receipts only. Nothing is saved or sent anywhere. In this test drive an uploaded photo gets a sample reading; the installed app reads your real receipt with AI.</p>
+</div>
+<div class="stage" id="stage"><div id="app"></div></div>
+
+<script src="../receipts/core/pricing.js"></script>
+<script src="../receipts/core/match.js"></script>
+<script src="../receipts/core/documents.js"></script>
+<script src="../receipts/core/quickbooks.js"></script>
+<script src="../receipts/core/extract.js"></script>
+<script src="../receipts/demo/samples.js"></script>
+<script src="../receipts/demo/mock-api.js"></script>
+<script src="../receipts/ui/app.js"></script>
+<script>
+(function () {
+  "use strict";
+  // One shared sample back end per session, so what Jake sends shows up in the office view.
+  var office, employee;
+  function fresh() {
+    office = createMockApi({ delay: 250 });
+    employee = {
+      call: function (name) {
+        // Jake's view of the same records: only his receipts, no money fields.
+        var args = Array.prototype.slice.call(arguments);
+        if (name === "apiBootstrap" || name === "apiReceipts") {
+          return office.call(name).then(function (data) {
+            var list = name === "apiBootstrap" ? data.receipts : data;
+            var mine = list.filter(function (r) { return r.uploadedBy === "jake@samplecontracting.com"; }).map(function (r) {
+              return { id: r.id, createdAt: r.createdAt, status: r.status, jobName: r.jobName, note: r.note, vendor: r.extracted && r.extracted.vendor,
+                total: r.extracted && r.extracted.total, items: r.extracted ? r.extracted.items.length : 0, error: r.error, action: r.status === "approved" ? r.action : "" };
+            });
+            if (name === "apiReceipts") return mine;
+            data.user = "jake@samplecontracting.com"; data.admin = false; data.receipts = mine;
+            return data;
+          });
+        }
+        if (name === "apiUpload") {
+          return office.call.apply(null, args).then(function (r) {
+            var rec = office.receipts[office.receipts.length - 1];
+            rec.uploadedBy = "jake@samplecontracting.com"; rec.employee = "Jake Brenner";
+            return { id: r.id, status: r.status, vendor: r.extracted.vendor, total: r.extracted.total, jobName: r.jobName };
+          });
+        }
+        return Promise.reject(new Error("Only admins can do that."));
+      },
+    };
+  }
+  var role = "office";
+  function show() {
+    document.getElementById("as-employee").setAttribute("aria-pressed", String(role === "employee"));
+    document.getElementById("as-office").setAttribute("aria-pressed", String(role === "office"));
+    document.getElementById("stage").className = "stage" + (role === "employee" ? " phone" : "");
+    // Mount into a fresh element so handlers from the previous view don't pile up.
+    var old = document.getElementById("app"), el = document.createElement("div");
+    el.id = "app"; old.replaceWith(el);
+    JobReceiptsApp.mount(el, { api: role === "employee" ? employee : office });
+  }
+  document.getElementById("as-employee").addEventListener("click", function () { role = "employee"; show(); });
+  document.getElementById("as-office").addEventListener("click", function () { role = "office"; show(); });
+  document.getElementById("reset").addEventListener("click", function () { fresh(); show(); });
+  fresh();
+  show();
+})();
+</script>
+</body>
+</html>

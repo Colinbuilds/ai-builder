@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JobReceipts (local test)</title>
+<link rel="stylesheet" href="../ui/app.css">
+<style>html, body { margin: 0; height: 100%; }</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="../core/pricing.js"></script>
+<script src="../core/match.js"></script>
+<script src="../core/documents.js"></script>
+<script src="../core/quickbooks.js"></script>
+<script src="../core/extract.js"></script>
+<script src="samples.js"></script>
+<script src="mock-api.js"></script>
+<script src="../ui/app.js"></script>
+<script>
+  // Local test harness: #employee shows the employee view, anything else the admin view.
+  var employee = location.hash === "#employee";
+  window.mockApi = createMockApi(employee ? { admin: false, user: "jake@samplecontracting.com", delay: 30 } : { delay: 30 });
+  window.appState = JobReceiptsApp.mount(document.getElementById("app"), { api: window.mockApi });
+</script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<title>JobReceipts Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: a job-site ledger. Header + build status, then one row per receipt: paper receipt → what was read → pricing, with the customer document and QuickBooks entries under it. */
+  :root {
+    --bg: #f3f5f7; --panel: #ffffff; --ink: #16202b; --muted: #5d6b7a; --line: #dde3ea; --line-strong: #c6d0da;
+    --accent: #1d5fb8; --accent-soft: #e6eefa; --paper: #fbfaf6; --paper-ink: #2b2b2b;
+    --good: #1f7a45; --good-soft: #e3f3e9; --warn: #9a5b00; --warn-soft: #fdf1dc; --todo: #6b7785; --todo-soft: #eef1f4;
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e141b; --panel: #151e28; --ink: #e7edf3; --muted: #9aa8b6; --line: #253241; --line-strong: #33445a;
+      --accent: #6fa3ec; --accent-soft: #19283c; --paper: #efece4; --paper-ink: #2b2b2b;
+      --good: #5ccc8a; --good-soft: #14301f; --warn: #f0b457; --warn-soft: #33260f; --todo: #8e9aa8; --todo-soft: #1c2631;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e141b; --panel: #151e28; --ink: #e7edf3; --muted: #9aa8b6; --line: #253241; --line-strong: #33445a;
+    --accent: #6fa3ec; --accent-soft: #19283c; --paper: #efece4; --paper-ink: #2b2b2b;
+    --good: #5ccc8a; --good-soft: #14301f; --warn: #f0b457; --warn-soft: #33260f; --todo: #8e9aa8; --todo-soft: #1c2631;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 60px; display: flex; flex-direction: column; gap: 28px; }
+  h1, h2, h3 { font-family: var(--display); letter-spacing: -0.01em; text-wrap: balance; margin: 0; }
+  h1 { font-size: 30px; font-weight: 800; }
+  h2 { font-size: 20px; font-weight: 700; }
+  h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+  .num, td.n, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  header.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+  .sub { color: var(--muted); margin: 6px 0 0; max-width: 62ch; }
+  .ro { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+
+  .status { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+  .step { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; padding: 8px 10px; border-radius: 8px; background: var(--todo-soft); color: var(--todo); }
+  .step b { font-weight: 600; color: var(--ink); display: block; }
+  .step.done { background: var(--good-soft); color: var(--good); }
+  .step.now { background: var(--warn-soft); color: var(--warn); }
+  .step .dot { font-family: var(--mono); font-size: 12px; margin-top: 2px; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .flow span { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; color: var(--ink); }
+
+  .receipt-row { display: flex; flex-direction: column; gap: 14px; }
+  .row-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .pill { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; }
+  .pill.co { background: var(--accent-soft); color: var(--accent); }
+  .pill.inv { background: var(--good-soft); color: var(--good); }
+  .pill.rev { background: var(--warn-soft); color: var(--warn); }
+  .meta { color: var(--muted); font-size: 13px; }
+
+  .grid3 { display: grid; grid-template-columns: 250px minmax(0, 1fr) minmax(0, 1.35fr); gap: 14px; align-items: start; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+  /* Thermal paper receipt: stays light in both themes, like real paper. */
+  .paper { background: var(--paper); color: var(--paper-ink); font-family: var(--mono); font-size: 12px; line-height: 1.45; padding: 16px 14px 20px;
+           border-radius: 3px; box-shadow: 0 1px 0 rgba(0,0,0,.08), 0 10px 24px -14px rgba(0,0,0,.35);
+           mask: linear-gradient(#000 0 0) top/100% calc(100% - 6px) no-repeat, radial-gradient(circle 6px at 50% 100%, transparent 96%, #000) bottom/12px 7px repeat-x; }
+  .paper .v { text-align: center; font-weight: 500; font-size: 13px; }
+  .paper .c { text-align: center; }
+  .paper hr { border: 0; border-top: 1px dashed #9a978f; margin: 8px 0; }
+  .paper .it { display: flex; justify-content: space-between; gap: 8px; }
+  .paper .it span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .src { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+  .src q { color: var(--ink); font-style: italic; quotes: "“" "”"; }
+
+  dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 14px; }
+  dl.kv dt { color: var(--muted); }
+  dl.kv dd { margin: 0; overflow-wrap: anywhere; }
+  .match { border-radius: 8px; padding: 10px 12px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .match.ok { background: var(--good-soft); }
+  .match.low { background: var(--warn-soft); }
+  .match .job { font-weight: 600; }
+  .cands { list-style: none; padding: 0; margin: 4px 0 0; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+  .cands li { display: flex; justify-content: space-between; gap: 10px; }
+
+  .tbl { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th.n, td.n { text-align: right; white-space: nowrap; }
+  tfoot td { border-bottom: 0; font-weight: 600; }
+  .totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .note { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+  /* Customer document (what the customer receives) */
+  .docwrap { background: var(--bg); border-radius: 10px; padding: 12px; overflow-x: auto; }
+  .doc { background: #fff; color: #1b1b1b; border: 1px solid #d9dde2; border-radius: 4px; padding: 20px; font-size: 12.5px; min-width: 440px; }
+  .doc .dochead { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 2px solid #1b1b1b; padding-bottom: 8px; margin-bottom: 10px; }
+  .doc h2 { font-size: 16px; text-transform: uppercase; letter-spacing: .06em; }
+  .doc h3 { color: #555; margin: 12px 0 4px; font-size: 11px; }
+  .doc table { font-size: 12px; }
+  .doc th { color: #555; border-color: #c9ced4; }
+  .doc td { border-color: #e3e6ea; }
+  .doc table.kv th { width: 30%; text-align: left; background: #f4f5f7; }
+  .doc table.kv td, .doc table.kv th { border: 1px solid #dfe2e6; padding: 5px 7px; font-size: 12px; }
+  .doc .n { text-align: right; font-family: var(--mono); }
+  .doc table.sign td { border: 0; border-top: 1px solid #1b1b1b; padding-top: 4px; width: 50%; color: #555; font-size: 11px; }
+  .doc table.sign { margin-top: 26px; border-spacing: 24px 0; border-collapse: separate; }
+  .doc .terms { color: #555; }
+  .docname { font-size: 13px; color: var(--muted); }
+  .docname b { color: var(--ink); font-weight: 600; }
+
+  .qbo { display: flex; flex-direction: column; gap: 8px; }
+  .qline { display: flex; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font-size: 14px; }
+  .qline small { display: block; color: var(--muted); font-size: 12.5px; }
+  .hold { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 12px; font-size: 14px; }
+
+  @media (max-width: 1000px) { .grid3 { grid-template-columns: 220px minmax(0, 1fr); } .grid3 > :last-child { grid-column: 1 / -1; } .grid2 { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .grid3 { grid-template-columns: 1fr; } .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); } h1 { font-size: 25px; } }
+
+  /* App screens shown read-only inside device frames */
+  .frames { display: grid; grid-template-columns: minmax(0, 390px) minmax(0, 1fr); gap: 22px; align-items: start; }
+  .frame { border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; background: var(--panel); display: flex; flex-direction: column; min-width: 0; }
+  .frame > .cap { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; }
+  .frame.phone { border-radius: 28px; border-width: 6px; border-color: var(--ink); }
+  .frame .screen .jr-bar { position: static; }
+  .screens-wide { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  @media (max-width: 1000px) { .frames { grid-template-columns: 1fr; } .frame.phone { max-width: 400px; } }
+</style>
+<link rel="stylesheet" href="ui/app.css">
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>JobReceipts</h1>
+      <p class="sub">Employees photograph receipts on their phone. AI reads the employee, job and materials; the office reviews cost, markup and profit, then approves a change order or invoice that lands in the job folder and QuickBooks. Everything here is made-up sample data.</p>
+    </div>
+    <span class="ro">Build preview · read only</span>
+  </header>
+
+  <section class="status" aria-label="Build progress">
+    <h3>Build progress</h3>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <div class="flow" aria-label="How a receipt moves">
+    <span>Employee photo</span>→<span>AI reads receipt</span>→<span>Job folder</span>→<span>Office review: cost, markup, profit</span>→<span>Change order or invoice</span>→<span>QuickBooks Online</span>
+  </div>
+
+  <div class="frames">
+    <div class="frame phone" inert><div class="cap"><span>Employee's phone</span><span>Jake · sees only his receipts</span></div><div class="screen" id="f-employee"></div></div>
+    <div class="screens-wide">
+      <div class="frame" inert><div class="cap"><span>Office · review</span><span>Admin sees everything</span></div><div class="screen" id="f-review"></div></div>
+      <div class="frame" inert><div class="cap"><span>Office · jobs</span><span>Totals per job folder</span></div><div class="screen" id="f-jobs"></div></div>
+      <div class="frame" inert><div class="cap"><span>Office · settings</span><span>Connections</span></div><div class="screen" id="f-settings"></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="core/pricing.js"></script>
+<script src="core/match.js"></script>
+<script src="core/documents.js"></script>
+<script src="core/quickbooks.js"></script>
+<script src="core/extract.js"></script>
+<script src="demo/samples.js"></script>
+<script src="demo/mock-api.js"></script>
+<script src="ui/app.js"></script>
+<script>
+(function () {
+  "use strict";
+  var BUILD = [
+    ["done", "Pricing & profit", "Cost, 15% markup, billed, profit"],
+    ["done", "Job matching", "Picked job + AI cross-check"],
+    ["done", "Change orders & invoices", "Your template, named like the job folder"],
+    ["done", "QuickBooks entries", "Estimate / Invoice + job-cost expense"],
+    ["done", "AI receipt reading", "Photo or PDF → line items + checks"],
+    ["done", "Employee phone app", "Upload, see own receipts only"],
+    ["done", "Office review", "Edit, markup, approve, job totals"],
+    ["done", "Install package & guide", "Copy-paste setup for Google Workspace"],
+    ["todo", "Your keys", "Anthropic API key, QuickBooks"],
+  ];
+  var steps = document.getElementById("steps");
+  BUILD.forEach(function (s) {
+    var d = document.createElement("div");
+    d.className = "step " + s[0];
+    d.innerHTML = '<span class="dot">' + (s[0] === "done" ? "✓" : s[0] === "now" ? "●" : "○") + "</span><span><b>" + escapeHtml(s[1]) + "</b>" + escapeHtml(s[2]) + "</span>";
+    steps.appendChild(d);
+  });
+
+  // A photographed receipt for the phone screen, drawn on a canvas.
+  function receiptPhoto() {
+    var c = document.createElement("canvas"); c.width = 300; c.height = 380;
+    var g = c.getContext("2d");
+    g.fillStyle = "#5b5f63"; g.fillRect(0, 0, 300, 380);
+    g.save(); g.translate(150, 190); g.rotate(-0.04);
+    g.fillStyle = "#fbfaf6"; g.fillRect(-110, -170, 220, 340);
+    g.fillStyle = "#2b2b2b"; g.font = "bold 13px monospace"; g.textAlign = "center";
+    g.fillText("THE HOME DEPOT", 0, -145);
+    g.font = "10px monospace"; g.fillText("09/28/26  4410 00012 58833", 0, -128);
+    g.textAlign = "left";
+    [["HARDIE 5/4X4 TRIM 12'", "167.94"], ["  6 @ 27.99", ""], ["OSI QUAD MAX WHT", "79.84"], ["  8 @ 9.98", ""], ["Z-FLASHING 10FT GALV", "44.90"], ["  5 @ 8.98", ""]]
+      .forEach(function (l, i) { g.fillText(l[0], -98, -100 + i * 17); g.textAlign = "right"; g.fillText(l[1], 98, -100 + i * 17); g.textAlign = "left"; });
+    g.fillText("SUBTOTAL", -98, 20); g.textAlign = "right"; g.fillText("292.68", 98, 20); g.textAlign = "left";
+    g.fillText("SALES TAX", -98, 37); g.textAlign = "right"; g.fillText("20.49", 98, 37); g.textAlign = "left";
+    g.font = "bold 11px monospace"; g.fillText("TOTAL", -98, 58); g.textAlign = "right"; g.fillText("$313.17", 98, 58);
+    g.restore();
+    return c.toDataURL("image/jpeg", 0.85);
+  }
+
+  var office = createMockApi({ delay: 0 });
+  var employee = createMockApi({ admin: false, user: "jake@samplecontracting.com", delay: 0 });
+  var harvest = SAMPLE_JOBS.indexOf("8821 Harvest Ln Lot 12, Prairie Creek");
+
+  JobReceiptsApp.mount(document.getElementById("f-employee"), {
+    api: employee, readOnly: true, view: "new",
+    preset: { jobId: "job" + harvest, file: { previewUrl: receiptPhoto(), fileName: "receipt.jpg" }, suggestedAction: "invoice", note: "Trim + flashing for garage side" },
+  });
+  JobReceiptsApp.mount(document.getElementById("f-review"), { api: office, readOnly: true, view: "review", selectedId: "r1" });
+  JobReceiptsApp.mount(document.getElementById("f-jobs"), { api: createMockApi({ delay: 0 }), readOnly: true, view: "jobs" });
+  JobReceiptsApp.mount(document.getElementById("f-settings"), { api: createMockApi({ delay: 0 }), readOnly: true, view: "settings" });
+})();
+</script>

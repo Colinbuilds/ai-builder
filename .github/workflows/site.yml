@@ -3,9 +3,9 @@ name: Site checks
 on:
   push:
     branches: [main]
-    paths: ["site/**", "niches/**", "sitemap.xml"]
+    paths: ["site/**", "niches/**"]
   pull_request:
-    paths: ["site/**", "niches/**", "sitemap.xml"]
+    paths: ["site/**", "niches/**"]
 
 jobs:
   test:
