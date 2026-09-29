@@ -227,6 +227,56 @@ Goal: one place per job for all internal talk, so the team stops running job det
   - Summaries are saved (JobSummary) so the team sees the same catch-up, with the time range it covers.
 - **AI assistant tool:** add `get_job_communications(since?)` so the estimator assistant can read the chat and email history for the job.
 
+#### 12. Job costing and profit analysis
+Goal: know what every job actually made, while it's running and after it closes, and where the money went.
+- **Revenue per job:** the contract amount (from the accepted estimate or entered by hand), plus approved change orders and supplements, minus credits. Every figure keeps its source.
+- **Estimated cost:** comes from the accepted estimate revision (materials, general conditions, labor) and is frozen when the job is sold, so it stays the baseline to compare against.
+- **Actual cost**, logged against the job by category (materials, labor, subcontractors, equipment/rentals, dumpster/disposal, permits, other):
+  - Material costs come from supplier invoices, delivery tickets, and returns/credits, by hand entry or CSV import of ABC invoices. Each line links to the order it came from once ordering exists (§13).
+  - Labor comes from crew hours × rate × burden (the labor standards and rates from §6, or timesheets from §13), or from crew/sub pay entered per job.
+  - Sub bills are entered against the sub's accepted proposal.
+  - Every cost line has a date, vendor, reference #, who entered it, and an attachment (receipt or invoice photo).
+- **Per-job P&L:**
+  - Figures: contract, estimated cost, actual cost, gross profit, gross margin %, and estimated vs. actual variance by category.
+  - Flag categories over estimate by more than a company-set threshold.
+  - Show committed-but-not-yet-billed costs (open orders, accepted sub proposals) so margin is projected, not just to-date.
+- **Overhead and commissions:**
+  - Company overhead % and commission plans (on revenue or on gross profit, per salesperson) come from company settings the Admin enters.
+  - The company settings start EMPTY. Until they are set, net profit and commission show MISSING. Never assume a rate.
+- **Across jobs:**
+  - Profit reports filtered by date range, job type (steep, low-slope, siding, panels), public vs. private, salesperson, estimator, and GC/client.
+  - Reports show margin %, $/SQ and $/SF sold vs. cost, and estimate accuracy (actual ÷ estimated by category) so bids can be tuned.
+  - Public bid tabs (§10) feed the same reports.
+- **Permissions:** Viewers don't see cost or margin. Estimators see their own jobs. Admins see everything.
+- **Close-out:** a job closes only when every bill is entered, or marked none-expected, and the final P&L is locked. After that, edits need an Admin and are audit-logged.
+
+#### 13. Operations: replacing AccuLynx
+Goal: BTR runs every job in this app instead of AccuLynx. The modules below are my understanding of AccuLynx's main tools. **Confirm which ones the team actually uses** and cut or add before each is built.
+- **Customers and leads (CRM):** contacts and companies (homeowners, GCs, property managers, owners), lead source, and a sales pipeline with follow-up reminders. Duplicate detection on phone/email/address.
+- **Job workflow:** Lead → Estimating → Submitted → Sold → Scheduled → In production → Complete → Invoiced → Paid → Closed. Required checklists per stage (e.g., Form 17 executed before materials on tax-exempt jobs, signed contract before scheduling), and an activity timeline per job.
+- **Proposals and contracts:** the estimate becomes a customer-facing proposal (We Will / We Will Not scope, options, terms) with e-signature. An accepted proposal sets the contract amount and the job-costing baseline.
+- **Material orders and deliveries:**
+  - Build an order from the estimate's material lines (same item numbers) and send it to ABC Supply Branch #112 by email/PDF first, then by ABC's ordering API if BTR gets access.
+  - Track delivery date, drop location, delivery tickets, backorders, and returns. Received quantities and invoices flow into job costing.
+- **Production scheduling:** a calendar of installs, deliveries, inspections, and dumpster swaps; crew and sub assignment; weather notes; conflict warnings (the same crew double-booked).
+- **Crews, subs, and work orders:**
+  - Crew and subcontractor records (insurance/COI and license expiration dates are tracked with reminders).
+  - Work orders are generated from the job scope and sent to the crew/sub.
+  - Timesheets or piece-rate logging feed labor cost.
+- **Invoicing and payments:**
+  - Deposit, progress, and final invoices; retainage on commercial jobs.
+  - Payment recording by check/ACH/card (card payments through a processor such as Stripe, showing the 3% card surcharge rule only where permitted).
+  - AR aging, and a QuickBooks Online sync for invoices, payments, and job costs.
+- **Change orders and supplements:** priced from the price library with the same rules as estimates, customer-approved by e-signature, then added to the contract amount and job costing.
+- **Photos:** CompanyCam stays the photo tool. Link each job to its CompanyCam project and show its photos here (CompanyCam API).
+- **Measurements:** order EagleView reports from the job and attach them automatically when ready (EagleView API, if BTR's account allows), feeding §3 extraction.
+- **Tasks and reminders:** assigned tasks with due dates per job and a "my day" list; they are generated automatically by workflow stages.
+- **Reports and dashboards:** pipeline value, close rate, sales by rep, production backlog, AR, and the §12 profit reports.
+- **Customer portal:** homeowners/GCs see their proposal, schedule, invoices, and payments, and can sign and pay online.
+- **Field mobile view:** the same app, laid out for phones. Crews see today's jobs, work orders, and addresses, and can clock hours and upload delivery tickets.
+- **Migration off AccuLynx:** import existing contacts, open jobs, and history from AccuLynx exports (CSV). Keep the AccuLynx copy output (§9) until the cutover date.
+- **Integrations that need BTR's accounts or approval** (ABC ordering API, EagleView, CompanyCam, QuickBooks, payment processor, e-signature): each is built behind a setting and works without the integration (manual entry/upload) until credentials are added.
+
 ---
 
 ### Acceptance tests (must pass — use real data from `/data`)
@@ -246,21 +296,27 @@ Goal: one place per job for all internal talk, so the team stops running job det
 ---
 
 ### Build order — stop after each phase, run it, show me, and wait for my go-ahead
-1. Scaffold, auth, Prisma schema, seed from `/data`, price library browse/search
-2. Price sheet upload/parse (including the ZIP case), review/diff, date status
-3. Projects, intake checklist, readiness engine, Form 17 logic
-4. Job communication: per-job chat, email capture, per-email summaries, "Catch me up"
+1. Scaffold, auth, Prisma schema, seed from `/data`, price library browse/search ✅
+2. Price sheet upload/parse (including the ZIP case), review/diff, date status ✅
+3. Customers/contacts + projects with the full job workflow stages, intake checklist, readiness engine, Form 17 logic
+4. Job communication: per-job chat, email capture (forwarding address + Gmail/M365 pull), per-email summaries, "Catch me up"
 5. Document upload + Claude extraction + confirmation queue
 6. Calc engine + unit tests (acceptance tests 2–9)
 7. Estimate builder UI, waste gate, substitutions, revisions
 8. Labor + labor standards library
 9. Rules engine
 10. AI assistant with tools + server-side validation
-11. Outputs: AccuLynx copy, CSV, BTR PDF, internal takeoff PDF
-12. Calibration / bid tabs
-13. Playwright end-to-end: create project → upload a sample EagleView-style PDF → confirm measurements → build a shingle estimate → export PDF
+11. Outputs: AccuLynx copy, CSV, BTR PDF, internal takeoff PDF, customer proposal with e-signature
+12. Job costing and profit analysis (§12), including actual-cost entry, ABC invoice CSV import, per-job P&L, and cross-job reports with calibration/bid tabs
+13. Material orders and deliveries (§13)
+14. Production scheduling, crews/subs, work orders, timesheets
+15. Invoicing, payments, change orders/supplements, QuickBooks sync
+16. Tasks/reminders, dashboards and reports, commissions
+17. CompanyCam and EagleView links, customer portal, field mobile view
+18. AccuLynx data migration and cutover
+19. Playwright end-to-end: create project → upload a sample EagleView-style PDF → confirm measurements → build a shingle estimate → export PDF → record costs → see job P&L
 
 **Ground rules:**
 - Ask me one question at a time when something is unclear.
 - Don't fabricate sample prices; test data must come from `/data` or be clearly labeled `TEST_ONLY`.
-- Don't add features outside roofing, decking, siding, and envelope scope.
+- Don't add features outside roofing, decking, siding, and envelope estimating, or BTR's job operations (§11–13).

@@ -8,9 +8,12 @@ Roofing and exterior estimating app for BTR Contracting (Omaha, NE). The full sp
 |---|---|---|
 | 1 | Scaffold, auth (Admin / Estimator / Viewer), Prisma schema, seed from `/data`, price library browse/search | **Done** |
 | 2 | Price sheet upload/parse (ZIP case), review/diff, date status, coverage parsing | **Done** |
-| 3 | Projects, intake checklist, readiness, Form 17 | Next |
+| 3 | Customers + projects with job workflow stages, intake checklist, readiness, Form 17 | Next |
 | 4 | Job communication: per-job chat, forwarding address + Gmail/M365 pull, email summaries, "Catch me up" | |
-| 5–13 | Documents/extraction, calc engine, estimate builder, labor, rules, AI assistant, outputs, calibration, E2E | |
+| 5–11 | Documents/extraction, calc engine, estimate builder, labor, rules, AI assistant, outputs + proposals | |
+| 12 | Job costing and profit analysis | |
+| 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
+| 19 | End-to-end test | |
 
 The full schema, including the job chat/email models, is already in `prisma/schema.prisma`. Later phases add features without reshaping the data model.
 
