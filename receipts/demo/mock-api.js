@@ -26,6 +26,10 @@ function createMockApi(opts) {
   }
 
   var receipts = SAMPLE_RECEIPTS.map(build);
+  var people = [{ name: "Office", admin: true }, { name: "Jake Brenner", admin: false }, { name: "Luis Ortega", admin: false }];
+  function peopleList() {
+    return people.map(function (p, i) { return { name: p.name, admin: p.admin, link: "https://script.google.com/macros/s/SAMPLE/exec?k=sample" + i }; });
+  }
   // An already-approved receipt so job totals and history have something in them.
   var old = build(SAMPLE_RECEIPTS[1], -20);
   old.id = "r0"; old.createdAt = "2026-09-24T15:10:00.000Z"; old.status = "approved"; old.action = "invoice";
@@ -84,7 +88,18 @@ function createMockApi(opts) {
     apiRetry: function (id) { return find(id); },
     apiSettings: function () {
       return { quickbooks: { connected: false, authUrl: "#connect" }, ai: true,
-        admins: ["office@samplecontracting.com"], defaultMarkup: DEFAULT_MARKUP_PERCENT, changeOrderTemplate: true };
+        admins: ["office@samplecontracting.com"], defaultMarkup: DEFAULT_MARKUP_PERCENT, changeOrderTemplate: true, people: peopleList() };
+    },
+    apiAddPerson: function (name, isAdmin) {
+      name = String(name || "").trim();
+      if (!name) throw new Error("Type the person's name.");
+      if (people.some(function (p) { return p.name.toLowerCase() === name.toLowerCase(); })) throw new Error(name + " already has a link.");
+      people.push({ name: name, admin: !!isAdmin });
+      return peopleList();
+    },
+    apiRemovePerson: function (name) {
+      people = people.filter(function (p) { return p.name !== name; });
+      return peopleList();
     },
   };
 

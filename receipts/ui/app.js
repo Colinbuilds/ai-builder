@@ -231,6 +231,7 @@
       (S.boot.jobs || []).forEach(function (j) {
         h += '<option value="' + esc(j.id) + '"' + (d.jobId === j.id ? " selected" : "") + ">" + (suggested[j.id] && d.jobId !== j.id ? "★ " : "") + esc(j.name) + "</option>";
       });
+      if (d.jobId && !job(d.jobId)) h = h.replace('<option value="">Pick a job…</option>', '<option value="">Pick a job…</option><option value="' + esc(d.jobId) + '" selected>New job: ' + esc(r.jobName || String(d.jobId).replace(/^new:/, "")) + "</option>");
       h += "</select></label>";
       if (r.match && r.match.aiSuggestion) h += '<p class="jr-hint">AI suggestion: ' + esc(r.match.aiSuggestion) + "</p>";
       h += '<div class="jr-row"><label class="jr-field" for="d-markup"><span>Markup %</span><input type="number" id="d-markup" min="0" max="500" step="0.5" value="' + esc(d.markup) + '" ' + (approved ? "disabled" : "") + "></label>" +
@@ -332,7 +333,21 @@
       h += '<div class="jr-qline"><span>AI receipt reading<small>' + (s.ai ? "On" : "Add your Anthropic API key in Script properties") + "</small></span>" + (s.ai ? '<span class="jr-pill approved">On</span>' : '<span class="jr-pill review">Off</span>') + "</div>";
       h += '<div class="jr-qline"><span>Change order template<small>' + (s.changeOrderTemplate ? "Using your Google Doc template" : "Using the built-in layout") + "</small></span></div>";
       h += '<p class="jr-hint">' + (s.hint ? esc(s.hint) : "Default markup: " + esc(s.defaultMarkup) + "% · Admins: " + esc(s.admins.join(", ") || "only the person who installed the app") + ". Change these in Script properties.") + "</p></section>";
-      return h;
+      var people = "";
+      if (s.people) {
+        people += '<section class="jr-card" aria-labelledby="people-h" style="margin-top:16px"><h2 id="people-h">People</h2>' +
+          '<p class="jr-hint">Each person opens JobReceipts with their own private link. No password or sign-in: text them the link and they tap Add receipt. Office links see every receipt and the money.</p>';
+        people += '<div class="jr-list">' + s.people.map(function (p, i) {
+          return '<div class="jr-item" style="flex-wrap:wrap"><div style="min-width:0;flex:1 1 220px"><div class="t">' + esc(p.name) + (p.admin ? ' <span class="jr-role">Office</span>' : "") +
+            '</div><input type="text" readonly id="link-' + i + '" value="' + esc(p.link) + '" aria-label="' + esc(p.name) + ' link" style="width:100%;margin-top:6px"></div>' +
+            '<div class="r" style="flex-direction:row;gap:8px"><button type="button" class="jr-btn secondary" data-act="copy-link" data-i="' + i + '">Copy link</button>' +
+            '<button type="button" class="jr-btn secondary" data-act="remove-person" data-name="' + esc(p.name) + '">Turn off</button></div></div>';
+        }).join("") + "</div>";
+        people += '<div class="jr-row" style="margin-top:12px;align-items:flex-end"><label class="jr-field" for="person-name" style="flex:2 1 200px"><span>Name</span><input type="text" id="person-name" placeholder="e.g. Jake Brenner"></label>' +
+          '<label class="jr-opt" style="flex:0 0 auto"><input type="checkbox" id="person-admin"> Office (sees everything)</label>' +
+          '<button type="button" class="jr-btn" data-act="add-person" style="flex:0 0 auto">Make link</button></div></section>';
+      }
+      return h + people;
     }
 
     // ---------------------------------------------------------------- events
@@ -363,6 +378,20 @@
       else if (act === "send") send();
       else if (act === "approve") approve(t.dataset.id);
       else if (act === "retry") retry(t.dataset.id);
+      else if (act === "add-person") {
+        var nm = el.querySelector("#person-name").value, ad = el.querySelector("#person-admin").checked;
+        api.call("apiAddPerson", nm, ad).then(function (people) { S.settings.people = people; renderView(); toast("Link made for " + nm.trim() + ". Copy it and text it to them."); }, function (err) { toast(err.message); });
+      }
+      else if (act === "remove-person") {
+        if (t.dataset.confirm !== "1") { t.dataset.confirm = "1"; t.textContent = "Tap again to turn off"; return; }
+        api.call("apiRemovePerson", t.dataset.name).then(function (people) { S.settings.people = people; renderView(); toast("Link turned off. Their receipts stay."); }, function (err) { toast(err.message); });
+      }
+      else if (act === "copy-link") {
+        var box = el.querySelector("#link-" + t.dataset.i);
+        var done = function () { toast("Link copied."); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(box.value).then(done, function () { box.select(); toast("Press copy to copy the selected link."); });
+        else { box.select(); toast("Press copy to copy the selected link."); }
+      }
       else if (act === "download-doc") api.call("apiDownloadDoc", t.dataset.id).then(function (m) { if (m) toast(m); }, function (err) { toast(err.message); });
     });
 
@@ -452,13 +481,14 @@
   }
 
   /** google.script.run as promises: api.call("apiUpload", arg) */
-  function appsScriptApi() {
+  /** Apps Script back end. key: the person's private link key (?k=...), sent with every call. */
+  function appsScriptApi(key) {
     return {
       call: function (name) {
         var args = Array.prototype.slice.call(arguments, 1);
         return new Promise(function (resolve, reject) {
-          var runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e instanceof Error ? e : new Error(String(e && e.message || e))); });
-          runner[name].apply(runner, args);
+          google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e instanceof Error ? e : new Error(String(e && e.message || e))); })
+            .api(key || "", name, args);
         });
       },
     };
