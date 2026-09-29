@@ -12,7 +12,8 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 4 | Job communication: per-job chat, forwarding address + Gmail/M365 pull, email summaries, "Catch me up" | **Done** |
 | 5 | Documents, EagleView/plan extraction, confirmation queue, Google Drive import, Integrations page | **Done** |
 | 6 | Calc engine: steep, low-slope, deck, siding, pricing & totals (pure TypeScript, unit-tested) | **Done** |
-| 7–11 | Estimate builder, labor, rules, AI assistant, outputs + proposals | Next |
+| 7–9 | Estimate builder, labor + standards library, rules engine | **Done** |
+| 10–11 | AI estimator assistant, outputs + proposals | Next |
 | 12 | Job costing and profit analysis | |
 | 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
 | 19 | End-to-end test | |
@@ -94,6 +95,18 @@ Each job has tabs: Overview, Team chat, Email, Documents, Estimates.
 - **SID-01:** on siding jobs the tab shows the siding area used (the EagleView Siding category only) and the masonry area/corners excluded from siding math.
 - **Storage:** `STORAGE_DRIVER=local` for development. Use `s3` in production (AWS S3, Cloudflare R2, or Backblaze B2 via `S3_ENDPOINT`).
 - **Settings → Integrations** (Admin): status, needed keys, and fallback for Claude, job email, Gmail/M365, Google Drive, QuickBooks Online, Procore, Buildertrend, EagleView, ABC Supply, CompanyCam, and file storage. Connections use OAuth, with tokens encrypted at rest.
+
+## Estimating (Phases 6–9)
+
+- **Calc engine** (`src/lib/calc`) is pure TypeScript with unit tests; the AI never does arithmetic. Every line stores a readable formula (e.g. `ceil(32.4 SQ × 1.05 × 3 BD/SQ) = 103 BD`) and its inputs. Any missing measurement, coverage, or product leaves the line MISSING.
+- **Takeoff** per module (steep, low-slope, deck, siding): pick products from the live sheets, and coverage fills in only from explicit description patterns in the right unit (otherwise you enter it). Fastening patterns, I&W rows, flashing allowances, and exposures are always entered from the spec or manufacturer data. Measurements come only from confirmed/entered values.
+- **Company rules** are built into the math: nails at 1 BX/15 SQ, cap nails always, ridge vent always, starter on eaves + rakes, H&R at 25 LF/BD, EPDM cover board, pre-securement on pre-secured EPDM, SID-01 siding area, 8.25" HardiePlank default, and the cheapest wrap on the sheet. The rules panel shows pass/fail with a one-click fix; Admins edit rules under **Rules** (logged).
+- **Units:** when the takeoff unit differs from how the sheet sells an item, only the item's printed relationship is used (e.g. 103 BD ÷ 3 BD/SQ = 34.33 SQ, "Order 103 BD"). Any other mismatch stays unpriced.
+- **Waste gate:** residential roofing/siding default 5% (pre-approved); anything else shows the reference range and needs approval. Residential waste other than 5% needs an Admin.
+- **Lines:** `Item | Supplier Material # | Quantity | Unit | Unit Cost | Total | Source/Status`, with green/amber/red/blue status. Unknown item numbers are MISSING_ITEM. General conditions and non-sheet items need a price source. Placeholders are labeled NOT FOR FINAL BID. **Substitute (requires approval)** and quantity overrides need a reason and are logged.
+- **Revisions:** "Create next revision" copies and locks the previous one. Compare shows quantity/price/total changes.
+- **Labor:** hours = qty ÷ production rate; cost = hours × $/hr × (1 + burden). Rates come from the **Labor standards** library (starts empty), a stated source, or an approved placeholder.
+- **Totals:** materials, general conditions, labor, contingency, and grand total. Lines without a number are excluded, and the estimate is flagged INCOMPLETE.
 
 ## Environment variables
 

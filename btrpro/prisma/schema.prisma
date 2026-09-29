@@ -450,6 +450,8 @@ model Estimate {
   createdById       String?
   createdBy         User?     @relation(fields: [createdById], references: [id])
   locked            Boolean   @default(false)
+  revision          Int       @default(1)
+  takeoff           Json?
   createdAt         DateTime  @default(now())
 
   lines      EstimateLine[]
@@ -477,6 +479,11 @@ model EstimateLine {
   ruleId             String?
   substitution       Boolean      @default(false)
   sortOrder          Int          @default(0)
+  // "steep:shingles" etc. for takeoff-generated lines; null for lines added by hand
+  calcKey            String?
+  note               String?
+  substitutionNote   String?
+  createdAt          DateTime     @default(now())
 }
 
 model LaborLine {
@@ -492,6 +499,12 @@ model LaborLine {
   burdenPct      Float?
   total          Float?
   sourceStatus   SourceStatus @default(MISSING)
+  quantity       Float?
+  quantityUnit   String?
+  quantitySource String?
+  standardId     String?
+  note           String?
+  sortOrder      Int          @default(0)
 }
 
 // Company library — starts EMPTY. Never seeded with invented rates.

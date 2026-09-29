@@ -36,6 +36,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/library/sheets" className="text-muted-foreground hover:text-foreground">
                 Sheets
               </Link>
+              {user.role !== "VIEWER" && (
+                <Link href="/settings/labor" className="text-muted-foreground hover:text-foreground">
+                  Labor
+                </Link>
+              )}
+              <Link href="/settings/rules" className="text-muted-foreground hover:text-foreground">
+                Rules
+              </Link>
               {user.role === "ADMIN" && (
                 <>
                   <Link href="/admin/users" className="text-muted-foreground hover:text-foreground">

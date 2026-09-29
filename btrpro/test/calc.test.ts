@@ -6,7 +6,7 @@ import { steepTakeoff, type SteepInput } from "@/lib/calc/steep";
 import { lowSlopeTakeoff, type LowSlopeInput } from "@/lib/calc/lowslope";
 import { deckTakeoff } from "@/lib/calc/deck";
 import { cheapestHouseWrap, sidingAreaUsed, sidingTakeoff } from "@/lib/calc/siding";
-import { estimateTotals, priceStatusFor } from "@/lib/calc/pricing";
+import { estimateTotals, priceStatusFor, toSheetUnit } from "@/lib/calc/pricing";
 import { parseCoverage } from "@/lib/sheets/coverage";
 
 type Raw = { item_number: string; description: string; unit_price: number | null; uom: string; sheet_code: string; price_status: string };
@@ -209,5 +209,15 @@ describe("pricing and totals — acceptance test 9", () => {
   it("totals are complete only when every line and labor has a number", () => {
     const t = estimateTotals([{ section: "MATERIAL_ROOFING", total: 100, sourceStatus: "VERIFIED" }], [{ total: 50, sourceStatus: "VERIFIED" }], 5);
     expect(t).toMatchObject({ subtotal: 150, contingency: 7.5, grandTotal: 157.5, incomplete: false });
+  });
+});
+
+describe("unit conversion to the sheet's UOM", () => {
+  it("converts bundles to squares only with the item's printed coverage, and never silently otherwise", () => {
+    expect(toSheetUnit(103, "BD", { uom: "SQ", coverageQty: 3, coverageUnit: "BD/SQ" })).toMatchObject({ quantity: 34.3333, ok: true, note: "Order 103 BD." });
+    expect(toSheetUnit(5, "BD", { uom: "BD", coverageQty: 70, coverageUnit: "LF/BD" })).toMatchObject({ quantity: 5, ok: true });
+    const bad = toSheetUnit(12, "PC", { uom: "BD", coverageQty: null, coverageUnit: null });
+    expect(bad.ok).toBe(false);
+    expect(bad.note).toMatch(/Not priced/);
   });
 });

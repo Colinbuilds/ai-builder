@@ -60,3 +60,31 @@ export function estimateTotals(
   const contingency = contingencyPct ? round((subtotal * contingencyPct) / 100, 2) : 0;
   return { materials, generalConditions, labor: laborTotal, subtotal, contingency, grandTotal: round(subtotal + contingency, 2), incomplete };
 }
+
+/**
+ * Puts a takeoff quantity into the unit the sheet sells by. Only the explicit, printed relationship is used
+ * (bundles → squares via the item's own "3/SQ" coverage); anything else is a mismatch and stays unpriced
+ * rather than being converted silently (CLAUDE.md §5).
+ */
+export function toSheetUnit(
+  qty: number | null,
+  takeoffUnit: string | null,
+  item: { uom: string; coverageQty: number | null; coverageUnit: string | null },
+): { quantity: number | null; ok: boolean; formula: string | null; note: string | null } {
+  if (qty == null || !takeoffUnit || takeoffUnit === item.uom) return { quantity: qty, ok: true, formula: null, note: null };
+  if (takeoffUnit === "BD" && item.uom === "SQ" && item.coverageUnit === "BD/SQ" && item.coverageQty) {
+    const sq = qty / item.coverageQty;
+    return {
+      quantity: Math.round(sq * 10000) / 10000,
+      ok: true,
+      formula: `${qty} BD ÷ ${item.coverageQty} BD/SQ = ${Math.round(sq * 1000) / 1000} SQ (sheet sells by SQ)`,
+      note: `Order ${qty} BD.`,
+    };
+  }
+  return {
+    quantity: qty,
+    ok: false,
+    formula: null,
+    note: `Unit mismatch: takeoff counts ${takeoffUnit}, the sheet sells by ${item.uom}. Not priced — confirm the conversion with the supplier.`,
+  };
+}
