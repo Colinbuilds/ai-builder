@@ -1,6 +1,6 @@
 # BTRpro
 
-Roofing and exterior estimating app for BTR Contracting (Omaha, NE). The full spec is in [`BUILD_PROMPT.md`](BUILD_PROMPT.md). The estimator rules, which also become the AI system prompt, are in [`CLAUDE.md`](CLAUDE.md). The source-of-truth price data is in [`data/`](data/).
+The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, estimating, job communication, documents, and (as the phases land) ordering, scheduling, invoicing, and job costing, on both the residential and commercial sides. The full spec is in [`BUILD_PROMPT.md`](BUILD_PROMPT.md). The estimator rules, which also become the AI system prompt, are in [`CLAUDE.md`](CLAUDE.md). The source-of-truth price data is in [`data/`](data/).
 
 ## Status
 
@@ -10,7 +10,8 @@ Roofing and exterior estimating app for BTR Contracting (Omaha, NE). The full sp
 | 2 | Price sheet upload/parse (ZIP case), review/diff, date status, coverage parsing | **Done** |
 | 3 | Customers + projects with job workflow stages, intake checklist, readiness, Form 17 | **Done** |
 | 4 | Job communication: per-job chat, forwarding address + Gmail/M365 pull, email summaries, "Catch me up" | **Done** |
-| 5–11 | Documents/extraction, calc engine, estimate builder, labor, rules, AI assistant, outputs + proposals | |
+| 5 | Documents, EagleView/plan extraction, confirmation queue, Google Drive import, Integrations page | **Done** |
+| 6–11 | Calc engine, estimate builder, labor, rules, AI assistant, outputs + proposals | Next |
 | 12 | Job costing and profit analysis | |
 | 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
 | 19 | End-to-end test | |
@@ -79,6 +80,20 @@ Each job has tabs: Overview, Team chat, Email, Documents, Estimates.
   - **Paste:** copy an email in by hand.
 - **AI summaries:** each email gets a short summary with its asks and every stated figure, labeled "not verified". **Catch me up** writes a brief of the job (since you last looked, or the whole job) from the timeline, chat, email, intake gaps, and readiness blockers, and saves it with the time range it covers. All AI calls use CLAUDE.md as the system prompt, `claude-opus-5-5` (override with `ANTHROPIC_MODEL`), server-side refusal fallback (`fallbacks: "default"`), and treat a refusal as an error instead of saving partial output. Without `ANTHROPIC_API_KEY` the AI buttons are disabled; nothing is faked.
 
+## Documents and measurements (Phase 5)
+
+- **Documents tab:** drag-and-drop upload (50 MB per file), Google Drive import from a file or folder link, and email attachments all land here. Each file gets a first-guess type (EagleView, plans, specs, manufacturer data, sub proposal, change order, photo); change it from the list.
+- **Read with AI:**
+  - EagleView reports → measurements. Plans and specs → roof system, insulation, warranty, edge metal, deck type, Div. 07/08 spec sections, and roof area.
+  - Claude reads the PDF itself. Every value must cite a page in the file and the text it came from; values without one are dropped and reported.
+  - **ROOF-01:** a roof area that came from a floor-plan area schedule is rejected with an explanation and a red banner.
+- **Confirmation queue:** each extracted value sits next to the PDF opened at its source page. Confirm, edit and confirm (the AI's reading is kept for the record), or reject. Only confirmed or hand-entered measurements count.
+  - Confirmed values fill the matching intake fields as Verified, citing file and page (roof area, pitch, penetrations, curbs, skylights, building height, wall heights, roof system, and the rest), and readiness updates.
+  - Hand entries need a source (sheet and page, or who field-measured).
+- **SID-01:** on siding jobs the tab shows the siding area used (the EagleView Siding category only) and the masonry area/corners excluded from siding math.
+- **Storage:** `STORAGE_DRIVER=local` for development. Use `s3` in production (AWS S3, Cloudflare R2, or Backblaze B2 via `S3_ENDPOINT`).
+- **Settings → Integrations** (Admin): status, needed keys, and fallback for Claude, job email, Gmail/M365, Google Drive, QuickBooks Online, Procore, Buildertrend, EagleView, ABC Supply, CompanyCam, and file storage. Connections use OAuth, with tokens encrypted at rest.
+
 ## Environment variables
 
 | Name | Used for |
@@ -87,7 +102,9 @@ Each job has tabs: Overview, Team chat, Email, Documents, Estimates.
 | `AUTH_SECRET` | Signs session cookies. Required. |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | First admin, created by the seed if missing |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | AI features (Phase 4+) |
-| `STORAGE_DRIVER`, `UPLOAD_DIR` | File storage; `local` writes to `./uploads` (S3 arrives in Phase 5) |
+| `STORAGE_DRIVER`, `UPLOAD_DIR`, `S3_*` | File storage: `local` (dev) or `s3` (`S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`) |
+| `QBO_CLIENT_ID/SECRET`, `PROCORE_CLIENT_ID/SECRET` | QuickBooks Online and Procore connections |
+| `EAGLEVIEW_CLIENT_ID/SECRET`, `ABC_CLIENT_ID/SECRET`, `COMPANYCAM_TOKEN` | Set when those vendors grant BTR API access |
 | `INBOUND_EMAIL_DOMAIN`, `INBOUND_EMAIL_WEBHOOK_SECRET` | Job forwarding addresses and the inbound webhook |
 | `APP_URL`, `GOOGLE_CLIENT_ID/SECRET`, `MS_CLIENT_ID/SECRET` | Mailbox connect (OAuth redirect is `APP_URL/api/mail/{google,microsoft}/callback`) |
 

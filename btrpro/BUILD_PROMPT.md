@@ -6,6 +6,8 @@
 
 ## Prompt to paste into Claude Code
 
+> **Scope note (Sept 29, 2026):** BTRpro is the system the whole company runs on, not only an estimating tool. It covers both residential and commercial work, from the first lead through estimating, selling, ordering, building, invoicing, and job costing. The estimating rules below apply to everything priced in it.
+
 Build **BTRpro**, a production web app for BTR Contracting's roofing and exterior estimating team in Omaha, NE.
 
 **Read these files first, in full, before writing any code:**
@@ -319,7 +321,7 @@ Rules for every integration:
 2. Price sheet upload/parse (including the ZIP case), review/diff, date status ✅
 3. Customers/contacts + projects with the full job workflow stages, intake checklist, readiness engine, Form 17 logic ✅
 4. Job communication: per-job chat, email capture (forwarding address + Gmail/M365 pull), per-email summaries, "Catch me up" ✅
-5. Document upload + Claude extraction + confirmation queue, Google Drive import, EagleView upload/API, Integrations settings page
+5. Document upload + Claude extraction + confirmation queue, Google Drive import, EagleView upload/API, Integrations settings page ✅
 6. Calc engine + unit tests (acceptance tests 2–9)
 7. Estimate builder UI, waste gate, substitutions, revisions
 8. Labor + labor standards library

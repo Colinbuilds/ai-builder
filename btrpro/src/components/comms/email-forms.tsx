@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/input";
 import { Problems } from "@/components/projects/problems";
 
 export function PasteEmail({ projectId }: { projectId: string }) {
-  const [state, action, pending] = useFormAction(pasteEmailAction, null);
+  const [state, action, pending] = useFormAction(pasteEmailAction, null, { resetOnOk: true });
   return (
     <form onSubmit={action} className="flex flex-col gap-2">
       <input type="hidden" name="projectId" value={projectId} />

@@ -1,6 +1,6 @@
 // Job email: parse inbound webhooks, attach messages to jobs, de-duplicate, keep attachments.
 import { prisma } from "@/lib/db";
-import { saveUpload } from "@/lib/storage";
+import { addDocument } from "@/lib/docs/documents";
 
 export type EmailAttachment = { name: string; contentType: string; bytes: Uint8Array };
 export type NormalizedEmail = {
@@ -126,10 +126,8 @@ export async function ingestEmail(
   });
   for (const a of e.attachments) {
     if (!a.bytes.length || a.bytes.length > MAX_ATTACHMENT) continue;
-    const fileUrl = await saveUpload(a.bytes, a.name, `projects/${projectId}/email`);
-    await prisma.document.create({
-      data: { projectId, type: "OTHER", fileName: a.name, fileUrl, jobEmailId: email.id },
-    });
+    const { doc } = await addDocument({ projectId, bytes: a.bytes, fileName: a.name, contentType: a.contentType, source: "EMAIL", userId: addedById });
+    await prisma.document.update({ where: { id: doc.id }, data: { jobEmailId: email.id } });
   }
   await prisma.projectActivity.create({
     data: {

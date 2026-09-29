@@ -37,9 +37,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 Sheets
               </Link>
               {user.role === "ADMIN" && (
-                <Link href="/admin/users" className="text-muted-foreground hover:text-foreground">
-                  Users
-                </Link>
+                <>
+                  <Link href="/admin/users" className="text-muted-foreground hover:text-foreground">
+                    Users
+                  </Link>
+                  <Link href="/settings/integrations" className="text-muted-foreground hover:text-foreground">
+                    Integrations
+                  </Link>
+                </>
               )}
               <span className="ml-auto">
                 <MarketSwitch view={view} />
