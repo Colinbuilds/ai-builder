@@ -3,9 +3,9 @@ name: JobReceipts checks
 on:
   push:
     branches: [main]
-    paths: ["receipts/**"]
+    paths: ["receipts/**", "try/**"]
   pull_request:
-    paths: ["receipts/**"]
+    paths: ["receipts/**", "try/**"]
 
 jobs:
   test:

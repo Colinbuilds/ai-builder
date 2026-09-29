@@ -2,13 +2,361 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Business Toolkit</title>
-<meta http-equiv="refresh" content="0; url=site/">
-<link rel="canonical" href="site/">
-<script>location.replace("site/" + location.search + location.hash);</script>
-<style>body{margin:0;font:16px system-ui,sans-serif;background:#fff;color:#111827;display:grid;place-items:center;min-height:100vh}
-@media (prefers-color-scheme:dark){body{background:#0b0d14;color:#f3f4f6}}a{color:#6366f1}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JobReceipts</title>
+<meta name="description" content="Your crew photographs supply receipts at the counter. JobReceipts reads every line, files it to the right job folder in Google Drive, adds your markup and turns it into a change order or invoice, with QuickBooks Online updated.">
+<link rel="canonical" href="https://colinbuilds.github.io/ai-builder/">
+<meta property="og:title" content="JobReceipts">
+<meta property="og:description" content="Snap the supply receipt. Bill the job. Change orders and invoices from material receipts, inside your Google Workspace and QuickBooks Online.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://colinbuilds.github.io/ai-builder/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d5fb8'/%3E%3Cpath d='M10 7h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5z' fill='%23fbfaf6'/%3E%3Cpath d='M13 12h6M13 15.5h6M13 19h4' stroke='%231d5fb8' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: one centered column; the hero pairs the pitch with a receipt turning into a change order. */
+  :root {
+    --bg: #f3f5f7; --panel: #ffffff; --ink: #16202b; --muted: #5d6b7a; --line: #dde3ea;
+    --accent: #1d5fb8; --accent-ink: #ffffff; --accent-soft: #e6eefa; --paper: #fbfaf6; --paper-ink: #2a2a26;
+    --good: #1f7a45; --good-soft: #e3f3e9; --warn-soft: #fdf1dc; --warn: #9a5b00;
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e141b; --panel: #151e28; --ink: #e7edf3; --muted: #9aa8b6; --line: #253241;
+      --accent: #6fa3ec; --accent-ink: #0e141b; --accent-soft: #19283c; --paper: #efece4; --paper-ink: #2a2a26;
+      --good: #5ccc8a; --good-soft: #14301f; --warn-soft: #33260f; --warn: #f0b457;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e141b; --panel: #151e28; --ink: #e7edf3; --muted: #9aa8b6; --line: #253241;
+    --accent: #6fa3ec; --accent-ink: #0e141b; --accent-soft: #19283c; --paper: #efece4; --paper-ink: #2a2a26;
+    --good: #5ccc8a; --good-soft: #14301f; --warn-soft: #33260f; --warn: #f0b457;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.55; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.1; letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+  h2 { font-size: clamp(26px, 4vw, 36px); }
+  h3 { font-size: 19px; letter-spacing: 0; }
+  p { margin: 0; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .lede { color: var(--muted); max-width: 62ch; }
+
+  header.top { border-bottom: 1px solid var(--line); background: var(--panel); }
+  header.top .wrap { display: flex; align-items: center; gap: 16px; padding-block: 14px; }
+  .logo { font-family: var(--display); font-weight: 800; font-size: 20px; color: var(--ink); text-decoration: none; }
+  .logo span { color: var(--accent); }
+  header.top nav { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; font-size: 15px; }
+  header.top nav a { color: var(--ink); text-decoration: none; }
+  header.top nav a:hover { color: var(--accent); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 20px; border-radius: 10px; font: 600 16px var(--body);
+    text-decoration: none; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* Hero */
+  .hero .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 48px; align-items: center; padding-block: 56px 64px; }
+  .hero h1 { font-size: clamp(38px, 6.2vw, 64px); font-weight: 800; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero .pitch { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .fits { font-size: 14px; color: var(--muted); }
+
+  .art { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; min-width: 0; }
+  .receipt { grid-column: 1; grid-row: 1; background: var(--paper); color: var(--paper-ink); font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+    padding: 18px 16px 26px; transform: rotate(-2.5deg); box-shadow: 0 10px 30px rgba(10, 20, 30, .18); position: relative; z-index: 1; margin-top: 18px;
+    -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 8px) no-repeat, conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) bottom / 12px 8px repeat-x;
+            mask: linear-gradient(#000 0 0) top / 100% calc(100% - 8px) no-repeat, conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) bottom / 12px 8px repeat-x; }
+  .receipt b { display: block; text-align: center; font-weight: 500; letter-spacing: .12em; }
+  .receipt .c { text-align: center; opacity: .75; margin-bottom: 8px; }
+  .receipt .r { display: flex; justify-content: space-between; gap: 8px; }
+  .receipt .r span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .receipt hr { border: 0; border-top: 1px dashed currentColor; opacity: .45; margin: 8px 0; }
+  .doc { grid-column: 2; grid-row: 1; margin-left: -14px; margin-top: 96px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px;
+    box-shadow: 0 16px 40px rgba(10, 20, 30, .16); position: relative; z-index: 2; font-size: 13.5px; min-width: 0; }
+  .doc .kind { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .doc h3 { font-size: 16px; margin: 4px 0 12px; }
+  .doc table { width: 100%; border-collapse: collapse; }
+  .doc td { padding: 6px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  .doc td.n { text-align: right; padding-left: 10px; white-space: nowrap; }
+  .doc .v { display: block; font-size: 12px; color: var(--muted); }
+  .doc tfoot td { font-weight: 600; border-top: 2px solid var(--ink); }
+  .inside { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; background: var(--good-soft); color: var(--good); border-radius: 8px; padding: 8px 10px; }
+  .inside strong { font-weight: 600; }
+
+  section.band { padding-block: 64px; border-top: 1px solid var(--line); }
+  section.band.alt { background: var(--panel); }
+  .head { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+
+  /* Steps: a real sequence, so numbered */
+  ol.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; counter-reset: s; }
+  ol.steps li { counter-increment: s; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding-top: 16px; border-top: 3px solid var(--accent); }
+  ol.steps li::before { content: "Step " counter(s); font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+  ol.steps p { color: var(--muted); font-size: 16px; }
+
+  /* Pricing table */
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  table.price { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 15px; }
+  table.price th, table.price td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); }
+  table.price th { font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  table.price .n { text-align: right; }
+  table.price .v { display: block; font-size: 13px; color: var(--muted); }
+  table.price tfoot td { font-weight: 600; border-bottom: 0; }
+  table.price td.p { color: var(--good); }
+  .totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+  .total { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--panel); display: flex; flex-direction: column; gap: 2px; }
+  .total span { font-size: 13px; color: var(--muted); }
+  .total strong { font-size: 22px; font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .total.good strong { color: var(--good); }
+  .note { margin-top: 16px; color: var(--muted); max-width: 70ch; }
+
+  .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .who { border: 1px solid var(--line); border-radius: 12px; padding: 22px; background: var(--bg); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .who ul, .real ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .who .tag { align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 999px; padding: 3px 10px; background: var(--accent-soft); color: var(--accent); }
+
+  .real { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 32px; }
+  .real div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .real p { color: var(--muted); font-size: 16px; }
+  .real .flag { font-size: 14px; background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 8px 10px; }
+
+  .stack { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+  .stack div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .stack p { color: var(--muted); font-size: 16px; }
+
+  /* Sign-up */
+  .access { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+  form#waitlist { display: flex; flex-direction: column; gap: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 22px; }
+  form#waitlist label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 15px; }
+  form#waitlist input { font: inherit; font-weight: 400; min-height: 46px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  .msg { border-radius: 8px; padding: 10px 12px; font-size: 15px; }
+  .msg.ok { background: var(--good-soft); color: var(--good); }
+  .msg.err { background: var(--warn-soft); color: var(--warn); }
+
+  footer { border-top: 1px solid var(--line); padding-block: 28px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+  @media (max-width: 900px) {
+    .hero .wrap { grid-template-columns: minmax(0, 1fr); gap: 36px; padding-block: 40px 48px; }
+    ol.steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .real, .stack { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .access { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .wrap { padding-inline: 16px; }
+    header.top nav a.hide-sm { display: none; }
+    .art { grid-template-columns: minmax(0, 1fr); }
+    .receipt { grid-column: 1; grid-row: 1; width: 88%; margin-top: 0; }
+    .doc { grid-column: 1; grid-row: 2; margin: -24px 0 0 8%; }
+    ol.steps, .real, .stack, .two { grid-template-columns: minmax(0, 1fr); }
+    .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    section.band { padding-block: 48px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .doc { animation: settle .6s ease-out both .15s; }
+    @keyframes settle { from { transform: translateY(10px); } to { transform: none; } }
+  }
+</style>
 </head>
-<body><p>Taking you to <a href="site/">AI Business Toolkit</a>…</p></body>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="./">Job<span>Receipts</span></a>
+    <nav aria-label="Main">
+      <a class="hide-sm" href="#how">How it works</a>
+      <a class="hide-sm" href="#numbers">Pricing view</a>
+      <a href="try/">Test drive</a>
+      <a href="#access">Early access</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="pitch">
+        <p class="eyebrow">For contractors on Google Workspace and QuickBooks Online</p>
+        <h1>Snap the supply receipt. <em>Bill the job.</em></h1>
+        <p class="lede">Your crew photographs material receipts at the counter. JobReceipts reads every line, files it to the right job folder in your Drive, adds your markup and turns it into a change order or invoice. QuickBooks Online is updated in the same click.</p>
+        <div class="cta">
+          <a class="btn" href="try/">Try it with sample receipts</a>
+          <a class="btn ghost" href="#access">Get early access</a>
+        </div>
+        <p class="fits">Reads receipts, invoices and delivery tickets from ABC Supply, The Home Depot, Menards, lumber yards and other suppliers.</p>
+      </div>
+
+      <div class="art" role="img" aria-label="An ABC Supply receipt for $1,129.90 becomes Change Order #3 for the Dana Whitfield job, billed at $1,299.39 with $169.49 profit.">
+        <div class="receipt" aria-hidden="true">
+          <b>ABC SUPPLY CO.</b>
+          <div class="c">INV-558201 · 09/29/26<br>PO: WHITFIELD</div>
+          <div class="r"><span>12 BDL TIMBERLINE HDZ</span><span>510.00</span></div>
+          <div class="r"><span>14 SHT 7/16 OSB 4X8</span><span>238.00</span></div>
+          <div class="r"><span>2 RL ICE &amp; WATER 2SQ</span><span>179.98</span></div>
+          <div class="r"><span>2 BX COIL NAILS 1-1/4</span><span>128.00</span></div>
+          <hr>
+          <div class="r"><span>SUBTOTAL</span><span>1,055.98</span></div>
+          <div class="r"><span>TAX</span><span>73.92</span></div>
+          <div class="r"><span>TOTAL</span><span>1,129.90</span></div>
+        </div>
+        <div class="doc" aria-hidden="true">
+          <div class="kind">Customer copy</div>
+          <h3>Change Order #3 - Dana Whitfield - 4410 Maple Ridge Dr Omaha NE</h3>
+          <table>
+            <tbody>
+              <tr><td>GAF Timberline HDZ Shingles<span class="v">ABC Supply Co.</span></td><td class="n num">$627.56</td></tr>
+              <tr><td>7/16" OSB Sheathing 4x8<span class="v">ABC Supply Co.</span></td><td class="n num">$292.86</td></tr>
+              <tr><td>GAF WeatherWatch Ice &amp; Water<span class="v">ABC Supply Co.</span></td><td class="n num">$221.47</td></tr>
+              <tr><td>Coil Roofing Nails 1-1/4"<span class="v">ABC Supply Co.</span></td><td class="n num">$157.50</td></tr>
+            </tbody>
+            <tfoot><tr><td>Net increase</td><td class="n num">$1,299.39</td></tr></tfoot>
+          </table>
+          <div class="inside"><span>Office only:</span><span>cost <strong class="num">$1,129.90</strong></span><span>markup <strong>15%</strong></span><span>profit <strong class="num">$169.49</strong></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt" id="how">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">How it works</p>
+        <h2>From the supply counter to the customer's paperwork</h2>
+      </div>
+      <ol class="steps">
+        <li><h3>Crew sends it from the counter</h3><p>On their phone: pick the job, take a photo of the receipt, tap send. Add a note like "rotted decking, customer approved" if it's extra work.</p></li>
+        <li><h3>AI reads every line</h3><p>Vendor, date, items, quantities, tax and total. It checks the math and matches the job to your Drive folder by name or address.</p></li>
+        <li><h3>Office sets the price</h3><p>Markup starts at 15% and can be changed on any receipt. You see cost, billed total, profit and margin before anything goes out.</p></li>
+        <li><h3>One click makes the paperwork</h3><p>A change order from your own template or an invoice, saved in the job's folder and named after it. QuickBooks Online gets the estimate or invoice.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="band" id="numbers">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">What the office sees</p>
+        <h2>Cost, markup, billed and profit on every line</h2>
+        <p class="lede">Sales tax is spread across the lines so each line's cost is what you really paid. This is the ABC Supply receipt above at the default 15% markup.</p>
+      </div>
+      <div class="tbl">
+        <table class="price">
+          <thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Cost</th><th class="n">Markup</th><th class="n">Billed</th><th class="n">Profit</th></tr></thead>
+          <tbody>
+            <tr><td>GAF Timberline HDZ Shingles - Charcoal<span class="v">ABC Supply Co.</span></td><td class="n num">12 bdl</td><td class="n num">$545.70</td><td class="n num">15%</td><td class="n num">$627.56</td><td class="n num p">$81.86</td></tr>
+            <tr><td>7/16" OSB Sheathing 4x8<span class="v">ABC Supply Co.</span></td><td class="n num">14 sht</td><td class="n num">$254.66</td><td class="n num">15%</td><td class="n num">$292.86</td><td class="n num p">$38.20</td></tr>
+            <tr><td>GAF WeatherWatch Ice &amp; Water 2sq<span class="v">ABC Supply Co.</span></td><td class="n num">2 rl</td><td class="n num">$192.58</td><td class="n num">15%</td><td class="n num">$221.47</td><td class="n num p">$28.89</td></tr>
+            <tr><td>Coil Roofing Nails 1-1/4" 7200ct<span class="v">ABC Supply Co.</span></td><td class="n num">2 box</td><td class="n num">$136.96</td><td class="n num">15%</td><td class="n num">$157.50</td><td class="n num p">$20.54</td></tr>
+          </tbody>
+          <tfoot><tr><td>Totals (tax included in cost)</td><td></td><td class="n num">$1,129.90</td><td></td><td class="n num">$1,299.39</td><td class="n num p">$169.49</td></tr></tfoot>
+        </table>
+      </div>
+      <div class="totals">
+        <div class="total"><span>Cost</span><strong>$1,129.90</strong></div>
+        <div class="total"><span>Markup</span><strong>15%</strong></div>
+        <div class="total"><span>Total billed</span><strong>$1,299.39</strong></div>
+        <div class="total good"><span>Profit · 13.04% margin</span><strong>$169.49</strong></div>
+      </div>
+      <p class="note">The customer's change order or invoice lists the vendor and the billed amount on every line. Your cost, markup and profit never leave the office view.</p>
+    </div>
+  </section>
+
+  <section class="band alt" id="who">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Who sees what</p>
+        <h2>Your crew sends receipts. Your office sees the money.</h2>
+      </div>
+      <div class="two">
+        <div class="who">
+          <span class="tag">Crew · phone</span>
+          <ul>
+            <li>Sends receipts from the supply counter in a few taps</li>
+            <li>Sees only the receipts they sent, and whether each is approved</li>
+            <li>Never sees cost, markup or profit</li>
+          </ul>
+        </div>
+        <div class="who">
+          <span class="tag">Office · admin</span>
+          <ul>
+            <li>Sees every receipt from every employee</li>
+            <li>Fixes the job, items or tax, and sets the markup</li>
+            <li>Chooses change order or invoice and approves</li>
+            <li>Totals for each job: cost, billed, profit and what's still pending</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="real">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Built for real receipts</p>
+        <h2>It handles the paperwork crews actually bring back</h2>
+      </div>
+      <div class="real">
+        <div><h3>Your job names, as they are in Drive</h3><p>Change orders and invoices are named after the job folder, like "Change Order #3 - Dana Whitfield - 4410 Maple Ridge Dr Omaha NE".</p></div>
+        <div><h3>Unclear jobs get a question, not a guess</h3><p>A receipt that just says "Northgate" when you have Northgate Commons and Northgate Plaza goes to the office to pick.</p></div>
+        <div><h3>Delivery tickets with no prices</h3><p>Pickup tickets list quantities but no prices. They're held for the office to type in costs, never billed at $0.</p><p class="flag">No prices on this receipt. Type in what each line cost before approving.</p></div>
+        <div><h3>Math that doesn't add up is flagged</h3><p>If the lines don't match the subtotal, or the subtotal plus tax doesn't match the total, the office sees it before approving.</p></div>
+        <div><h3>Your own change order template</h3><p>Fills in project name, location, date, description, reason, net change and new contract total, and adds the materials table above the signatures.</p></div>
+        <div><h3>Next change order number, automatically</h3><p>It reads the job's Change Orders folder and uses the next number, so CO #2 is followed by CO #3.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt" id="workspace">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Where it runs</p>
+        <h2>Inside your Google Workspace, connected to QuickBooks Online</h2>
+      </div>
+      <div class="stack">
+        <div><h3>Google Drive and Docs</h3><p>Receipts are filed in each job's Receipts folder. Change orders and invoices are saved as a Google Doc and a PDF in the job's folders. Your crew signs in with their company Google account.</p></div>
+        <div><h3>QuickBooks Online</h3><p>Change orders go in as estimates and invoices as invoices, under the customer named like your job folder. Material costs can be recorded as expenses on the job.</p></div>
+        <div><h3>A record of every receipt</h3><p>Every receipt, who sent it, what it cost and what was billed is kept in a Google Sheet in your Drive.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="access">
+    <div class="wrap access">
+      <div class="head">
+        <p class="eyebrow">Early access</p>
+        <h2>Set it up for your crew</h2>
+        <p class="lede">JobReceipts is installed for each company in its own Google Workspace. Leave your details and we'll get in touch to set it up and connect QuickBooks.</p>
+        <p><a href="try/">Try the test drive first</a> to see the phone and office views with sample receipts.</p>
+      </div>
+      <form id="waitlist" data-niche="jobreceipts" novalidate>
+        <label for="wl-name">Your name <input id="wl-name" name="name" autocomplete="name"></label>
+        <label for="wl-business">Company <input id="wl-business" name="business" autocomplete="organization"></label>
+        <label for="wl-email">Email <input id="wl-email" name="email" type="email" autocomplete="email" required></label>
+        <button type="submit" class="btn">Get early access</button>
+        <p id="waitlistMsg" class="msg" hidden></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span><strong>JobReceipts</strong> · Material receipts to change orders and invoices</span>
+    <span>Sample receipts on this page are made up.</span>
+  </div>
+</footer>
+<script src="site/config.js"></script>
+<script src="site/assets/waitlist.js"></script>
+</body>
 </html>
