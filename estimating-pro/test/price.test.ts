@@ -5,11 +5,14 @@ import { getPriceItem, searchPriceItems } from "@/lib/price";
 
 afterAll(() => prisma.$disconnect());
 
+// Other test files upload TEST_ONLY sheets into the same DB; count only what the seed created.
+const seeded = { sheet: { importId: null, isActive: true } };
+
 describe("seed", () => {
   it("loads exactly 527 items across 6 sheets, 8 of them CALL", async () => {
-    expect(await prisma.priceItem.count()).toBe(527);
-    expect(await prisma.priceSheet.count({ where: { isLoaded: true } })).toBe(6);
-    expect(await prisma.priceItem.count({ where: { priceStatus: "CALL" } })).toBe(8);
+    expect(await prisma.priceItem.count({ where: seeded })).toBe(527);
+    expect(await prisma.priceSheet.count({ where: { isLoaded: true, importId: null } })).toBe(6);
+    expect(await prisma.priceItem.count({ where: { priceStatus: "CALL", ...seeded } })).toBe(8);
     expect(await prisma.priceItem.count({ where: { priceStatus: "CALL", unitPrice: { not: null } } })).toBe(0);
   });
 
@@ -28,6 +31,14 @@ describe("seed", () => {
     expect(await prisma.rule.count()).toBe(16);
     expect((await prisma.rule.findUnique({ where: { id: "SID-01" } }))?.locked).toBe(true);
     expect((await prisma.rule.findUnique({ where: { id: "ROOF-03" } }))?.itemNumber).toBe("4292804534");
+  });
+});
+
+describe("seeded coverage", () => {
+  it("parses coverage for the 186 items with explicit patterns", async () => {
+    expect(await prisma.priceItem.count({ where: { coverageSource: "PARSED_FROM_DESCRIPTION", ...seeded } })).toBe(186);
+    expect(await getPriceItem("02MLVIA3AB")).toMatchObject({ coverageQty: 3, coverageUnit: "BD/SQ" });
+    expect(await getPriceItem("04MLHR12AB")).toMatchObject({ coverageQty: 31, coverageUnit: "LF/BD" });
   });
 });
 
@@ -62,7 +73,7 @@ describe("searchPriceItems", () => {
   });
 
   it("filters CALL items", async () => {
-    const r = await searchPriceItems({ priceStatus: "CALL" });
+    const r = await searchPriceItems({ priceStatus: "CALL", sheetCodes: ["MH", "EL", "SS", "HP", "HS", "NX"] });
     expect(r.total).toBe(8);
   });
 });

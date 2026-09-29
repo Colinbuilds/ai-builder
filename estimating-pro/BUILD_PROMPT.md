@@ -218,6 +218,7 @@ Goal: one place per job for all internal talk, so the team stops running job det
   - **Forwarding address:** each project has a unique inbound address (`job-<emailToken>@<inbound domain>`). An inbound-email webhook (Postmark / SendGrid / Mailgun, env-configurable) stores the message on the job.
   - **Mailbox pull (optional):** connect a Gmail / Microsoft 365 mailbox and pull threads that match a job label or search.
   - **Paste in:** manual fallback.
+  - **Decision (Sept 29, 2026):** build both the forwarding address and the mailbox pull (Gmail and Microsoft 365).
   - De-duplicate on Message-ID. Keep the full text; store attachments as project Documents (type OTHER until classified).
 - **Summaries.**
   - Each email gets a short AI summary (who, what they asked for, any dates or numbers they stated, attributed to the sender).

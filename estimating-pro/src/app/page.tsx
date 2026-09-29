@@ -3,8 +3,9 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listSheets } from "@/lib/price";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SheetDateBanner } from "@/components/sheet-banner";
 
-// Placeholder dashboard for Phase 1. Projects, readiness, and sheet date banners arrive in Phases 2–3.
+// Dashboard. The project list, readiness badges, and job chat arrive in Phases 3–4.
 export default async function Home() {
   const user = await requireUser();
   const [sheets, callCount, ruleCount] = await Promise.all([
@@ -17,6 +18,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">Welcome, {user.name}</h1>
+      <SheetDateBanner />
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>

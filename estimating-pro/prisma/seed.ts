@@ -1,9 +1,10 @@
 // Seeds the price library, company rules, and a first admin user from /data.
 // Re-running is safe: sheets/items/rules are upserted, never duplicated.
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { parseCoverage } from "../src/lib/sheets/coverage";
 
 const prisma = new PrismaClient();
 const dataDir = path.join(__dirname, "..", "data");
@@ -38,8 +39,11 @@ type RawRule = {
   [k: string]: unknown;
 };
 
-async function upsertSheet(code: string, data: Omit<Parameters<typeof prisma.priceSheet.create>[0]["data"], "code">) {
+// Returns null when an Admin has uploaded a newer version of this sheet; the seed never overwrites an upload.
+type SeedSheet = Omit<Prisma.PriceSheetUncheckedCreateInput, "code" | "importId">;
+async function upsertSheet(code: string, data: SeedSheet) {
   const existing = await prisma.priceSheet.findFirst({ where: { code, isActive: true } });
+  if (existing?.importId) return null;
   if (existing) return prisma.priceSheet.update({ where: { id: existing.id }, data });
   return prisma.priceSheet.create({ data: { code, ...data } });
 }
@@ -61,11 +65,13 @@ async function main() {
       warning: m.warning ?? null,
       isLoaded: true,
     });
-    sheetIds[code] = sheet.id;
+    if (sheet) sheetIds[code] = sheet.id;
+    else console.log(`Skipped ${code}: an uploaded version is live.`);
   }
 
   // LP SmartSide: record exists so the UI can show it, but no items until a sheet is uploaded.
-  await upsertSheet("LP", {
+  const lp = await prisma.priceSheet.findFirst({ where: { code: "LP", isActive: true } });
+  if (!lp?.isLoaded) await upsertSheet("LP", {
     name: "LP SmartSide",
     scope: "LP SmartSide siding/panels (25LP…) and trim (31LPTW…)",
     warning: "No LP SmartSide price sheet loaded. LP items stay MISSING until a sheet is uploaded.",
@@ -73,8 +79,9 @@ async function main() {
   });
 
   for (const it of items) {
+    if (!(it.sheet_code in meta)) throw new Error(`Item ${it.item_number} references unknown sheet ${it.sheet_code}`);
     const sheetId = sheetIds[it.sheet_code];
-    if (!sheetId) throw new Error(`Item ${it.item_number} references unknown sheet ${it.sheet_code}`);
+    if (!sheetId) continue; // sheet replaced by an upload
     const isCall = it.price_status !== "LISTED";
     const data = {
       section: it.section,
@@ -83,10 +90,22 @@ async function main() {
       uom: it.uom,
       priceStatus: isCall ? ("CALL" as const) : ("LISTED" as const),
     };
+    const where = { sheetId_itemNumber: { sheetId, itemNumber: it.item_number } };
+    const existing = await prisma.priceItem.findUnique({ where, select: { coverageSource: true } });
+    // Parsed coverage never overwrites a value a user entered or took from manufacturer data.
+    const keepCoverage = existing?.coverageSource && existing.coverageSource !== "PARSED_FROM_DESCRIPTION";
+    const c = keepCoverage ? null : parseCoverage(it.description, it.uom);
+    const coverage = keepCoverage
+      ? {}
+      : {
+          coverageQty: c?.qty ?? null,
+          coverageUnit: c?.unit ?? null,
+          coverageSource: c ? ("PARSED_FROM_DESCRIPTION" as const) : null,
+        };
     await prisma.priceItem.upsert({
-      where: { sheetId_itemNumber: { sheetId, itemNumber: it.item_number } },
-      update: data,
-      create: { sheetId, itemNumber: it.item_number, ...data },
+      where,
+      update: { ...data, ...coverage },
+      create: { sheetId, itemNumber: it.item_number, ...data, ...coverage },
     });
   }
 
@@ -113,10 +132,11 @@ async function main() {
     console.log(`Created admin user ${email}`);
   }
 
+  const active = { sheet: { isActive: true } };
   const [sheetCount, itemCount, callCount, ruleCount] = await Promise.all([
     prisma.priceSheet.count({ where: { isLoaded: true, isActive: true } }),
-    prisma.priceItem.count(),
-    prisma.priceItem.count({ where: { priceStatus: "CALL" } }),
+    prisma.priceItem.count({ where: active }),
+    prisma.priceItem.count({ where: { priceStatus: "CALL", ...active } }),
     prisma.rule.count(),
   ]);
   console.log(`Seeded ${itemCount} items across ${sheetCount} sheets (${callCount} CALL), ${ruleCount} rules.`);

@@ -26,11 +26,12 @@ model User {
   role         Role     @default(ESTIMATOR)
   createdAt    DateTime @default(now())
 
-  messages    JobMessage[]
-  summaries   JobSummary[]
-  auditLogs   AuditLog[]
-  estimates   Estimate[]
-  emailsAdded JobEmail[]
+  messages     JobMessage[]
+  summaries    JobSummary[]
+  auditLogs    AuditLog[]
+  estimates    Estimate[]
+  emailsAdded  JobEmail[]
+  sheetImports SheetImport[]
 }
 
 // ---------- Price library ----------
@@ -47,7 +48,7 @@ enum CoverageSource {
 }
 
 model PriceSheet {
-  id             String    @id @default(cuid())
+  id             String       @id @default(cuid())
   code           String // MH/EL/SS/HP/HS/NX/LP… — one active version per code
   name           String
   sourceFile     String?
@@ -58,9 +59,13 @@ model PriceSheet {
   scope          String?
   warning        String?
   // false = placeholder record with no items (e.g. LP SmartSide until uploaded)
-  isLoaded       Boolean   @default(true)
-  isActive       Boolean   @default(true)
-  uploadedAt     DateTime  @default(now())
+  isLoaded       Boolean      @default(true)
+  isActive       Boolean      @default(true)
+  uploadedAt     DateTime     @default(now())
+  // set when this version came from an upload (null = seeded from /data)
+  importId       String?      @unique
+  import         SheetImport? @relation(fields: [importId], references: [id])
+  replacedAt     DateTime?
 
   items PriceItem[]
 
@@ -86,6 +91,34 @@ model PriceItem {
 
   @@unique([sheetId, itemNumber])
   @@index([itemNumber])
+}
+
+enum ImportStatus {
+  DRAFT
+  APPLIED
+  DISCARDED
+}
+
+// An uploaded price sheet, parsed and waiting for Admin review. Nothing goes live until applied.
+model SheetImport {
+  id            String       @id @default(cuid())
+  code          String
+  name          String
+  scope         String?
+  fileName      String
+  fileUrl       String
+  format        String // ZIP_TXT | PDF | CSV | TEXT
+  extractedText String
+  header        Json // { effective, expiration, account, salesRep }
+  rows          Json // ParsedRow[]
+  unparsed      Json // { line, text }[]
+  status        ImportStatus @default(DRAFT)
+  createdById   String
+  createdBy     User         @relation(fields: [createdById], references: [id])
+  createdAt     DateTime     @default(now())
+  appliedAt     DateTime?
+
+  sheet PriceSheet?
 }
 
 // ---------- Projects & intake ----------

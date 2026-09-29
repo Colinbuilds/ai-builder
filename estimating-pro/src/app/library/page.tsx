@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { listSections, listSheets, searchPriceItems } from "@/lib/price";
 import { UnitPriceCell } from "@/components/price-cells";
+import { SheetStatusBadge } from "@/components/sheet-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -82,22 +83,35 @@ export default async function LibraryPage({ searchParams }: { searchParams: SP }
             <TH>Section</TH>
             <TH className="text-right">Unit price</TH>
             <TH>UOM</TH>
+            <TH>Coverage</TH>
             <TH>Sheet</TH>
           </TR>
         </THead>
         <TBody>
           {result.items.map((it) => (
             <TR key={it.id}>
-              <TD className="font-mono text-xs">{it.itemNumber}</TD>
+              <TD className="font-mono text-xs">
+                <Link href={`/library/items/${it.id}`} className="underline-offset-2 hover:underline">
+                  {it.itemNumber}
+                </Link>
+              </TD>
               <TD>{it.description}</TD>
               <TD className="text-muted-foreground">{it.section}</TD>
               <TD className="text-right">
                 <UnitPriceCell unitPrice={it.unitPrice} priceStatus={it.priceStatus} />
               </TD>
               <TD>{it.uom}</TD>
+              <TD className="whitespace-nowrap text-xs">
+                {it.coverageQty != null ? (
+                  `${it.coverageQty} ${it.coverageUnit}`
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TD>
               <TD>
                 <span className="flex items-center gap-1">
                   <Badge variant="outline">{it.sheet.code}</Badge>
+                  <SheetStatusBadge sheet={it.sheet} />
                   {it.sheet.warning && (
                     <Badge variant="amber" title={it.sheet.warning}>
                       Confirm account
@@ -109,7 +123,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: SP }
           ))}
           {result.items.length === 0 && (
             <TR>
-              <TD colSpan={6} className="py-8 text-center text-muted-foreground">
+              <TD colSpan={7} className="py-8 text-center text-muted-foreground">
                 No items match. If the product isn&apos;t on a loaded sheet, it stays MISSING until a sheet with it is
                 uploaded.
               </TD>
