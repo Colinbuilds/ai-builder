@@ -6,7 +6,7 @@ import { INTAKE_BY_KEY, INTAKE_FIELDS, parseScopes, reconcileIntake, type Scope 
 import { computeReadiness, type ReadinessInput } from "./readiness";
 import { checkStageChange, nextForm17Status, type Stage } from "./workflow";
 
-type Actor = { id: string; name: string };
+type Actor = { id: string | null; name: string };
 type ConstructionType = "NEW" | "REROOF";
 
 export class ProjectError extends Error {

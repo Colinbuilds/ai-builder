@@ -11,8 +11,12 @@ export type CompanySettings = {
   overheadPct: number | null; // company overhead as % of revenue; net profit is MISSING until set
   costVarianceThresholdPct: number | null; // flag a cost category when it runs this far over estimate
   supplierOrderEmail: string | null; // where material orders are emailed (ABC branch order desk)
+  invoiceNetDays: number | null; // due date = issue date + this many days
+  remitTo: string | null; // payment instructions printed on invoices (check address, ACH)
+  cardSurchargePct: number | null; // card surcharge on customer card payments, only where permitted; null = none
+  qboItemId: string | null; // QuickBooks item used for invoice lines
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });

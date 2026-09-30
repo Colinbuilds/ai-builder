@@ -249,6 +249,8 @@ model Project {
   scheduleEvents   ScheduleEvent[]
   workOrders       WorkOrder[]
   timeEntries      TimeEntry[]
+  invoices         Invoice[]
+  qboCustomerId    String?
 }
 
 // Timeline of everything that happened on a job: stage changes, intake edits, Form 17, overrides.
@@ -900,25 +902,41 @@ enum ChangeOrderStatus {
 
 // Revenue changes after the contract. Only APPROVED ones count toward revenue.
 model ChangeOrder {
-  id          String            @id @default(cuid())
-  projectId   String
-  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  number      String
-  kind        ChangeOrderKind   @default(CHANGE_ORDER)
-  description String
+  id               String            @id @default(cuid())
+  projectId        String
+  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number           String
+  kind             ChangeOrderKind   @default(CHANGE_ORDER)
+  description      String
   // always entered positive; CREDIT subtracts
-  amount      Float
+  amount           Float
   // added cost the change brings, if known (feeds the estimated-cost baseline)
-  costImpact  Float?
-  status      ChangeOrderStatus @default(PENDING)
-  source      String? // "Signed CO", "Adjuster supplement email 9/12", …
-  documentId  String?
-  decidedAt   DateTime?
-  decidedBy   String?
-  createdBy   String?
-  externalRef String? // Buildertrend / Procore CO id once synced
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  costImpact       Float?
+  status           ChangeOrderStatus @default(PENDING)
+  source           String? // "Signed CO", "Adjuster supplement email 9/12", …
+  documentId       String?
+  decidedAt        DateTime?
+  decidedBy        String?
+  createdBy        String?
+  externalRef      String? // Buildertrend / Procore CO id once synced
+  // estimate revision the CO was priced from (same rules as estimates)
+  estimateId       String?
+  priceFormula     String?
+  // customer e-signature
+  token            String?
+  sentAt           DateTime?
+  sentTo           String?
+  signerName       String?
+  signerEmail      String?
+  signedAt         DateTime?
+  signerIp         String?
+  signatureImage   String?
+  signedDocumentId String?
+  declineReason    String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([token])
 }
 
 enum CommissionBasis {
@@ -1129,4 +1147,78 @@ model TimeEntry {
   approvedAt DateTime?
   jobCostId  String?
   createdAt  DateTime  @default(now())
+}
+
+// ---------- Invoicing & payments (§13) ----------
+
+enum InvoiceKind {
+  DEPOSIT
+  PROGRESS
+  FINAL
+  CHANGE_ORDER
+  RETAINAGE_RELEASE
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIAL
+  PAID
+  VOID
+}
+
+model Invoice {
+  id           String        @id @default(cuid())
+  projectId    String
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number       String        @unique
+  kind         InvoiceKind
+  status       InvoiceStatus @default(DRAFT)
+  // [{ description, amount }]
+  lines        Json
+  subtotal     Float
+  retainagePct Float?
+  retainage    Float         @default(0)
+  // subtotal − retainage
+  amountDue    Float
+  issueDate    DateTime
+  dueDate      DateTime
+  notes        String?
+  // why it bills past the contract, when it does
+  override     String?
+  token        String        @unique
+  billTo       String?
+  billToEmail  String?
+  sentAt       DateTime?
+  viewedAt     DateTime?
+  voidReason   String?
+  qboId        String?
+  qboSyncedAt  DateTime?
+  qboError     String?
+  createdBy    String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  payments     Payment[]
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  invoiceId  String
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  date       DateTime
+  // applied to the invoice (surcharge not included)
+  amount     Float
+  // CHECK | ACH | CARD | CASH | INSURANCE_CHECK | OTHER
+  method     String
+  reference  String?
+  // card surcharge collected on top, where permitted
+  surcharge  Float    @default(0)
+  // MANUAL | STRIPE
+  source     String   @default("MANUAL")
+  externalId String?  @unique
+  recordedBy String
+  qboId      String?
+  qboError   String?
+  createdAt  DateTime @default(now())
 }
