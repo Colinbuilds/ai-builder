@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+/* JobReceipts app. Mobile-first: employees use it on a phone at the supply counter. */
+.jr {
+  --bg: #f3f5f7; --panel: #ffffff; --ink: #16202b; --muted: #5d6b7a; --line: #dde3ea; --line-strong: #c6d0da;
+  --accent: #1d5fb8; --accent-ink: #ffffff; --accent-soft: #e6eefa; --paper: #fbfaf6;
+  --good: #1f7a45; --good-soft: #e3f3e9; --warn: #9a5b00; --warn-soft: #fdf1dc; --bad: #b3261e; --bad-soft: #fbe4e2;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--body); font-size: 15px; line-height: 1.45; color: var(--ink); background: var(--bg);
+  min-height: 100%;
+  container-type: inline-size; container-name: jr; /* layout follows the app's own width */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .jr {
+    --bg: #0e141b; --panel: #151e28; --ink: #e7edf3; --muted: #9aa8b6; --line: #253241; --line-strong: #33445a;
+    --accent: #6fa3ec; --accent-ink: #0e141b; --accent-soft: #19283c; --paper: #efece4;
+    --good: #5ccc8a; --good-soft: #14301f; --warn: #f0b457; --warn-soft: #33260f; --bad: #f28b82; --bad-soft: #3a1714;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] .jr {
+  --bg: #0e141b; --panel: #151e28; --ink: #e7edf3; --muted: #9aa8b6; --line: #253241; --line-strong: #33445a;
+  --accent: #6fa3ec; --accent-ink: #0e141b; --accent-soft: #19283c; --paper: #efece4;
+  --good: #5ccc8a; --good-soft: #14301f; --warn: #f0b457; --warn-soft: #33260f; --bad: #f28b82; --bad-soft: #3a1714;
+  color-scheme: dark;
+}
+.jr *, .jr *::before, .jr *::after { box-sizing: border-box; }
+.jr button, .jr input, .jr select, .jr textarea { font: inherit; color: inherit; }
+.jr [hidden] { display: none !important; }
+.jr h1, .jr h2, .jr h3 { font-family: var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.jr .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.jr-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+.jr-logo { font-family: var(--display); font-weight: 800; font-size: 18px; }
+.jr-logo span { color: var(--accent); }
+.jr-spacer { flex: 1; }
+.jr-who { font-size: 13px; color: var(--muted); max-width: 45vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jr-role { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 2px 8px; }
+
+.jr-tabs { display: flex; gap: 4px; padding: 8px 16px 0; background: var(--panel); border-bottom: 1px solid var(--line); overflow-x: auto; }
+.jr-tab { border: 0; background: none; padding: 9px 12px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 600; cursor: pointer; white-space: nowrap; }
+.jr-tab[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }
+.jr-count { font-size: 12px; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+
+.jr-main { padding: 16px; display: flex; flex-direction: column; gap: 16px; max-width: 1200px; margin: 0 auto; width: 100%; }
+.jr-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.jr-card h2 { font-size: 18px; }
+.jr-label { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.jr-hint { font-size: 13px; color: var(--muted); margin: 0; }
+
+.jr-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 10px; padding: 12px 18px; font-weight: 600; cursor: pointer;
+          background: var(--accent); color: var(--accent-ink); min-height: 44px; }
+.jr-btn:disabled { opacity: .55; cursor: default; }
+.jr-btn.secondary { background: var(--panel); color: var(--ink); border: 1px solid var(--line-strong); }
+.jr-btn.block { width: 100%; }
+.jr-btn:focus-visible, .jr-tab:focus-visible, .jr input:focus-visible, .jr select:focus-visible, .jr textarea:focus-visible, .jr-opt:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.jr input[type=text], .jr input[type=search], .jr input[type=number], .jr input[type=date], .jr select, .jr textarea {
+  width: 100%; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 12px; background: var(--panel); min-height: 44px; }
+.jr textarea { min-height: 70px; resize: vertical; }
+
+.jr-joblist { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.jr-job { text-align: left; border: 0; border-bottom: 1px solid var(--line); background: var(--panel); padding: 11px 12px; cursor: pointer; }
+.jr-job:last-child { border-bottom: 0; }
+.jr-job[aria-selected="true"] { background: var(--accent-soft); font-weight: 600; }
+.jr-chip { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; font-weight: 600; }
+.jr-chip button { border: 0; background: none; color: var(--accent); font-weight: 600; cursor: pointer; }
+
+.jr-photo { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 2px dashed var(--line-strong); border-radius: 12px; padding: 22px; cursor: pointer; text-align: center; color: var(--muted); }
+.jr-photo strong { color: var(--ink); font-size: 16px; }
+.jr-photo input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.jr-thumb { max-height: 220px; border-radius: 8px; border: 1px solid var(--line); }
+.jr-add-btn { position: relative; min-height: 76px; font-size: 20px; font-weight: 700; cursor: pointer; }
+.jr-add-btn input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.jr-add-btn:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+.jr-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.jr-opt { position: relative; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 8px; text-align: center; font-size: 13.5px; cursor: pointer; }
+.jr-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.jr-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+.jr-pill { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.jr-pill.reading { background: var(--accent-soft); color: var(--accent); }
+.jr-pill.review { background: var(--warn-soft); color: var(--warn); }
+.jr-pill.ready { background: var(--accent-soft); color: var(--accent); }
+.jr-pill.approved { background: var(--good-soft); color: var(--good); }
+.jr-pill.error { background: var(--bad-soft); color: var(--bad); }
+
+.jr-list { display: flex; flex-direction: column; }
+.jr-item { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; padding: 12px 4px; border-bottom: 1px solid var(--line); text-align: left; background: none; border-left: 0; border-right: 0; border-top: 0; width: 100%; cursor: pointer; }
+.jr-item:last-child { border-bottom: 0; }
+.jr-item[aria-selected="true"] { background: var(--accent-soft); border-radius: 8px; }
+.jr-item .t { font-weight: 600; }
+.jr-item .s { font-size: 13px; color: var(--muted); }
+.jr-item .r { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+.jr-split { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.jr-detail-grid { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.jr-flags { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.jr-ok { background: var(--good-soft); color: var(--good); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.jr-err { background: var(--bad-soft); color: var(--bad); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+
+.jr-paper { background: var(--paper); color: #2b2b2b; font-family: var(--mono); font-size: 12px; padding: 14px; border-radius: 3px; box-shadow: 0 8px 20px -14px rgba(0,0,0,.4); }
+.jr-paper .v { text-align: center; font-weight: 500; }
+.jr-paper .it { display: flex; justify-content: space-between; gap: 8px; }
+.jr-paper hr { border: 0; border-top: 1px dashed #9a978f; margin: 6px 0; }
+.jr-img { width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+
+.jr-tbl { overflow-x: auto; }
+.jr table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.jr th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 6px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+.jr td { padding: 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.jr th.n, .jr td.n { text-align: right; white-space: nowrap; }
+.jr td input { min-height: 36px !important; padding: 6px 8px !important; }
+.jr tfoot td { font-weight: 600; border-bottom: 0; }
+
+.jr-totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.jr-total { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.jr-total span { display: block; font-size: 12px; color: var(--muted); }
+.jr-total strong { font-family: var(--mono); font-size: 18px; font-variant-numeric: tabular-nums; }
+.jr-total.profit strong { color: var(--good); }
+.jr-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.jr-row > * { flex: 1 1 160px; min-width: 0; }
+.jr-field { display: flex; flex-direction: column; gap: 5px; }
+.jr-field > span { font-size: 13px; font-weight: 600; }
+
+.jr-docprev { background: var(--bg); border-radius: 10px; padding: 10px; overflow-x: auto; }
+.jr-docprev .doc { background: #fff; color: #1b1b1b; border: 1px solid #d9dde2; border-radius: 4px; padding: 18px; font-size: 12px; min-width: 420px; }
+.jr-docprev .dochead { display: flex; justify-content: space-between; gap: 16px; border-bottom: 2px solid #1b1b1b; padding-bottom: 8px; margin-bottom: 10px; }
+.jr-docprev h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; }
+.jr-docprev h3 { color: #555; margin: 10px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.jr-docprev table { font-size: 11.5px; }
+.jr-docprev th { color: #555; border-color: #c9ced4; }
+.jr-docprev td { border-color: #e3e6ea; }
+.jr-docprev table.kv th { width: 30%; background: #f4f5f7; }
+.jr-docprev table.kv td, .jr-docprev table.kv th { border: 1px solid #dfe2e6; padding: 4px 6px; }
+.jr-docprev .n { text-align: right; font-family: var(--mono); }
+.jr-docprev table.sign td { border: 0; border-top: 1px solid #1b1b1b; width: 50%; color: #555; font-size: 10.5px; padding-top: 4px; }
+.jr-docprev table.sign { margin-top: 22px; border-collapse: separate; border-spacing: 20px 0; }
+.jr-qline { display: flex; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; font-size: 14px; }
+.jr-qline small { display: block; color: var(--muted); font-size: 12.5px; }
+.jr-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.jr-toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 10; max-width: 90vw; }
+.jr-empty { color: var(--muted); text-align: center; padding: 24px 8px; }
+
+@container jr (max-width: 1000px) { .jr-split { grid-template-columns: 1fr; } }
+@container jr (max-width: 720px) { .jr-detail-grid { grid-template-columns: 1fr; } .jr-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: no-preference) { .jr-btn { transition: filter .15s; } .jr-btn:hover:not(:disabled) { filter: brightness(1.08); } }
+/* Long job names must wrap or truncate, never widen the page on a phone. */
+.jr-split > *, .jr-detail-grid > *, .jr-row > * { min-width: 0; }
+.jr select { max-width: 100%; text-overflow: ellipsis; }
+.jr-item > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+.jr-chip span { min-width: 0; overflow-wrap: anywhere; }
+
+</style>
+
+  <style>html, body { margin: 0; height: 100%; }</style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+// Pricing: turns an extracted receipt into cost, markup, billed price and profit.
+// Plain function declarations so the same file runs in Google Apps Script and Node tests.
+
+var DEFAULT_MARKUP_PERCENT = 28;
+
+// Rounds half-cents up (627.555 -> 627.56). Shifting through the exponent avoids
+// binary float error: 627.555 * 100 is 62755.49999... but Number("627.555e2") is 62755.5.
+function roundCents(n) {
+  var v = Number(n) || 0;
+  var sign = v < 0 ? -1 : 1;
+  var abs = Math.abs(v);
+  if (/e/i.test(String(abs))) return sign * (Math.round(abs * 100) / 100); // 1e-7, 1e21 etc.
+  return sign * Number(Math.round(Number(abs + "e2")) + "e-2");
+}
+
+/**
+ * Price a receipt.
+ * receipt: { vendor, items: [{ description, qty, lineTotal, vendor? , markupPercent? }], tax, total }
+ * options: { markupPercent (default 28), includeTaxInCost (default true) }
+ *
+ * Sales tax paid at the store is a real cost to the business, so by default it is
+ * spread across the lines in proportion to their pre-tax amount; the last line
+ * absorbs rounding so line costs always add up to the receipt total.
+ */
+function priceReceipt(receipt, options) {
+  options = options || {};
+  var markup = options.markupPercent == null ? DEFAULT_MARKUP_PERCENT : Number(options.markupPercent);
+  var includeTax = options.includeTaxInCost !== false;
+  var items = receipt.items || [];
+  var subtotal = roundCents(items.reduce(function (s, it) { return s + Number(it.lineTotal || 0); }, 0));
+  var tax = includeTax ? roundCents(receipt.tax || 0) : 0;
+
+  var allocated = 0;
+  var lines = items.map(function (it, i) {
+    var pre = roundCents(it.lineTotal || 0);
+    var share;
+    if (i === items.length - 1) share = roundCents(tax - allocated);
+    else share = subtotal > 0 ? roundCents(tax * (pre / subtotal)) : 0;
+    allocated = roundCents(allocated + share);
+    var cost = roundCents(pre + share);
+    var m = it.markupPercent == null ? markup : Number(it.markupPercent);
+    var billed = roundCents(cost * (1 + m / 100));
+    return {
+      vendor: it.vendor || receipt.vendor || "",
+      description: it.description || "",
+      qty: it.qty == null ? 1 : Number(it.qty),
+      unit: it.unit || "",
+      cost: cost,
+      markupPercent: m,
+      billed: billed,
+      profit: roundCents(billed - cost),
+    };
+  });
+
+  var cost = roundCents(lines.reduce(function (s, l) { return s + l.cost; }, 0));
+  var billed = roundCents(lines.reduce(function (s, l) { return s + l.billed; }, 0));
+  var profit = roundCents(billed - cost);
+  return {
+    lines: lines,
+    totals: {
+      subtotal: subtotal,
+      tax: tax,
+      cost: cost,
+      billed: billed,
+      profit: profit,
+      marginPercent: billed > 0 ? roundCents((profit / billed) * 100) : 0,
+    },
+  };
+}
+
+/** Combine several priced receipts (e.g. one change order covering two store runs). */
+function combinePriced(pricedList) {
+  var lines = [];
+  pricedList.forEach(function (p) { lines = lines.concat(p.lines); });
+  var cost = roundCents(lines.reduce(function (s, l) { return s + l.cost; }, 0));
+  var billed = roundCents(lines.reduce(function (s, l) { return s + l.billed; }, 0));
+  var profit = roundCents(billed - cost);
+  return {
+    lines: lines,
+    totals: {
+      subtotal: roundCents(pricedList.reduce(function (s, p) { return s + p.totals.subtotal; }, 0)),
+      tax: roundCents(pricedList.reduce(function (s, p) { return s + p.totals.tax; }, 0)),
+      cost: cost,
+      billed: billed,
+      profit: profit,
+      marginPercent: billed > 0 ? roundCents((profit / billed) * 100) : 0,
+    },
+  };
+}
+
+function formatMoney(n) {
+  var v = roundCents(n);
+  var s = Math.abs(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return (v < 0 ? "-$" : "$") + s;
+}
+
+</script>
+<script>
+// Job matching: finds the job folder a receipt belongs to from a customer name
+// and/or address, using the folder names exactly as they appear in Drive.
+
+var ADDRESS_WORDS = {
+  st: "street", str: "street", ave: "avenue", av: "avenue", dr: "drive", ln: "lane", rd: "road",
+  blvd: "boulevard", ct: "court", cir: "circle", pl: "place", pkwy: "parkway", hwy: "highway",
+  ter: "terrace", trl: "trail", cv: "cove", wy: "way",
+  n: "north", s: "south", e: "east", w: "west", ne: "northeast", nw: "northwest", se: "southeast", sw: "southwest",
+};
+// Words that carry no identifying signal on their own.
+var MATCH_STOPWORDS = { the: 1, and: 1, of: 1, lot: 1, llc: 1, inc: 1 };
+
+function matchTokens(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/(\d+)(st|nd|rd|th)\b/g, "$1") // 164th -> 164
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(function (t) { return ADDRESS_WORDS[t] || t; })
+    .filter(function (t) { return !MATCH_STOPWORDS[t]; });
+}
+
+// House numbers (3+ digits, or the first number in an address) are the strongest signal.
+function houseNumbers(tokens) {
+  return tokens.filter(function (t) { return /^\d{3,6}$/.test(t); });
+}
+
+/**
+ * Score how well a hint ("Whitfield", "4410 Maple Ridge Dr") matches a job folder name.
+ * Returns 0..1.
+ */
+function scoreJob(hint, jobName) {
+  var h = matchTokens(hint), j = matchTokens(jobName);
+  if (!h.length || !j.length) return 0;
+  var jSet = {};
+  j.forEach(function (t) { jSet[t] = true; });
+
+  var hNums = houseNumbers(h), jNums = houseNumbers(j);
+  var numScore = 0;
+  if (hNums.length && jNums.length) {
+    var shared = hNums.filter(function (n) { return jSet[n]; }).length;
+    numScore = shared ? 1 : -1; // a different house number is strong evidence against
+  }
+
+  var words = h.filter(function (t) { return !/^\d+$/.test(t) && t.length > 1; });
+  var wordHits = words.filter(function (t) { return jSet[t]; }).length;
+  var wordScore = words.length ? wordHits / words.length : 0;
+
+  var score;
+  if (numScore === 1) score = 0.6 + 0.4 * wordScore;
+  else if (numScore === -1) score = 0.15 * wordScore;
+  else score = 0.85 * wordScore;
+  return Math.max(0, Math.min(1, Math.round(score * 100) / 100));
+}
+
+/**
+ * Match a receipt to a job.
+ * hints: array of strings (customer name, address, job name from the email or receipt)
+ * jobs:  array of job folder names (or {name, id} objects)
+ * Returns { job, score, confident, candidates: [{job, score}] (top 5) }
+ */
+function matchJob(hints, jobs) {
+  var list = (jobs || []).map(function (j) { return typeof j === "string" ? { name: j } : j; });
+  var hintList = (hints || []).filter(function (x) { return x && String(x).trim(); });
+  var combined = hintList.join(" ");
+  var scored = list.map(function (job) {
+    var best = scoreJob(combined, job.name);
+    hintList.forEach(function (hint) { best = Math.max(best, scoreJob(hint, job.name)); });
+    return { job: job, score: best };
+  }).sort(function (a, b) { return b.score - a.score; });
+
+  var top = scored[0], second = scored[1];
+  var confident = !!top && top.score >= 0.6 && (!second || top.score - second.score >= 0.15);
+  return {
+    job: top && top.score > 0 ? top.job : null,
+    score: top ? top.score : 0,
+    confident: confident,
+    candidates: scored.slice(0, 5).filter(function (c) { return c.score > 0; }),
+  };
+}
+
+</script>
+<script>
+// Customer documents (change orders and invoices) and the internal job summary.
+// A document is plain data; adapters render it (Google Docs in Apps Script, HTML in the demo).
+// Customers see billed prices and vendors only. Cost, markup and profit stay internal.
+
+/** Next change order number from existing change order names in the job folder. */
+function nextChangeOrderNumber(existingNames) {
+  var max = 0;
+  (existingNames || []).forEach(function (name) {
+    var m = String(name).match(/\b(?:co|change\s*order)\s*#?\s*(\d+)/i);
+    if (m) max = Math.max(max, Number(m[1]));
+  });
+  return max + 1;
+}
+
+/** File name for a document, using the job name exactly as it is in Drive. */
+function documentName(kind, jobName, opts) {
+  opts = opts || {};
+  var job = String(jobName || "").trim();
+  if (kind === "change_order") {
+    var title = "Change Order #" + opts.number + " - " + job;
+    return opts.summary ? title + " (" + opts.summary + ")" : title;
+  }
+  return "Invoice" + (opts.number ? " #" + opts.number : "") + " - " + job + (opts.date ? " - " + opts.date : "");
+}
+
+/**
+ * Build a customer-facing document.
+ * kind:   "change_order" | "invoice"
+ * job:    { name } (Drive folder name)
+ * priced: result of priceReceipt / combinePriced
+ * info:   { number, date, description, reason, projectManager, contractPrice, company }
+ */
+function buildCustomerDocument(kind, job, priced, info) {
+  info = info || {};
+  var lines = priced.lines.map(function (l) {
+    return {
+      vendor: l.vendor,
+      description: l.description,
+      qty: l.qty,
+      unit: l.unit,
+      amount: l.billed,
+    };
+  });
+  var total = priced.totals.billed;
+  var doc = {
+    kind: kind,
+    title: kind === "change_order" ? "Construction Change Order" : "Invoice",
+    name: documentName(kind, job.name, { number: info.number, date: info.date, summary: info.summary }),
+    projectName: job.name,
+    location: info.location || job.address || job.name,
+    date: info.date || "",
+    number: info.number || "",
+    projectManager: info.projectManager || "",
+    description: info.description || "Additional materials as listed below.",
+    reason: info.reason || "",
+    lines: lines,
+    total: total,
+  };
+  if (kind === "change_order" && info.contractPrice != null && info.contractPrice !== "") {
+    doc.previousContractPrice = roundCents(info.contractPrice);
+    doc.newContractPrice = roundCents(Number(info.contractPrice) + total);
+  }
+  return doc;
+}
+
+/** Internal summary for the office: cost, markup, billed and profit per line and in total. */
+function buildInternalSummary(job, priced, receipts) {
+  return {
+    job: job.name,
+    receipts: (receipts || []).map(function (r) {
+      return { vendor: r.vendor, date: r.date, employee: r.employee, receiptNumber: r.receiptNumber, total: r.total };
+    }),
+    lines: priced.lines,
+    totals: priced.totals,
+  };
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/** Printable HTML for a customer document (demo preview and PDF export). */
+function renderDocumentHtml(doc, company) {
+  company = company || {};
+  var rows = doc.lines.map(function (l) {
+    var qty = l.qty && l.qty !== 1 ? l.qty + (l.unit ? " " + l.unit : "") : (l.unit ? "1 " + l.unit : "1");
+    return "<tr><td>" + escapeHtml(l.vendor) + "</td><td>" + escapeHtml(l.description) + "</td><td class=n>" +
+      escapeHtml(qty) + "</td><td class=n>" + formatMoney(l.amount) + "</td></tr>";
+  }).join("");
+  var head = doc.kind === "change_order"
+    ? "<tr><th>Project name</th><td>" + escapeHtml(doc.projectName) + "</td><th>Change order #</th><td>" + escapeHtml(doc.number) + "</td></tr>" +
+      "<tr><th>Location of work</th><td>" + escapeHtml(doc.location) + "</td><th>Date of request</th><td>" + escapeHtml(doc.date) + "</td></tr>" +
+      "<tr><th>Project manager</th><td colspan=3>" + escapeHtml(doc.projectManager) + "</td></tr>"
+    : "<tr><th>Bill to / Project</th><td>" + escapeHtml(doc.projectName) + "</td><th>Invoice #</th><td>" + escapeHtml(doc.number) + "</td></tr>" +
+      "<tr><th>Location of work</th><td>" + escapeHtml(doc.location) + "</td><th>Date</th><td>" + escapeHtml(doc.date) + "</td></tr>";
+  var change = doc.kind === "change_order"
+    ? "<h3>Change request overview</h3><table class=kv><tr><th>Description of changes</th><td>" + escapeHtml(doc.description) +
+      "</td></tr><tr><th>Reason for change</th><td>" + escapeHtml(doc.reason) + "</td></tr></table>"
+    : "";
+  var contract = doc.newContractPrice != null
+    ? "<table class=kv><tr><th>Net increase</th><td class=n>" + formatMoney(doc.total) + "</td></tr><tr><th>Previous contract price</th><td class=n>" +
+      formatMoney(doc.previousContractPrice) + "</td></tr><tr><th>Total contract price with approved changes</th><td class=n><b>" +
+      formatMoney(doc.newContractPrice) + "</b></td></tr></table>"
+    : "";
+  var sign = doc.kind === "change_order"
+    ? "<table class=sign><tr><td>Contractor signature &amp; date</td><td>Customer approval signature &amp; date</td></tr></table>"
+    : "<p class=terms>Thank you for your business.</p>";
+  return "<div class=doc><div class=dochead><div><b>" + escapeHtml(company.name || "") + "</b><br>" + escapeHtml(company.address || "") +
+    "</div><h2>" + escapeHtml(doc.title) + "</h2></div><table class=kv>" + head + "</table>" + change +
+    "<h3>Materials</h3><table class=items><thead><tr><th>Vendor</th><th>Item</th><th class=n>Qty</th><th class=n>Amount</th></tr></thead><tbody>" +
+    rows + "</tbody><tfoot><tr><td colspan=3>Total</td><td class=n>" + formatMoney(doc.total) + "</td></tr></tfoot></table>" + contract + sign + "</div>";
+}
+
+</script>
+<script>
+// QuickBooks Online: builds API request bodies. The adapter sends them with OAuth.
+// Change orders become Estimates, invoices become Invoices, and the receipt's cost is
+// recorded as an Expense (Purchase) against the job so job costing stays accurate.
+// Docs: https://developer.intuit.com/app/developer/qbo/docs/api/accounting/all-entities/invoice
+
+var QBO_MINOR_VERSION = 75;
+
+function qboBaseUrl(realmId, sandbox) {
+  var host = sandbox ? "https://sandbox-quickbooks.api.intuit.com" : "https://quickbooks.api.intuit.com";
+  return host + "/v3/company/" + encodeURIComponent(realmId);
+}
+
+/** QuickBooks query strings use single quotes; escape any inside names. */
+function qboQuote(value) {
+  return "'" + String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
+}
+
+function qboFindByNameQuery(entity, name) {
+  var field = entity === "Item" ? "Name" : "DisplayName";
+  return "select * from " + entity + " where " + field + " = " + qboQuote(qboDisplayName(name));
+}
+
+// QuickBooks DisplayName: max 500 chars, no colon, tab or newline.
+function qboDisplayName(name) {
+  return String(name || "").replace(/[:\t\n\r]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 500);
+}
+
+function qboLineDescription(line) {
+  var parts = [];
+  if (line.vendor) parts.push(line.vendor);
+  var qty = line.qty && line.qty !== 1 ? line.qty + (line.unit ? " " + line.unit : "") + " " : "";
+  parts.push(qty + line.description);
+  return parts.join(" – ").slice(0, 4000);
+}
+
+/** New customer, named exactly like the job folder in Drive. */
+function qboCustomerBody(job) {
+  return { DisplayName: qboDisplayName(job.name), Notes: "Created by JobReceipts from job folder: " + job.name };
+}
+
+function qboVendorBody(vendorName) {
+  return { DisplayName: qboDisplayName(vendorName) };
+}
+
+function salesLines(priced, itemId) {
+  return priced.lines.map(function (l) {
+    return {
+      DetailType: "SalesItemLineDetail",
+      Amount: l.billed,
+      Description: qboLineDescription(l),
+      SalesItemLineDetail: { ItemRef: { value: String(itemId) }, Qty: 1, UnitPrice: l.billed },
+    };
+  });
+}
+
+/**
+ * Invoice or Estimate (change order) body.
+ * refs: { customerId, materialsItemId }
+ * info: { kind, date (YYYY-MM-DD), number, jobName, memo }
+ */
+function qboSalesBody(priced, refs, info) {
+  var body = {
+    CustomerRef: { value: String(refs.customerId) },
+    TxnDate: info.date,
+    Line: salesLines(priced, refs.materialsItemId),
+    PrivateNote: info.memo || "",
+  };
+  if (info.kind === "change_order") {
+    body.CustomerMemo = { value: "Change Order #" + info.number + " - " + info.jobName };
+    body.DocNumber = ("CO" + info.number + "-" + String(info.jobName).replace(/[^A-Za-z0-9]/g, "")).slice(0, 21);
+  } else {
+    body.CustomerMemo = { value: "Materials - " + info.jobName };
+  }
+  return body;
+}
+
+/**
+ * Expense (Purchase) for the receipt's cost, assigned to the job's customer for job costing.
+ * refs: { vendorId, customerId, paymentAccountId, expenseAccountId, paymentType }
+ * Lines are NotBillable because billing happens through the invoice or change order.
+ */
+function qboExpenseBody(priced, refs, info) {
+  return {
+    PaymentType: refs.paymentType || "CreditCard",
+    AccountRef: { value: String(refs.paymentAccountId) },
+    EntityRef: { value: String(refs.vendorId), type: "Vendor" },
+    TxnDate: info.date,
+    DocNumber: info.receiptNumber ? String(info.receiptNumber).slice(0, 21) : undefined,
+    PrivateNote: (info.employee ? "Purchased by " + info.employee + ". " : "") + (info.memo || ""),
+    Line: priced.lines.map(function (l) {
+      return {
+        DetailType: "AccountBasedExpenseLineDetail",
+        Amount: l.cost,
+        Description: qboLineDescription(l),
+        AccountBasedExpenseLineDetail: {
+          AccountRef: { value: String(refs.expenseAccountId) },
+          CustomerRef: { value: String(refs.customerId) },
+          BillableStatus: "NotBillable",
+        },
+      };
+    }),
+  };
+}
+
+/** Readable summary of what will be sent, for the review screen. */
+function qboPlan(kind, priced, job, info) {
+  var plan = [];
+  plan.push({
+    entity: kind === "change_order" ? "Estimate" : "Invoice",
+    label: kind === "change_order" ? "Change order as an Estimate" : "Invoice",
+    customer: qboDisplayName(job.name),
+    amount: priced.totals.billed,
+    lines: priced.lines.length,
+  });
+  var vendors = {};
+  priced.lines.forEach(function (l) { vendors[l.vendor || "Unknown vendor"] = true; });
+  Object.keys(vendors).forEach(function (v) {
+    var cost = roundCents(priced.lines.filter(function (l) { return (l.vendor || "Unknown vendor") === v; })
+      .reduce(function (s, l) { return s + l.cost; }, 0));
+    plan.push({ entity: "Purchase", label: "Expense (job cost)", vendor: v, customer: qboDisplayName(job.name), amount: cost });
+  });
+  return plan;
+}
+
+</script>
+<script>
+// AI receipt reading: builds the Claude request for a receipt photo/PDF plus the email
+// it came with, and checks the answer. Sent over plain HTTPS (Apps Script has no SDK).
+// API: https://docs.anthropic.com/en/api/messages
+
+var CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
+var CLAUDE_MODEL = "claude-opus-5";
+var CLAUDE_FALLBACK_BETA = "server-side-fallback-2026-07-01";
+var RECEIPT_IMAGE_TYPES = { "image/jpeg": 1, "image/png": 1, "image/gif": 1, "image/webp": 1 };
+
+var RECEIPT_SCHEMA = {
+  type: "object",
+  properties: {
+    isReceipt: { type: "boolean", description: "False if the file is not a supplier receipt, invoice, delivery ticket or packing slip" },
+    employee: { type: "string", description: "Person who bought the materials; empty if unknown" },
+    jobName: { type: "string", description: "Job, customer or project name as written; empty if none" },
+    address: { type: "string", description: "Job site address as written; empty if none" },
+    jobGuess: { type: "string", description: "Exact job folder name from the provided list that this receipt belongs to, or empty if unsure" },
+    vendor: { type: "string", description: "Store or supplier name, e.g. ABC Supply Co." },
+    date: { type: "string", description: "Purchase date as YYYY-MM-DD; empty if unreadable" },
+    receiptNumber: { type: "string", description: "Receipt, invoice or order number; empty if none" },
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          description: { type: "string" },
+          qty: { type: "number" },
+          unit: { type: "string", description: "Unit such as ea, bdl, sht, rl, box, ft; empty if none" },
+          lineTotal: { type: "number", description: "Extended price for the line after any line discount, before tax; 0 if no price is printed" },
+        },
+        required: ["description", "qty", "unit", "lineTotal"],
+        additionalProperties: false,
+      },
+    },
+    subtotal: { type: "number" },
+    tax: { type: "number" },
+    total: { type: "number" },
+    notes: { type: "string", description: "Anything unclear or unreadable the office should check; empty if none" },
+  },
+  required: ["isReceipt", "employee", "jobName", "address", "jobGuess", "vendor", "date", "receiptNumber", "items", "subtotal", "tax", "total", "notes"],
+  additionalProperties: false,
+};
+
+var RECEIPT_INSTRUCTIONS = [
+  "You read material receipts for a construction contractor.",
+  "Extract the purchase from the attached receipt. Use the email details below for the employee and job when the receipt doesn't say.",
+  "",
+  "Rules:",
+  "- items: one entry per product line, with the quantity, unit and extended price. Fold line discounts, core charges and deposits into the line they belong to. Do not include tax, payment, change or loyalty lines.",
+  "- tax is the total sales tax charged. subtotal is before tax. total is the amount charged.",
+  "- employee: the buyer's name from the receipt (customer, picked up by, signature, account contact) or else the email sender's name.",
+  "- jobName and address: copy what the receipt or email says (PO/job field, delivery address, subject line). Do not invent them.",
+  "- A bill-to or ship-to address under the buyer's own company name (their office or shop, common on pickups) is not a job site; leave address empty unless it is a job site.",
+  "- jobGuess: pick the exact matching folder name from the job list only if you are confident; otherwise leave it empty.",
+  "- Delivery tickets, pick tickets and packing slips often show no prices. Read them anyway: use 0 for any price that isn't printed and say so in notes.",
+  "- Include handwritten additions as items and mention them in notes.",
+  "- Never guess numbers. If something is unreadable, put your best reading and explain it in notes.",
+].join("\n");
+
+/**
+ * Build the Messages API request.
+ * file:    { mimeType, base64 }  image (jpeg/png/gif/webp) or application/pdf
+ * context: { from, subject, body, receivedAt }
+ * jobs:    array of job folder names
+ * Returns { url, headers, body } or throws for unsupported files.
+ */
+function buildReceiptRequest(file, context, jobs, options) {
+  options = options || {};
+  var mime = String(file.mimeType || "").toLowerCase();
+  var block;
+  if (mime === "application/pdf") {
+    block = { type: "document", source: { type: "base64", media_type: "application/pdf", data: file.base64 } };
+  } else if (RECEIPT_IMAGE_TYPES[mime]) {
+    block = { type: "image", source: { type: "base64", media_type: mime, data: file.base64 } };
+  } else {
+    throw new Error("Unsupported file type " + (mime || "unknown") + ". Send a JPG, PNG or PDF (iPhone: set camera to Most Compatible).");
+  }
+  context = context || {};
+  var email = [
+    "Email/upload details:",
+    "From: " + (context.from || ""),
+    "Subject: " + (context.subject || ""),
+    "Message: " + String(context.body || "").slice(0, 4000),
+    "Received: " + (context.receivedAt || ""),
+  ].join("\n");
+  var jobList = "Job folders:\n" + (jobs || []).map(function (j) { return "- " + (typeof j === "string" ? j : j.name); }).join("\n");
+  var model = options.model || CLAUDE_MODEL;
+  var body = {
+    model: model,
+    max_tokens: 16000,
+    output_config: { effort: options.effort || "medium", format: { type: "json_schema", schema: RECEIPT_SCHEMA } },
+    messages: [{ role: "user", content: [block, { type: "text", text: RECEIPT_INSTRUCTIONS + "\n\n" + email + "\n\n" + jobList }] }],
+  };
+  var headers = { "x-api-key": options.apiKey || "", "anthropic-version": "2023-06-01", "content-type": "application/json" };
+  // Server-side refusal fallback: supported on Claude Opus 5 / Fable 5.1.
+  if (model === "claude-opus-5" || model === "claude-fable-5-1") {
+    body.fallbacks = "default";
+    headers["anthropic-beta"] = CLAUDE_FALLBACK_BETA;
+  }
+  return { url: CLAUDE_API_URL, headers: headers, body: body };
+}
+
+/** Parse the Messages API response into extracted receipt data. Throws with a readable message. */
+function parseReceiptResponse(status, response) {
+  if (status === 429 || status === 529) throw new Error("The AI service is busy. The receipt will be retried.");
+  if (status >= 400) {
+    var msg = response && response.error && response.error.message;
+    throw new Error("AI request failed (" + status + ")" + (msg ? ": " + msg : ""));
+  }
+  if (response.stop_reason === "refusal") throw new Error("The AI declined to read this file. Please review it by hand.");
+  if (response.stop_reason === "max_tokens") throw new Error("The receipt was too long to read in one pass. Please review it by hand.");
+  var text = null;
+  (response.content || []).forEach(function (b) { if (b.type === "text" && text === null) text = b.text; });
+  if (!text) throw new Error("The AI returned no answer.");
+  return normalizeExtraction(JSON.parse(text));
+}
+
+/** Clean numbers and flag anything that doesn't add up, so the office knows what to check. */
+function normalizeExtraction(x) {
+  var num = function (v) { var n = Number(v); return isFinite(n) ? roundCents(n) : 0; };
+  var items = (x.items || []).map(function (it) {
+    return { description: String(it.description || "").trim(), qty: Number(it.qty) || 1, unit: String(it.unit || "").trim(), lineTotal: num(it.lineTotal) };
+  }).filter(function (it) { return it.description || it.lineTotal; });
+  var out = {
+    isReceipt: x.isReceipt !== false,
+    employee: String(x.employee || "").trim(),
+    jobName: String(x.jobName || "").trim(),
+    address: String(x.address || "").trim(),
+    jobGuess: String(x.jobGuess || "").trim(),
+    vendor: String(x.vendor || "").trim(),
+    date: /^\d{4}-\d{2}-\d{2}$/.test(String(x.date || "")) ? x.date : "",
+    receiptNumber: String(x.receiptNumber || "").trim(),
+    items: items,
+    subtotal: num(x.subtotal),
+    tax: num(x.tax),
+    total: num(x.total),
+    notes: String(x.notes || "").trim(),
+  };
+  var flags = [];
+  if (!out.isReceipt) flags.push("This doesn't look like a receipt.");
+  if (!out.items.length) flags.push("No line items found.");
+  var unpriced = items.filter(function (it) { return !it.lineTotal; });
+  if (items.length && unpriced.length === items.length) {
+    flags.push("No prices on this receipt (delivery tickets and packing slips usually have none). Type in what each line cost before approving.");
+  } else if (unpriced.length) {
+    flags.push("No price on: " + unpriced.map(function (it) { return it.description; }).join("; ") + ". Type in what it cost before approving.");
+  }
+  var itemsSum = roundCents(items.reduce(function (s, it) { return s + it.lineTotal; }, 0));
+  if (out.subtotal && Math.abs(itemsSum - out.subtotal) > 0.05) {
+    flags.push("Line items add up to " + formatMoney(itemsSum) + " but the subtotal is " + formatMoney(out.subtotal) + ".");
+  }
+  if (out.total && Math.abs(roundCents(out.subtotal + out.tax) - out.total) > 0.05) {
+    flags.push("Subtotal plus tax (" + formatMoney(out.subtotal + out.tax) + ") doesn't equal the total " + formatMoney(out.total) + ".");
+  }
+  if (!out.vendor) flags.push("Vendor not found.");
+  if (!out.employee) flags.push("Employee not found.");
+  if (!out.date) flags.push("Date not readable.");
+  if (out.notes) flags.push(out.notes);
+  out.flags = flags;
+  return out;
+}
+
+/**
+ * Decide the job for an extracted receipt: address/name matching first, the AI's pick as backup.
+ * Anything not confident goes to review.
+ */
+function resolveJob(extracted, context, jobs) {
+  var hints = [extracted.jobName, extracted.address, context && context.subject, context && context.body].filter(Boolean);
+  var m = matchJob(hints, jobs);
+  var names = (jobs || []).map(function (j) { return typeof j === "string" ? j : j.name; });
+  var guess = extracted.jobGuess && names.indexOf(extracted.jobGuess) >= 0 ? extracted.jobGuess : "";
+  if (guess && m.job && m.job.name === guess && m.score >= 0.4) m.confident = true;
+  if (guess && !m.confident && (!m.job || m.job.name !== guess)) m.aiSuggestion = guess;
+  return m;
+}
+
+</script>
+
+  <script>
+// JobReceipts app UI. Runs in the Apps Script web app (api = google.script.run wrapper)
+// and in the build preview (api = sample-data stand-in). Uses the shared core functions
+// (priceReceipt, buildCustomerDocument, renderDocumentHtml, qboPlan, formatMoney).
+(function (root) {
+  "use strict";
+
+  var STATUS_TEXT = {
+    reading: ["reading", "Reading…"],
+    needs_review: ["review", "Needs review"],
+    ready: ["ready", "Ready to approve"],
+    approved: ["approved", "Approved"],
+    error: ["error", "Problem"],
+  };
+  var ACTION_TEXT = { change_order: "Change order", invoice: "Invoice" };
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function money(n) { return n == null || n === "" ? "—" : formatMoney(n); }
+  function shortDate(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    return isNaN(d) ? String(iso) : d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " +
+      d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+  function pill(r) {
+    var s = STATUS_TEXT[r.status] || ["review", r.status];
+    var text = r.status === "approved" && r.action ? "Approved · " + (ACTION_TEXT[r.action] || r.action) : s[1];
+    return '<span class="jr-pill ' + s[0] + '">' + esc(text) + "</span>";
+  }
+  function paperHtml(x) {
+    if (!x) return "";
+    var h = '<div class="jr-paper"><div class="v">' + esc(String(x.vendor || "").toUpperCase()) + '</div><div class="v">' + esc(x.date || "") +
+      (x.receiptNumber ? " · #" + esc(x.receiptNumber) : "") + "</div><hr>";
+    (x.items || []).forEach(function (it) {
+      h += '<div class="it"><span>' + esc((it.qty || 1) + " " + (it.unit || "") + " " + it.description) + "</span><span>" + Number(it.lineTotal || 0).toFixed(2) + "</span></div>";
+    });
+    return h + '<hr><div class="it"><span>SUBTOTAL</span><span>' + Number(x.subtotal || 0).toFixed(2) + '</span></div><div class="it"><span>TAX</span><span>' +
+      Number(x.tax || 0).toFixed(2) + '</span></div><div class="it"><b>TOTAL</b><b>' + Number(x.total || 0).toFixed(2) + "</b></div></div>";
+  }
+
+  /** Resize photos to at most 1800px JPEG so uploads are fast and fit the AI's image limits. */
+  function readFileForUpload(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error("Couldn't read that file. Try taking the photo again.")); };
+      reader.onload = function () {
+        var dataUrl = reader.result;
+        if (file.type === "application/pdf") {
+          if (file.size > 10 * 1024 * 1024) return reject(new Error("That PDF is over 10 MB. Send a smaller file."));
+          return resolve({ base64: dataUrl.split(",")[1], mimeType: "application/pdf", fileName: file.name, previewUrl: "" });
+        }
+        var img = new Image();
+        img.onerror = function () { reject(new Error("That image type can't be opened here. On iPhone, set Camera → Formats → Most Compatible.")); };
+        img.onload = function () {
+          var scale = Math.min(1, 1800 / Math.max(img.width, img.height));
+          var c = document.createElement("canvas");
+          c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          var out = c.toDataURL("image/jpeg", 0.85);
+          resolve({ base64: out.split(",")[1], mimeType: "image/jpeg", fileName: (file.name || "receipt").replace(/\.\w+$/, "") + ".jpg", previewUrl: out });
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function mount(el, opts) {
+    var api = opts.api;
+    var S = {
+      boot: null,
+      view: opts.view || null,
+      selectedId: opts.selectedId || null,
+      form: Object.assign({ file: null, sending: false, message: "" }, opts.preset || {}),
+      drafts: {},
+      files: {},
+      settings: null,
+      filter: { status: "", q: "" },
+      busy: false,
+    };
+
+    function toast(msg) {
+      var t = el.querySelector(".jr-toast");
+      if (!t) { t = document.createElement("div"); t.className = "jr-toast"; t.setAttribute("role", "status"); el.querySelector(".jr").appendChild(t); } // outside the re-rendered area
+      t.textContent = msg; t.hidden = false;
+      clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 4500);
+    }
+
+    function appRoot() { return el.querySelector(".jr-app"); }
+    function receipts() { return S.boot ? S.boot.receipts : []; }
+    function byId(id) { return receipts().filter(function (r) { return r.id === id; })[0]; }
+    function job(id) { return (S.boot.jobs || []).filter(function (j) { return j.id === id; })[0]; }
+
+    function draftFor(r) {
+      if (!S.drafts[r.id]) {
+        S.drafts[r.id] = {
+          jobId: r.jobId || "",
+          markup: r.markupPercent != null ? r.markupPercent : S.boot.defaultMarkup,
+          action: r.action || r.suggestedAction || "",
+          description: "", reason: r.note || "", contractPrice: "", projectManager: "",
+          items: JSON.parse(JSON.stringify((r.extracted && r.extracted.items) || [])),
+          tax: r.extracted ? r.extracted.tax : 0,
+          dirty: false,
+        };
+      }
+      return S.drafts[r.id];
+    }
+
+    function pricedFor(r, d) {
+      return priceReceipt({ vendor: r.extracted && r.extracted.vendor, items: d.items, tax: d.tax }, { markupPercent: Number(d.markup) || 0 });
+    }
+
+    // ---------------------------------------------------------------- views
+
+    function renderShell() {
+      var admin = S.boot.admin;
+      var tabs = admin
+        ? [["review", "Review", receipts().filter(function (r) { return r.status === "needs_review" || r.status === "ready" || r.status === "error"; }).length],
+           ["all", "All receipts"], ["jobs", "Jobs"], ["new", "Add receipt"], ["settings", "Settings"]]
+        : [["new", "Add receipt"], ["mine", "My receipts"]];
+      if (!S.view) S.view = admin ? "review" : "new";
+      var html = '<header class="jr-bar"><div class="jr-logo">Job<span>Receipts</span></div><div class="jr-spacer"></div>' +
+        (admin ? '<span class="jr-role">Admin</span>' : "") + '<span class="jr-who">' + esc(S.boot.user) + "</span></header>";
+      html += '<nav class="jr-tabs" role="tablist">' + tabs.map(function (t) {
+        return '<button class="jr-tab" role="tab" id="tab-' + t[0] + '" data-act="tab" data-view="' + t[0] + '" aria-selected="' + (S.view === t[0]) + '">' +
+          esc(t[1]) + (t[2] ? '<span class="jr-count">' + t[2] + "</span>" : "") + "</button>";
+      }).join("") + "</nav>";
+      html += '<main class="jr-main" id="jr-main"></main>';
+      appRoot().innerHTML = html;
+      renderView();
+    }
+
+    function renderView() {
+      var main = el.querySelector("#jr-main");
+      el.querySelectorAll(".jr-tab").forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.view === S.view)); });
+      if (S.view === "new") main.innerHTML = viewNew() + (S.boot.admin ? "" : viewMine(true));
+      else if (S.view === "mine") main.innerHTML = viewMine(false);
+      else if (S.view === "review") main.innerHTML = viewReview(true);
+      else if (S.view === "all") main.innerHTML = viewReview(false);
+      else if (S.view === "jobs") main.innerHTML = viewJobs();
+      else if (S.view === "settings") main.innerHTML = viewSettings();
+      afterRender();
+    }
+
+    function viewNew() {
+      var f = S.form;
+      var h = '<section class="jr-card jr-add" aria-labelledby="new-h"><h2 id="new-h">Add a receipt</h2>';
+      if (f.sending) {
+        h += (f.file && f.file.previewUrl ? '<img class="jr-thumb" alt="Receipt photo" src="' + f.file.previewUrl + '">' : "") +
+          '<div class="jr-ok" role="status">Reading the receipt… this takes a few seconds.</div>';
+      } else {
+        h += '<label class="jr-btn block jr-add-btn" for="receipt-file">Add receipt<input type="file" id="receipt-file" accept="image/*,application/pdf" aria-label="Add receipt: take or choose a photo"></label>';
+      }
+      if (f.message) h += '<div class="' + (f.messageKind === "ok" ? "jr-ok" : "jr-err") + '" role="status">' + esc(f.message) + "</div>";
+      h += '<p class="jr-hint">Take a photo of the receipt or pick one from your phone. The job, store and materials are read from the receipt. Keep the paper copy until it shows Approved.</p></section>';
+      return h;
+    }
+
+    function viewMine(compact) {
+      var list = receipts();
+      var h = '<section class="jr-card" aria-labelledby="mine-h"><h2 id="mine-h">My receipts</h2>';
+      if (!list.length) return h + '<div class="jr-empty">Receipts you send will show up here.</div></section>';
+      h += '<div class="jr-list">' + list.slice(0, compact ? 8 : 200).map(function (r) {
+        return '<div class="jr-item"><div><div class="t">' + esc(r.vendor || "Receipt") + " · " + money(r.total) + '</div><div class="s">' + esc(r.jobName || "No job") +
+          " · " + esc(shortDate(r.createdAt)) + (r.error ? '<br><span style="color:var(--bad)">' + esc(r.error) + "</span>" : "") + '</div></div><div class="r">' + pill(r) + "</div></div>";
+      }).join("") + "</div></section>";
+      return h;
+    }
+
+    function listRows(list) {
+      return list.map(function (r) {
+        var x = r.extracted || {};
+        return '<button type="button" class="jr-item" data-act="select" data-id="' + esc(r.id) + '" aria-selected="' + (S.selectedId === r.id) + '"><div><div class="t">' +
+          esc(x.vendor || "Receipt") + " · " + money(x.total) + '</div><div class="s">' + esc(r.jobName || "Job not confirmed") + "<br>" +
+          esc(r.employee || r.uploadedBy) + " · " + esc(shortDate(r.createdAt)) + '</div></div><div class="r">' + pill(r) +
+          (r.billed != null ? '<span class="s num">' + money(r.billed) + "</span>" : "") + "</div></button>";
+      }).join("");
+    }
+
+    function viewReview(queueOnly) {
+      var list = receipts();
+      if (queueOnly) list = list.filter(function (r) { return r.status !== "approved"; });
+      else {
+        if (S.filter.status) list = list.filter(function (r) { return r.status === S.filter.status; });
+        if (S.filter.q) {
+          var q = S.filter.q.toLowerCase();
+          list = list.filter(function (r) {
+            return [r.jobName, r.employee, r.uploadedBy, r.extracted && r.extracted.vendor].join(" ").toLowerCase().indexOf(q) >= 0;
+          });
+        }
+      }
+      if (!S.selectedId || !list.some(function (r) { return r.id === S.selectedId; })) S.selectedId = list[0] ? list[0].id : null;
+      var h = '<div class="jr-split"><section class="jr-card" aria-label="Receipts">';
+      if (!queueOnly) {
+        h += '<div class="jr-row"><input type="search" id="filter-q" placeholder="Job, employee or vendor" value="' + esc(S.filter.q) + '">' +
+          '<select id="filter-status"><option value="">All statuses</option>' + Object.keys(STATUS_TEXT).map(function (k) {
+            return '<option value="' + k + '"' + (S.filter.status === k ? " selected" : "") + ">" + STATUS_TEXT[k][1] + "</option>";
+          }).join("") + "</select></div>";
+      }
+      h += list.length ? '<div class="jr-list">' + listRows(list) + "</div>"
+        : '<div class="jr-empty">' + (queueOnly ? "Nothing waiting. New receipts appear here as employees send them." : "No receipts match.") + "</div>";
+      h += "</section>";
+      h += '<div id="jr-detail">' + (S.selectedId ? viewDetail(byId(S.selectedId)) : "") + "</div></div>";
+      return h;
+    }
+
+    function viewDetail(r) {
+      if (!r) return "";
+      var x = r.extracted;
+      var h = '<section class="jr-card" aria-labelledby="det-h"><div class="jr-row" style="align-items:center"><h2 id="det-h" style="flex:2 1 240px">' +
+        esc((x && x.vendor) || "Receipt") + " · " + money(x && x.total) + '</h2><div style="flex:0 0 auto">' + pill(r) + "</div></div>";
+      h += '<p class="jr-hint">' + esc("Uploaded by " + (r.employee || r.uploadedBy)) + " · " + esc(shortDate(r.createdAt)) +
+        (r.note ? " · Note: “" + esc(r.note) + "”" : "") + "</p>";
+      if (r.status === "error") {
+        h += '<div class="jr-err">' + esc(r.error || "Something went wrong reading this receipt.") + '</div><div class="jr-actions"><button type="button" class="jr-btn" data-act="retry" data-id="' + esc(r.id) + '">Read it again</button></div></section>';
+        return h;
+      }
+      if (r.status === "reading" || !x) return h + '<div class="jr-ok">Reading the receipt…</div></section>';
+      var d = draftFor(r);
+      var priced = pricedFor(r, d);
+      var approved = r.status === "approved";
+
+      h += '<div class="jr-detail-grid"><div id="jr-file">' + (S.files[r.id] ? fileHtml(S.files[r.id], x) : paperHtml(x)) + "</div><div style=\"display:flex;flex-direction:column;gap:12px;min-width:0\">";
+      var flags = (x.flags || []).slice();
+      if (r.match && !r.match.confident && !d.jobId) flags.unshift("Pick the job before approving.");
+      h += flags.length ? '<div class="jr-flags">' + flags.map(esc).join("<br>") + "</div>" : '<div class="jr-ok">The numbers add up and the job is confirmed.</div>';
+      h += '<label class="jr-field" for="d-job"><span>Job folder</span><select id="d-job" ' + (approved ? "disabled" : "") + '><option value="">Pick a job…</option>';
+      var suggested = {};
+      ((r.match && r.match.candidates) || []).forEach(function (c) { suggested[c.id] = true; });
+      (S.boot.jobs || []).forEach(function (j) {
+        h += '<option value="' + esc(j.id) + '"' + (d.jobId === j.id ? " selected" : "") + ">" + (suggested[j.id] && d.jobId !== j.id ? "★ " : "") + esc(j.name) + "</option>";
+      });
+      if (d.jobId && !job(d.jobId)) h = h.replace('<option value="">Pick a job…</option>', '<option value="">Pick a job…</option><option value="' + esc(d.jobId) + '" selected>New job: ' + esc(r.jobName || String(d.jobId).replace(/^new:/, "")) + "</option>");
+      h += "</select></label>";
+      if (r.match && r.match.aiSuggestion) h += '<p class="jr-hint">AI suggestion: ' + esc(r.match.aiSuggestion) + "</p>";
+      h += '<div class="jr-row"><label class="jr-field" for="d-markup"><span>Markup %</span><input type="number" id="d-markup" min="0" max="500" step="0.5" value="' + esc(d.markup) + '" ' + (approved ? "disabled" : "") + "></label>" +
+        '<div class="jr-field"><span>Bill as</span><div class="jr-seg" role="radiogroup" style="grid-template-columns:repeat(2,minmax(0,1fr))">' +
+        [["change_order", "Change order"], ["invoice", "Invoice"]].map(function (o) {
+          return '<label class="jr-opt"><input type="radio" name="d-action" value="' + o[0] + '"' + (d.action === o[0] ? " checked" : "") + (approved ? " disabled" : "") + ">" + o[1] + "</label>";
+        }).join("") + "</div></div></div>";
+      h += "</div></div>";
+
+      // Line items (editable before approval)
+      h += '<div class="jr-label">Materials · internal pricing</div><div class="jr-tbl"><table><thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Receipt $</th><th class="n">Cost</th><th class="n">Billed</th><th class="n">Profit</th></tr></thead><tbody>';
+      priced.lines.forEach(function (l, i) {
+        var it = d.items[i];
+        h += "<tr><td>" + (approved ? esc(it.description) : '<input type="text" id="it-desc-' + i + '" data-item="' + i + '" data-field="description" value="' + esc(it.description) + '" aria-label="Item description">') +
+          '<div class="jr-hint">' + esc(l.vendor) + '</div></td><td class="n">' + (approved ? esc(it.qty) : '<input type="number" id="it-qty-' + i + '" data-item="' + i + '" data-field="qty" value="' + esc(it.qty) + '" style="width:64px" aria-label="Quantity">') +
+          '</td><td class="n">' + (approved ? money(it.lineTotal) : '<input type="number" step="0.01" id="it-amt-' + i + '" data-item="' + i + '" data-field="lineTotal" value="' + esc(it.lineTotal) + '" style="width:96px" aria-label="Receipt amount">') +
+          '</td><td class="n num">' + money(l.cost) + '</td><td class="n num">' + money(l.billed) + '</td><td class="n num">' + money(l.profit) + "</td></tr>";
+      });
+      h += '</tbody><tfoot><tr><td>Tax (counted in cost)</td><td></td><td class="n">' + (approved ? money(d.tax) : '<input type="number" step="0.01" id="d-tax" value="' + esc(d.tax) + '" style="width:96px" aria-label="Tax">') +
+        '</td><td class="n num">' + money(priced.totals.cost) + '</td><td class="n num">' + money(priced.totals.billed) + '</td><td class="n num">' + money(priced.totals.profit) + "</td></tr></tfoot></table></div>";
+      h += '<div class="jr-totals"><div class="jr-total"><span>Cost</span><strong>' + money(priced.totals.cost) + '</strong></div><div class="jr-total"><span>Markup</span><strong>' + esc(d.markup) +
+        '%</strong></div><div class="jr-total"><span>Total billed</span><strong>' + money(priced.totals.billed) + '</strong></div><div class="jr-total profit"><span>Profit · ' + priced.totals.marginPercent +
+        '% margin</span><strong>' + money(priced.totals.profit) + "</strong></div></div>";
+
+      if (d.action === "change_order" && !approved) {
+        h += '<div class="jr-row"><label class="jr-field" for="d-desc"><span>Description of changes</span><input type="text" id="d-desc" value="' + esc(d.description) + '" placeholder="Additional materials as listed below"></label>' +
+          '<label class="jr-field" for="d-pm"><span>Project manager</span><input type="text" id="d-pm" value="' + esc(d.projectManager) + '"></label></div>' +
+          '<div class="jr-row"><label class="jr-field" for="d-reason"><span>Reason for change</span><input type="text" id="d-reason" value="' + esc(d.reason) + '"></label>' +
+          '<label class="jr-field" for="d-contract"><span>Current contract price <span class="jr-hint">(optional)</span></span><input type="number" step="0.01" id="d-contract" value="' + esc(d.contractPrice) + '"></label></div>';
+      }
+
+      h += '<div id="jr-preview" style="display:flex;flex-direction:column;gap:12px">' + previewHtml(r, d, priced, approved) + "</div>";
+      if (approved) {
+        h += '<div class="jr-ok">Approved as ' + esc(ACTION_TEXT[r.action] || r.action) + (r.docName ? ": " + esc(r.docName) : "") + (r.approvedBy ? " · by " + esc(r.approvedBy) : "") + "</div>";
+        if (S.boot.canDownloadDocs) h += '<div class="jr-actions"><button type="button" class="jr-btn secondary" data-act="download-doc" data-id="' + esc(r.id) + '">Download ' + esc((ACTION_TEXT[r.action] || "document").toLowerCase()) + "</button></div>";
+      } else {
+        var priced0 = !(priced.totals.cost > 0);
+        var ready = !!(d.jobId && d.action && d.items.length) && !priced0;
+        h += '<div class="jr-actions"><button type="button" class="jr-btn" data-act="approve" data-id="' + esc(r.id) + '" ' + (ready && !S.busy ? "" : "disabled") + ">" +
+          (S.busy ? "Creating…" : !d.action ? "Choose change order or invoice" : priced0 ? "Type in the costs to approve" :
+            d.action === "invoice" ? "Approve & create invoice" : "Approve & create change order") + "</button></div>";
+      }
+      return h + "</section>";
+    }
+
+    /** Customer document preview + QuickBooks plan. Updated on its own while typing so buttons never move under a tap. */
+    function previewHtml(r, d, priced, approved) {
+      var x = r.extracted, h = "";
+      var j = job(d.jobId);
+      if (j && d.action) {
+        var doc = buildCustomerDocument(d.action, j, priced, {
+          number: d.action === "change_order" ? "(next)" : "", date: (x.date || ""), projectManager: d.projectManager,
+          description: d.description, reason: d.reason, contractPrice: d.contractPrice === "" ? null : Number(d.contractPrice),
+        });
+        h += '<details' + (approved ? "" : " open") + '><summary class="jr-label" style="cursor:pointer">What the customer sees</summary><div class="jr-docprev">' +
+          renderDocumentHtml(doc, { name: S.boot.company, address: S.boot.companyAddress }) + "</div></details>";
+        h += '<div class="jr-label">QuickBooks Online</div>' + qboPlan(d.action, priced, j, {}).map(function (p) {
+          return '<div class="jr-qline"><span>' + esc(p.label) + "<small>" + (p.vendor ? "Vendor: " + esc(p.vendor) + " · " : "") + "Customer: " + esc(p.customer) + '</small></span><span class="num">' + money(p.amount) + "</span></div>";
+        }).join("");
+      }
+      return h;
+    }
+
+    function fileHtml(f, x) {
+      if (f.dataUrl && /^data:image\//.test(f.dataUrl)) return '<img class="jr-img" alt="Receipt" src="' + f.dataUrl + '">';
+      if (f.url) return '<a class="jr-btn secondary block" href="' + esc(f.url) + '" target="_blank" rel="noopener">Open the receipt file</a>' + paperHtml(x);
+      return paperHtml(x);
+    }
+
+    function viewJobs() {
+      var by = {};
+      receipts().forEach(function (r) {
+        if (!r.jobName) return;
+        var j = by[r.jobName] || (by[r.jobName] = { name: r.jobName, count: 0, cost: 0, billed: 0, profit: 0, pending: 0 });
+        j.count++;
+        if (r.status === "approved") { j.cost += r.cost || 0; j.billed += r.billed || 0; j.profit += r.profit || 0; }
+        else j.pending += r.cost || 0;
+      });
+      var rows = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.billed - a.billed; });
+      var t = rows.reduce(function (a, j) { a.cost += j.cost; a.billed += j.billed; a.profit += j.profit; a.pending += j.pending; return a; }, { cost: 0, billed: 0, profit: 0, pending: 0 });
+      var h = '<section class="jr-card"><h2>Jobs</h2><p class="jr-hint">Approved receipts count toward cost, billed and profit. Pending shows cost still waiting for review.</p>';
+      h += '<div class="jr-totals"><div class="jr-total"><span>Cost</span><strong>' + money(t.cost) + '</strong></div><div class="jr-total"><span>Billed</span><strong>' + money(t.billed) +
+        '</strong></div><div class="jr-total profit"><span>Profit</span><strong>' + money(t.profit) + '</strong></div><div class="jr-total"><span>Pending cost</span><strong>' + money(t.pending) + "</strong></div></div>";
+      h += '<div class="jr-tbl"><table><thead><tr><th>Job</th><th class="n">Receipts</th><th class="n">Cost</th><th class="n">Billed</th><th class="n">Profit</th><th class="n">Pending</th></tr></thead><tbody>' +
+        (rows.map(function (j) {
+          return "<tr><td>" + esc(j.name) + '</td><td class="n num">' + j.count + '</td><td class="n num">' + money(j.cost) + '</td><td class="n num">' + money(j.billed) +
+            '</td><td class="n num">' + money(j.profit) + '</td><td class="n num">' + money(j.pending) + "</td></tr>";
+        }).join("") || '<tr><td colspan="6" class="jr-empty">No receipts yet.</td></tr>') + "</tbody></table></div></section>";
+      return h;
+    }
+
+    function viewSettings() {
+      var s = S.settings;
+      if (!s) return '<section class="jr-card"><h2>Settings</h2><div class="jr-empty">Loading…</div></section>';
+      var q = s.quickbooks;
+      var h = '<section class="jr-card"><h2>Connections</h2>';
+      h += '<div class="jr-qline"><span>QuickBooks Online<small>' + (q.connected ? "Connected (" + esc(q.environment) + ")" : esc(q.reason || "Not connected")) + "</small></span>" +
+        (q.connected ? '<span class="jr-pill approved">Connected</span>' : q.authUrl ? '<a class="jr-btn" href="' + esc(q.authUrl) + '" target="_blank" rel="noopener">Connect QuickBooks</a>' : '<span class="jr-pill review">Needs setup</span>') + "</div>";
+      h += '<div class="jr-qline"><span>AI receipt reading<small>' + (s.ai ? "On" : "Add your Anthropic API key in Script properties") + "</small></span>" + (s.ai ? '<span class="jr-pill approved">On</span>' : '<span class="jr-pill review">Off</span>') + "</div>";
+      h += '<div class="jr-qline"><span>Change order template<small>' + (s.changeOrderTemplate ? "Using your Google Doc template" : "Using the built-in layout") + "</small></span></div>";
+      h += '<p class="jr-hint">' + (s.hint ? esc(s.hint) : "Default markup: " + esc(s.defaultMarkup) + "% · Admins: " + esc(s.admins.join(", ") || "only the person who installed the app") + ". Change these in Script properties.") + "</p></section>";
+      var people = "";
+      if (s.people) {
+        people += '<section class="jr-card" aria-labelledby="people-h" style="margin-top:16px"><h2 id="people-h">People</h2>' +
+          '<p class="jr-hint">Each person opens JobReceipts with their own private link. No password or sign-in: text them the link and they tap Add receipt. Office links see every receipt and the money.</p>';
+        people += '<div class="jr-list">' + s.people.map(function (p, i) {
+          return '<div class="jr-item" style="flex-wrap:wrap"><div style="min-width:0;flex:1 1 220px"><div class="t">' + esc(p.name) + (p.admin ? ' <span class="jr-role">Office</span>' : "") +
+            '</div><input type="text" readonly id="link-' + i + '" value="' + esc(p.link) + '" aria-label="' + esc(p.name) + ' link" style="width:100%;margin-top:6px"></div>' +
+            '<div class="r" style="flex-direction:row;gap:8px"><button type="button" class="jr-btn secondary" data-act="copy-link" data-i="' + i + '">Copy link</button>' +
+            '<button type="button" class="jr-btn secondary" data-act="remove-person" data-name="' + esc(p.name) + '">Turn off</button></div></div>';
+        }).join("") + "</div>";
+        people += '<div class="jr-row" style="margin-top:12px;align-items:flex-end"><label class="jr-field" for="person-name" style="flex:2 1 200px"><span>Name</span><input type="text" id="person-name" placeholder="e.g. Jake Brenner"></label>' +
+          '<label class="jr-opt" style="flex:0 0 auto"><input type="checkbox" id="person-admin"> Office (sees everything)</label>' +
+          '<button type="button" class="jr-btn" data-act="add-person" style="flex:0 0 auto">Make link</button></div></section>';
+      }
+      return h + people;
+    }
+
+    // ---------------------------------------------------------------- events
+
+    function afterRender() {
+      if (S.view === "settings" && !S.settings) {
+        api.call("apiSettings").then(function (s) { S.settings = s; renderView(); }, function (e) { toast(e.message); });
+      }
+      if ((S.view === "review" || S.view === "all") && S.selectedId && !S.files[S.selectedId]) {
+        var id = S.selectedId, r = byId(id);
+        if (r && r.fileId) api.call("apiReceiptFile", id).then(function (f) { if (f) { S.files[id] = f; var box = el.querySelector("#jr-file"); if (box && S.selectedId === id) box.innerHTML = fileHtml(f, r.extracted); } }, function () {});
+      }
+    }
+
+    function rerenderDetail() {
+      var box = el.querySelector("#jr-detail");
+      var active = document.activeElement && document.activeElement.id;
+      if (box) box.innerHTML = viewDetail(byId(S.selectedId));
+      if (active) { var again = el.querySelector("#" + active); if (again) { again.focus(); if (again.setSelectionRange && again.type === "text") { var n = again.value.length; again.setSelectionRange(n, n); } } }
+    }
+
+    el.addEventListener("click", function (e) {
+      var t = e.target.closest("[data-act]");
+      if (!t || opts.readOnly) return;
+      var act = t.dataset.act;
+      if (act === "tab") { S.view = t.dataset.view; renderView(); }
+      else if (act === "select") { S.selectedId = t.dataset.id; renderView(); }
+      else if (act === "send") send();
+      else if (act === "approve") approve(t.dataset.id);
+      else if (act === "retry") retry(t.dataset.id);
+      else if (act === "add-person") {
+        var nm = el.querySelector("#person-name").value, ad = el.querySelector("#person-admin").checked;
+        api.call("apiAddPerson", nm, ad).then(function (people) { S.settings.people = people; renderView(); toast("Link made for " + nm.trim() + ". Copy it and text it to them."); }, function (err) { toast(err.message); });
+      }
+      else if (act === "remove-person") {
+        if (t.dataset.confirm !== "1") { t.dataset.confirm = "1"; t.textContent = "Tap again to turn off"; return; }
+        api.call("apiRemovePerson", t.dataset.name).then(function (people) { S.settings.people = people; renderView(); toast("Link turned off. Their receipts stay."); }, function (err) { toast(err.message); });
+      }
+      else if (act === "copy-link") {
+        var box = el.querySelector("#link-" + t.dataset.i);
+        var done = function () { toast("Link copied."); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(box.value).then(done, function () { box.select(); toast("Press copy to copy the selected link."); });
+        else { box.select(); toast("Press copy to copy the selected link."); }
+      }
+      else if (act === "download-doc") api.call("apiDownloadDoc", t.dataset.id).then(function (m) { if (m) toast(m); }, function (err) { toast(err.message); });
+    });
+
+    el.addEventListener("input", function (e) {
+      if (opts.readOnly) return;
+      var t = e.target;
+      if (t.id === "filter-q") { S.filter.q = t.value; var p = t.selectionStart; renderView(); var f = el.querySelector("#filter-q"); f.focus(); f.setSelectionRange(p, p); return; }
+      var r = byId(S.selectedId);
+      if (!r) return;
+      var d = draftFor(r);
+      if (t.dataset.item != null) {
+        var it = d.items[Number(t.dataset.item)];
+        it[t.dataset.field] = t.dataset.field === "description" ? t.value : Number(t.value);
+        d.dirty = true;
+        if (t.dataset.field !== "description") rerenderDetail();
+        return;
+      }
+      if (t.id === "d-markup") { d.markup = t.value; rerenderDetail(); }
+      else if (t.id === "d-tax") { d.tax = Number(t.value); d.dirty = true; rerenderDetail(); }
+      else if (/^d-(desc|reason|pm|contract)$/.test(t.id)) {
+        var key = { "d-desc": "description", "d-reason": "reason", "d-pm": "projectManager", "d-contract": "contractPrice" }[t.id];
+        d[key] = t.value;
+        var pv = el.querySelector("#jr-preview");
+        if (pv) pv.innerHTML = previewHtml(r, d, pricedFor(r, d), false);
+      }
+    });
+
+    el.addEventListener("change", function (e) {
+      if (opts.readOnly) return;
+      var t = e.target;
+      if (t.id === "receipt-file" && t.files && t.files[0]) {
+        readFileForUpload(t.files[0]).then(function (f) { S.form.file = f; S.form.message = ""; send(); }, function (err) { S.form.message = err.message; S.form.messageKind = "err"; renderView(); });
+      }
+      else if (t.id === "filter-status") { S.filter.status = t.value; renderView(); }
+      else if (t.id === "d-job") { draftFor(byId(S.selectedId)).jobId = t.value; rerenderDetail(); }
+      else if (t.name === "d-action") { draftFor(byId(S.selectedId)).action = t.value; rerenderDetail(); }
+    });
+
+    function refresh() {
+      return api.call("apiReceipts").then(function (list) { S.boot.receipts = list; renderShell(); });
+    }
+
+    function send() {
+      var f = S.form;
+      f.sending = true; f.message = ""; renderView();
+      api.call("apiUpload", { base64: f.file.base64, mimeType: f.file.mimeType, fileName: f.file.fileName })
+        .then(function (r) {
+          S.form = { file: null, sending: false,
+            message: r.status === "error" ? "Saved, but it couldn't be read: " + (r.error || "") + " The office will check it."
+              : "Sent. " + [r.vendor, r.total ? money(r.total) : "", r.jobName].filter(Boolean).join(" · ") + ". The office will review it.",
+            messageKind: r.status === "error" ? "err" : "ok" };
+          return refresh();
+        }, function (err) { S.form = { file: null, sending: false, message: err.message, messageKind: "err" }; renderView(); });
+    }
+
+    function approve(id) {
+      var r = byId(id), d = draftFor(r);
+      S.busy = true; rerenderDetail();
+      var sub = roundCents(d.items.reduce(function (s, i) { return s + Number(i.lineTotal || 0); }, 0));
+      // A ticket printed without prices has no total; the office's typed costs become it.
+      var edited = Object.assign({}, r.extracted, { items: d.items, tax: d.tax, subtotal: sub, total: r.extracted.total || roundCents(sub + Number(d.tax || 0)) });
+      var save = d.dirty || d.jobId !== r.jobId || Number(d.markup) !== r.markupPercent
+        ? api.call("apiSaveDraft", id, { jobId: d.jobId, markupPercent: Number(d.markup), extracted: d.dirty ? edited : null })
+        : Promise.resolve();
+      save.then(function () {
+        return api.call("apiApprove", id, { action: d.action, markupPercent: Number(d.markup), description: d.description, reason: d.reason,
+          contractPrice: d.contractPrice === "" ? null : Number(d.contractPrice), projectManager: d.projectManager });
+      }).then(function (res) {
+        S.busy = false; delete S.drafts[id];
+        toast("Created " + res.receipt.docName);
+        return refresh();
+      }, function (err) { S.busy = false; toast(err.message); rerenderDetail(); });
+    }
+
+    function retry(id) {
+      api.call("apiRetry", id).then(function () { return refresh(); }, function (err) { toast(err.message); });
+    }
+
+    // ---------------------------------------------------------------- start
+    // Stable outer .jr (theme tokens + toast); only .jr-app is re-rendered.
+    el.innerHTML = '<div class="jr"><div class="jr-app"><div class="jr-main"><div class="jr-empty">Loading…</div></div></div></div>';
+    S.reload = refresh; // lets a live back end show new receipts as they arrive
+    var start = opts.boot ? Promise.resolve(opts.boot) : api.call("apiBootstrap");
+    start.then(function (b) { S.boot = b; if (opts.settings) S.settings = opts.settings; renderShell(); if (opts.after) opts.after(S); },
+      function (err) { appRoot().innerHTML = '<div class="jr-main"><div class="jr-err">' + esc(err.message) + "</div></div>"; });
+    return S;
+  }
+
+  /** google.script.run as promises: api.call("apiUpload", arg) */
+  /** Apps Script back end. key: the person's private link key (?k=...), sent with every call. */
+  function appsScriptApi(key) {
+    return {
+      call: function (name) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        return new Promise(function (resolve, reject) {
+          google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e instanceof Error ? e : new Error(String(e && e.message || e))); })
+            .api(key || "", name, args);
+        });
+      },
+    };
+  }
+
+  root.JobReceiptsApp = { mount: mount, appsScriptApi: appsScriptApi, readFileForUpload: readFileForUpload };
+})(this);
+
+</script>
+
+  <script>
+    var JR_KEY = <?!= JSON.stringify(key || "") ?>; // this person's private link key
+    JobReceiptsApp.mount(document.getElementById("app"), { api: JobReceiptsApp.appsScriptApi(JR_KEY) });
+  </script>
+</body>
+</html>

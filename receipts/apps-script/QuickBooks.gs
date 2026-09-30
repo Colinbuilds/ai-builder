@@ -24,8 +24,14 @@ function qboAuthCallback(request) {
     : "<p style='font-family:sans-serif'>QuickBooks connection was cancelled.</p>");
 }
 
+/** True when QuickBooks is set up and connected. Works before the OAuth2 library is added. */
+function qboReady_() {
+  return typeof OAuth2 !== "undefined" && !!setting_("QBO_CLIENT_ID") && qboService_().hasAccess();
+}
+
 function qboStatus_() {
   requireAdmin_();
+  if (typeof OAuth2 === "undefined") return { connected: false, reason: "Not set up yet. See \"Connect QuickBooks\" in the setup guide." };
   if (!setting_("QBO_CLIENT_ID")) return { connected: false, reason: "Add QBO_CLIENT_ID and QBO_CLIENT_SECRET in Script properties." };
   var svc = qboService_();
   if (!svc.hasAccess()) return { connected: false, authUrl: svc.getAuthorizationUrl() };
