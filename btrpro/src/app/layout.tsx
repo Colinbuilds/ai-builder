@@ -41,6 +41,7 @@ function navFor(role: string): NavGroup[] {
           ? [
               { href: "/admin/users", label: "Users" },
               { href: "/settings/import-jobs", label: "Import jobs" },
+              { href: "/settings/acculynx", label: "Move off AccuLynx" },
               { href: "/settings/company", label: "Company settings" },
               { href: "/settings/integrations", label: "Integrations" },
             ]

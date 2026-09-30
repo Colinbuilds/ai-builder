@@ -74,6 +74,8 @@ export default async function EstimatePage({
 }) {
   const user = await requireUser();
   const { id, estimateId } = await params;
+  const cutover = (await getSettings()).acculynxCutoverDate;
+  const acculynxRetired = !!cutover && new Date().toISOString().slice(0, 10) > cutover;
   const e = await prisma.estimate.findUnique({
     where: { id: estimateId },
     include: {
@@ -215,12 +217,14 @@ export default async function EstimatePage({
             <a className="underline" href={`/api/estimates/${e.id}/order.csv`}>
               Order CSV
             </a>
-            <Link
-              className="underline"
-              href={`/projects/${id}/estimates/${e.id}/acculynx`}
-            >
-              AccuLynx copy
-            </Link>
+            {!acculynxRetired && (
+              <Link
+                className="underline"
+                href={`/projects/${id}/estimates/${e.id}/acculynx`}
+              >
+                AccuLynx copy
+              </Link>
+            )}
           </div>
         )}
         {canEdit && (

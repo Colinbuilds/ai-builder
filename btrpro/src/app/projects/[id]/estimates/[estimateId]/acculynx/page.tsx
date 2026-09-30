@@ -1,3 +1,4 @@
+import { getSettings } from "@/lib/settings";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { acculynxText, loadBundle } from "@/lib/outputs/estimate";
@@ -10,6 +11,7 @@ export default async function AccuLynxPage({
 }) {
   await requireUser(["ADMIN", "ESTIMATOR"]);
   const { id, estimateId } = await params;
+  const cutover = (await getSettings()).acculynxCutoverDate;
   const b = await loadBundle(estimateId);
   const { text, skipped } = acculynxText(b);
   return (
@@ -21,6 +23,11 @@ export default async function AccuLynxPage({
         ← {b.e.name}
       </Link>
       <h2 className="text-xl font-semibold">AccuLynx material list</h2>
+      {cutover && new Date().toISOString().slice(0, 10) > cutover && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          BTR moved off AccuLynx on {cutover}. This list is kept for reference only.
+        </p>
+      )}
       <p className="text-sm text-muted-foreground">
         Item, quantity, unit — tab-separated so it pastes into AccuLynx columns.
         No item numbers or notes.
