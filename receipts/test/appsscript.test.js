@@ -96,7 +96,7 @@ test("employees only see their own receipts; admin-only actions are refused", ()
   assert.equal(all.length, 1);
   assert.equal(all[0].cost, 265.12);
   g._.setUser("");
-  assert.throws(() => ctx.apiBootstrap(), /sign in/);
+  assert.throws(() => ctx.apiBootstrap(), /link the office sent you/);
 });
 
 test("admin approves an invoice: QuickBooks customer, invoice and expense; doc in Invoices; receipt filed", () => {
@@ -213,6 +213,7 @@ test("phone upload without a buyer name on the receipt: the uploader is the empl
   assert.equal(r.status, "ready");
 });
 
+
 test("QuickBooks not connected yet: documents are still created and the receipt is marked", () => {
   const { g, ctx, qbo, jobs } = setup({ qboConnected: false });
   g._.setUser("jake@acme.test"); const up = upload(ctx, jobs.harvest.getId());
@@ -241,7 +242,7 @@ test("AI failure leaves a visible receipt with the error, and retry recovers it"
 test("security: only the page API, the OAuth callback and setup can be called from a browser", () => {
   // Apps Script lets the page call any top-level function whose name doesn't end in "_".
   const PUBLIC = new Set(["doGet", "setup", "qboAuthCallback", "apiBootstrap", "apiUpload", "apiReceipts",
-    "apiReceiptFile", "apiSaveDraft", "apiApprove", "apiRetry", "apiSettings"]);
+    "apiReceiptFile", "apiSaveDraft", "apiApprove", "apiRetry", "apiSettings", "api", "apiAddPerson", "apiRemovePerson"]);
   for (const f of GS) {
     const src = fs.readFileSync(path.join(DIR, "apps-script", f), "utf8");
     for (const m of src.matchAll(/^function (\w+)\s*\(/gm)) {
@@ -250,8 +251,54 @@ test("security: only the page API, the OAuth callback and setup can be called fr
   }
 });
 
+test("private links: the office link is admin, crew links see only their own, bad links and internals are refused", () => {
+  const { g, ctx } = setup();
+  const people = JSON.parse(g._.props.get("PEOPLE"));
+  const officeKey = Object.keys(people).find((k) => people[k].admin);
+  g._.setUser(""); // anonymous visitor: identity comes only from the link
+  assert.equal(ctx.api(officeKey, "apiBootstrap", []).admin, true);
+  const list = ctx.api(officeKey, "apiAddPerson", ["Jake Brenner", false]);
+  const jakeKey = list.find((p) => p.name === "Jake Brenner").link.split("?k=")[1];
+  const up = ctx.api(jakeKey, "apiUpload", [{ base64: Buffer.from("x").toString("base64"), mimeType: "image/jpeg", fileName: "a.jpg" }]);
+  assert.equal(up.cost, undefined);
+  const boot = ctx.api(jakeKey, "apiBootstrap", []);
+  assert.equal(boot.admin, false);
+  assert.equal(boot.user, "Jake Brenner");
+  assert.equal(boot.receipts.length, 1);
+  assert.throws(() => ctx.api(jakeKey, "apiSettings", []), /Only admins/);
+  assert.equal(ctx.api(officeKey, "apiReceipts", [])[0].employee, "Jake Brenner");
+  assert.throws(() => ctx.api("nope", "apiBootstrap", []), /doesn't work anymore/);
+  assert.throws(() => ctx.api(officeKey, "qboRequest_", []), /Unknown action/);
+  assert.throws(() => ctx.api("", "apiBootstrap", []), /link the office sent you/);
+  ctx.api(officeKey, "apiRemovePerson", ["Jake Brenner"]);
+  assert.throws(() => ctx.api(jakeKey, "apiBootstrap", []), /doesn't work anymore/);
+});
+
 test("security: setup refuses employees", () => {
   const { g, ctx } = setup();
   g._.setUser("jake@acme.test");
   assert.throws(() => ctx.setup(), /Only admins/);
+});
+
+test("install bundle: the two-file Code.gs sets itself up and serves the office link", () => {
+  const code = fs.readFileSync(path.join(DIR, "dist/install/Code.gs"), "utf8")
+    .replace('ANTHROPIC_API_KEY: "",', 'ANTHROPIC_API_KEY: "sk-test",').replace('COMPANY_NAME: "",', 'COMPANY_NAME: "Acme Contracting",');
+  const g = createGoogle({ owner: "owner@gmail.test", user: "owner@gmail.test", props: {} });
+  g._.routes.push({ match: (r) => r.url === "https://api.anthropic.com/v1/messages", reply: () => ({ body: { stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify({ ...RECEIPT, jobGuess: "", address: "", jobName: "Bennington Ronco" }) }] } }) });
+  const ctx = vm.createContext({ console, ...g, JSON, Date, Math });
+  vm.runInContext(code, ctx, { filename: "Code.gs" });
+  const msg = ctx.setup();
+  assert.match(msg, /Your office link: https:\/\/script\.google\.com\/macros\/s\/APP\/exec\?k=\w+/);
+  const key = msg.split("?k=")[1];
+  g._.setUser("");
+  const boot = ctx.api(key, "apiBootstrap", []);
+  assert.equal(boot.admin, true);
+  assert.equal(boot.company, "Acme Contracting");
+  const up = ctx.api(key, "apiUpload", [{ base64: Buffer.from("x").toString("base64"), mimeType: "image/jpeg", fileName: "a.jpg" }]);
+  assert.equal(up.jobId, "new:Bennington Ronco");
+  const res = ctx.api(key, "apiApprove", [up.id, { action: "change_order", markupPercent: 28, date: "2026-09-29" }]);
+  assert.equal(res.receipt.jobName, "Bennington Ronco");
+  assert.match(res.receipt.jobId, /^\w/);
+  assert.notEqual(res.receipt.jobId.indexOf("new:"), 0);
+  assert.equal(res.receipt.qbo.skipped, "QuickBooks not connected");
 });

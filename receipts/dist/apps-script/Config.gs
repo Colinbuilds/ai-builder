@@ -42,8 +42,26 @@ function settingBool_(key) {
   return String(setting_(key)).toLowerCase() === "true";
 }
 
+// People open the app with a private link (?k=...). Set per call by api().
+var CURRENT_PERSON_ = null;
+
 function currentUserEmail_() {
+  if (CURRENT_PERSON_) return CURRENT_PERSON_.name;
   return String(Session.getActiveUser().getEmail() || "").toLowerCase();
+}
+
+/** People with a private link: { key: { name, admin } } in Script Properties. */
+function people_() {
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty("PEOPLE") || "{}"); } catch (e) { return {}; }
+}
+
+function savePeople_(people) {
+  PropertiesService.getScriptProperties().setProperty("PEOPLE", JSON.stringify(people));
+}
+
+function personByKey_(key) {
+  var p = key ? people_()[key] : null;
+  return p ? { name: p.name, admin: !!p.admin } : null;
 }
 
 function adminEmails_() {
@@ -51,6 +69,7 @@ function adminEmails_() {
 }
 
 function isAdmin_(email) {
+  if (CURRENT_PERSON_) return CURRENT_PERSON_.admin;
   email = (email || currentUserEmail_()).toLowerCase();
   var admins = adminEmails_();
   // Until admins are configured, only the person who deployed the app is admin.
@@ -60,7 +79,7 @@ function isAdmin_(email) {
 
 function requireUser_() {
   var email = currentUserEmail_();
-  if (!email) throw new Error("Please sign in with your company Google account.");
+  if (!email) throw new Error("Open JobReceipts with the link the office sent you.");
   return email;
 }
 

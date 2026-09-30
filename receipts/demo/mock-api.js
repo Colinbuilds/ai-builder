@@ -26,6 +26,10 @@ function createMockApi(opts) {
   }
 
   var receipts = SAMPLE_RECEIPTS.map(build);
+  var people = [{ name: "Office", admin: true }, { name: "Jake Brenner", admin: false }, { name: "Luis Ortega", admin: false }];
+  function peopleList() {
+    return people.map(function (p, i) { return { name: p.name, admin: p.admin, link: "https://script.google.com/macros/s/SAMPLE/exec?k=sample" + i }; });
+  }
   // An already-approved receipt so job totals and history have something in them.
   var old = build(SAMPLE_RECEIPTS[1], -20);
   old.id = "r0"; old.createdAt = "2026-09-24T15:10:00.000Z"; old.status = "approved"; old.action = "invoice";
@@ -49,15 +53,11 @@ function createMockApi(opts) {
     apiReceipts: visible,
     apiReceiptFile: function () { return null; },
     apiUpload: function (input) {
-      if (!input.jobId) throw new Error("Pick the job this receipt is for.");
-      var j = jobs.filter(function (x) { return x.id === input.jobId; })[0];
-      var x = normalizeExtraction({ isReceipt: true, employee: "", jobName: "", address: "", jobGuess: "", vendor: "Menards", date: "2026-09-29", receiptNumber: "118-3399",
+      // The test drive gives every photo the same sample reading; the job comes from its PO line.
+      var x = normalizeExtraction({ isReceipt: true, employee: user.split("@")[0], jobName: "Harvest Ln", address: "8821 Harvest Ln", jobGuess: "", vendor: "Menards", date: "2026-09-29", receiptNumber: "118-3399",
         items: [{ description: "2x4x8 SPF Stud", qty: 20, unit: "ea", lineTotal: 79.8 }, { description: "GRK R4 Screws 3\" 100ct", qty: 2, unit: "box", lineTotal: 49.96 }],
         subtotal: 129.76, tax: 9.08, total: 138.84, notes: "" });
-      var priced = priceReceipt(x, { markupPercent: DEFAULT_MARKUP_PERCENT });
-      var r = { id: "u" + receipts.length, createdAt: new Date(clock + receipts.length * 6e4).toISOString(), uploadedBy: user, employee: user.split("@")[0], source: "upload",
-        status: "ready", jobId: j.id, jobName: j.name, note: input.note || "", suggestedAction: input.suggestedAction || "", extracted: x,
-        match: { confident: true, score: 1, candidates: [] }, markupPercent: DEFAULT_MARKUP_PERCENT, cost: priced.totals.cost, billed: priced.totals.billed, profit: priced.totals.profit };
+
       receipts.push(r);
       return admin ? r : employeeView(r);
     },
@@ -84,7 +84,6 @@ function createMockApi(opts) {
     apiRetry: function (id) { return find(id); },
     apiSettings: function () {
       return { quickbooks: { connected: false, authUrl: "#connect" }, ai: true,
-        admins: ["office@samplecontracting.com"], defaultMarkup: DEFAULT_MARKUP_PERCENT, changeOrderTemplate: true };
     },
   };
 

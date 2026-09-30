@@ -1,9 +1,10 @@
 // JobReceipts web app: entry point, receipt pipeline and the functions the page calls.
-// Deployed as a web app that runs as the admin who deployed it and is open to people in
-// your Google Workspace domain. Every function below checks who is calling.
+// Deployed as a web app that runs as the admin who deployed it. People open it with their own
+// private link (?k=...); every function below checks who is calling.
 
 function doGet(e) {
   var t = HtmlService.createTemplateFromFile("Index");
+  t.key = String((e && e.parameter && e.parameter.k) || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
   return t.evaluate()
     .setTitle("JobReceipts")
     .addMetaTag("viewport", "width=device-width, initial-scale=1, viewport-fit=cover")
@@ -16,10 +17,29 @@ function include_(name) {
 
 // ------------------------------------------------------------------ one-time setup
 
-/** Run once from the editor: creates the records sheet and inbox folder. */
+/** The page calls everything through here with the person's private link key. */
+function api(key, name, args) {
+  var API = { apiBootstrap: apiBootstrap, apiUpload: apiUpload, apiReceipts: apiReceipts, apiReceiptFile: apiReceiptFile, apiSaveDraft: apiSaveDraft,
+    apiApprove: apiApprove, apiRetry: apiRetry, apiSettings: apiSettings, apiAddPerson: apiAddPerson, apiRemovePerson: apiRemovePerson };
+  if (!Object.prototype.hasOwnProperty.call(API, name)) throw new Error("Unknown action.");
+  CURRENT_PERSON_ = null;
+  if (key) {
+    CURRENT_PERSON_ = personByKey_(key);
+    if (!CURRENT_PERSON_) throw new Error("This link doesn't work anymore. Ask the office for a new one.");
+  }
+  return API[name].apply(null, args || []);
+}
+
+/**
+ * Run once from the editor (after the first Deploy): stores the settings filled in at the top of
+ * the code, creates the records sheet, inbox and jobs folders, and makes the office link.
+ */
 function setup() {
   requireOwnerOrAdmin_();
   var props = PropertiesService.getScriptProperties();
+  var first = typeof FIRST_RUN_ !== "undefined" ? FIRST_RUN_ : {};
+  Object.keys(first).forEach(function (k) { if (first[k]) props.setProperty(k, String(first[k]).trim()); });
+  if (!props.getProperty("JOBS_FOLDER_ID")) props.setProperty("JOBS_FOLDER_ID", DriveApp.createFolder("JobReceipts jobs").getId());
   if (!props.getProperty("DB_SPREADSHEET_ID")) {
     var ss = SpreadsheetApp.create("JobReceipts records (do not edit)");
     props.setProperty("DB_SPREADSHEET_ID", ss.getId());
@@ -28,7 +48,51 @@ function setup() {
   if (!props.getProperty("INBOX_FOLDER_ID")) {
     props.setProperty("INBOX_FOLDER_ID", DriveApp.createFolder("JobReceipts inbox").getId());
   }
-  return "Setup complete.";
+  var people = people_();
+  var officeKey = Object.keys(people).filter(function (k) { return people[k].admin; })[0];
+  if (!officeKey) { officeKey = newKey_(); people[officeKey] = { name: "Office", admin: true }; savePeople_(people); }
+  var msg = "Setup complete. Your office link: " + personLink_(officeKey);
+  Logger.log(msg);
+  return msg;
+}
+
+function newKey_() {
+  return Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "").slice(0, 8);
+}
+
+function personLink_(key) {
+  var url = ScriptApp.getService().getUrl();
+  return url ? url + "?k=" + key : "(deploy the web app first, then run setup again to see the link)";
+}
+
+function peopleList_() {
+  var people = people_();
+  return Object.keys(people).map(function (k) { return { name: people[k].name, admin: !!people[k].admin, link: personLink_(k) }; })
+    .sort(function (a, b) { return (b.admin - a.admin) || a.name.localeCompare(b.name); });
+}
+
+/** Office: give someone their own link. admin=true lets them see everything. */
+function apiAddPerson(name, admin) {
+  requireAdmin_();
+  name = String(name || "").trim().slice(0, 60);
+  if (!name) throw new Error("Type the person's name.");
+  var people = people_();
+  if (Object.keys(people).some(function (k) { return people[k].name.toLowerCase() === name.toLowerCase(); })) throw new Error(name + " already has a link.");
+  people[newKey_()] = { name: name, admin: !!admin };
+  savePeople_(people);
+  return peopleList_();
+}
+
+/** Office: turn off someone's link. Their receipts stay. */
+function apiRemovePerson(name) {
+  requireAdmin_();
+  var people = people_();
+  var keys = Object.keys(people).filter(function (k) { return people[k].name === name; });
+  if (!keys.length) throw new Error("No one named " + name + ".");
+  if (people[keys[0]].admin && Object.keys(people).filter(function (k) { return people[k].admin; }).length === 1) throw new Error("Keep at least one office link.");
+  delete people[keys[0]];
+  savePeople_(people);
+  return peopleList_();
 }
 
 // ------------------------------------------------------------------ pipeline
@@ -73,7 +137,13 @@ function processReceiptFile_(receipt, blob, context, chosenJobId) {
   receipt.extracted = extracted;
   receipt.match = { confident: match.confident, score: match.score, aiSuggestion: match.aiSuggestion || "",
     candidates: (match.candidates || []).map(function (c) { return { id: c.job.id, name: c.job.name, score: c.score }; }) };
-  if (match.job) { receipt.jobId = match.job.id; receipt.jobName = match.job.name; }
+  var readName = String(extracted.jobName || extracted.address || "").trim();
+  if (match.job && (match.confident || match.score >= 0.3)) { receipt.jobId = match.job.id; receipt.jobName = match.job.name; }
+  else if (readName) {
+    // A job that isn't in the Jobs folder yet: its folder is made when the office approves.
+    receipt.jobId = "new:" + readName; receipt.jobName = readName;
+    extracted.flags.push("New job \u201c" + readName + "\u201d from the receipt. Check the name; a folder is made for it when you approve.");
+  }
   if (!receipt.employee) receipt.employee = extracted.employee;
   receipt.markupPercent = settingNumber_("DEFAULT_MARKUP_PERCENT");
   receipt.cost = priced.totals.cost;
@@ -104,25 +174,25 @@ function apiBootstrap() {
 
 /**
  * Employee upload from the phone.
- * input: { base64, mimeType, fileName, jobId, note, suggestedAction }
+ * input: { base64, mimeType, fileName } plus optional { jobId, note, suggestedAction }.
+ * Without a jobId the job is read from the receipt (PO/job field or address).
  */
 function apiUpload(input) {
   var email = requireUser_();
   if (!input || !input.base64) throw new Error("Take or choose a photo of the receipt first.");
-  if (!input.jobId) throw new Error("Pick the job this receipt is for.");
-  var job = jobById_(input.jobId);
+  var job = input.jobId ? jobById_(input.jobId) : null;
   var blob = Utilities.newBlob(Utilities.base64Decode(input.base64), input.mimeType || "image/jpeg",
     (input.fileName || "receipt") .replace(/[\\/:*?"<>|]+/g, "-"));
   var name = email.split("@")[0];
   var receipt = {
-    source: "upload", uploadedBy: email, employee: "", status: STATUS.READING, jobId: job.id, jobName: job.name,
+    source: "upload", uploadedBy: email, employee: "", status: STATUS.READING, jobId: job ? job.id : "", jobName: job ? job.name : "",
     note: String(input.note || "").slice(0, 1000), suggestedAction: input.suggestedAction || "",
   };
   saveReceipt_(receipt);
   try {
     processReceiptFile_(receipt, blob, {
-      from: name, subject: "Receipt for " + job.name, body: receipt.note, receivedAt: new Date().toISOString(),
-    }, job.id);
+      from: name, subject: job ? "Receipt for " + job.name : "", body: receipt.note, receivedAt: new Date().toISOString(),
+    }, job ? job.id : null);
   } catch (e) {
     receipt.status = STATUS.ERROR;
     receipt.error = String(e.message || e);
@@ -176,6 +246,7 @@ function apiApprove(id, opts) {
     if (!r.jobId) throw new Error("Pick the job first.");
     if (opts.action !== "change_order" && opts.action !== "invoice") throw new Error("Choose change order or invoice.");
     var job = jobById_(r.jobId);
+    r.jobId = job.id; r.jobName = job.name;
     var jobFolder = DriveApp.getFolderById(job.id);
     var markup = opts.markupPercent != null ? Number(opts.markupPercent) : r.markupPercent;
     var priced = priceReceipt(r.extracted, { markupPercent: markup, includeTaxInCost: settingBool_("INCLUDE_TAX_IN_COST") });
@@ -187,7 +258,7 @@ function apiApprove(id, opts) {
       number = nextChangeOrderNumber(existingChangeOrderNames_(ensureFolderPath_(jobFolder, setting_("CHANGE_ORDERS_PATH"))));
     }
     var qbo = null;
-    if (qboService_().hasAccess()) {
+    if (qboReady_()) {
       qbo = sendToQuickBooks_(opts.action, job, priced, r, { date: date, number: number });
       if (opts.action === "invoice") number = qbo.salesNumber;
     }
@@ -244,5 +315,6 @@ function apiSettings() {
     admins: adminEmails_(),
     defaultMarkup: settingNumber_("DEFAULT_MARKUP_PERCENT"),
     changeOrderTemplate: !!setting_("CHANGE_ORDER_TEMPLATE_ID"),
+    people: peopleList_(),
   };
 }

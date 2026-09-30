@@ -151,7 +151,7 @@ function createGoogle(opts) {
       getEffectiveUser: () => ({ getEmail: () => owner }),
       getScriptTimeZone: () => "America/Chicago",
     },
-    CacheService: { getScriptCache: () => ({ get: (k) => cache.get(k) || null, put: (k, v) => { cache.set(k, v); } }) },
+    CacheService: { getScriptCache: () => ({ get: (k) => cache.get(k) || null, put: (k, v) => { cache.set(k, v); }, remove: (k) => { cache.delete(k); } }) },
     LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
     Utilities: {
       getUuid: () => nextId("uuid-"),
@@ -198,7 +198,9 @@ function createGoogle(opts) {
       createHtmlOutput: (h) => ({ html: h }),
       XFrameOptionsMode: { DEFAULT: "DEFAULT" },
     },
+    Logger: { log() {} },
     ScriptApp: {
+      getService: () => ({ getUrl: () => "https://script.google.com/macros/s/APP/exec" }),
       triggers: [],
       getProjectTriggers() { return this.triggers; },
       newTrigger(fn) { const self = this; return { timeBased: () => ({ everyHours: () => ({ create: () => self.triggers.push({ getHandlerFunction: () => fn }) }) }) }; },
