@@ -455,3 +455,55 @@ describe("schedule import", () => {
     expect(r3.skipped).toBe(1);
   });
 });
+
+describe("schedule re-import and Lost jobs", () => {
+  it("never moves a job marked Lost back into the pipeline", async () => {
+    const admin = await prisma.user.findFirstOrThrow({
+      where: { role: "ADMIN" },
+    });
+    const actor = { id: admin.id, name: admin.name };
+    const tabs = [
+      {
+        name: "Hildy",
+        rows: [
+          H,
+          ["Hildy Upcoming"],
+          row({
+            Builder: "TEST_ONLY Lostcheck Homes",
+            Address: "900 TEST_ONLY Lost Rd",
+            Type: "Siding",
+            Sell: "$1,000.00",
+          }),
+        ],
+      },
+    ];
+    const f = await storeUploadedSchedule(
+      await xlsx(tabs),
+      "TEST_ONLY Lost Schedule.xlsx",
+    );
+    const mapping = { "TEST_ONLY Lostcheck Homes": "NEW:BUILDER" };
+    await importSchedule(
+      { ...f, market: "RESIDENTIAL", mapping, source: "TEST_ONLY" },
+      actor,
+    );
+    const job = await prisma.project.findFirstOrThrow({
+      where: { address: "900 TEST_ONLY Lost Rd" },
+    });
+    await prisma.project.update({
+      where: { id: job.id },
+      data: { status: "LOST", lostReason: "TEST_ONLY builder cancelled" },
+    });
+    const again = await storeUploadedSchedule(
+      await xlsx(tabs),
+      "TEST_ONLY Lost Schedule.xlsx",
+    );
+    await importSchedule(
+      { ...again, market: "RESIDENTIAL", mapping, source: "TEST_ONLY" },
+      actor,
+    );
+    expect(
+      (await prisma.project.findUniqueOrThrow({ where: { id: job.id } }))
+        .status,
+    ).toBe("LOST");
+  });
+});

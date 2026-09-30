@@ -158,15 +158,13 @@ export async function previewSchedule(
     stages,
     skipped: parsed.skipped.length,
     skippedSample: parsed.skipped.slice(0, 15),
-    sample: parsed.jobs
-      .slice(0, 12)
-      .map((j) => ({
-        account: j.account,
-        name: j.name,
-        stage: j.stage,
-        sell: j.sell,
-        sources: j.sources,
-      })),
+    sample: parsed.jobs.slice(0, 12).map((j) => ({
+      account: j.account,
+      name: j.name,
+      stage: j.stage,
+      sell: j.sell,
+      sources: j.sources,
+    })),
     accountChoices: accounts,
   };
 }
@@ -254,9 +252,11 @@ export async function importSchedule(
         where: { importKey: j.key },
       });
       if (existing) {
+        // a job marked Lost here stays Lost; the schedule sheet never revives it
         const forward =
+          existing.status !== "LOST" &&
           STAGE_RANK[j.stage] >
-          STAGE_RANK[existing.status as keyof typeof STAGE_RANK];
+            STAGE_RANK[existing.status as keyof typeof STAGE_RANK];
         const data = {
           ...(forward
             ? { status: j.stage as never, statusChangedAt: new Date() }

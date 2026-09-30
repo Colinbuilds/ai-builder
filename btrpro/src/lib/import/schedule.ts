@@ -391,8 +391,10 @@ export function matchAccount(text: string, accounts: Account[]): AccountMatch {
     hits = hits.filter((a) => plain(a.name).length === longest);
     if (hits.length === 1) return { account: hits[0], ambiguous: [] };
     // Same builder in two markets, e.g. DR Horton (Omaha) / (Kansas City): pick the one named in the text, else Omaha (home market).
+    // look in the text as written, parentheses included: "DR Horton (Kansas City)"
+    const raw = ` ${norm(text)} `;
     const named = hits.filter(
-      (a) => paren(a.name) && t.includes(paren(a.name)),
+      (a) => paren(a.name) && raw.includes(` ${paren(a.name)} `),
     );
     const pick =
       named[0] ?? hits.find((a) => /omaha/.test(paren(a.name))) ?? null;
