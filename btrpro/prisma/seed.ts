@@ -165,6 +165,37 @@ async function main() {
     if (added) console.log(`Added ${added} built-in estimate templates.`);
   }
 
+  // BTR company data from their Drive (labor piece rates, crews/subs, companies). Created once; edits in the app are kept.
+  const coFile = path.join(dataDir, "btr_company_data.json");
+  if (existsSync(coFile)) {
+    const co = JSON.parse(readFileSync(coFile, "utf8")) as {
+      laborStandards: { seedKey: string; category: string; task: string; unit: string; unitRate: number; source: string }[];
+      crews: { name: string; leadName: string; trade: string; notes?: string }[];
+      companies: { name: string; type: string }[];
+    };
+    let n = 0;
+    for (const l of co.laborStandards) {
+      if (await prisma.laborStandard.findFirst({ where: { seedKey: l.seedKey } })) continue;
+      await prisma.laborStandard.create({ data: { ...l, rateType: "UNIT", enteredBy: "BTR Drive import" } });
+      n++;
+    }
+    const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const crewNames = new Set((await prisma.crew.findMany({ select: { name: true } })).map((c) => norm(c.name)));
+    for (const c of co.crews)
+      if (!crewNames.has(norm(c.name))) {
+        // insurance dates aren't in the files: they show as missing until entered
+        await prisma.crew.create({ data: { name: c.name, kind: "SUB", leadName: c.leadName, trade: c.trade, notes: c.notes ?? "From BTR's Drive files. Add phone, email, pay, and insurance dates." } });
+        n++;
+      }
+    const coNames = new Set((await prisma.company.findMany({ select: { name: true } })).map((c) => norm(c.name)));
+    for (const c of co.companies)
+      if (!coNames.has(norm(c.name))) {
+        await prisma.company.create({ data: { name: c.name, type: c.type as never, notes: "From BTR's Drive files (estimating schedule / job list)." } });
+        n++;
+      }
+    if (n) console.log(`Added ${n} records from BTR company data.`);
+  }
+
   const active = { sheet: { isActive: true, companyId: null } };
   const [sheetCount, itemCount, callCount, ruleCount] = await Promise.all([
     prisma.priceSheet.count({ where: { isLoaded: true, isActive: true, companyId: null } }),

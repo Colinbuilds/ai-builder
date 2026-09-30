@@ -169,9 +169,9 @@ export async function setContingencyAction(f: FormData) {
 export async function addLaborAction(_: EstResult, f: FormData): Promise<EstResult> {
   const a = await actor();
   const id = String(f.get("estimateId"));
-  const nums = ["quantity", "crewSize", "productionRate", "hourlyRate", "burdenPct"].map((k) => numOrNull(f, k));
+  const nums = ["quantity", "crewSize", "productionRate", "hourlyRate", "burdenPct", "unitRate"].map((k) => numOrNull(f, k));
   if (nums.some((x) => Number.isNaN(x))) return { problems: ["Numbers only in the labor fields."] };
-  const [quantity, crewSize, productionRate, hourlyRate, burdenPct] = nums;
+  const [quantity, crewSize, productionRate, hourlyRate, burdenPct, unitRate] = nums;
   try {
     await addLaborLine(
       id,
@@ -185,6 +185,7 @@ export async function addLaborAction(_: EstResult, f: FormData): Promise<EstResu
         productionRate,
         hourlyRate,
         burdenPct,
+        unitRate,
         rateSource: str(f, "rateSource"),
         placeholder: f.get("placeholder") === "on",
       },
@@ -211,10 +212,24 @@ export async function saveLaborStandardAction(_: EstResult, f: FormData): Promis
   const crew = numOrNull(f, "crewSize");
   const hourly = numOrNull(f, "hourlyRate");
   const burden = numOrNull(f, "burdenPct");
-  if ([rate, crew, hourly, burden].some((x) => Number.isNaN(x))) return { problems: ["Numbers only."] };
+  const unitRate = numOrNull(f, "unitRate");
+  if ([rate, crew, hourly, burden, unitRate].some((x) => Number.isNaN(x))) return { problems: ["Numbers only."] };
+  const rateType = str(f, "rateType") === "UNIT" ? "UNIT" : "HOURLY";
   try {
     await saveLaborStandard(
-      { id: str(f, "id") ?? undefined, task: str(f, "task") ?? "", productionRate: rate ?? 0, unit: str(f, "unit") ?? "", crewSize: crew, hourlyRate: hourly, burdenPct: burden, source: str(f, "source") ?? "" },
+      {
+        id: str(f, "id") ?? undefined,
+        task: str(f, "task") ?? "",
+        rateType,
+        unitRate: rateType === "UNIT" ? unitRate : null,
+        category: str(f, "category"),
+        productionRate: rateType === "UNIT" ? null : rate,
+        unit: (str(f, "unit") ?? "").toUpperCase(),
+        crewSize: rateType === "UNIT" ? null : crew,
+        hourlyRate: rateType === "UNIT" ? null : hourly,
+        burdenPct: rateType === "UNIT" ? null : burden,
+        source: str(f, "source") ?? "",
+      },
       a,
     );
   } catch (e) {

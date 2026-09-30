@@ -63,7 +63,7 @@ describe("using templates", () => {
   it("vinyl is ordered by the square from siding SF and waste", async () => {
     const { a, p } = await job();
     const { estimate } = await createEstimateFromTemplate(p.id, (await tpl("ndx-woodsman")).id, a);
-    await setWaste(estimate.id, "SIDING", { pct: 5, approved: true, basis: "TEST_ONLY residential default" } as never, a).catch(() => null);
+    await setWaste(estimate.id, "SIDING", 5, true, a);
     await runTakeoff(estimate.id, "siding", a);
     const vinyl = await prisma.estimateLine.findFirstOrThrow({ where: { estimateId: estimate.id, supplierItemNumber: "22NXWM4DWH" } });
     expect(vinyl.unit).toBe("SQ");
@@ -92,5 +92,28 @@ describe("siding sold by the square", () => {
       counted: [],
     });
     expect(l).toMatchObject({ quantity: 20, unit: "SQ" });
+  });
+});
+
+describe("piece-rate labor and BTR company data", () => {
+  it("computes quantity × $/unit, and standards from the Drive price book are loaded with sources", async () => {
+    const { computeLabor } = await import("@/lib/estimates/labor");
+    expect(computeLabor({ quantity: 32.4, productionRate: null, hourlyRate: null, burdenPct: null, unitRate: 90, unit: "SQ" })).toMatchObject({ total: 2916, formula: "32.4 SQ × $90/SQ = $2916" });
+    const std = await prisma.laborStandard.findFirstOrThrow({ where: { seedKey: "rf-tearoff-install-lam" } });
+    expect(std).toMatchObject({ rateType: "UNIT", unitRate: 90, unit: "SQ" });
+    expect(std.source).toMatch(/Labor pricing/);
+    expect(await prisma.crew.count({ where: { name: "ONIX Construction" } })).toBe(1);
+    expect(await prisma.company.findFirst({ where: { name: "Hildy Homes" } })).toMatchObject({ type: "BUILDER", pricingFallback: null });
+  });
+
+  it("a piece-rate standard on an estimate: priced from the standard, and the unit must match", async () => {
+    const { addLaborLine } = await import("@/lib/estimates/labor");
+    const a = await admin();
+    const p = await createProject({ name: `TEST_ONLY Piece ${Math.random().toString(36).slice(2, 6)}`, market: "RESIDENTIAL", scopes: ["STEEP"], address: "1 Pc St", isPublic: false, isTaxExempt: false }, a, { firstName: "P", lastName: "R" });
+    const { estimate } = await createEstimateFromTemplate(p.id, (await tpl("mal-vista")).id, a);
+    const std = await prisma.laborStandard.findFirstOrThrow({ where: { seedKey: "rf-tearoff-install-lam" } });
+    await expect(addLaborLine(estimate.id, { task: "Install", quantity: 3000, quantityUnit: "SF", quantitySource: "roof", standardId: std.id }, a)).rejects.toThrow(/priced per SQ/);
+    const l = await addLaborLine(estimate.id, { task: "Tear-off & install", quantity: 30, quantityUnit: "SQ", quantitySource: "roof", standardId: std.id }, a);
+    expect(l).toMatchObject({ total: 2700, unitRate: 90, sourceStatus: "VERIFIED" });
   });
 });

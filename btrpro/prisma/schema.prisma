@@ -534,6 +534,8 @@ model LaborLine {
   productionUnit String?
   laborHours     Float?
   hourlyRate     Float?
+  // piece rate ($ per quantity unit) instead of hours × $/hr
+  unitRate       Float?
   burdenPct      Float?
   total          Float?
   sourceStatus   SourceStatus @default(MISSING)
@@ -549,7 +551,13 @@ model LaborLine {
 model LaborStandard {
   id             String   @id @default(cuid())
   task           String
-  productionRate Float
+  // HOURLY: units per labor-hour × $/hr × burden · UNIT: a piece rate paid per unit ($/SQ, $/LF, $/EA)
+  rateType       String   @default("HOURLY")
+  unitRate       Float?
+  category       String?
+  // set on standards loaded from a company file, so reloading doesn't duplicate them
+  seedKey        String?
+  productionRate Float?
   unit           String
   crewSize       Int?
   hourlyRate     Float?

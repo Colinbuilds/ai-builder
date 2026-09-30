@@ -54,6 +54,8 @@ export function AddLabor({
         </Select>
         {!std && (
           <>
+            <Input name="unitRate" placeholder="$ / unit (piece rate)" className="h-8 w-36" title="Piece rate per quantity unit — leave blank to use hours × $/hr" />
+            <span className="text-xs text-muted-foreground">or hourly:</span>
             <Input name="crewSize" placeholder="Crew" className="h-8 w-16" />
             <Input name="productionRate" placeholder="Units / labor-hr" className="h-8 w-32" />
             <Input name="hourlyRate" placeholder="$ / hr" className="h-8 w-20" />

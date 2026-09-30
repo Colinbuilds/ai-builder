@@ -76,7 +76,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
     totalsFor(estimateId),
     rulesForEstimate(estimateId, modules.includes("siding") ? await cheapestWrapOnSheet(plank?.sheetCode ?? takeoff.siding?.plank.sheetCode) : null),
     measureMap(id),
-    prisma.laborStandard.findMany({ orderBy: { task: "asc" } }),
+    prisma.laborStandard.findMany({ orderBy: [{ category: "asc" }, { task: "asc" }] }),
     prisma.measurement.findMany({ where: { projectId: id } }),
   ]);
   const siding = sidingAreaUsed(measurements);
@@ -334,7 +334,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
                   {fmtQty(l.quantity)} {l.quantityUnit}
                 </TD>
                 <TD className="text-right">{l.crewSize ?? "—"}</TD>
-                <TD className="text-right">{l.productionRate != null ? `${l.productionRate} ${l.productionUnit ?? ""}/hr` : "—"}</TD>
+                <TD className="text-right">{l.unitRate != null ? (canEdit ? `${formatUsd(l.unitRate)}/${l.productionUnit ?? "unit"} piece rate` : "piece rate") : l.productionRate != null ? `${l.productionRate} ${l.productionUnit ?? ""}/hr` : "—"}</TD>
                 <TD className="text-right tabular-nums">{fmtQty(l.laborHours)}</TD>
                 {canEdit && <TD className="text-right">{l.hourlyRate != null ? formatUsd(l.hourlyRate) : "—"}</TD>}
                 {canEdit && <TD className="text-right">{l.burdenPct != null ? `${l.burdenPct}%` : "—"}</TD>}
@@ -354,7 +354,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
             ))}
           </TBody>
         </Table>
-        {!locked && <AddLabor estimateId={e.id} standards={standards.map((s) => ({ id: s.id, label: `${s.task} — ${s.productionRate} ${s.unit}/hr` }))} quantities={quantities} />}
+        {!locked && <AddLabor estimateId={e.id} standards={standards.map((s) => ({ id: s.id, label: s.rateType === "UNIT" ? `${s.category ? `${s.category}: ` : ""}${s.task} — $${s.unitRate}/${s.unit}` : `${s.task} — ${s.productionRate} ${s.unit}/hr` }))} quantities={quantities} />}
       </section>
 
       {canEdit && (

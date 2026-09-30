@@ -210,6 +210,23 @@ Templates only choose products. Quantities still come from confirmed measurement
 
 To make your own template, set up products on an estimate and click "Save these product picks as a template".
 
+## BTR data loaded from Google Drive
+
+`data/btr_company_data.json` is loaded on every start. It only creates what's missing, so edits made in the app are kept. Contents:
+- **33 labor piece rates** with their source file:
+  - Roofing: tear-off & install $90/SQ, height charge $7.50/SQ, and 750 vents $12.50/EA, from the "Labor pricing" screenshot.
+  - Siding: 26 rates from the Residential Price Book 4/29/26 (Hardie/LP lap, shingles, B&B, tear-off, wrap, trim, garage doors…).
+  - Gutters: 4 rates from the Price Book Gutters tab.
+- **6 crews/subs** from the jobs & commissions sheet: Arne's Innovation, D&I Creations, Betos Construction, ERZ Exteriors, ONIX Construction, Jorge. Insurance shows missing until dates are entered.
+- **28 companies:**
+  - 17 GCs, e.g. Brester, Overland, Perry Reid, Pedcore, Lund Ross, Ronco, Sampson.
+  - 3 property managers: Broadmoor, Richdale, Asset Living.
+  - 8 builders: DR Horton Omaha/KC, Hildy, Drake, Blake, Bridgewater, Sharf, Echelon. Each builder asks you to choose its pricing fallback before its jobs are priced.
+
+Business names only; no customer emails or addresses are stored in the repository.
+
+Labor standards can now be **piece rates** ($ per SQ/LF/EA, how crews and subs are paid) as well as hourly production rates.
+
 ## Environment variables
 
 | Name | Used for |
