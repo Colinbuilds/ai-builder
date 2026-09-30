@@ -18,6 +18,7 @@ export function ProjectTabs({
     [`${base}/email`, "Email", counts.email ? <Pill key="e" n={counts.email} /> : null],
     [`${base}/documents`, "Documents", counts.documents ? <Pill key="d" n={counts.documents} /> : null],
     [`${base}/estimates`, "Estimates", counts.estimates ? <Pill key="s" n={counts.estimates} /> : null],
+    [`${base}/proposals`, "Proposals"],
     [`${base}/assistant`, "AI assistant"],
   ];
   return (

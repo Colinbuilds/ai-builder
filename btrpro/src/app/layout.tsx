@@ -52,6 +52,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Link href="/settings/integrations" className="text-muted-foreground hover:text-foreground">
                     Integrations
                   </Link>
+                  <Link href="/settings/company" className="text-muted-foreground hover:text-foreground">
+                    Company
+                  </Link>
                 </>
               )}
               <span className="ml-auto">

@@ -14,8 +14,8 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 6 | Calc engine: steep, low-slope, deck, siding, pricing & totals (pure TypeScript, unit-tested) | **Done** |
 | 7–9 | Estimate builder, labor + standards library, rules engine | **Done** |
 | 10 | AI estimator assistant (tools, validation, quick actions) | **Done** |
-| 11 | Outputs (AccuLynx copy, order CSV, estimate & takeoff PDFs) + customer proposals with e-signature | Next |
-| 12 | Job costing and profit analysis | |
+| 11 | Outputs (AccuLynx copy, order CSV, estimate & takeoff PDFs) + customer proposals with e-signature | **Done** |
+| 12 | Job costing and profit analysis | Next |
 | 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
 | 19 | End-to-end test | |
 
@@ -117,6 +117,13 @@ The **AI assistant** tab on each job is a streaming chat with a shared per-job h
 - **Quick actions:** Start project, What's missing?, Review change order, Compare sub proposals, Write scope.
 - **Every request** carries CLAUDE.md as the system prompt plus a live job snapshot, uses adaptive thinking at high effort with server-side refusal fallback, validates each tool input before running it, and stops cleanly on a refusal or a truncated tool call.
 
+## Outputs and proposals (Phase 11)
+
+- **Estimate outputs**: each estimate has links for the AccuLynx paste-in copy, the ABC order CSV, the BTR estimate PDF, and the internal takeoff PDF (formulas, sources, MISSING items in red).
+- **Company settings** (Settings → Company): markup, sales tax, deposit %, proposal terms, warranty text, and how long proposals stay valid. Anything blank stays blank; nothing is filled in for you.
+- **Proposals**: made from a finished estimate. The estimate must be complete, have a written scope ("We will" lines), and have terms plus a markup set. A NOT READY job needs an explicit checkbox. Price = (cost + tax on materials) × (1 + markup), and the breakdown is shown. Optional add-ons can be offered.
+- **E-signature**: "Send" emails the customer a private link (Postmark), or you copy the link yourself. The customer picks add-ons, signs with a finger or mouse, and consents. Signing records name, email, IP, and time; sets the contract amount; moves the job to Sold; and files the signed PDF in Documents.
+
 ## Environment variables
 
 | Name | Used for |
@@ -129,6 +136,7 @@ The **AI assistant** tab on each job is a streaming chat with a shared per-job h
 | `QBO_CLIENT_ID/SECRET`, `PROCORE_CLIENT_ID/SECRET` | QuickBooks Online and Procore connections |
 | `EAGLEVIEW_CLIENT_ID/SECRET`, `ABC_CLIENT_ID/SECRET`, `COMPANYCAM_TOKEN` | Set when those vendors grant BTR API access |
 | `INBOUND_EMAIL_DOMAIN`, `INBOUND_EMAIL_WEBHOOK_SECRET` | Job forwarding addresses and the inbound webhook |
+| `POSTMARK_SERVER_TOKEN`, `EMAIL_FROM` | Sending proposals and notices by email |
 | `APP_URL`, `GOOGLE_CLIENT_ID/SECRET`, `MS_CLIENT_ID/SECRET` | Mailbox connect (OAuth redirect is `APP_URL/api/mail/{google,microsoft}/callback`) |
 
 ## Tests

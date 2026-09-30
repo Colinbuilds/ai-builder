@@ -745,3 +745,52 @@ model AssistantMessage {
 
   @@index([projectId, createdAt])
 }
+
+// Company-wide settings entered by an Admin (markup, tax, deposit, proposal terms). Start empty.
+model CompanySetting {
+  key       String   @id
+  value     Json
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+// Customer proposal made from an estimate revision, signed electronically through a private link.
+model Proposal {
+  id                 String    @id @default(cuid())
+  projectId          String
+  estimateId         String
+  number             String    @unique
+  title              String
+  status             String    @default("DRAFT") // DRAFT | SENT | VIEWED | SIGNED | DECLINED | VOID
+  token              String    @unique
+  costTotal          Float
+  taxPct             Float?
+  taxAmount          Float     @default(0)
+  markupPct          Float
+  basePrice          Float
+  priceNote          String?
+  alternates         Json? // [{ name, description, price }]
+  selectedAlternates Json? // names picked by the customer
+  acceptedTotal      Float?
+  depositPct         Float?
+  terms              String
+  scope              Json // { weWill: string[], weWillNot: string[] }
+  validUntil         DateTime?
+  recipientName      String?
+  recipientEmail     String?
+  sentAt             DateTime?
+  viewedAt           DateTime?
+  signedAt           DateTime?
+  declinedAt         DateTime?
+  declineReason      String?
+  signerName         String?
+  signerEmail        String?
+  signerIp           String?
+  signerAgent        String?
+  signatureImage     String? // PNG data URL when drawn
+  signedDocumentId   String?
+  createdById        String?
+  createdAt          DateTime  @default(now())
+
+  @@index([projectId])
+}

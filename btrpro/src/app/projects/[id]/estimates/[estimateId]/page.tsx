@@ -10,6 +10,8 @@ import { READINESS_LABEL } from "@/lib/projects/readiness";
 import { MEASUREMENT_BY_KEY } from "@/lib/docs/measurements";
 import { TakeoffEditor } from "@/components/estimates/takeoff-editor";
 import { Collapsible } from "@/components/collapsible";
+import { CreateProposal } from "@/components/proposals/create-proposal";
+import { getSettings } from "@/lib/settings";
 import { WasteGate } from "@/components/estimates/waste-gate";
 import { LineStatus } from "@/components/estimates/status";
 import { LineActions } from "@/components/estimates/line-actions";
@@ -79,6 +81,14 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
         </h2>
         {e.locked && <Badge variant="outline">Locked</Badge>}
         <ReadinessBadge readiness={e.project.readiness} />
+        {canEdit && (
+          <div className="flex flex-wrap gap-2 text-sm">
+            <a className="underline" href={`/api/estimates/${e.id}/estimate.pdf`} target="_blank">Estimate PDF</a>
+            <a className="underline" href={`/api/estimates/${e.id}/takeoff.pdf`} target="_blank">Takeoff PDF</a>
+            <a className="underline" href={`/api/estimates/${e.id}/order.csv`}>Order CSV</a>
+            <Link className="underline" href={`/projects/${id}/estimates/${e.id}/acculynx`}>AccuLynx copy</Link>
+          </div>
+        )}
         {canEdit && (
           <form action={createRevisionAction}>
             <input type="hidden" name="estimateId" value={e.id} />
@@ -321,6 +331,13 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
           )}
           <span className="text-xs text-muted-foreground">Recommended when the estimate rests on assumptions or placeholders.</span>
         </form>
+      )}
+
+      {canEdit && !totals.incomplete && (
+        <section className="flex flex-col gap-2">
+          <h3 className="font-semibold">Customer proposal</h3>
+          <CreateProposal estimateId={e.id} defaultMarkup={(await getSettings()).markupPct} notReady={e.project.readiness === "NOT_READY"} />
+        </section>
       )}
 
       <section className="flex flex-col gap-2">
