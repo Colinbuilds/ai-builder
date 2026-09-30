@@ -15,8 +15,8 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 7–9 | Estimate builder, labor + standards library, rules engine | **Done** |
 | 10 | AI estimator assistant (tools, validation, quick actions) | **Done** |
 | 11 | Outputs (AccuLynx copy, order CSV, estimate & takeoff PDFs) + customer proposals with e-signature | **Done** |
-| 12 | Job costing and profit analysis | Next |
-| 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | |
+| 12 | Job costing and profit analysis | **Done** |
+| 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | Next |
 | 19 | End-to-end test | |
 
 The full schema, including the job chat/email models, is already in `prisma/schema.prisma`. Later phases add features without reshaping the data model.
@@ -123,6 +123,26 @@ The **AI assistant** tab on each job is a streaming chat with a shared per-job h
 - **Company settings** (Settings → Company): markup, sales tax, deposit %, proposal terms, warranty text, and how long proposals stay valid. Anything blank stays blank; nothing is filled in for you.
 - **Proposals**: made from a finished estimate. The estimate must be complete, have a written scope ("We will" lines), and have terms plus a markup set. A NOT READY job needs an explicit checkbox. Price = (cost + tax on materials) × (1 + markup), and the breakdown is shown. Optional add-ons can be offered.
 - **E-signature**: "Send" emails the customer a private link (Postmark), or you copy the link yourself. The customer picks add-ons, signs with a finger or mouse, and consents. Signing records name, email, IP, and time; sets the contract amount; moves the job to Sold; and files the signed PDF in Documents.
+
+## Job costing and profit (Phase 12)
+
+Each job has a **Job costing** tab. Admins see every job. Estimators see the jobs where they're the estimator or salesperson, plus unassigned jobs. Viewers never see it.
+
+- **Baseline:** when a customer signs a proposal, that estimate is frozen as the job's estimated cost. You can also freeze one by hand. Replacing it is Admin-only, needs a reason, and is logged.
+- **Actual costs:** bills, receipts, and credits by category, with an optional photo or PDF. Crew hours are entered as hours × rate × burden, and the formula is shown. Supplier invoice CSVs (myABCsupply or others) can be imported:
+  - You preview first and can filter by PO.
+  - Nothing is imported twice.
+  - Lines billed at a different price than the price sheet are flagged.
+- **Committed costs:** open orders and accepted sub proposals, so margin is projected rather than only to-date. Linking a bill to a commitment reduces what's still committed.
+- **Change orders and supplements:** only approved ones count toward revenue. Credits subtract.
+- **P&L:** revenue, estimated/actual/projected cost, gross profit and margin, overhead, commission, and net profit.
+  - A category over estimate by the company threshold is flagged red.
+  - A number that can't be calculated shows MISSING and says why. Overhead, the threshold, and commission plans start empty in Settings → Company.
+- **Close-out:** every category needs a bill or a "none expected" mark, with no open commitments or pending change orders. Closing then locks the final P&L. After that, changes are Admin-only and audit-logged.
+- **Profit report (nav → Profit):**
+  - Filters: date, side, job type, public/private, salesperson, estimator, and GC.
+  - Shows $/SQ and $/SF sold vs. cost, and estimate accuracy by bucket for closed jobs.
+  - Also shows public bid tabs (rank, % over low, money left on the table).
 
 ## Environment variables
 

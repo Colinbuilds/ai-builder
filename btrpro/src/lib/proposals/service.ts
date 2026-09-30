@@ -8,6 +8,7 @@ import { emailConfigured, sendEmail } from "@/lib/email/send";
 import { BTR } from "@/lib/company";
 import { acceptedTotal, proposalPrice, type Alternate } from "./price";
 import { proposalPdf } from "./pdf";
+import { freezeBaseline } from "@/lib/costing/service";
 
 type Actor = { id: string; name: string };
 export class ProposalError extends Error {}
@@ -166,6 +167,11 @@ export async function signProposal(
       text: `${input.name.trim()} signed proposal ${p.number} for $${total.toFixed(2)}${selected.length ? ` (with ${selected.join(", ")})` : ""}${early ? `; job moved ${project.status} → SOLD` : ""}`,
     },
   });
+  // Freeze the signed estimate as the job-cost baseline (§12) unless one was frozen already.
+  if (!project.costBaseline)
+    await freezeBaseline(p.projectId, p.estimateId, { id: null, name: `Signed proposal ${p.number}`, role: "SYSTEM" }, null, selected).catch((e) =>
+      prisma.projectActivity.create({ data: { projectId: p.projectId, kind: "costing", text: `Cost baseline not frozen automatically: ${e instanceof Error ? e.message : e}` } }),
+    );
   await prisma.auditLog.create({ data: { entity: "Proposal", entityId: p.id, action: "signed", after: { name: input.name, email: input.email, ip: input.ip, total, at: now.toISOString() } } });
   if (emailConfigured())
     await sendEmail({

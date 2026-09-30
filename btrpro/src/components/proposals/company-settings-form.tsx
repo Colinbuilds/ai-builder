@@ -23,6 +23,8 @@ export function CompanySettingsForm({ s }: { s: CompanySettings }) {
         {field("salesTaxPct", "Sales tax % on materials", "Skipped on tax-exempt jobs. Leave blank if tax is carried in your costs.")}
         {field("depositPct", "Deposit %", "Shown on proposals as due at signing.")}
         {field("proposalValidDays", "Proposal valid for (days)", "After this the customer can't sign.")}
+        {field("overheadPct", "Company overhead % of revenue", "Used for net profit on job P&Ls. Net profit shows MISSING until this is set.")}
+        {field("costVarianceThresholdPct", "Flag costs over estimate by %", "A job-cost category gets a red flag when it runs this far over its estimate.")}
       </div>
       <div className="flex flex-col gap-1">
         <Label>Proposal terms</Label>

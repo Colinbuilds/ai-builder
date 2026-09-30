@@ -18,7 +18,7 @@ const num = (v: FormDataEntryValue | null) => {
 export async function saveCompanySettingsAction(_: PResult, f: FormData): Promise<PResult> {
   const u = await requireUser(["ADMIN"]);
   const n = (k: string) => num(f.get(k));
-  const vals = { markupPct: n("markupPct"), salesTaxPct: n("salesTaxPct"), depositPct: n("depositPct"), proposalValidDays: n("proposalValidDays") };
+  const vals = { markupPct: n("markupPct"), salesTaxPct: n("salesTaxPct"), depositPct: n("depositPct"), proposalValidDays: n("proposalValidDays"), overheadPct: n("overheadPct"), costVarianceThresholdPct: n("costVarianceThresholdPct") };
   if (Object.values(vals).some((v) => v != null && (!Number.isFinite(v) || v < 0))) return { problems: ["Numbers only, zero or more."] };
   await saveSettings({ ...vals, proposalTerms: String(f.get("proposalTerms") ?? "").trim() || null, warrantyText: String(f.get("warrantyText") ?? "").trim() || null }, u);
   revalidatePath("/settings/company");

@@ -8,8 +8,10 @@ export type CompanySettings = {
   proposalValidDays: number | null;
   proposalTerms: string | null;
   warrantyText: string | null;
+  overheadPct: number | null; // company overhead as % of revenue; net profit is MISSING until set
+  costVarianceThresholdPct: number | null; // flag a cost category when it runs this far over estimate
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });

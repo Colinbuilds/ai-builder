@@ -9,6 +9,7 @@ import { unreadCounts } from "@/lib/comms/chat";
 import { Form17Banner } from "@/components/projects/form17-panel";
 import { ReadinessBadge, StageBadge } from "@/components/projects/badges";
 import { ProjectTabs } from "@/components/projects/tabs";
+import { canSeeCosts } from "@/lib/costing/service";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatUsd } from "@/lib/utils";
 
@@ -70,6 +71,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
       {showForm17Banner(project) && <Form17Banner id={project.id} canEdit={canEdit} />}
       <ProjectTabs
         id={project.id}
+        showCosts={canSeeCosts(user, project)}
         counts={{ chat: unread?.unread ?? 0, mentioned: !!unread?.mentioned, email: project._count.emails, documents: project._count.documents, estimates: project._count.estimates }}
       />
       {children}
