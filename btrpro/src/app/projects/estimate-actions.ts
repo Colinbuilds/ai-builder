@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { applyTemplate, createEstimateFromTemplate, saveAsTemplate, updateTemplateMeta } from "@/lib/estimates/templates";
 import {
   addLine,
   createEstimate,
@@ -51,9 +52,11 @@ export async function createEstimateAction(_: EstResult, f: FormData): Promise<E
   const a = await actor();
   const projectId = String(f.get("projectId"));
   const scope = String(f.get("scopeType")) as ScopeType;
+  const templateId = str(f, "templateId");
   let id: string;
   try {
-    ({ id } = await createEstimate(projectId, scope, a));
+    if (templateId) ({ estimate: { id } } = await createEstimateFromTemplate(projectId, templateId, a));
+    else ({ id } = await createEstimate(projectId, scope, a));
   } catch (e) {
     return { problems: [msg(e)] };
   }
@@ -249,4 +252,57 @@ export async function scopeItemAction(f: FormData) {
     if (text) await prisma.scopeItem.create({ data: { estimateId, type, text, sortOrder: Date.now() % 1_000_000 } });
   }
   await revalidateEstimate(estimateId);
+}
+
+export async function applyTemplateAction(_: EstResult, f: FormData): Promise<EstResult> {
+  const a = await actor();
+  const estimateId = String(f.get("estimateId"));
+  try {
+    const r = await applyTemplate(estimateId, String(f.get("templateId")), a);
+    await revalidateEstimate(estimateId);
+    return { problems: [], ok: true, note: r.missing.length ? `Applied. Not on this job's pricing: ${r.missing.join(", ")} — those stay MISSING or flagged.` : "Applied. Run the takeoff to calculate quantities." };
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+}
+
+export async function saveAsTemplateAction(_: EstResult, f: FormData): Promise<EstResult> {
+  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const estimateId = String(f.get("estimateId"));
+  try {
+    const t = await saveAsTemplate(
+      estimateId,
+      {
+        module: String(f.get("module")) as Module,
+        name: str(f, "name") ?? "",
+        category: str(f, "category") ?? "OTHER",
+        group: str(f, "group") ?? "",
+        brand: str(f, "brand"),
+        impactClass: str(f, "impactClass"),
+        impactSource: str(f, "impactSource"),
+        notes: str(f, "notes"),
+        replaceId: str(f, "replaceId"),
+      },
+      { id: u.id, name: u.name, role: u.role },
+    );
+    revalidatePath("/settings/templates");
+    return { problems: [], ok: true, note: `Saved template "${t.name}".` };
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+}
+
+export async function updateTemplateMetaAction(_: EstResult, f: FormData): Promise<EstResult> {
+  const u = await requireUser(["ADMIN"]);
+  try {
+    await updateTemplateMeta(
+      String(f.get("id")),
+      { name: str(f, "name") ?? "", group: str(f, "group") ?? "", impactClass: str(f, "impactClass"), impactSource: str(f, "impactSource"), notes: str(f, "notes"), active: f.get("active") === "on" },
+      { id: u.id, name: u.name, role: u.role },
+    );
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+  revalidatePath("/settings/templates");
+  return { problems: [], ok: true };
 }

@@ -191,6 +191,25 @@ How prices are picked:
 - Builder prices never appear on any other job or in the main price library.
 - If a job's client changes after it was priced, the estimate warns which lines were priced under the old pricing.
 
+## Estimate templates (product systems)
+
+**Estimating → Estimate templates.** Ready-made product systems built from the loaded sheets. Pick one when you start an estimate, or apply it on the estimate page.
+- **Shingles:** Malarkey, IKO, Tamko, Atlas, CertainTeed, GAF, and Owens Corning.
+  - Each system includes the brand's starter, hip & ridge, underlayment, and ice & water where the sheet has them, plus ridge vent, drip edge, step flashing, and pipe boots.
+  - Split into **Class 4 / impact-resistant** (only where the sheet says IR, Impact, or Class 4) and **rating not on sheet**. An Admin can set Class 3 or Class 4 on a template once a source (spec sheet or UL 2218 listing) is entered.
+- **Flat roof:**
+  - Mulehide EPDM .060 fully adhered, Mulehide EPDM .060 pre-secured, and Mulehide TPO .060 mechanically attached.
+  - Elevate EPDM and Elevate TPO.
+  - Cover board is always on EPDM, and pre-securement is included on pre-secured systems.
+- **Siding:**
+  - Hardie Primed (Cedarmill / Smooth 8.25"), Hardie Statement, and Norandex vinyl (Summit Manor, Woodsman, Cedar Knolls, Great Barrier, Board & Batten).
+  - Vinyl is quantified by the square.
+  - LP SmartSide stays MISSING until an LP sheet is loaded.
+
+Templates only choose products. Quantities still come from confirmed measurements, and prices from the live sheets (or the builder's sheets on builder jobs). Notes on each template call out anything to confirm.
+
+To make your own template, set up products on an estimate and click "Save these product picks as a template".
+
 ## Environment variables
 
 | Name | Used for |

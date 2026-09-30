@@ -39,7 +39,8 @@ export type TrimRun = { key: string; name: string; itemNumber: string | null; lf
 export type SidingInput = {
   sidingSf: Sourced; // from sidingAreaUsed
   waste: Waste;
-  plank: { itemNumber: string | null; name: string; exposureIn: Sourced; lengthFt: Sourced };
+  // soldBySquare: products the sheet sells by the square (vinyl) — quantity is area ÷ 100, no exposure math
+  plank: { itemNumber: string | null; name: string; exposureIn: Sourced; lengthFt: Sourced; soldBySquare?: boolean };
   houseWrap: { itemNumber: string | null; name: string; sfPerRoll: Sourced } | null;
   trim: TrimRun[]; // outside/inside corners, window/door trim, J-channel, starter, fascia…
   soffit?: { itemNumber: string | null; name: string; sf: Sourced; sfPerPanel: Sourced };
@@ -50,7 +51,14 @@ export function sidingTakeoff(i: SidingInput): CalcLine[] {
   const S = "MATERIAL_SIDING" as const;
   const lines: CalcLine[] = [];
   const wasteSrc = { value: i.waste.pct, source: i.waste.basis };
-  lines.push(
+  if (i.plank.soldBySquare)
+    lines.push(
+      line({ key: "siding", itemName: i.plank.name, section: S, itemNumber: i.plank.itemNumber, unit: "SQ", ruleId: "SID-01" }, { siding_sf: i.sidingSf, waste_pct: wasteSrc }, (v) => {
+        const q = ceilUnits((v.siding_sf * (1 + v.waste_pct / 100)) / 100);
+        return { quantity: q, formula: `ceil(${n(v.siding_sf)} SF × ${n(1 + v.waste_pct / 100)} ÷ 100 SF/SQ) = ${q} SQ (sheet sells by SQ)` };
+      }),
+    );
+  else lines.push(
     line(
       { key: "siding", itemName: i.plank.name, section: S, itemNumber: i.plank.itemNumber, unit: "PC", ruleId: "SID-01" },
       { siding_sf: i.sidingSf, waste_pct: wasteSrc, exposure_in: i.plank.exposureIn, length_ft: i.plank.lengthFt },

@@ -10,6 +10,14 @@ import { sidingAreaUsed } from "@/lib/calc/siding";
 import { READINESS_LABEL } from "@/lib/projects/readiness";
 import { MEASUREMENT_BY_KEY } from "@/lib/docs/measurements";
 import { TakeoffEditor } from "@/components/estimates/takeoff-editor";
+import { ApplyTemplate, SaveAsTemplate } from "@/components/estimates/templates";
+import { listTemplates } from "@/lib/estimates/templates";
+
+const hashKey = (s: string) => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return String(h);
+};
 import { Collapsible } from "@/components/collapsible";
 import { CreateProposal } from "@/components/proposals/create-proposal";
 import { getSettings } from "@/lib/settings";
@@ -80,6 +88,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
   }));
   const sections = ["MATERIAL_ROOFING", "MATERIAL_DECK", "MATERIAL_SIDING", "GENERAL_CONDITIONS"].filter((s) => e.lines.some((l) => l.section === s));
   const fails = rules.filter((r) => r.status === "fail");
+  const templates = (await listTemplates({ companyId: e.project.clientCompanyId })).map((t) => ({ id: t.id, name: t.name, category: t.category, group: t.group, module: t.module, impactClass: t.impactClass }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -188,11 +197,18 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
         </div>
       </section>
 
+      {!locked && modules.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-md border p-3">
+          <ApplyTemplate estimateId={e.id} templates={templates.filter((t) => modules.includes(t.module as Module))} />
+          <SaveAsTemplate estimateId={e.id} modules={modules} templates={templates} isAdmin={user.role === "ADMIN"} />
+        </section>
+      )}
       {modules.map((m) => (
         <Collapsible key={m} defaultOpen={!e.lines.some((l) => l.calcKey?.startsWith(`${m}:`))} className="rounded-md border p-4" title={`Takeoff — ${MODULE_LABEL[m]}`}>
           <div className="mt-3 flex flex-col gap-3">
             <MeasurementsUsed m={m} mm={mm} projectId={id} sidingFormula={m === "siding" ? siding.formula : null} />
-            <TakeoffEditor estimateId={e.id} module={m} initial={(takeoff[m] ?? defaultConfig(m, e.project.market)) as never} locked={locked} />
+            {/* keyed on the saved config so applying a template refreshes the editor */}
+            <TakeoffEditor key={hashKey(JSON.stringify(takeoff[m] ?? null))} estimateId={e.id} module={m} initial={(takeoff[m] ?? defaultConfig(m, e.project.market)) as never} locked={locked} />
           </div>
         </Collapsible>
       ))}

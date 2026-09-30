@@ -4,6 +4,12 @@ import { prisma } from "@/lib/db";
 import { parseScopes } from "@/lib/projects/intake";
 import { totalsFor } from "@/lib/estimates/service";
 import { NewEstimate } from "@/components/estimates/new-estimate";
+import { listTemplates } from "@/lib/estimates/templates";
+
+async function templateOpts(projectId: string) {
+  const p = await prisma.project.findUnique({ where: { id: projectId }, select: { clientCompanyId: true } });
+  return (await listTemplates({ companyId: p?.clientCompanyId })).map((t) => ({ id: t.id, name: t.name, category: t.category, group: t.group, module: t.module, impactClass: t.impactClass }));
+}
 import { Badge } from "@/components/ui/badge";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatUsd } from "@/lib/utils";
@@ -21,7 +27,7 @@ export default async function EstimatesPage({ params }: { params: Promise<{ id: 
       {canEdit && (
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium">New estimate</span>
-          <NewEstimate projectId={id} defaultScope={scopes.length === 1 ? scopes[0] : scopes.length ? "MIXED" : "STEEP"} />
+          <NewEstimate projectId={id} defaultScope={scopes.length === 1 ? scopes[0] : scopes.length ? "MIXED" : "STEEP"} templates={await templateOpts(id)} />
           {estimates.length >= 2 && (
             <Link className="text-sm underline" href={`/projects/${id}/estimates/compare?a=${estimates[1].id}&b=${estimates[0].id}`}>
               Compare {estimates[1].name} → {estimates[0].name}

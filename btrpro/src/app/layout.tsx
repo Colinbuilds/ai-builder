@@ -27,6 +27,7 @@ function navFor(role: string): NavGroup[] {
       items: [
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },
+        { href: "/settings/templates", label: "Estimate templates" },
         ...(staff ? [{ href: "/settings/labor", label: "Labor standards" }] : []),
         { href: "/settings/rules", label: "Rules" },
       ],

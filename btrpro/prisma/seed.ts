@@ -2,7 +2,7 @@
 // Re-running is safe: sheets/items/rules are upserted, never duplicated.
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseCoverage } from "../src/lib/sheets/coverage";
 
@@ -150,9 +150,24 @@ async function main() {
     console.log(`Admin sign-ins: ${admins.map((a) => a.email).join(", ")}`);
   }
 
-  const active = { sheet: { isActive: true } };
+  // Built-in estimate templates (product systems). Created once; later edits in the app are kept.
+  const tplFile = path.join(dataDir, "estimate_templates.json");
+  if (existsSync(tplFile)) {
+    const { templates } = JSON.parse(readFileSync(tplFile, "utf8")) as { templates: { key: string; config: object; [k: string]: unknown }[] };
+    let added = 0;
+    for (const t of templates) {
+      if (await prisma.estimateTemplate.findUnique({ where: { key: t.key } })) continue;
+      await prisma.estimateTemplate.create({
+        data: { key: t.key, name: String(t.name), category: String(t.category), group: String(t.group), brand: (t.brand as string) ?? null, impactClass: (t.impactClass as string) ?? null, impactSource: (t.impactSource as string) ?? null, scopeType: String(t.scopeType), module: String(t.module), config: t.config as Prisma.InputJsonValue, notes: (t.notes as string) ?? null, builtIn: true, createdBy: "BTRpro starter set" },
+      });
+      added++;
+    }
+    if (added) console.log(`Added ${added} built-in estimate templates.`);
+  }
+
+  const active = { sheet: { isActive: true, companyId: null } };
   const [sheetCount, itemCount, callCount, ruleCount] = await Promise.all([
-    prisma.priceSheet.count({ where: { isLoaded: true, isActive: true } }),
+    prisma.priceSheet.count({ where: { isLoaded: true, isActive: true, companyId: null } }),
     prisma.priceItem.count({ where: active }),
     prisma.priceItem.count({ where: { priceStatus: "CALL", ...active } }),
     prisma.rule.count(),

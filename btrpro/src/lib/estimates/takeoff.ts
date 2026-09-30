@@ -125,7 +125,7 @@ export function defaultConfig(module: Module, market: "RESIDENTIAL" | "COMMERCIA
 }
 
 export type MeasureMap = Map<string, Sourced>;
-export type ItemInfo = { itemNumber: string; description: string; sheetCode: string; coverageQty: number | null; coverageUnit: string | null };
+export type ItemInfo = { itemNumber: string; description: string; sheetCode: string; coverageQty: number | null; coverageUnit: string | null; uom?: string };
 export type Ctx = { m: MeasureMap; items: Map<string, ItemInfo>; waste: Record<"ROOFING" | "SIDING" | "DECK", Waste> };
 
 const M = (ctx: Ctx, key: string | null | undefined): Sourced => (key ? (ctx.m.get(key) ?? { value: null, source: `${key} (not confirmed)` }) : { value: null, source: "not set" });
@@ -254,6 +254,7 @@ export function runModule(module: Module, config: TakeoffConfig, ctx: Ctx): { li
       name: name(ctx, c.plank, "Siding"),
       exposureIn: num(c.plank.exposureIn, c.plank.exposureSource || "entered by user"),
       lengthFt: num(c.plank.lengthFt, "entered by user"),
+      soldBySquare: !!c.plank.itemNumber && ctx.items.get(c.plank.itemNumber)?.uom === "SQ",
     },
     houseWrap: c.houseWrap.pick.itemNumber
       ? { itemNumber: c.houseWrap.pick.itemNumber, name: name(ctx, c.houseWrap.pick, "House wrap"), sfPerRoll: coverage(ctx, c.houseWrap.pick, "SF/RL") }

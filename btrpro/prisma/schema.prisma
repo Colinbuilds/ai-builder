@@ -1238,3 +1238,31 @@ model Payment {
   qboError   String?
   createdAt  DateTime @default(now())
 }
+
+// ---------- Estimate templates (product systems) ----------
+
+// A saved takeoff setup for one module: the products for every slot, e.g. "GAF Timberline HDZ" or
+// "Mulehide EPDM .060 fully adhered". Applying one fills an estimate's takeoff; quantities still come
+// from the job's confirmed measurements.
+model EstimateTemplate {
+  id           String   @id @default(cuid())
+  // built-in templates are seeded by key; user templates get a generated key
+  key          String   @unique
+  name         String
+  category     String // SHINGLE | FLAT | SIDING | DECK | OTHER
+  group        String // "Class 4 / impact-resistant", "EPDM", "Vinyl", "Hardie (Primed)"…
+  brand        String?
+  impactClass  String? // CLASS_4 | CLASS_3 | null (not verified)
+  impactSource String?
+  scopeType    String // STEEP | LOW_SLOPE | SIDING | DECK
+  module       String // steep | lowSlope | siding | deck
+  config       Json
+  notes        String?
+  builtIn      Boolean  @default(false)
+  active       Boolean  @default(true)
+  // a builder's own template (their standard specs); null = everyone
+  companyId    String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
