@@ -190,6 +190,8 @@ model Project {
   form17Note        String?
   bidDueDate        DateTime?
   acculynxJobNumber String?
+  // set by the job-schedule import; the same schedule row maps to the same job on every re-import
+  importKey         String?
   leadSource        String?
   status            ProjectStatus     @default(LEAD)
   statusChangedAt   DateTime          @default(now())
@@ -255,6 +257,8 @@ model Project {
   timeEntries      TimeEntry[]
   invoices         Invoice[]
   qboCustomerId    String?
+
+  @@index([importKey])
 }
 
 // Timeline of everything that happened on a job: stage changes, intake edits, Form 17, overrides.

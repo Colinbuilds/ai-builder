@@ -209,8 +209,17 @@ export function suggestTemplates(
     }
     // Spec needs Class 4 but allows an equal: offer the confirmed Class 4 shingle templates too.
     if (c4Spec && p.orEqual)
-      for (const t of pool.filter((t) => t.category === "SHINGLE" && t.impactClass === "CLASS_4"))
-        add({ templateId: t.id, name: t.name, strength: "TYPE", reason: `Class 4 option — spec allows an equal (p.${p.page}).`, page: p.page, warning: null });
+      for (const t of pool.filter(
+        (t) => t.category === "SHINGLE" && t.impactClass === "CLASS_4",
+      ))
+        add({
+          templateId: t.id,
+          name: t.name,
+          strength: "TYPE",
+          reason: `Class 4 option — spec allows an equal (p.${p.page}).`,
+          page: p.page,
+          warning: null,
+        });
     if (exact) continue;
     // No brand match: fall back to the material type the spec describes (TPO, EPDM, fiber cement, vinyl…).
     if (!specBrand || p.orEqual) {

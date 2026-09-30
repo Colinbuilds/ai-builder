@@ -39,6 +39,7 @@ function navFor(role: string): NavGroup[] {
         role === "ADMIN"
           ? [
               { href: "/admin/users", label: "Users" },
+              { href: "/settings/import-jobs", label: "Import jobs" },
               { href: "/settings/company", label: "Company settings" },
               { href: "/settings/integrations", label: "Integrations" },
             ]
