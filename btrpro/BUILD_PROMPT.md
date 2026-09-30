@@ -335,7 +335,7 @@ Rules for every integration:
 16. Tasks/reminders, dashboards and reports, commissions ✅
 17. CompanyCam and EagleView links, customer portal, field mobile view ✅ (EagleView ordering API waits on credentials)
 18. AccuLynx data migration and cutover ✅
-19. Playwright end-to-end: create project → upload a sample EagleView-style PDF → confirm measurements → build a shingle estimate → export PDF → record costs → see job P&L
+19. Playwright end-to-end: create project → upload a sample EagleView-style PDF → confirm measurements → build a shingle estimate → export PDF → record costs → see job P&L ✅
 
 **Ground rules:**
 - Ask me one question at a time when something is unclear.

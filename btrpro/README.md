@@ -1,6 +1,6 @@
 # BTRpro
 
-The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, estimating, job communication, documents, and (as the phases land) ordering, scheduling, invoicing, and job costing, on both the residential and commercial sides. The full spec is in [`BUILD_PROMPT.md`](BUILD_PROMPT.md). The estimator rules, which also become the AI system prompt, are in [`CLAUDE.md`](CLAUDE.md). The source-of-truth price data is in [`data/`](data/).
+The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, estimating, job communication, documents, ordering, scheduling, crews, invoicing, and job costing, on both the residential and commercial sides. The full spec is in [`BUILD_PROMPT.md`](BUILD_PROMPT.md). The estimator rules, which also become the AI system prompt, are in [`CLAUDE.md`](CLAUDE.md). The source-of-truth price data is in [`data/`](data/).
 
 ## Status
 
@@ -18,8 +18,11 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 12 | Job costing and profit analysis | **Done** |
 | 13 | Material orders and deliveries | **Done** |
 | 14 | Schedule, crews & subs, work orders, timesheets | **Done** |
-| 15–18 | AccuLynx replacement: invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | Next |
-| 19 | End-to-end test | |
+| 15 | Invoicing, payments, AR aging, change orders with e-signature, QuickBooks push, Stripe card payments | **Done** |
+| 16 | Tasks and reminders (My day), sales & pipeline dashboard, commissions | **Done** |
+| 17 | Customer portal, crew phone link, CompanyCam photos, EagleView order tracking | **Done** |
+| 18 | AccuLynx migration (jobs export import) and cutover checklist | **Done** |
+| 19 | Playwright end-to-end test: job → PDF upload → confirm measurements → shingle estimate → PDF → costs → P&L | **Done** |
 
 The full schema, including the job chat/email models, is already in `prisma/schema.prisma`. Later phases add features without reshaping the data model.
 
@@ -241,15 +244,39 @@ BTRpro watches the Drive folder where ABC price sheets are dropped (Unit Pricing
 - **Ignored:** older files. **Listed as unmatched:** unrecognized names, such as manufacturer price lists; upload those by hand.
 - A sheet from `/data` never replaces a newer live one: newest effective date wins.
 
-One-time setup (Railway + Google):
-1. In Google Cloud (signed in with a btrcontracting.com account):
-   - Create a project and enable the **Google Drive API**.
-   - Set the OAuth consent screen to **Internal**.
-   - Create an **OAuth client ID** (Web application) with the redirect URI `https://YOUR-RAILWAY-DOMAIN/api/integrations/google_drive/callback`.
-2. In Railway → Variables, add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `APP_URL=https://YOUR-RAILWAY-DOMAIN`.
-3. In BTRpro, as an Admin:
-   - Admin → Integrations → connect Google Drive.
-   - Estimating → Price sheets → paste the Current folder link → **Save folder** → **Check now**.
+One-time setup (the app reads Drive on its own with a service account):
+1. In Google Cloud: create a project (or use one), enable the **Google Drive API**, then **IAM & Admin → Service accounts → Create**. Open it → **Keys → Add key → JSON** and download the key.
+2. In Railway → Variables, add `GOOGLE_SERVICE_ACCOUNT_JSON` and paste the whole JSON file.
+3. In Google Drive, share the price-sheet **Current** folder (and the job schedules, or the whole shared drive) with the service account's email (`…@….iam.gserviceaccount.com`) as **Viewer**.
+4. That's it: the Current folder link is preset. Estimating → Price sheets shows the service account and a **Check now** button; Admin → Integrations shows it as connected.
+
+Without a service account, an Admin can still connect their own Drive (Google OAuth client: `GOOGLE_CLIENT_ID/SECRET`, `APP_URL`, redirect `APP_URL/api/integrations/google_drive/callback`) and the sync runs as them.
+
+## Plan & spec review (new construction)
+
+Job → **Plan review**: reads a plan set or project manual into an estimator brief — scope by trade, products specified (with "or equal"), requirements (warranty, Class 4, wind), work by others, alternates, conflicts between sheets, and RFIs — every item with its page. Big sets are trimmed to the roof plans, elevations, sections and Division 07 (or the pages you name). Pitches and a roof-plan area go to the confirmation queue; RFIs become open items; matching templates are suggested.
+
+## Billing (Phase 15)
+
+Job → **Billing**: contract vs billed vs paid, deposit/progress/final invoices (retainage on commercial), a customer link with PDF and optional Stripe card payment, payments by check/ACH/card (card surcharge up to 3%, only if set), void with a reason, and change orders priced from an estimate and e-signed by the customer. **Reports → Receivables** is AR aging. Sent invoices and payments push to QuickBooks when it's connected.
+
+## Tasks, dashboards, commissions (Phase 16)
+
+Each job stage adds its next steps as tasks (follow up a bid, Form 17 before ordering, deposit invoice, order materials, schedule, final invoice, close costs). **My day** lists your tasks plus reminders: bids due, proposals unsigned after a week, crew insurance/licenses expiring, past-due invoices. **Reports → Sales & pipeline** and **Commissions**.
+
+## Customer portal and crew phone link (Phase 17)
+
+- Job Overview → **Customer portal**: one private link with the job's stage, schedule, proposal, change orders, invoices and payments.
+- Crews → crew → **Crew phone link**: the crew's own page with today's and the next two weeks' jobs, work orders, hours or piece-work logging (office approves), and delivery-ticket photos.
+- Documents tab: link the job's **CompanyCam** project (photos show with `COMPANYCAM_TOKEN`) and record **EagleView** orders.
+
+## Moving off AccuLynx (Phase 18)
+
+1. Admin → **Import jobs**: bring in the Residential and Commercial Live schedules (Drive or .xlsx). Each Builder-column name is matched to a builder/customer account.
+2. Admin → **Move off AccuLynx**: upload the AccuLynx jobs export. Columns and milestones are matched in a preview; jobs already here at the same address are linked, not duplicated; re-imports update by AccuLynx job number.
+3. Work the cutover checklist on that page, then set the cutover date. After it, the estimate's AccuLynx copy output is retired.
+
+Admins can delete jobs (Overview → Delete this job, or tick several on the Jobs list). Jobs with payments or QuickBooks invoices are kept.
 
 ## Environment variables
 
@@ -265,13 +292,19 @@ One-time setup (Railway + Google):
 | `INBOUND_EMAIL_DOMAIN`, `INBOUND_EMAIL_WEBHOOK_SECRET` | Job forwarding addresses and the inbound webhook |
 | `POSTMARK_SERVER_TOKEN`, `EMAIL_FROM` | Sending proposals and notices by email |
 | `APP_URL`, `GOOGLE_CLIENT_ID/SECRET`, `MS_CLIENT_ID/SECRET` | Mailbox connect (OAuth redirect is `APP_URL/api/mail/{google,microsoft}/callback`) |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | The app's own Google Drive access (price-sheet sync, schedule import, Drive document import). Raw JSON key or base64. Share the Drive folders with the service account's email. |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Online card payments on invoices. Webhook URL: `APP_URL/api/stripe/webhook`, event `checkout.session.completed`. |
+| `COMPANYCAM_TOKEN` | Shows CompanyCam photos on jobs |
 
 ## Tests
 
 ```bash
-npm test        # Vitest; builds a fresh prisma/test.db from /data and seeds it
-npm run lint    # TypeScript typecheck
+npm test          # Vitest; builds a fresh prisma/test.db from /data and seeds it
+npm run lint      # TypeScript typecheck
+npm run test:e2e  # Playwright: builds the app, runs it on a fresh prisma/e2e.db, and drives the browser
 ```
+
+The end-to-end test creates a residential job, uploads a TEST_ONLY EagleView-style PDF, confirms the measurements in the queue, starts a Malarkey Vista AR estimate from its template and calculates it (checking acceptance test 4: 3 BX coil nails for 32.4 SQ), downloads the estimate PDF, records a material cost, and checks the job P&L. The AI read of the PDF is covered by unit tests with a fake client, so the browser run records the values that read would queue and a person confirms them. Locally, Chromium comes from `PLAYWRIGHT_BROWSERS_PATH` or `npx playwright install chromium`.
 
 Covers acceptance tests 1–9 (seed counts, item lookups, 32.4 SQ nails, 25 LF/BD hip & ridge, coverage parser, SID-01 siding area, sheet date status, MISSING_ITEM totals), 11 (Form 17 banner), and 12 (readiness can't reach BID_READY with missing/placeholder/pending lines, unapproved waste, or an expired sheet), plus the upload → review → apply flow, stage gates, and intake relevance.
 
@@ -290,6 +323,14 @@ BTRpro ships with a `Dockerfile` and `railway.json`. SQLite and uploaded files l
 5. **Settings → Networking → Generate Domain.** Open it and sign in.
 
 Each start runs `prisma db push` (schema), then the idempotent seed (price sheets, rules, first admin), then the server. The same image runs on Render or Fly.io: mount a disk at `/data` and set the same variables.
+
+### After the first deploy
+
+1. Sign in as the seed admin; add users (Admin → Users) and set company settings (markup, tax, deposit, invoice days, how to pay, card surcharge).
+2. Google Drive: create a service account, put its key in `GOOGLE_SERVICE_ACCOUNT_JSON`, share the price-sheet folder and schedules with its email. The price-sheet folder is preset; sync runs on start and every 6 hours.
+3. Email: `POSTMARK_SERVER_TOKEN` + `EMAIL_FROM` for invoices, proposals, change orders and orders; `INBOUND_EMAIL_*` for job forwarding addresses.
+4. Optional: Stripe (webhook above), QuickBooks (`QBO_*`, redirect `APP_URL/api/integrations/quickbooks/callback`), CompanyCam token.
+5. Import jobs and the AccuLynx export, then work Admin → Move off AccuLynx.
 
 For larger teams, move to Postgres: change `provider` in `prisma/schema.prisma` to `postgresql`, set `DATABASE_URL`, and set `STORAGE_DRIVER=s3` for files.
 

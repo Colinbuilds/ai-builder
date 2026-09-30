@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:reset": "prisma db push --force-reset && prisma db seed",
@@ -35,6 +36,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
