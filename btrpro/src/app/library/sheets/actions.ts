@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { applyImport, createImport, ImportError, SHEET_CODE_RE, type ReviewedImport } from "@/lib/sheets/imports";
 import { saveSettings } from "@/lib/settings";
 import { parseDriveLink } from "@/lib/integrations/drive";
-import { getConnection } from "@/lib/integrations/oauth";
+import { driveAvailable } from "@/lib/integrations/google-sa";
 import { syncPriceSheets } from "@/lib/sheets/drive-sync";
 
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -123,7 +123,7 @@ export async function saveSheetFolderAction(_: SyncState, f: FormData): Promise<
     return { problems: [], ok: true, note: "Stopped watching Drive." };
   }
   if (!parseDriveLink(link)) return { problems: ["Paste the Google Drive folder link (the \"Current\" price sheets folder)."] };
-  if (!(await getConnection("GOOGLE_DRIVE", admin.id))) return { problems: ["Connect your Google Drive first (Admin → Integrations), then save the folder."] };
+  if (!(await driveAvailable(admin.id))) return { problems: ["Set up Drive for the app first: a service account key in GOOGLE_SERVICE_ACCOUNT_JSON (recommended), or connect your Google Drive under Admin → Integrations."] };
   await saveSettings({ priceSheetFolder: link, priceSheetSyncUserId: admin.id }, admin);
   revalidatePath("/library/sheets");
   return { problems: [], ok: true, note: "Saved. BTRpro checks this folder on start and every 6 hours — or click Check now." };

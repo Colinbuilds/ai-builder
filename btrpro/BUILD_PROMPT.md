@@ -331,7 +331,7 @@ Rules for every integration:
 12. Job costing and profit analysis (§12), including actual-cost entry, ABC invoice CSV import, per-job P&L, and cross-job reports with calibration/bid tabs ✅
 13. Material orders and deliveries (§13), ABC Supply integration ✅ (email/PDF; ABC API waits on access)
 14. Production scheduling, crews/subs, work orders, timesheets ✅
-15. Invoicing, payments, change orders/supplements, QuickBooks sync, Buildertrend/Procore change-order sync
+15. Invoicing, payments, change orders/supplements, QuickBooks sync, Buildertrend/Procore change-order sync ✅ (Buildertrend/Procore by CSV until API access)
 16. Tasks/reminders, dashboards and reports, commissions
 17. CompanyCam and EagleView links, customer portal, field mobile view
 18. AccuLynx data migration and cutover

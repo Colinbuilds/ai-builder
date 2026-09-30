@@ -3,7 +3,7 @@
 // the live sheet; anything doubtful is held as a draft for an Admin to review on the usual review screen.
 import { prisma } from "@/lib/db";
 import { getSettings, saveSettings } from "@/lib/settings";
-import { accessToken } from "@/lib/integrations/oauth";
+import { driveNotFound, driveToken } from "@/lib/integrations/google-sa";
 import { parseDriveLink } from "@/lib/integrations/drive";
 import { applyImport, createImport } from "./imports";
 import { validateRows } from "./diff";
@@ -41,7 +41,7 @@ type DriveFile = { id: string; name: string; mimeType: string; modifiedTime: str
 
 async function driveGet(token: string, url: string) {
   const r = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
-  if (r.status === 404) throw new Error("Drive says the folder doesn't exist or isn't shared with the connected account.");
+  if (r.status === 404) throw new Error(driveNotFound());
   if (!r.ok) throw new Error(`Google Drive error (${r.status}).`);
   return r;
 }
@@ -74,10 +74,12 @@ export function judgeSheet(
 export async function syncPriceSheets(): Promise<SyncResult> {
   const s = await getSettings();
   const result: SyncResult = { checked: 0, applied: [], held: [], skipped: 0, unmatched: [], errors: [] };
-  if (!s.priceSheetFolder || !s.priceSheetSyncUserId) throw new Error("Set the price-sheet folder first (Price sheets page).");
+  if (!s.priceSheetFolder) throw new Error("Set the price-sheet folder first (Price sheets page).");
+  // who the imports are recorded under: the Admin who set the folder, else the first Admin
+  const syncUserId = s.priceSheetSyncUserId ?? (await prisma.user.findFirstOrThrow({ where: { role: "ADMIN" }, orderBy: { createdAt: "asc" } })).id;
   const folderId = parseDriveLink(s.priceSheetFolder);
   if (!folderId) throw new Error("The saved price-sheet folder link isn't a Drive folder link.");
-  const { token } = await accessToken("GOOGLE_DRIVE", s.priceSheetSyncUserId);
+  const token = await driveToken(s.priceSheetSyncUserId);
   const files: DriveFile[] = [];
   let pageToken = "";
   do {
@@ -109,7 +111,7 @@ export async function syncPriceSheets(): Promise<SyncResult> {
     try {
       const bytes = new Uint8Array(await (await driveGet(token, `${API}/${f.id}?alt=media&supportsAllDrives=true`)).arrayBuffer());
       const live = await prisma.priceSheet.findFirst({ where: { code: sheet.code, isActive: true, companyId: null }, include: { items: true } });
-      const imp = await createImport({ bytes, fileName: f.name, code: sheet.code, name: live?.name ?? sheet.name, scope: live?.scope ?? null, userId: s.priceSheetSyncUserId });
+      const imp = await createImport({ bytes, fileName: f.name, code: sheet.code, name: live?.name ?? sheet.name, scope: live?.scope ?? null, userId: syncUserId });
       const parsed = { header: imp.header as ParsedHeader, rows: imp.rows as ParsedRow[], unparsed: imp.unparsed as unknown[] };
       const verdict = judgeSheet(parsed, live && live.isLoaded ? { effectiveDate: live.effectiveDate, items: live.items } : null);
       if (verdict.action === "SKIP") {
@@ -120,7 +122,7 @@ export async function syncPriceSheets(): Promise<SyncResult> {
         result.held.push(f.name);
         await record("DRAFT", { code: sheet.code, importId: imp.id, message: `Held for review: ${verdict.reasons.join("; ")}.` });
       } else {
-        const { summary } = await applyImport(imp.id, { name: live?.name ?? sheet.name, scope: live?.scope ?? null, header: parsed.header, rows: parsed.rows }, s.priceSheetSyncUserId);
+        const { summary } = await applyImport(imp.id, { name: live?.name ?? sheet.name, scope: live?.scope ?? null, header: parsed.header, rows: parsed.rows }, syncUserId);
         result.applied.push(`${sheet.code} (${f.name})`);
         await record("APPLIED", { code: sheet.code, importId: imp.id, message: `Live: ${summary.items} items, ${summary.changed} changed, ${summary.added} added, ${summary.removed} removed. Effective ${parsed.header.effective}.` });
       }
@@ -130,7 +132,7 @@ export async function syncPriceSheets(): Promise<SyncResult> {
       await record("ERROR", { code: sheet.code, message: msg });
     }
   }
-  await saveSettings({ priceSheetLastCheck: new Date().toISOString() }, { id: s.priceSheetSyncUserId, name: "Price sheet sync" });
+  await saveSettings({ priceSheetLastCheck: new Date().toISOString() }, { id: syncUserId, name: "Price sheet sync" });
   return result;
 }
 
@@ -142,7 +144,7 @@ export function startSheetWatcher(everyMs = 6 * 3600_000) {
   const run = async () => {
     try {
       const s = await getSettings();
-      if (!s.priceSheetFolder || !s.priceSheetSyncUserId) return;
+      if (!s.priceSheetFolder) return;
       const r = await syncPriceSheets();
       if (r.checked) console.log(`[price sheets] checked ${r.checked}: applied ${r.applied.length}, held ${r.held.length}, unmatched ${r.unmatched.length}, errors ${r.errors.length}`);
     } catch (e) {

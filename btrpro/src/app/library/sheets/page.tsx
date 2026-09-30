@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import { getSettings } from "@/lib/settings";
-import { getConnection } from "@/lib/integrations/oauth";
 import { DriveSyncPanel } from "./drive-sync-panel";
+import { driveAvailable, serviceAccountEmail } from "@/lib/integrations/google-sa";
 
 type SP = Promise<{ applied?: string }>;
 
@@ -35,7 +35,7 @@ export default async function SheetsPage({ searchParams }: { searchParams: SP })
   const [settings, driveFiles, connected] = await Promise.all([
     getSettings(),
     prisma.driveSheetFile.findMany({ orderBy: { checkedAt: "desc" }, take: 12 }),
-    getConnection("GOOGLE_DRIVE", user.id),
+    driveAvailable(user.id),
   ]);
   const heldReasons = new Map((await prisma.driveSheetFile.findMany({ where: { status: "DRAFT", importId: { in: drafts.map((d) => d.id) } } })).map((f) => [f.importId, f.message]));
 
@@ -67,7 +67,7 @@ export default async function SheetsPage({ searchParams }: { searchParams: SP })
           New ABC sheets dropped in the Drive folder are read automatically. A sheet goes live on its own when it reads cleanly and is newer than the live one; anything doubtful (unreadable rows, missing dates, lots of removed items, or many prices moving more than 25%) is held below for review. Older files are ignored.
         </p>
         {isAdmin ? (
-          <DriveSyncPanel folder={settings.priceSheetFolder} connected={!!connected} lastCheck={settings.priceSheetLastCheck} />
+          <DriveSyncPanel folder={settings.priceSheetFolder} connected={!!connected} lastCheck={settings.priceSheetLastCheck} serviceAccount={serviceAccountEmail()} />
         ) : (
           <p className="text-sm">{settings.priceSheetFolder ? "Watching the Drive price-sheet folder." : "Not set up yet — an Admin sets the Drive folder here."}</p>
         )}

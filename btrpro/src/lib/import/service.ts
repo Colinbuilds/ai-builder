@@ -3,7 +3,7 @@
 // Re-importing is safe: jobs are matched by import key, only moved forward in stage, never duplicated.
 import { prisma } from "@/lib/db";
 import { readUpload, saveUpload } from "@/lib/storage";
-import { accessToken } from "@/lib/integrations/oauth";
+import { driveNotFound, driveToken } from "@/lib/integrations/google-sa";
 import { parseDriveLink } from "@/lib/integrations/drive";
 import { createProject } from "@/lib/projects/service";
 import { readCsv, readXlsx, type Tab } from "./xlsx";
@@ -42,15 +42,12 @@ export async function fetchScheduleFromDrive(
     throw new Error(
       "That doesn't look like a Google Sheets or Drive file link.",
     );
-  const { token } = await accessToken("GOOGLE_DRIVE", userId);
+  const token = await driveToken(userId);
   const get = async (url: string) => {
     const r = await fetch(url, {
       headers: { authorization: `Bearer ${token}` },
     });
-    if (r.status === 404)
-      throw new Error(
-        "Drive says that file doesn't exist or isn't shared with your account.",
-      );
+    if (r.status === 404) throw new Error(driveNotFound());
     if (!r.ok) throw new Error(`Google Drive error (${r.status}).`);
     return r;
   };

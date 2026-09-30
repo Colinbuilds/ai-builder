@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Problems } from "@/components/projects/problems";
 
-export function DriveSyncPanel({ folder, connected, lastCheck }: { folder: string | null; connected: boolean; lastCheck: string | null }) {
+export function DriveSyncPanel({ folder, connected, lastCheck, serviceAccount }: { folder: string | null; connected: boolean; lastCheck: string | null; serviceAccount: string | null }) {
   const [state, action, pending] = useFormAction(saveSheetFolderAction, null);
   const [sState, sAction, sPending] = useFormAction(syncSheetsNowAction, null);
   return (
@@ -19,11 +19,15 @@ export function DriveSyncPanel({ folder, connected, lastCheck }: { folder: strin
       </form>
       {state?.ok && <p className="text-sm text-green-700 dark:text-green-400">{state.note}</p>}
       <Problems state={state} />
-      {!connected && (
-        <p className="text-sm text-amber-700 dark:text-amber-400">
-          Your Google Drive isn&apos;t connected. <a href="/settings/integrations" className="underline">Connect it under Integrations</a>, then save the folder.
+      {serviceAccount ? (
+        <p className="text-xs text-muted-foreground">
+          BTRpro reads Drive as <span className="font-mono">{serviceAccount}</span>. Share the price-sheet folder (or its shared drive) with that address as a Viewer.
         </p>
-      )}
+      ) : !connected ? (
+        <p className="text-sm text-amber-700 dark:text-amber-400">
+          Drive isn&apos;t set up for the app. Add a Google service account key (GOOGLE_SERVICE_ACCOUNT_JSON) on the server, or <a href="/settings/integrations" className="underline">connect your Google Drive</a>, then save the folder.
+        </p>
+      ) : null}
       {folder && (
         <form onSubmit={sAction} className="flex flex-wrap items-center gap-2">
           <Button size="sm" disabled={sPending}>

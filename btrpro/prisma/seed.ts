@@ -200,6 +200,17 @@ async function main() {
     if (n) console.log(`Added ${n} records from BTR company data.`);
   }
 
+  // BTR's "Current" price-sheet folder in the company shared drive. Set once so the Drive sync can start on its own;
+  // if an Admin ever changed or cleared it (audit log has an entry), leave their choice alone.
+  const CURRENT_SHEETS = "https://drive.google.com/drive/folders/1tyaYSwNNPG3571FEFxEA0K6ohWzzWYFj";
+  if (
+    !(await prisma.companySetting.findUnique({ where: { key: "priceSheetFolder" } })) &&
+    !(await prisma.auditLog.findFirst({ where: { entity: "CompanySetting", entityId: "priceSheetFolder" } }))
+  ) {
+    await prisma.companySetting.create({ data: { key: "priceSheetFolder", value: CURRENT_SHEETS, updatedBy: "Seed" } });
+    console.log("Price-sheet sync folder set to BTR's Current folder.");
+  }
+
   const active = { sheet: { isActive: true, companyId: null } };
   const [sheetCount, itemCount, callCount, ruleCount] = await Promise.all([
     prisma.priceSheet.count({ where: { isLoaded: true, isActive: true, companyId: null } }),

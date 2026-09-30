@@ -4,7 +4,8 @@ import { prisma } from "@/lib/db";
 import { MEASUREMENT_BY_KEY, MEASUREMENTS } from "@/lib/docs/measurements";
 import { INTAKE_BY_KEY, parseScopes } from "@/lib/projects/intake";
 import { aiConfigured } from "@/lib/ai/claude";
-import { getConnection, oauthConfigured } from "@/lib/integrations/oauth";
+import { oauthConfigured } from "@/lib/integrations/oauth";
+import { driveAvailable } from "@/lib/integrations/google-sa";
 import { UploadDocs, DriveImport } from "@/components/docs/upload";
 import { DocTypeSelect } from "@/components/docs/doc-type-select";
 import { ExtractButton } from "@/components/docs/extract-button";
@@ -51,10 +52,8 @@ export default async function DocumentsPage({
     }),
   ]);
   const ai = aiConfigured();
-  const driveReady = oauthConfigured("GOOGLE_DRIVE");
-  const driveConn = driveReady
-    ? await getConnection("GOOGLE_DRIVE", user.id)
-    : null;
+  const driveConn = await driveAvailable(user.id);
+  const driveReady = driveConn || oauthConfigured("GOOGLE_DRIVE");
   const back = `/projects/${id}/documents`;
 
   const queue: QueueItem[] = [

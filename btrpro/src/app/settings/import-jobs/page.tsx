@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { oauthConfigured, getConnection } from "@/lib/integrations/oauth";
+import { driveAvailable } from "@/lib/integrations/google-sa";
 import { previewSchedule, type Market } from "@/lib/import/service";
 import { LoadSchedule, MapAndImport } from "@/components/import/import-forms";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +32,7 @@ export default async function ImportJobs({
 }) {
   const user = await requireUser(["ADMIN"]);
   const { f, n, m } = await searchParams;
-  const driveReady =
-    oauthConfigured("GOOGLE_DRIVE") &&
-    !!(await getConnection("GOOGLE_DRIVE", user.id));
+  const driveReady = await driveAvailable(user.id);
   let preview: Awaited<ReturnType<typeof previewSchedule>> | null = null;
   let error: string | null = null;
   if (f && n && f.includes("imports/schedules")) {
