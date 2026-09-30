@@ -6,10 +6,41 @@ import { logout } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { MarketSwitch } from "@/components/market-switch";
 import { getMarketView } from "@/lib/market";
+import { NavMenu, type NavGroup } from "@/components/nav-menu";
+
+function navFor(role: string): NavGroup[] {
+  const staff = role !== "VIEWER";
+  return [
+    { href: "/", label: "Jobs" },
+    { href: "/customers", label: "Customers" },
+    { label: "Operations", items: [{ href: "/deliveries", label: "Deliveries" }] },
+    {
+      label: "Estimating",
+      items: [
+        { href: "/library", label: "Price library" },
+        { href: "/library/sheets", label: "Price sheets" },
+        ...(staff ? [{ href: "/settings/labor", label: "Labor standards" }] : []),
+        { href: "/settings/rules", label: "Rules" },
+      ],
+    },
+    { label: "Reports", items: staff ? [{ href: "/reports/profit", label: "Profit" }] : [] },
+    {
+      label: "Admin",
+      items:
+        role === "ADMIN"
+          ? [
+              { href: "/admin/users", label: "Users" },
+              { href: "/settings/company", label: "Company settings" },
+              { href: "/settings/integrations", label: "Integrations" },
+            ]
+          : [],
+    },
+  ];
+}
 
 export const metadata: Metadata = {
   title: "BTRpro — BTR Contracting",
-  description: "Roofing and exterior estimating for BTR Contracting",
+  description: "BTR Contracting operations: estimating, jobs, orders, and job costing",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,48 +51,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen antialiased">
         {user && (
           <header className="border-b">
-            <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 text-sm">
-              <Link href="/" className="font-semibold">
+            <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 text-sm">
+              <Link href="/" className="mr-2 font-semibold">
                 BTRpro
               </Link>
-              <Link href="/" className="text-muted-foreground hover:text-foreground">
-                Jobs
-              </Link>
-              <Link href="/customers" className="text-muted-foreground hover:text-foreground">
-                Customers
-              </Link>
-              <Link href="/library" className="text-muted-foreground hover:text-foreground">
-                Price library
-              </Link>
-              <Link href="/library/sheets" className="text-muted-foreground hover:text-foreground">
-                Sheets
-              </Link>
-              {user.role !== "VIEWER" && (
-                <Link href="/reports/profit" className="text-muted-foreground hover:text-foreground">
-                  Profit
-                </Link>
-              )}
-              {user.role !== "VIEWER" && (
-                <Link href="/settings/labor" className="text-muted-foreground hover:text-foreground">
-                  Labor
-                </Link>
-              )}
-              <Link href="/settings/rules" className="text-muted-foreground hover:text-foreground">
-                Rules
-              </Link>
-              {user.role === "ADMIN" && (
-                <>
-                  <Link href="/admin/users" className="text-muted-foreground hover:text-foreground">
-                    Users
-                  </Link>
-                  <Link href="/settings/integrations" className="text-muted-foreground hover:text-foreground">
-                    Integrations
-                  </Link>
-                  <Link href="/settings/company" className="text-muted-foreground hover:text-foreground">
-                    Company
-                  </Link>
-                </>
-              )}
+              <NavMenu groups={navFor(user.role)} />
               <span className="ml-auto">
                 <MarketSwitch view={view} />
               </span>

@@ -284,6 +284,12 @@ export async function importInvoices(projectId: string, csv: string, opts: { pos
     const { doc } = await addDocument({ projectId, bytes: opts.file.bytes, fileName: opts.file.name, contentType: "text/csv", userId: actor.id });
     documentId = doc.id;
   }
+  // an invoice carrying our PO (or ABC's order #) bills that material order's commitment
+  const orders = await prisma.materialOrder.findMany({ where: { projectId }, select: { number: true, supplierOrderNumber: true, commitment: { select: { id: true } } } });
+  const commitmentFor = (r: InvoiceRow) => {
+    const keys = [r.po, r.invoice].filter(Boolean).map((k) => k!.toUpperCase());
+    return orders.find((o) => o.commitment && keys.some((k) => k === o.number.toUpperCase() || (o.supplierOrderNumber && k === o.supplierOrderNumber.toUpperCase())))?.commitment?.id ?? null;
+  };
   const batch = `imp_${Date.now().toString(36)}`;
   const today = new Date();
   const created = await prisma.$transaction(async (tx) => {
@@ -307,6 +313,7 @@ export async function importInvoices(projectId: string, csv: string, opts: { pos
             itemNumber: r.itemNumber,
             sheetPrice: r.sheetPrice,
             importBatch: batch,
+            commitmentId: commitmentFor(r),
             documentId,
             enteredById: actor.id,
           },

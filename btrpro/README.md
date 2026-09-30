@@ -16,7 +16,8 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 10 | AI estimator assistant (tools, validation, quick actions) | **Done** |
 | 11 | Outputs (AccuLynx copy, order CSV, estimate & takeoff PDFs) + customer proposals with e-signature | **Done** |
 | 12 | Job costing and profit analysis | **Done** |
-| 13–18 | AccuLynx replacement: material orders, scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | Next |
+| 13 | Material orders and deliveries | **Done** |
+| 14–18 | AccuLynx replacement: scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | Next |
 | 19 | End-to-end test | |
 
 The full schema, including the job chat/email models, is already in `prisma/schema.prisma`. Later phases add features without reshaping the data model.
@@ -143,6 +144,23 @@ Each job has a **Job costing** tab. Admins see every job. Estimators see the job
   - Filters: date, side, job type, public/private, salesperson, estimator, and GC.
   - Shows $/SQ and $/SF sold vs. cost, and estimate accuracy by bucket for closed jobs.
   - Also shows public bid tabs (rank, % over low, money left on the table).
+
+## Material orders and deliveries (Phase 13)
+
+- **Orders tab on each job.** "New material order" copies the estimate's material lines: same item numbers and quantities, with shingles converted to whole bundles through the item's printed coverage (for example 34.33 SQ × 3 BD/SQ = 103 BD). You can change quantities and add lines from the price sheets while it's a draft.
+- **Before sending**, the order needs a delivery date, drop location, and on-site contact, and no MISSING quantities. On a public tax-exempt job it can't go out until the Form 17 is executed (PUB-01).
+- **Sending**
+  - Emails the order PDF to the branch (set the order email under Admin → Company settings). You can also download the PDF and click "Mark as sent".
+  - Files the PDF on the job.
+  - Adds the priced total to committed cost in Job costing.
+- **After sending**
+  - Record the branch confirmation (ABC order # and date).
+  - Receive deliveries against the ticket, with a photo; short lines become dated backorders.
+  - Record returns, which lower the committed cost.
+  - Cancel with a reason.
+- **Job costing link:** imported invoices carrying the PO (or ABC's order #) bill that order's commitment automatically.
+- **Operations → Deliveries:** every open order across jobs by date, with overdue orders flagged and backorders listed.
+- The ABC ordering API is not connected; that needs ABC to grant access.
 
 ## Environment variables
 

@@ -27,6 +27,11 @@ export function CompanySettingsForm({ s }: { s: CompanySettings }) {
         {field("costVarianceThresholdPct", "Flag costs over estimate by %", "A job-cost category gets a red flag when it runs this far over its estimate.")}
       </div>
       <div className="flex flex-col gap-1">
+        <Label>ABC branch order email</Label>
+        <Input name="supplierOrderEmail" type="email" defaultValue={s.supplierOrderEmail ?? ""} className="w-80" placeholder="Branch #112 order desk" />
+        <span className="text-xs text-muted-foreground">Material orders are emailed here. Leave blank to send orders yourself and mark them sent.</span>
+      </div>
+      <div className="flex flex-col gap-1">
         <Label>Proposal terms</Label>
         <textarea name="proposalTerms" defaultValue={s.proposalTerms ?? ""} rows={10} className="rounded-md border border-input bg-background p-2 text-sm" placeholder="Payment terms, change-order policy, schedule, insurance, lien rights, cancellation…" />
       </div>

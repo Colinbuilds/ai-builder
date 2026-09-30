@@ -21,6 +21,7 @@ export function ProjectTabs({
     [`${base}/documents`, "Documents", counts.documents ? <Pill key="d" n={counts.documents} /> : null],
     [`${base}/estimates`, "Estimates", counts.estimates ? <Pill key="s" n={counts.estimates} /> : null],
     [`${base}/proposals`, "Proposals"],
+    [`${base}/orders`, "Orders"],
     ...(showCosts ? ([[`${base}/costs`, "Job costing"]] as [string, string][]) : []),
     [`${base}/assistant`, "AI assistant"],
   ];

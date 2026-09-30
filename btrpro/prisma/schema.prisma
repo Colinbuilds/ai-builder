@@ -245,6 +245,7 @@ model Project {
   costClosedBy     String?
   // the P&L as it stood when the job was closed; later edits are Admin-only and audit-logged
   finalPnl         Json?
+  materialOrders   MaterialOrder[]
 }
 
 // Timeline of everything that happened on a job: stage changes, intake edits, Form 17, overrides.
@@ -862,21 +863,24 @@ model JobCost {
 
 // Money the job has committed to but hasn't been billed for yet: open material orders, accepted sub proposals.
 model CostCommitment {
-  id          String       @id @default(cuid())
+  id          String         @id @default(cuid())
   projectId   String
-  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   category    CostCategory
   vendor      String
   description String
   amount      Float
   reference   String?
   // OPEN | BILLED | CANCELLED
-  status      String       @default("OPEN")
+  status      String         @default("OPEN")
   documentId  String?
   enteredBy   String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   bills       JobCost[]
+  // set when the commitment was created by sending a material order
+  orderId     String?        @unique
+  order       MaterialOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
 }
 
 enum ChangeOrderKind {
@@ -928,4 +932,77 @@ model CommissionPlan {
   note      String?
   updatedBy String?
   updatedAt DateTime        @updatedAt
+}
+
+// ---------- Material orders and deliveries (§13) ----------
+
+enum MaterialOrderStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  PARTIAL
+  DELIVERED
+  CANCELLED
+}
+
+model MaterialOrder {
+  id                  String              @id @default(cuid())
+  projectId           String
+  project             Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // our PO number; put it on the supplier order so invoices can be matched back to the job
+  number              String              @unique
+  estimateId          String?
+  supplier            String
+  status              MaterialOrderStatus @default(DRAFT)
+  requestedDate       DateTime?
+  deliveryWindow      String? // AM | PM | ANYTIME | WILL_CALL
+  dropLocation        String? // driveway, roof load, street, …
+  siteContact         String?
+  notes               String?
+  supplierOrderNumber String?
+  confirmedDate       DateTime?
+  sentAt              DateTime?
+  sentTo              String?
+  sentBy              String?
+  sentMethod          String? // EMAIL | MANUAL
+  cancelReason        String?
+  createdBy           String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  lines               MaterialOrderLine[]
+  tickets             DeliveryTicket[]
+  commitment          CostCommitment?
+}
+
+model MaterialOrderLine {
+  id             String        @id @default(cuid())
+  orderId        String
+  order          MaterialOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemNumber     String?
+  description    String
+  quantity       Float?
+  unit           String?
+  priceItemId    String?
+  // expected cost from the price sheet; null when the item is CALL or the unit doesn't match the sheet
+  extended       Float?
+  priceFormula   String?
+  received       Float         @default(0)
+  backordered    Float         @default(0)
+  backorderDate  DateTime?
+  returned       Float         @default(0)
+  estimateLineId String?
+  note           String?
+  sortOrder      Int           @default(0)
+}
+
+model DeliveryTicket {
+  id           String        @id @default(cuid())
+  orderId      String
+  order        MaterialOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  date         DateTime
+  ticketNumber String?
+  documentId   String?
+  note         String?
+  receivedBy   String
+  createdAt    DateTime      @default(now())
 }
