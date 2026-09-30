@@ -14,15 +14,16 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 6 | Calc engine: steep, low-slope, deck, siding, pricing & totals (pure TypeScript, unit-tested) | **Done** |
 | 7–9 | Estimate builder, labor + standards library, rules engine | **Done** |
 | 10 | AI estimator assistant (tools, validation, quick actions) | **Done** |
-| 11 | Outputs (AccuLynx copy, order CSV, estimate & takeoff PDFs) + customer proposals with e-signature | **Done** |
+| 11 | Outputs (material list, order CSV, estimate & takeoff PDFs) + customer proposals with e-signature | **Done** |
 | 12 | Job costing and profit analysis | **Done** |
 | 13 | Material orders and deliveries | **Done** |
 | 14 | Schedule, crews & subs, work orders, timesheets | **Done** |
 | 15 | Invoicing, payments, AR aging, change orders with e-signature, QuickBooks push, Stripe card payments | **Done** |
 | 16 | Tasks and reminders (My day), sales & pipeline dashboard, commissions | **Done** |
 | 17 | Customer portal, crew phone link, CompanyCam photos, EagleView order tracking | **Done** |
-| 18 | AccuLynx migration (jobs export import) and cutover checklist | **Done** |
+| 18 | AccuLynx migration (one-time jobs export import) and setup checklist | **Done** |
 | 19 | Playwright end-to-end test: job → PDF upload → confirm measurements → shingle estimate → PDF → costs → P&L | **Done** |
+| 20 | AccuLynx-style interface: icon toolbar with dropdowns, dashboard (pipeline, action items, activity feed, leaderboard, work schedule, AR), job header with milestones + Advance Job + Job Menu, notifications panel, company updates, watch list; job Photos tab from the CompanyCam folders in Drive | **Done** |
 
 The full schema, including the job chat/email models, is already in `prisma/schema.prisma`. Later phases add features without reshaping the data model.
 
@@ -84,7 +85,7 @@ Each job has tabs: Overview, Team chat, Email, Documents, Estimates.
 - **Team chat:** internal per-job thread with replies, edits, and @mentions (first name, full name, or email). It updates every 5 seconds. Unread counts and @mentions show on the dashboard and the job tab.
 - **Email:** three ways in, de-duplicated by Message-ID, with attachments saved to the job:
   - **Forwarding address:** every job has one (`job-<token>@INBOUND_EMAIL_DOMAIN`). Point your inbound email provider's webhook (Postmark JSON or a generic JSON body) at `POST /api/inbound-email` with `x-webhook-secret: $INBOUND_EMAIL_WEBHOOK_SECRET`.
-  - **Mailbox pull:** read-only Gmail / Microsoft 365. Each user connects their own mailbox, and tokens are encrypted at rest with AES-256-GCM. The default search is the claim #, AccuLynx #, or street address.
+  - **Mailbox pull:** read-only Gmail / Microsoft 365. Each user connects their own mailbox, and tokens are encrypted at rest with AES-256-GCM. The default search is the claim #, old AccuLynx job #, or street address.
   - **Paste:** copy an email in by hand.
 - **AI summaries:** each email gets a short summary with its asks and every stated figure, labeled "not verified". **Catch me up** writes a brief of the job (since you last looked, or the whole job) from the timeline, chat, email, intake gaps, and readiness blockers, and saves it with the time range it covers. All AI calls use CLAUDE.md as the system prompt, `claude-opus-5-5` (override with `ANTHROPIC_MODEL`), server-side refusal fallback (`fallbacks: "default"`), and treat a refusal as an error instead of saving partial output. Without `ANTHROPIC_API_KEY` the AI buttons are disabled; nothing is faked.
 
@@ -124,7 +125,7 @@ The **AI assistant** tab on each job is a streaming chat with a shared per-job h
 
 ## Outputs and proposals (Phase 11)
 
-- **Estimate outputs**: each estimate has links for the AccuLynx paste-in copy, the ABC order CSV, the BTR estimate PDF, and the internal takeoff PDF (formulas, sources, MISSING items in red).
+- **Estimate outputs**: each estimate has links for the copy-paste material list (item, qty, unit), the ABC order CSV, the BTR estimate PDF, and the internal takeoff PDF (formulas, sources, MISSING items in red).
 - **Company settings** (Settings → Company): markup, sales tax, deposit %, proposal terms, warranty text, and how long proposals stay valid. Anything blank stays blank; nothing is filled in for you.
 - **Proposals**: made from a finished estimate. The estimate must be complete, have a written scope ("We will" lines), and have terms plus a markup set. A NOT READY job needs an explicit checkbox. Price = (cost + tax on materials) × (1 + markup), and the breakdown is shown. Optional add-ons can be offered.
 - **E-signature**: "Send" emails the customer a private link (Postmark), or you copy the link yourself. The customer picks add-ons, signs with a finger or mouse, and consents. Signing records name, email, IP, and time; sets the contract amount; moves the job to Sold; and files the signed PDF in Documents.
@@ -270,11 +271,21 @@ Each job stage adds its next steps as tasks (follow up a bid, Form 17 before ord
 - Crews → crew → **Crew phone link**: the crew's own page with today's and the next two weeks' jobs, work orders, hours or piece-work logging (office approves), and delivery-ticket photos.
 - Documents tab: link the job's **CompanyCam** project (photos show with `COMPANYCAM_TOKEN`) and record **EagleView** orders.
 
-## Moving off AccuLynx (Phase 18)
+## Replacing AccuLynx (Phase 18)
 
-1. Admin → **Import jobs**: bring in the Residential and Commercial Live schedules (Drive or .xlsx). Each Builder-column name is matched to a builder/customer account.
-2. Admin → **Move off AccuLynx**: upload the AccuLynx jobs export. Columns and milestones are matched in a preview; jobs already here at the same address are linked, not duplicated; re-imports update by AccuLynx job number.
-3. Work the cutover checklist on that page, then set the cutover date. After it, the estimate's AccuLynx copy output is retired.
+BTRpro replaces AccuLynx for everything. The importers are for the one-time move:
+
+1. Admin → **Import jobs (schedules)**: bring in the Residential and Commercial Live schedules (Drive or .xlsx). Each Builder-column name is matched to a builder/customer account.
+2. Admin → **Import from AccuLynx (one-time)**: upload the AccuLynx jobs export. Columns and milestones are matched in a preview; jobs already here at the same address are linked, not duplicated; re-imports update by the old AccuLynx job number.
+3. Work the setup checklist on that page.
+
+## Interface (Phase 20)
+
+- **Top bar**: Company updates, watch list, tasks due today, notifications bell, @Me mentions, and the account menu (Residential/Commercial view, Admin pages, sign out).
+- **Toolbar**: New, Recent (jobs you opened), Dashboard, Contacts, Leads, Jobs (by milestone, mine, watch list), My day, Production, Reports, Estimating; job search on the right.
+- **Milestones**: Lead (Lead) → Prospect (Estimating, Submitted) → Approved (Sold, Scheduled, In production) → Completed → Invoiced (Invoiced, Paid) → Closed. Advance Job moves to the next stage through the same gates as before; ••• moves anywhere or marks Lost.
+- **Notifications panel**: activity and chat on jobs you sell, estimate or watch, @mentions, tasks due, and company updates. Admins post updates at /updates.
+- **Photos**: each job links to its CompanyCam folder in Google Drive (auto-matched by street address, or picked by hand) and shows the photos by day. Share the BTR Contracting/CompanyCam folder with the service account.
 
 Admins can delete jobs (Overview → Delete this job, or tick several on the Jobs list). Jobs with payments or QuickBooks invoices are kept.
 
@@ -330,7 +341,7 @@ Each start runs `prisma db push` (schema), then the idempotent seed (price sheet
 2. Google Drive: create a service account, put its key in `GOOGLE_SERVICE_ACCOUNT_JSON`, share the price-sheet folder and schedules with its email. The price-sheet folder is preset; sync runs on start and every 6 hours.
 3. Email: `POSTMARK_SERVER_TOKEN` + `EMAIL_FROM` for invoices, proposals, change orders and orders; `INBOUND_EMAIL_*` for job forwarding addresses.
 4. Optional: Stripe (webhook above), QuickBooks (`QBO_*`, redirect `APP_URL/api/integrations/quickbooks/callback`), CompanyCam token.
-5. Import jobs and the AccuLynx export, then work Admin → Move off AccuLynx.
+5. Import the schedules and the AccuLynx export once (Admin → Import from AccuLynx).
 
 For larger teams, move to Postgres: change `provider` in `prisma/schema.prisma` to `postgresql`, set `DATABASE_URL`, and set `STORAGE_DRIVER=s3` for files.
 

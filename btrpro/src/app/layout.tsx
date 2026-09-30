@@ -1,69 +1,116 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/auth";
-import { logout } from "@/app/actions";
-import { Button } from "@/components/ui/button";
-import { MarketSwitch } from "@/components/market-switch";
 import { getMarketView } from "@/lib/market";
-import { NavMenu, type NavGroup } from "@/components/nav-menu";
+import { prisma } from "@/lib/db";
+import { topBarCounts } from "@/lib/notifications";
+import { recentJobs } from "@/lib/shell/recent";
+import { TopBar, type Tool } from "@/components/shell/top-bar";
+import { PagePanel } from "@/components/shell/page-panel";
 
-function navFor(role: string): NavGroup[] {
+function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: string }[] } {
   const staff = role !== "VIEWER";
-  return [
-    { href: "/", label: "Jobs" },
-    { href: "/today", label: "My day" },
-    { href: "/customers", label: "Customers" },
-    { href: "/builders", label: "Builders" },
+  const admin = role === "ADMIN";
+  const tools: Tool[] = [
+    ...(staff
+      ? [
+          {
+            key: "new",
+            label: "New",
+            icon: "Plus" as const,
+            orange: true,
+            items: [
+              { href: "/projects/new", label: "New job / lead" },
+              { href: "/customers/new?kind=contact", label: "New contact" },
+              { href: "/customers/new", label: "New customer account" },
+              { href: "/today#add-task", label: "New task" },
+              ...(admin ? [{ href: "/updates#post", label: "Company update" }] : []),
+            ],
+          },
+        ]
+      : []),
+    { key: "recent", label: "Recent", icon: "History", orange: true },
+    { key: "dashboard", label: "Dashboard", icon: "Gauge", href: "/" },
     {
-      label: "Operations",
+      key: "contacts",
+      label: "Contacts",
+      icon: "BookUser",
+      items: [
+        { href: "/customers", label: "Customers & contacts" },
+        { href: "/builders", label: "Builders" },
+      ],
+    },
+    { key: "leads", label: "Leads", icon: "User", href: "/jobs?stage=LEAD" },
+    {
+      key: "jobs",
+      label: "Jobs",
+      icon: "Hammer",
+      items: [
+        { href: "/jobs", label: "All open jobs" },
+        { href: "/jobs?mine=1", label: "My jobs" },
+        { href: "/jobs?watch=1", label: "Watch list" },
+        { heading: "By milestone" },
+        { href: "/jobs?m=LEAD", label: "Lead" },
+        { href: "/jobs?m=PROSPECT", label: "Prospect" },
+        { href: "/jobs?m=APPROVED", label: "Approved" },
+        { href: "/jobs?m=COMPLETED", label: "Completed" },
+        { href: "/jobs?m=INVOICED", label: "Invoiced" },
+        { href: "/jobs?m=CLOSED", label: "Closed" },
+        { href: "/jobs?stage=LOST", label: "Lost" },
+      ],
+    },
+    { key: "today", label: "My day", icon: "CalendarDays", href: "/today" },
+    {
+      key: "production",
+      label: "Production",
+      icon: "CalendarDays",
       items: [
         { href: "/schedule", label: "Schedule" },
         { href: "/deliveries", label: "Deliveries" },
         { href: "/crews", label: "Crews & subs" },
       ],
     },
+    ...(staff
+      ? [
+          {
+            key: "reports",
+            label: "Reports",
+            icon: "FileText" as const,
+            items: [
+              { href: "/reports/sales", label: "Sales & pipeline" },
+              { href: "/reports/profit", label: "Profit" },
+              { href: "/reports/commissions", label: "Commissions" },
+              ...(admin ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : []),
+            ],
+          },
+        ]
+      : []),
     {
+      key: "tools",
       label: "Estimating",
+      icon: "Wrench",
       items: [
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },
         { href: "/settings/templates", label: "Estimate templates" },
-        ...(staff
-          ? [{ href: "/settings/labor", label: "Labor standards" }]
-          : []),
+        ...(staff ? [{ href: "/settings/labor", label: "Labor standards" }] : []),
         { href: "/settings/rules", label: "Rules" },
       ],
     },
-    {
-      label: "Reports",
-      items: [
-        ...(staff
-          ? [
-              { href: "/reports/sales", label: "Sales & pipeline" },
-              { href: "/reports/profit", label: "Profit" },
-              { href: "/reports/commissions", label: "Commissions" },
-            ]
-          : []),
-        ...(role === "ADMIN"
-          ? [{ href: "/reports/ar", label: "Receivables (AR)" }]
-          : []),
-      ],
-    },
-    {
-      label: "Admin",
-      items:
-        role === "ADMIN"
-          ? [
-              { href: "/admin/users", label: "Users" },
-              { href: "/settings/import-jobs", label: "Import jobs" },
-              { href: "/settings/acculynx", label: "Move off AccuLynx" },
-              { href: "/settings/company", label: "Company settings" },
-              { href: "/settings/integrations", label: "Integrations" },
-            ]
-          : [],
-    },
   ];
+  return {
+    tools,
+    admin: admin
+      ? [
+          { href: "/admin/users", label: "Users" },
+          { href: "/updates", label: "Company updates" },
+          { href: "/settings/company", label: "Company settings" },
+          { href: "/settings/integrations", label: "Integrations" },
+          { href: "/settings/import-jobs", label: "Import jobs (schedules)" },
+          { href: "/settings/acculynx", label: "Import from AccuLynx (one-time)" },
+        ]
+      : [],
+  };
 }
 
 export const metadata: Metadata = {
@@ -78,43 +125,34 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
-  const view = await getMarketView();
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">
-        {user && (
-          <header className="border-b">
-            <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 text-sm">
-              <Link href="/" className="mr-2 font-semibold">
-                BTRpro
-              </Link>
-              <NavMenu groups={navFor(user.role)}>
-                <MarketSwitch view={view} />
-                <span className="text-muted-foreground">
-                  {user.name} · {user.role.toLowerCase()}
-                </span>
-                <form action={logout}>
-                  <Button variant="outline" size="sm">
-                    Sign out
-                  </Button>
-                </form>
-              </NavMenu>
-              <span className="ml-auto hidden md:inline">
-                <MarketSwitch view={view} />
-              </span>
-              <span className="hidden text-muted-foreground md:inline">
-                {user.name} · {user.role.toLowerCase()}
-              </span>
-              <form action={logout} className="hidden md:block">
-                <Button variant="ghost" size="sm">
-                  Sign out
-                </Button>
-              </form>
-            </nav>
-          </header>
-        )}
-        <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <body className="min-h-screen bg-[var(--canvas)] antialiased">
+        {user && <Shell user={user} />}
+        <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-4 sm:py-5">
+          <PagePanel>{children}</PagePanel>
+        </main>
       </body>
     </html>
+  );
+}
+
+async function Shell({ user }: { user: { id: string; name: string; role: string } }) {
+  const [counts, recent, watching, view] = await Promise.all([
+    topBarCounts(user.id),
+    recentJobs(user.id),
+    prisma.jobWatch.count({ where: { userId: user.id } }),
+    getMarketView(),
+  ]);
+  const { tools, admin } = toolsFor(user.role);
+  return (
+    <TopBar
+      user={{ name: user.name, role: user.role }}
+      counts={{ ...counts, watching }}
+      recent={recent}
+      tools={tools}
+      view={view}
+      adminLinks={admin}
+    />
   );
 }

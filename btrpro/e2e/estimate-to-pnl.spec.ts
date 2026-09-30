@@ -22,7 +22,7 @@ test("estimate to job P&L", async ({ page }) => {
   await page.fill("#email", "admin@btrcontracting.local");
   await page.fill("#password", "change-me-now");
   await page.click("button[type=submit]");
-  await expect(page.locator("h1")).toContainText("obs");
+  await expect(page.locator("h1")).toContainText("Dashboard");
 
   // 1. New residential reroof
   await page.goto("/projects/new");

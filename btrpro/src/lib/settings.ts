@@ -20,10 +20,9 @@ export type CompanySettings = {
   companyCamDriveFolder: string | null; // Drive folder CompanyCam syncs project photo folders into
   iceWaterEavesFt: number | null; // company standard: ice & water width up from the eaves, in feet
   iceWaterValleysFt: number | null; // company standard: ice & water width in valleys, in feet
-  acculynxCutoverDate: string | null; // YYYY-MM-DD; after it the AccuLynx copy output is retired
   priceSheetLastCheck: string | null; // ISO time of the last check
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "acculynxCutoverDate", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });

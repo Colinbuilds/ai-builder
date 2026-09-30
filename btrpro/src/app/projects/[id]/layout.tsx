@@ -1,121 +1,158 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChevronLeft, ExternalLink } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseScopes, SCOPE_LABEL } from "@/lib/projects/intake";
 import { refreshReadiness } from "@/lib/projects/service";
 import { showForm17Banner } from "@/lib/projects/workflow";
 import { unreadCounts } from "@/lib/comms/chat";
+import { touchJob } from "@/lib/shell/recent";
 import { Form17Banner } from "@/components/projects/form17-panel";
 import { ReadinessBadge, StageBadge } from "@/components/projects/badges";
-import { ProjectTabs } from "@/components/projects/tabs";
+import { JobMenuBar } from "@/components/projects/job-menu";
+import { PriorityPicker, WatchButton } from "@/components/projects/job-controls";
+import { JobBody } from "@/components/projects/job-body";
+import { MilestoneDot } from "@/components/shell/milestone-dot";
 import { canSeeCosts } from "@/lib/costing/service";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatUsd } from "@/lib/utils";
 
-export default async function ProjectLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ id: string }>;
-}) {
+const initials = (n: string) =>
+  n
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+export default async function ProjectLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
       clientCompany: true,
-      _count: { select: { emails: true, documents: true, estimates: true } },
+      salesperson: { select: { name: true } },
+      _count: { select: { emails: true, documents: true, estimates: true, materialOrders: true, invoices: true, scheduleEvents: true } },
     },
   });
   if (!project) notFound();
   const canEdit = user.role !== "VIEWER";
   // Recomputed on every view so sheet expirations are picked up the day they happen.
-  const { readiness } = await refreshReadiness(id);
-  const unread = (await unreadCounts(user.id, [id]))[id];
+  const [{ readiness }, unreadAll, proposals, watching] = await Promise.all([
+    refreshReadiness(id),
+    unreadCounts(user.id, [id]),
+    prisma.proposal.count({ where: { projectId: id } }),
+    prisma.jobWatch.findUnique({ where: { projectId_userId: { projectId: id, userId: user.id } } }),
+    touchJob(id, user.id),
+  ]);
+  const unread = unreadAll[id];
   const scopes = parseScopes(project.scopes);
+  const showCosts = canSeeCosts(user, project);
+  const maps = project.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}` : null;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-2">
-        <Link href="/" className="text-sm text-muted-foreground">
-          ← Jobs
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="mr-1 text-2xl font-semibold">{project.name}</h1>
-          <Badge variant="outline">
-            {project.market === "RESIDENTIAL" ? "Residential" : "Commercial"}
-          </Badge>
-          <StageBadge stage={project.status} />
-          <ReadinessBadge readiness={readiness} />
-          {project.isInsuranceClaim && (
-            <Badge variant="blue">Insurance claim</Badge>
-          )}
-          {project.clientCompany?.type === "BUILDER" && (
-            <Link href={`/builders/${project.clientCompany.id}?tab=pricing`}>
-              <Badge variant="blue">{project.clientCompany.name} pricing</Badge>
+    <div className="flex flex-col gap-4">
+      <div className="-mx-3 -mt-4 shadow-sm sm:-mx-4 sm:-mt-5">
+        {/* job header: milestone, name, address | priority, watch, salesperson */}
+        <div className="flex flex-wrap items-stretch border-b bg-background">
+          <div className="flex min-w-[min(100%,20rem)] flex-1 items-center gap-3 px-3 py-2">
+            <Link href="/jobs" aria-label="Back to jobs" className="text-[#3b7bc8]">
+              <ChevronLeft size={26} />
             </Link>
-          )}
-          {project.isPublic && <Badge variant="outline">Public</Badge>}
-          {project.isTaxExempt && <Badge variant="outline">Tax-exempt</Badge>}
-          {project.prevailingWage && (
-            <Badge variant="outline">Prevailing wage</Badge>
-          )}
-          {project.bidBondRequired && <Badge variant="outline">Bid bond</Badge>}
-          {project.perfBondRequired && (
-            <Badge variant="outline">P&amp;P bond</Badge>
-          )}
+            <MilestoneDot stage={project.status} size={30} />
+            <div className="min-w-0">
+              <h1 className="text-lg leading-tight sm:truncate sm:text-xl">{project.name}</h1>
+              {project.address &&
+                (maps ? (
+                  <a href={maps} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#2c62a3] hover:underline dark:text-[#7fb0ea]">
+                    {project.address} <ExternalLink size={11} />
+                  </a>
+                ) : null)}
+            </div>
+            <div className="ml-2 hidden flex-wrap items-center gap-1.5 lg:flex">
+              <StageBadge stage={project.status} />
+              <ReadinessBadge readiness={readiness} />
+            </div>
+          </div>
+          <div className="flex w-full items-stretch divide-x border-t py-1.5 sm:w-auto sm:border-t-0 sm:border-l">
+            <PriorityPicker projectId={id} priority={project.priority} canEdit={canEdit} />
+            <WatchButton projectId={id} watching={!!watching} />
+            <div className="flex items-center gap-2 px-3 text-xs">
+              <span className="flex size-8 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+                {project.salesperson ? initials(project.salesperson.name) : "—"}
+              </span>
+              <span className="hidden flex-col sm:flex">
+                <span className="text-muted-foreground">Salesperson</span>
+                <span className="text-[#2c62a3] dark:text-[#7fb0ea]">{project.salesperson?.name ?? "Unassigned"}</span>
+              </span>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <JobMenuBar
+          id={id}
+          showCosts={showCosts}
+          counts={{
+            chat: unread?.unread ?? 0,
+            mentioned: !!unread?.mentioned,
+            email: project._count.emails,
+            documents: project._count.documents,
+            estimates: project._count.estimates,
+            proposals,
+            orders: project._count.materialOrders,
+            invoices: project._count.invoices,
+            events: project._count.scheduleEvents,
+            photos: !!project.photoFolderId,
+          }}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 text-sm">
+        <Badge variant="outline">{project.market === "RESIDENTIAL" ? "Residential" : "Commercial"}</Badge>
+        <span className="lg:hidden">
+          <StageBadge stage={project.status} />
+        </span>
+        <span className="lg:hidden">
+          <ReadinessBadge readiness={readiness} />
+        </span>
+        {project.priority === "HIGH" && <Badge variant="red">High priority</Badge>}
+        {project.isInsuranceClaim && <Badge variant="blue">Insurance claim</Badge>}
+        {project.clientCompany?.type === "BUILDER" && (
+          <Link href={`/builders/${project.clientCompany.id}?tab=pricing`}>
+            <Badge variant="blue">{project.clientCompany.name} pricing</Badge>
+          </Link>
+        )}
+        {project.isPublic && <Badge variant="outline">Public</Badge>}
+        {project.isTaxExempt && <Badge variant="outline">Tax-exempt</Badge>}
+        {project.prevailingWage && <Badge variant="outline">Prevailing wage</Badge>}
+        {project.bidBondRequired && <Badge variant="outline">Bid bond</Badge>}
+        {project.perfBondRequired && <Badge variant="outline">P&amp;P bond</Badge>}
+        <span className="text-muted-foreground">
+          {[project.clientCompany?.name, scopes.map((s) => SCOPE_LABEL[s]).join(", ")].filter(Boolean).join(" · ")}
+          {project.bidDueDate && ` · bid due ${formatDate(project.bidDueDate)}`}
+          {project.acculynxJobNumber && ` · old job #${project.acculynxJobNumber}`}
+        </span>
+      </div>
+      {project.status === "LOST" && project.lostReason && <p className="text-sm">Lost: {project.lostReason}</p>}
+      {project.isInsuranceClaim && (
+        <p className="text-sm">
+          <span className="font-medium">Claim:</span>{" "}
           {[
-            project.address,
-            project.clientCompany?.name,
-            scopes.map((s) => SCOPE_LABEL[s]).join(", "),
+            project.insuranceCarrier,
+            project.claimNumber && `#${project.claimNumber}`,
+            project.dateOfLoss && `loss ${formatDate(project.dateOfLoss)}`,
+            canEdit && project.deductible != null && `deductible ${formatUsd(project.deductible)}`,
+            project.adjusterName && `adjuster ${project.adjusterName}`,
+            project.adjusterPhone,
+            project.adjusterEmail,
           ]
             .filter(Boolean)
             .join(" · ")}
-          {project.bidDueDate && ` · bid due ${formatDate(project.bidDueDate)}`}
-          {project.acculynxJobNumber &&
-            ` · AccuLynx #${project.acculynxJobNumber}`}
         </p>
-        {project.status === "LOST" && project.lostReason && (
-          <p className="text-sm">Lost: {project.lostReason}</p>
-        )}
-        {project.isInsuranceClaim && (
-          <p className="text-sm">
-            <span className="font-medium">Claim:</span>{" "}
-            {[
-              project.insuranceCarrier,
-              project.claimNumber && `#${project.claimNumber}`,
-              project.dateOfLoss && `loss ${formatDate(project.dateOfLoss)}`,
-              canEdit &&
-                project.deductible != null &&
-                `deductible ${formatUsd(project.deductible)}`,
-              project.adjusterName && `adjuster ${project.adjusterName}`,
-              project.adjusterPhone,
-              project.adjusterEmail,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        )}
-      </div>
-      {showForm17Banner(project) && (
-        <Form17Banner id={project.id} canEdit={canEdit} />
       )}
-      <ProjectTabs
-        id={project.id}
-        showCosts={canSeeCosts(user, project)}
-        counts={{
-          chat: unread?.unread ?? 0,
-          mentioned: !!unread?.mentioned,
-          email: project._count.emails,
-          documents: project._count.documents,
-          estimates: project._count.estimates,
-        }}
-      />
-      {children}
+      {showForm17Banner(project) && <Form17Banner id={project.id} canEdit={canEdit} />}
+      <JobBody id={id}>{children}</JobBody>
     </div>
   );
 }

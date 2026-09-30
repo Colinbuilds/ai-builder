@@ -319,7 +319,7 @@ export async function orderPdf(orderId: string) {
     gap: 2,
   });
   w.text(
-    `Job: ${o.project.name}${o.project.acculynxJobNumber ? ` (AccuLynx #${o.project.acculynxJobNumber})` : ""}`,
+    `Job: ${o.project.name}${o.project.acculynxJobNumber ? ` (job #${o.project.acculynxJobNumber})` : ""}`,
     { size: 10, gap: 2 },
   );
   w.text(`Deliver to: ${o.project.address ?? "ADDRESS MISSING"}`, {

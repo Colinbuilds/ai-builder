@@ -333,7 +333,7 @@ export function ProjectForm({
           />
         </Field>
       )}
-      <Field label="AccuLynx job #">
+      <Field label="Old AccuLynx job # (imported jobs)">
         <Input
           name="acculynxJobNumber"
           defaultValue={v.acculynxJobNumber ?? ""}

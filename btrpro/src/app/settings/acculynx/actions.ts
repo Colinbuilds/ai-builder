@@ -87,19 +87,3 @@ export async function importAccuLynxAction(
   }
 }
 
-export async function saveCutoverAction(
-  _: AxResult,
-  f: FormData,
-): Promise<AxResult> {
-  const u = await requireUser(["ADMIN"]);
-  const d = String(f.get("date") ?? "").trim();
-  if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d))
-    return { problems: ["Pick a date."] };
-  await saveSettings({ acculynxCutoverDate: d || null }, u);
-  revalidatePath("/settings/acculynx");
-  return {
-    problems: [],
-    ok: true,
-    note: d ? `Cutover set for ${d}.` : "Cutover date cleared.",
-  };
-}

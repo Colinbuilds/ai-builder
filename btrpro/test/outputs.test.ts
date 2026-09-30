@@ -4,7 +4,7 @@ import { createProject } from "@/lib/projects/service";
 import { addManualMeasurement } from "@/lib/docs/confirm";
 import { addLine, createEstimate, runTakeoff, saveTakeoff } from "@/lib/estimates/service";
 import { addLaborLine } from "@/lib/estimates/labor";
-import { acculynxText, estimatePdf, loadBundle, orderCsv, takeoffPdf } from "@/lib/outputs/estimate";
+import { materialListText, estimatePdf, loadBundle, orderCsv, takeoffPdf } from "@/lib/outputs/estimate";
 import { proposalPrice, acceptedTotal } from "@/lib/proposals/price";
 import { createProposal, declineProposal, getByToken, sendProposal, signProposal } from "@/lib/proposals/service";
 import { saveSettings } from "@/lib/settings";
@@ -52,7 +52,7 @@ async function finishedEstimate() {
 describe("estimate outputs", () => {
   it("AccuLynx copy is item / qty / unit only and skips lines without a quantity", async () => {
     const { e } = await finishedEstimate();
-    const { text, skipped } = acculynxText(await loadBundle(e.id));
+    const { text, skipped } = materialListText(await loadBundle(e.id));
     expect(text.split("\n")).toContain('1.25" Coil Nail\t3\tBX');
     expect(text).not.toMatch(/0150080011/); // no item numbers
     expect(skipped).toContain("Ridge vent");

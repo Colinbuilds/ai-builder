@@ -12,7 +12,6 @@ import {
   previewAccuLynx,
 } from "@/lib/import/acculynx";
 import {
-  CutoverForm,
   LoadAccuLynx,
   MapAccuLynx,
 } from "@/components/import/acculynx-forms";
@@ -134,12 +133,6 @@ export default async function AccuLynxMigration({
       detail: `${linkedCrews} of ${crews}`,
       href: "/crews",
     },
-    {
-      done: !!s.acculynxCutoverDate,
-      label: "Cutover date set",
-      detail: s.acculynxCutoverDate ?? "not set",
-      href: "#cutover",
-    },
   ];
   let preview: Awaited<ReturnType<typeof previewAccuLynx>> | null = null;
   let error: string | null = null;
@@ -153,15 +146,15 @@ export default async function AccuLynxMigration({
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold">Moving off AccuLynx</h1>
+        <h1 className="text-2xl font-semibold">Import from AccuLynx</h1>
         <p className="text-sm text-muted-foreground">
-          Bring the open jobs and history over, set the cutover date, and check
-          the list. Keep AccuLynx read-only after cutover for reference.
+          BTRpro has replaced AccuLynx. Use this once to bring the old jobs and
+          history over, then check the setup list below.
         </p>
       </div>
 
       <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">Cutover checklist</h2>
+        <h2 className="font-semibold">Setup checklist</h2>
         <ul className="flex flex-col gap-1 text-sm">
           {checks.map((c) => (
             <li key={c.label} className="flex flex-wrap items-center gap-2">
@@ -249,15 +242,6 @@ export default async function AccuLynxMigration({
         )}
       </section>
 
-      <section id="cutover" className="flex flex-col gap-2">
-        <h2 className="font-semibold">Cutover date</h2>
-        <p className="text-sm text-muted-foreground">
-          Until this date the estimate page keeps its &quot;AccuLynx copy&quot;
-          list for entering estimates in AccuLynx. After it, that output is
-          retired and BTRpro is the system of record.
-        </p>
-        <CutoverForm date={s.acculynxCutoverDate} />
-      </section>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export function Form17Banner({
       <p className="mt-1">
         Nebraska Form 17 Purchasing Agent Appointment must be executed with the
         owner before any materials are purchased. Confirm it before setting this
-        job to tax-exempt in AccuLynx. The job can&apos;t be scheduled until
+        job to tax-exempt. The job can&apos;t be scheduled until
         it&apos;s recorded here.
       </p>
       {canEdit && (

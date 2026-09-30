@@ -27,7 +27,7 @@ export async function deleteProjectAction(
     return { problems: [msg(e)] };
   }
   revalidatePath("/");
-  redirect("/?deleted=1");
+  redirect("/jobs?deleted=1");
 }
 
 export async function deleteProjectsAction(

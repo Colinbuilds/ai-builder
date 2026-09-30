@@ -19,12 +19,14 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(ESTIMATOR)
-  createdAt    DateTime @default(now())
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  passwordHash        String
+  role                Role      @default(ESTIMATOR)
+  createdAt           DateTime  @default(now())
+  // when the user last opened the notifications panel (bell count = newer than this)
+  notificationsSeenAt DateTime?
 
   messages           JobMessage[]
   summaries          JobSummary[]
@@ -40,6 +42,8 @@ model User {
   costsEntered       JobCost[]
   commissionPlan     CommissionPlan?
   tasks              Task[]              @relation("TaskAssignee")
+  companyUpdates     CompanyUpdate[]
+  watching           JobWatch[]
 }
 
 // ---------- Price library ----------
@@ -202,6 +206,8 @@ model Project {
   eagleViewReportId  String?
   eagleViewOrderedAt DateTime?
   leadSource         String?
+  // NORMAL | HIGH (job header priority dropdown)
+  priority           String            @default("NORMAL")
   status             ProjectStatus     @default(LEAD)
   statusChangedAt    DateTime          @default(now())
   lostReason         String?
@@ -267,6 +273,7 @@ model Project {
   invoices         Invoice[]
   qboCustomerId    String?
   tasks            Task[]
+  watchers         JobWatch[]
 
   @@index([importKey])
   @@index([portalToken])
@@ -714,15 +721,18 @@ model JobSummary {
 
 // When each user last looked at a job's chat and its catch-up, for unread counts and "since you last looked".
 model ProjectView {
-  id         String    @id @default(cuid())
-  projectId  String
-  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chatReadAt DateTime  @default(now())
-  caughtUpAt DateTime?
+  id           String    @id @default(cuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatReadAt   DateTime  @default(now())
+  caughtUpAt   DateTime?
+  // last time the user opened the job at all (the Recent menu)
+  lastViewedAt DateTime?
 
   @@unique([projectId, userId])
+  @@index([userId, lastViewedAt])
 }
 
 enum MailProvider {
@@ -1354,4 +1364,29 @@ model Task {
 
   @@index([assigneeId, doneAt])
   @@index([projectId])
+}
+
+// Company-wide announcements shown on the dashboard and in everyone's notifications.
+model CompanyUpdate {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  pinned    Boolean  @default(false)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// A user's watch list: activity on watched jobs shows up in their notifications.
+model JobWatch {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
 }

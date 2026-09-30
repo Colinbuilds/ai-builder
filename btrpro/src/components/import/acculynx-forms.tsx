@@ -4,7 +4,6 @@ import { useFormAction } from "@/components/use-form-action";
 import {
   importAccuLynxAction,
   loadAccuLynxAction,
-  saveCutoverAction,
 } from "@/app/settings/acculynx/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -135,25 +134,3 @@ export function MapAccuLynx({
   );
 }
 
-export function CutoverForm({ date }: { date: string | null }) {
-  const [state, action, pending] = useFormAction(saveCutoverAction, null);
-  return (
-    <form onSubmit={action} className="flex flex-wrap items-center gap-2">
-      <Input
-        type="date"
-        name="date"
-        defaultValue={date ?? ""}
-        className="h-8 w-44"
-      />
-      <Button size="sm" variant="outline" disabled={pending}>
-        Save
-      </Button>
-      {state?.ok && (
-        <span className="text-sm text-green-700 dark:text-green-400">
-          {state.note}
-        </span>
-      )}
-      <Problems state={state} className="w-full" />
-    </form>
-  );
-}

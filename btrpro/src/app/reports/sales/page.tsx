@@ -146,7 +146,7 @@ export default async function SalesDashboard({
                 <TR key={s.stage}>
                   <TD>
                     <Link
-                      href={`/?stage=${s.stage}`}
+                      href={`/jobs?stage=${s.stage}`}
                       className="hover:underline"
                     >
                       {STAGE_LABEL[s.stage as Stage]}
