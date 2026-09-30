@@ -13,7 +13,8 @@
   <?!= include_('CoreClient'); ?>
   <?!= include_('UiScript'); ?>
   <script>
-    JobReceiptsApp.mount(document.getElementById("app"), { api: JobReceiptsApp.appsScriptApi() });
+    var JR_KEY = <?!= JSON.stringify(key || "") ?>; // this person's private link key
+    JobReceiptsApp.mount(document.getElementById("app"), { api: JobReceiptsApp.appsScriptApi(JR_KEY) });
   </script>
 </body>
 </html>

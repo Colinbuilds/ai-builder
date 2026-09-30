@@ -2,6 +2,7 @@
 //   core/*.js      -> Core*.gs (server) and CoreClient.html (browser)
 //   ui/app.js/.css -> UiScript.html / UiStyles.html
 //   apps-script/*  -> copied as-is
+// dist/install/ is the same app in two files (Code.gs + Index.html) for pasting into a new project,
 // and the public test drive page ../try/index.html from try.html (served by GitHub Pages).
 // Usage: node build.mjs          (write)   node build.mjs --check  (fail if dist is stale)
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync } from "node:fs";
@@ -45,12 +46,32 @@ ${page}</body>
 `;
 }
 
+// The whole app as two files, so installing means two pastes.
+function installFiles() {
+  const gsOrder = ["Start.gs", ...readdirSync(new URL("apps-script/", root)).filter((f) => f.endsWith(".gs") && f !== "Start.gs").sort()];
+  const code = [
+    ...gsOrder.map((f) => `// ===== ${f} =====\n` + read(`apps-script/${f}`)),
+    ...CORE.map((n) => `// ===== core/${n}.js =====\n` + read(`core/${n}.js`)),
+  ].join("\n");
+  const all = outputs();
+  const index = read("apps-script/Index.html").replace(/<\?!= include_\('(\w+)'\); \?>/g, (m, name) => {
+    if (!all[name + ".html"]) throw new Error("Index.html includes unknown file " + name);
+    return all[name + ".html"];
+  });
+  return { "Code.gs": code, "Index.html": index };
+}
+
 const out = new URL("dist/apps-script/", root);
 const files = outputs();
+const installOut = new URL("dist/install/", root);
+const install = installFiles();
 const tryOut = new URL("../try/index.html", root);
 const tryPage = testDrivePage();
 if (process.argv.includes("--check")) {
   if (!existsSync(tryOut) || readFileSync(tryOut, "utf8") !== tryPage) { console.error("try/index.html is out of date. Run: node build.mjs"); process.exit(1); }
+  for (const [n, c] of Object.entries(install)) {
+    if (!existsSync(new URL(n, installOut)) || readFileSync(new URL(n, installOut), "utf8") !== c) { console.error("dist/install/" + n + " is out of date. Run: node build.mjs"); process.exit(1); }
+  }
   const stale = Object.entries(files).filter(([n, c]) => !existsSync(new URL(n, out)) || readFileSync(new URL(n, out), "utf8") !== c);
   const extra = existsSync(out) ? readdirSync(out).filter((n) => !(n in files)) : [];
   if (stale.length || extra.length) { console.error("dist/apps-script is out of date:", [...stale.map((s) => s[0]), ...extra].join(", "), "\nRun: node build.mjs"); process.exit(1); }
@@ -60,6 +81,9 @@ if (process.argv.includes("--check")) {
   mkdirSync(out, { recursive: true });
   for (const [n, c] of Object.entries(files)) writeFileSync(new URL(n, out), c);
   console.log("wrote", Object.keys(files).length, "files to dist/apps-script/");
+  mkdirSync(installOut, { recursive: true });
+  for (const [n, c] of Object.entries(install)) writeFileSync(new URL(n, installOut), c);
+  console.log("wrote dist/install/Code.gs and Index.html");
   mkdirSync(new URL("../try/", root), { recursive: true });
   writeFileSync(tryOut, tryPage);
   console.log("wrote ../try/index.html");
