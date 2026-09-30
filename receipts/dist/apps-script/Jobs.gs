@@ -18,6 +18,7 @@ function listJobs_() {
 }
 
 function jobById_(id) {
+  if (String(id).indexOf("new:") === 0) return newJobFolder_(String(id).slice(4));
   var job = listJobs_().filter(function (j) { return j.id === id; })[0];
   if (!job) throw new Error("That job folder no longer exists. Refresh and pick the job again.");
   return job;
@@ -46,4 +47,15 @@ function existingChangeOrderNames_(coFolder) {
   var di = coFolder.getFolders();
   while (di.hasNext()) names.push(di.next().getName());
   return names;
+}
+
+/** A job read off a receipt that has no folder yet: use a folder with that name, or make one. */
+function newJobFolder_(name) {
+  name = String(name).trim().replace(/[\\/]+/g, "-").slice(0, 120);
+  if (!name) throw new Error("Pick the job first.");
+  var same = listJobs_().filter(function (j) { return j.name.toLowerCase() === name.toLowerCase(); })[0];
+  if (same) return same;
+  var f = DriveApp.getFolderById(setting_("JOBS_FOLDER_ID")).createFolder(name);
+  CacheService.getScriptCache().remove("jobs");
+  return { id: f.getId(), name: name };
 }

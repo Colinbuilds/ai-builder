@@ -87,7 +87,7 @@ function saveReceipt_(r) {
 /** What a user may see: admins see everything, employees only their own uploads. */
 function visibleReceipts_(email) {
   var list = allReceipts_();
-  if (!isAdmin_(email)) list = list.filter(function (r) { return String(r.uploadedBy).toLowerCase() === email; });
+  if (!isAdmin_(email)) list = list.filter(function (r) { return String(r.uploadedBy).toLowerCase() === String(email).toLowerCase(); });
   return list.sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
 }
 
