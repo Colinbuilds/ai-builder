@@ -10,6 +10,7 @@ import {
   uploadDeliveryTicket,
 } from "@/lib/portal/crew";
 import { linkCompanyCam } from "@/lib/integrations/companycam";
+import { linkPhotoFolder } from "@/lib/integrations/drive-photos";
 
 export type PResult = {
   problems: string[];
@@ -170,4 +171,17 @@ export async function crewTicketAction(
     return { problems: [msg(e)] };
   }
   return { problems: [], ok: true, note: "Ticket uploaded. Thanks!" };
+}
+
+export async function photoFolderAction(_: PResult, f: FormData): Promise<PResult> {
+  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const id = str(f, "projectId");
+  const folder = str(f, "folderId");
+  try {
+    await linkPhotoFolder(id, folder === "NONE" ? null : folder || "AUTO", u);
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+  revalidatePath(`/projects/${id}/photos`);
+  return { problems: [], ok: true };
 }

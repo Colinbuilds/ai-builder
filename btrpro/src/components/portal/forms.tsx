@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormAction } from "@/components/use-form-action";
 import {
+  photoFolderAction,
   companyCamAction,
   crewLinkAction,
   crewLogAction,
@@ -342,6 +343,35 @@ export function CrewTicketForm({
         </p>
       )}
       <Problems state={state} />
+    </form>
+  );
+}
+
+export function PhotoFolderPicker({ projectId, folders, current, suggested }: { projectId: string; folders: { id: string; name: string }[]; current: string | null; suggested: { id: string; name: string } | null }) {
+  const [state, action, pending] = useFormAction(photoFolderAction, null);
+  return (
+    <form onSubmit={action} className="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="projectId" value={projectId} />
+      {suggested && !current && (
+        <Button size="sm" name="folderId" value={suggested.id} disabled={pending}>
+          Use {suggested.name}
+        </Button>
+      )}
+      <select name="folderId" defaultValue={current ?? ""} className="h-8 max-w-md rounded-md border bg-background px-2 text-sm">
+        <option value="" disabled>
+          Pick the CompanyCam folder…
+        </option>
+        {folders.map((f) => (
+          <option key={f.id} value={f.id}>
+            {f.name}
+          </option>
+        ))}
+        {current && <option value="NONE">Unlink photos</option>}
+      </select>
+      <Button size="sm" variant="outline" disabled={pending}>
+        {current ? "Change" : "Link"}
+      </Button>
+      <Problems state={state} className="w-full" />
     </form>
   );
 }

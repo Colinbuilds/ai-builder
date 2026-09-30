@@ -197,6 +197,8 @@ model Project {
   portalToken        String?
   // CompanyCam project id, and the EagleView report on order
   companyCamId       String?
+  // Drive folder CompanyCam syncs this job's photos into (BTR Contracting/CompanyCam/<project - address>)
+  photoFolderId      String?
   eagleViewReportId  String?
   eagleViewOrderedAt DateTime?
   leadSource         String?

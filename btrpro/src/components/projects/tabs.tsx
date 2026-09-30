@@ -39,6 +39,7 @@ export function ProjectTabs({
       "Documents",
       counts.documents ? <Pill key="d" n={counts.documents} /> : null,
     ],
+    [`${base}/photos`, "Photos"],
     [`${base}/plans`, "Plan review"],
     [
       `${base}/estimates`,

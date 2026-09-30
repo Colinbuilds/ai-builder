@@ -17,12 +17,13 @@ export type CompanySettings = {
   qboItemId: string | null; // QuickBooks item used for invoice lines
   priceSheetFolder: string | null; // Google Drive folder the current ABC price sheets are dropped into
   priceSheetSyncUserId: string | null; // whose Drive connection reads that folder (the Admin who set it)
+  companyCamDriveFolder: string | null; // Drive folder CompanyCam syncs project photo folders into
   iceWaterEavesFt: number | null; // company standard: ice & water width up from the eaves, in feet
   iceWaterValleysFt: number | null; // company standard: ice & water width in valleys, in feet
   acculynxCutoverDate: string | null; // YYYY-MM-DD; after it the AccuLynx copy output is retired
   priceSheetLastCheck: string | null; // ISO time of the last check
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "acculynxCutoverDate", "iceWaterEavesFt", "iceWaterValleysFt"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "acculynxCutoverDate", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });
