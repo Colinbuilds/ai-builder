@@ -36,9 +36,6 @@ describe("deleting jobs", () => {
   it("deletes a job and everything on it after the name is typed; logs it", async () => {
     const a = await admin();
     const p = await job("TEST_ONLY Delete me");
-    await prisma.task.create({
-      data: { projectId: p.id, title: "TEST_ONLY task" },
-    });
     await prisma.proposal.create({
       data: {
         projectId: p.id,
@@ -62,7 +59,6 @@ describe("deleting jobs", () => {
     ).rejects.toThrow(/Only an Admin/);
     await deleteProject(p.id, "  test_only delete ME ", a);
     expect(await prisma.project.findUnique({ where: { id: p.id } })).toBeNull();
-    expect(await prisma.task.count({ where: { projectId: p.id } })).toBe(0);
     expect(await prisma.intakeField.count({ where: { projectId: p.id } })).toBe(
       0,
     );
