@@ -1,5 +1,6 @@
 // Project data operations. Every change writes to the job's activity timeline and recomputes readiness.
 import { prisma } from "@/lib/db";
+import { createStageTasks } from "@/lib/tasks/service";
 import { normEmail, phoneKey } from "@/lib/customers";
 import { sheetDateStatus } from "@/lib/sheets/date-status";
 import { INTAKE_BY_KEY, INTAKE_FIELDS, parseScopes, reconcileIntake, type Scope } from "./intake";
@@ -279,6 +280,7 @@ export async function changeStage(projectId: string, to: Stage, opts: { reason?:
   });
   const why = opts.reason?.trim() ? ` — ${opts.reason.trim()}` : "";
   await activity(projectId, actor.id, "stage", `${actor.name} moved the job ${p.status} → ${to}${why}`, { from: p.status, to });
+  await createStageTasks(p, to, actor);
   if (gate.overridden) {
     await activity(projectId, actor.id, "override", `${actor.name} submitted while NOT READY FOR HARD BID${why}`);
     await prisma.auditLog.create({

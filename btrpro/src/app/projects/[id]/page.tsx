@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DeleteJob } from "@/components/projects/delete-job";
+import { JobTasks, type TaskRow } from "@/components/tasks/task-list";
 import { deleteBlocker } from "@/lib/projects/delete";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
@@ -80,6 +81,11 @@ export default async function ProjectPage({
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     }),
   ]);
+  const jobTasks = (await prisma.task.findMany({
+    where: { projectId: id },
+    include: { assignee: { select: { name: true } }, project: { select: { id: true, name: true } } },
+    orderBy: [{ doneAt: { sort: "desc", nulls: "first" } }, { dueDate: { sort: "asc", nulls: "last" } }],
+  })) as TaskRow[];
   const [estimateCount, latestReview, openRfis] = await Promise.all([
     prisma.estimate.count({ where: { projectId: id } }),
     prisma.planReview.findFirst({
@@ -186,6 +192,8 @@ export default async function ProjectPage({
           </table>
         </div>
       </section>
+
+      <JobTasks projectId={id} tasks={jobTasks} users={users} canEdit={canEdit} meId={user.id} />
 
       <section
         id="estimates"

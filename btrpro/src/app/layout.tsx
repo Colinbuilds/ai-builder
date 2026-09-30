@@ -12,6 +12,7 @@ function navFor(role: string): NavGroup[] {
   const staff = role !== "VIEWER";
   return [
     { href: "/", label: "Jobs" },
+    { href: "/today", label: "My day" },
     { href: "/customers", label: "Customers" },
     { href: "/builders", label: "Builders" },
     {
@@ -32,7 +33,7 @@ function navFor(role: string): NavGroup[] {
         { href: "/settings/rules", label: "Rules" },
       ],
     },
-    { label: "Reports", items: [...(staff ? [{ href: "/reports/profit", label: "Profit" }] : []), ...(role === "ADMIN" ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : [])] },
+    { label: "Reports", items: [...(staff ? [{ href: "/reports/sales", label: "Sales & pipeline" }, { href: "/reports/profit", label: "Profit" }, { href: "/reports/commissions", label: "Commissions" }] : []), ...(role === "ADMIN" ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : [])] },
     {
       label: "Admin",
       items:

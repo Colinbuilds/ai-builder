@@ -332,7 +332,7 @@ Rules for every integration:
 13. Material orders and deliveries (§13), ABC Supply integration ✅ (email/PDF; ABC API waits on access)
 14. Production scheduling, crews/subs, work orders, timesheets ✅
 15. Invoicing, payments, change orders/supplements, QuickBooks sync, Buildertrend/Procore change-order sync ✅ (Buildertrend/Procore by CSV until API access)
-16. Tasks/reminders, dashboards and reports, commissions
+16. Tasks/reminders, dashboards and reports, commissions ✅
 17. CompanyCam and EagleView links, customer portal, field mobile view
 18. AccuLynx data migration and cutover
 19. Playwright end-to-end: create project → upload a sample EagleView-style PDF → confirm measurements → build a shingle estimate → export PDF → record costs → see job P&L

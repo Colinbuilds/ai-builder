@@ -36,6 +36,9 @@ describe("deleting jobs", () => {
   it("deletes a job and everything on it after the name is typed; logs it", async () => {
     const a = await admin();
     const p = await job("TEST_ONLY Delete me");
+    await prisma.task.create({
+      data: { projectId: p.id, title: "TEST_ONLY task" },
+    });
     await prisma.proposal.create({
       data: {
         projectId: p.id,
@@ -63,6 +66,7 @@ describe("deleting jobs", () => {
       0,
     );
     expect(await prisma.proposal.count({ where: { projectId: p.id } })).toBe(0);
+    expect(await prisma.task.count({ where: { projectId: p.id } })).toBe(0);
     const log = await prisma.auditLog.findFirstOrThrow({
       where: { entity: "Project", entityId: p.id, action: "delete" },
     });
