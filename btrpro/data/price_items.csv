@@ -1,0 +1,528 @@
+sheet_code,sheet_name,section,item_number,description,unit_price,uom,price_status,effective_date,expiration_date
+HP,BTR - Hardie Primed,JH - Cedar Mill Plank - Primed,25H5KC2,HZ5 Plank CM 12.00 Primed,22.85,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Plank - Primed,25H5KC9,HZ5 Plank CM 9.25 Primed,15.5,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Plank - Primed,25H5KEC8,HZ5 Plank Eased CM 8.25 Primed,13.7,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Plank - Primed,25H5KEC7,HZ5 Plank Eased CM 7.25 Primed,12.3,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Plank - Primed,25H5KEC6,HZ5 Plank Eased CM 6.25 Primed,10.6,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Plank - Primed,25H5KEC5,HZ5 Plank Eased CM 5.25 Primed,8.9,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Plank - Primed,25H5KS2,HZ5 Plank SM 12.00 Primed,22.09,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Plank - Primed,25H5KS9,HZ5 Plank SM 9.25 Primed,16.99,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Plank - Primed,25H5KES8,HZ5 Plank Eased SM 8.25 Primed,15.19,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Plank - Primed,25H5KES7,HZ5 Plank Eased SM 7.25 Primed,13.29,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Plank - Primed,25H5KES6,HZ5 Plank Eased SM 6.25 Primed,11.49,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Plank - Primed,25H5KES5,HZ5 Plank Eased SM 5.25 Primed,9.69,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Shingles & Panels - Primed,25H5HG4,"HZ5 Shingle Stagg 48""X16 Primed",11.09,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Shingles & Panels - Primed,25H5HS4,"HZ5 Shingle Strght 48""X16 Primed",12.89,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Shingles & Panels - Primed,25H5PC8,"HZ5 Panel CM, Sierra, Stucco 4X8 Primed",61.5,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Shingles & Panels - Primed,25H5PT9,"HZ5 Panel CM, Sierra, Stucco 4X9 Primed",65.85,SH,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Shingles & Panels - Primed,25H5PT0,"HZ5 Panel CM, Sierra, Stucco 4X10 Primed",75.0,SH,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Shingles & Panels - Primed,25H5PS8,HZ5 Panel Smooth 4X8 Primed,59.89,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Shingles & Panels - Primed,25H5PS9,HZ5 Panel Smooth 4X9 Primed,68.79,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Shingles & Panels - Primed,25H5PS0,HZ5 Panel Smooth 4X10 Primed,74.2,SH,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 4/4 Trims - Primed,25H5BR22,"HZ5 Batten RS/SM 2.5""X12' Primed",10.44,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 4/4 Trims - Primed,25H5NS43,HZ5 NT3 4/4 3.5X12' RS/SM Primed,14.0,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 4/4 Trims - Primed,25H5NS45,HZ5 NT3 4/4 5.5X12' RS/SM Primed,22.03,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 4/4 Trims - Primed,25H5NS47,HZ5 NT3 4/4 7.25X12' RS/SM Primed,29.0,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 4/4 Trims - Primed,25H5NS49,HZ5 NT3 4/4 9.25X12' RS/SM Primed,39.44,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 4/4 Trims - Primed,25H5NS41,HZ5 NT3 4/4 11.25X12' RS/SM Primed,46.63,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 5/4 Trims - Primed,25H5NS23,HZ5 NT3 5/4 3.5X12' RS/SM Primed,15.38,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 5/4 Trims - Primed,25H5NS25,HZ5 NT3 5/4 5.5X12' RS/SM Primed,24.16,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 5/4 Trims - Primed,25H5NS27,HZ5 NT3 5/4 7.25X12' RS/SM Primed,31.85,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 5/4 Trims - Primed,25H5NS29,HZ5 NT3 5/4 9.25X12' RS/SM Primed,41.38,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - 5/4 Trims - Primed,25H5NS21,HZ5 NT3 5/4 11.25X12 RS/SM Primed,47.94,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Soffit - Primed,25H5SSC2,"HZ5 Soff CM Solid 12""X12' Primed",21.3,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Soffit - Primed,25H5SSC6,"HZ5 Soff CM Solid 16""X12' Primed",28.3,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Soffit - Primed,25H5SSC4,"HZ5 Soff CM Solid 24""X8' Primed",28.3,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Soffit - Primed,25H5SSC8,"HZ5 Soff CM Solid 48""X8' Primed",52.9,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Soffit - Primed,25H5SVC2,"HZ5 Soff CM Ventd 12""X12' Primed",26.1,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Soffit - Primed,25H5SVC6,"HZ5 Soff CM Ventd 16""X12' Primed",32.7,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Cedar Mill Soffit - Primed,25H5SVC4,"HZ5 Soff CM Ventd 24""X8' Primed",32.7,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Soffit - Primed,25H5SSS2,"HZ5 Soff SM Solid 12""X12' Primed",21.19,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Soffit - Primed,25H5SSS6,"HZ5 Soff SM Solid 16""X12' Primed",28.29,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Soffit - Primed,25H5SSS4,"HZ5 Soff SM Solid 24""X8' Primed",28.29,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Soffit - Primed,25H5SSS8,"HZ5 Soff SM Solid 48""X8' Primed",57.69,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Soffit - Primed,25H5SVS2,"HZ5 Soff SM Ventd 12""X12' Primed",24.99,PNL,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Smooth Soffit - Primed,25H5SVS4,"HZ5 Soff SM Ventd 24""X8' Primed",33.39,PC,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Accessories,5400500672,"Coil Nail 2-1/4"" HDG SM 4.8M #13388",183.99,BX,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Accessories,ASF57TBWH,Alum Flat Shingle 5X7 T Bronz/White,41.75,BD,LISTED,2026-05-19,2027-03-31
+HP,BTR - Hardie Primed,JH - Accessories,31FPJFSG,For Bearskn Joint Flsh Sht Gry 50PK,33.4,PK,LISTED,2026-05-19,2027-03-31
+HS,BTR - Hardie Statement,James Hardie - Plank - Statement,25H5KEC7AW,"7.25"" CM Plank Eased",15.39,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Plank - Statement,25H5KEC8AW,"8.25"" CM Plank Eased",15.99,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Panels & Shingles - Statement,25H5PC0AW,4'X10' CM Panel,83.49,PNL,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Panels & Shingles - Statement,25H5PS0AW,4'X10' SM Panel,86.19,SH,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Panels & Shingles - Statement,25H5HG45AW,"Shingle Staggered 48""X15.25",10.39,PNL,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Panels & Shingles - Statement,25H5HS45AP,"Shingle Straight 48""X15.25",11.99,PNL,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 4/4 Trims - Statement,25H5BS22AW,"4/4 X 2.5"" X 12' Batten RS/SM",9.81,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 4/4 Trims - Statement,25H5NS43AW,4/4 X 3.5 X 12' RS/SM,13.13,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 4/4 Trims - Statement,25H5NR45AW,4/4 X 5.5 X 12' RS/SM,20.5,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 4/4 Trims - Statement,25H5NS47IG,4/4 X 7.25 X 12' RS/SM,27.0,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 4/4 Trims - Statement,25H5NR49AW,4/4 X 9.25 X12' RS/SM,37.06,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 4/4 Trims - Statement,25H5NR41AW,4/4 X 11.25 X 12 RS/SM,44.6,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 5/4 Trims - Statement,25H5NS23AW,"5/4"" x 3.5"" x 12' RS/SM",14.63,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 5/4 Trims - Statement,25H5NS25AW,"5/4"" x 5.5"" x 12' RS/SM",23.13,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 5/4 Trims - Statement,25H5NS27AW,"5/4"" x 7.25"" x 12' RS/SM",30.48,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 5/4 Trims - Statement,25H5NS29AW,5/4 x 9.25X12' RS/SM,39.6,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - 5/4 Trims - Statement,25H5NS21AW,"5/4 x 11.25"" x 12' RS/SM",48.15,PC,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Soffit - Statement,25H5SSC2AW,"Soffit CM Solid 12""X12'",23.79,PNL,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Soffit - Statement,25H5SSC6AW,"Soffit CM Solid 16""X12'",,PNL,CALL FOR PRICE,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Soffit - Statement,25H5SSC4CS,"Soffit CM Solid 24""X8'",,PNL,CALL FOR PRICE,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Soffit - Statement,25H5SVC2AW,"Soffit CM Vented 12""X12'",28.59,PNL,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Soffit - Statement,25H5SVC6CS,"Soffit CM Vented 16""X12'",,PNL,CALL FOR PRICE,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Soffit - Statement,25H5SVC4CS,"Soffit CM Vented 24""X8'",,PNL,CALL FOR PRICE,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Fasteners & Accessories,2875696787,OSI Quad Max,10.75,TB,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Fasteners & Accessories,25MIHTUKAW,Hardi Touch-UP Kit,43.33,KT,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Fasteners & Accessories,29JHHB9150,9' x 150' Hardiewrap Weather Barrier,325.33,RL,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Fasteners & Accessories,29JHPF675,"Hardi Wrap 6""X75' Pro Flashing",67.8,RL,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Fasteners & Accessories,29JHHST178,"Hardiewrap 1-7/8""X165' Seam Tape",21.67,RL,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Fasteners & Accessories,31FPJFSG,Bearskin Joint Flashing 50PK,32.5,PK,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Fasteners & Accessories,ASF57TBWH,Alum Flat Shingle 5X7 T Bronz,41.75,BD,LISTED,2026-05-19,2026-12-31
+HS,BTR - Hardie Statement,James Hardie - Fasteners & Accessories,5400500672,"Coil Nail 2-1/4"" HDG SM 4.8M #13388",183.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .045 EPDM,07MH410X5B,MH EPDM 045 10'X50' Black,489.66,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 EPDM,07MH610X1B,MH EPDM Clean 060 10'X100' Black,976.47,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 EPDM,07MHA6113R,"MH 060 EPDM Clean 10X100 Blk RL 3""T",1058.82,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 EPDM,07MH620X5B,MH EPDM 060 20'X50' Black,976.47,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 EPDM,07MHA62013,"MH 060 EPDM 20X100' RL 3""Tape",2117.65,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 EPDM,07MHA62016,"MH 060 EPDM 20X100' RL 6""Tape",2188.24,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 EPDM,07MH612X1B,MH EPDM 060 12'X100' Black,1171.76,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .090 EPDM,07MH910X1B,MH EPDM 090 10'X100' Black,1805.88,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM (White),08MHINST3W,MH EPDM IN-Seam Tape 3 X100 White,140.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM (White),07MH610X1W,MH EPDM 060 10'X100' White,1205.88,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM (White),08MHUT095W,MH EPDM Unc Flsh Tape 9X50 Wht,320.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM (White),08MHUT125W,"MH EPDM Unc Flash Tape 12""X50' White",468.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Tapes,08MHUT095B,"MH EPDM Unc Flash Tape 9""X50' Black",283.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Tapes,08MHUT125B,"MH EPDM Unc Flash Tape 12""X50' Black",433.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Tapes,08MHLAT6,"MH Cured Cover Tape 6""X100' Black",346.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Tapes,08MHLAT9,"MH Cured Cover Tape 9""X100' Black",547.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Tapes,08MHLAT250,"MH Cured Cover Tape 12""X50' Black",416.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Tapes,08MHRMS61T,"MH EPDM Rms Strip W/3"" Tape 6""X100",249.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHPBTB6T,"MH EPDM 1""-6"" Pipe Boot Blk/Tape",57.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHETJ6B,"MH EPDM T-Joint Covers 6""X6"" Black",6.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHPCC20,MH EPDM Pre-Cut Corner W/Tape 20/C,10.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHPSOPBK,MH One Part Pourable Seal Blk 1/2GL,81.99,BO,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHSSPC16,MH Shapeshift Pitch Pan Crnrs 16/Ct,32.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHSSPS16,MH Shapeshift Pitch Pan Strts 16/CT,56.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHPSP4,"MH EPDM 4"" Pourable Sealer Pockets",62.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHPSP6,"MH EPDM 6"" Pourable Sealer Pockets",67.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHPSP8,"MH EPDM 8"" Pourable Sealer Pockets",71.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,08MHWP303T,MH 3/8 X30 X30 Walkpad W/Tape Black,46.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,EPDM Accessories,16MHLFBK35,MH Seal-Fast Liqui-Flash Black 3.5G,222.13,DR,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .045 TPO,07MHT4061W,MH 045 TPO 6'X100' White,444.71,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .045 TPO,07MHT4081W,MH 045 TPO 8'X100' White,592.94,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .045 TPO,07MHT4101W,MH 045 TPO 10'X100' White,741.18,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .045 TPO,07MHT4121W,MH 045 TPO 12'X100' White,889.41,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 TPO,07MHT6041W,MH 060 TPO 4'X100' White,343.53,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 TPO,07MHT6061W,MH 060 TPO 6'X100' White,515.29,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 TPO,07MHT6081W,MH 060 TPO 8'X100' White,687.06,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 TPO,07MHT6101W,MH 060 TPO 10'X100' White,858.82,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide .060 TPO,07MHT6121W,MH 060 TPO 12'X100' White,1030.59,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHDM125W,"MH TPO Non-Rein Flash 12""X50' White",252.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHDM243W,"MH TPO Non-Rein Flash 24""X50' White",477.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTICWH,MH TPO Inside Corner White,11.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTMSPW,MH TPO Molded Sealant Pocket White,53.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTOCWH,MH TPO Outside Corner White 12/BX,14.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTP348W,"MH TPO Pipe Boot 3/4""-8"" White",54.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTSC61W,"MH TPO PS Cover Strip 6""X100' White",446.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTSR10W,"MH TPO PS Russ 10""X100' White",496.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTSR6W,"MH TPO PS Russ 6""X100' White",330.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTTJPWH,MH TPO T-Joint Patch White,1.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTUCWHE,MH TPO Univ Corner White,16.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHTW345W,"MH TPO Walkway 34""X50' White",778.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,"TPO Tapes, Boots, Corners",08MHCM481W,"MH TPO Coated Mtl 48""X120"" White",394.99,PNL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,TPO Sealants,08MHTCESCE,MH TPO Cut Edge Sealant Clear EA,26.99,BO,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,TPO Sealants,08MHTMP1,MH TPO Tape Primer 1GAL,55.99,CN,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,TPO Sealants,08MHTPSWHE,MH TPO Pourable Sealant White EA,94.99,EA,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,TPO Sealants,16MHLFWH35,MH Seal-Fast Liqui-Flash White 3.5G,222.13,DR,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,TPO Sealants,08MHUSPSWH,MH Univ Single Ply Sealant Wht 10.1,10.99,TB,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHBOND5,MH EPDM Bonding Adhesive 5GAL,173.99,PA,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHTBAAM5,MH TPO Solv Bond Adh Amber 5GAL,186.99,PA,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHAWAP40,MH Aeroweb Low Voc Aerosol Cont Adh,741.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHCCGH6,MH Aeroweb 6' Hose,75.0,EA,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHCCGSGN,MH Aeroweb Adjustable Spray Gun,229.33,EA,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHCCGSGV,"MH Aeroweb Spray Gun w/24"" Extensn",403.82,EA,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHHMDCC4,MH Helix LR Adhsv Cartridge 4/Box,415.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHHMTNKA,MH Helix Max LR ADH Tank Part A,764.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHHMTNKB,MH Helix Max LR ADH Tank Part B,764.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Adhesives,08MHCCGUT8,MH/CCW Cav-Grip UN-Tack 8#,321.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Primers & Cleaners,08MHTAPR1,MH Tape Primer 1GAL,53.99,CN,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Primers & Cleaners,08MHTWMC1,MH Weathered Membrane Cleaner 1GAL,37.99,CN,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Primers & Cleaners,08MHTWMC5,MH Weathered Membrane Cleaner 5GAL,134.99,PA,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,56MHHD1248,"MH 1/2"" STRUCTODEK FIB 4X8 C2S RED",15.91,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHHD0548,"MH 1/2"" Poly Iso 1-HD Cover Brd 4X8",31.66,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHP11048,"MH 1.0"" Poly Iso 1 4'X8'",21.35,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHP11548,"MH 1.5"" Poly Iso 1 4'X8'",25.39,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHP12048,"MH 2.0"" Poly Iso 1 4'X8'",29.3,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHP12548,"MH 2.5"" Poly Iso 1 4'X8'",42.3,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHP12648,"MH 2.6"" Poly Iso 1 4'X8'",41.18,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHP13048,"MH 3.0"" Poly Iso 1 4'X8'",50.77,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHTA12Q,MH Q Taper Poly Iso 2 0.5-2.5 4X4,17.48,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHTA14X,MH X Taper Poly Iso 2 0.5-1.5 4X4,12.32,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHTA14Y,MH Y Taper Poly Iso 2 1.5-2.5 4X4,21.87,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHTA18A,MH A Taper Poly Iso 2 1.0-1.5 4X4,13.67,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHTA18AA,MH AA Taper Poly Iso 2 0.5-1.0 4X4,9.14,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHTA18B,MH B Taper Poly Iso 2 1.5-2.0 4X4,19.14,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,58MHTA18C,MH C Taper Poly Iso 2 2.0-2.5 4X4,24.56,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,62MHDP1244,"MH 1/2"" Densdeck Primed 4X4",16.47,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,62MHDP1444,"MH 1/4"" Densdeck Primed 4X4",15.12,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Insulation & Cover Board,62MHDP1448,"MH 1/4"" Densdeck Primed 4X8",28.8,SH,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHBSP241,"MH 2.4"" Seam Plate Galv 1M",326.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHGLV3,"MH 3"" Insulation Plate 1M",237.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD112,"MH 1-1/2"" #14 HDP Fastener 1M",130.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD2,"MH 2"" #14 HDP Fastener 1M",137.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD3,"MH 3"" #14 HDP Fastener 1M",190.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD4,"MH 4"" #14 HDP Fastener 1M",286.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD5,"MH 5"" #14 HDP Fastener 1M",391.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD6,"MH 6"" #14 HDP Fastener 1M",485.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD7,"MH 7"" #14 HDP Fastener 500",283.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD8,"MH 8"" #14 HDP Fastener 500/bx",315.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD925,"MH 9"" #14 HDP Fastener 250",214.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD1025,"MH 10"" #14 HDP Fastener 250",250.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD1125,"MH 11"" #14 HDP Fastener 250",264.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHHD1225,"MH 12"" #14 HDP Fastener 250",280.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH114,"MH 1-1/4"" #15 Ehd Fastener 1M",198.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH3,"MH 3"" #15 Ehd Fastener 1M",277.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH4,"MH 4"" #15 Ehd Fastener 1M",352.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH5,"MH 5"" #15 Ehd Fastener 1M",460.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH6,"MH 6"" #15 Ehd Fastener 5C",285.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH7,"MH 7"" #15 Ehd Fastener 500",368.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH8,"MH 8"" #15 Ehd Fastener 500",425.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH92,"MH 9"" #15 Ehd Fastener 250",233.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH102,"MH 10"" #15 Ehd Fastener 250",309.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH112,"MH 11"" #15 Ehd Fastener 250",325.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH122,"MH 12"" #15 Ehd Fastener 250",368.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH14,"MH 14"" #15 Ehd Fastener 250",609.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH16,"MH 16"" #15 Ehd Fastener 250",694.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH18,"MH 18"" #15 Ehd Fastener 250",887.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH20,"MH 20"" #15 Ehd Fastener 250",1023.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH22,"MH 22"" #15 Ehd Fastener 250",1176.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHXH24,"MH 24"" #15 Ehd Fastener 250",1237.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Screws & Plates,08MHRBTP3,"MH 3"" TPO Rhinobond Plate 500/BX",584.99,BX,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Termination & AP Bars,08MHAP10,MH 10' All Purpose Bar,14.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Termination & AP Bars,08MHTB125,MH TB125 Term Bar Flat,22.99,PC,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Vapor Barrier & Primer,09MHF5AVB1,"MH 39""X100' F5 Air&Vapor Bar 3.25SQ",280.1,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Vapor Barrier & Primer,08MHC7025,MH/CCW 702 Primer 5GAL,303.99,PA,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Repair Hero Coating,16MHRHGY1,MH Repair Hero Gray 1Gal 4/Ctn,53.33,CN,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Repair Hero Coating,16MHRHGY3,MH Repair Hero Gray 3Gal 1/Ctn,142.0,CN,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Seam Tapes,08MHINSMT3,"MH EPDM IN-Seam Tape 3""X100' Black",92.99,RL,LISTED,2026-05-19,2026-12-31
+MH,BTR - Mulehide,Mulehide Seam Tapes,08MHINSMT6,"MH EPDM IN-Seam Tape 6""X100' Black",146.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Adhesives,16FSTJP148,Elevt Twin Jet PRT1 W56RACIAPC1 48#,673.0,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Adhesives,16FSTJP244,Elevt Twin Jet PRT2 W56RACIAPC2 44#,673.0,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Accessories,08FSQS18CF,"Elevt Q/S 18"" Curb Flashing 1RL/CT",249.99,EA,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Accessories,08FSQSP06,"Elevt Q/S 6"" Penet 1POCKT/1RING/1FLSH",295.99,KT,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Accessories,08FSQSPUN,"Elevt Q/S EPDM Pipe Boot Univ 1-6""",58.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Accessories,08FSTB,Elevt Termination Bar,20.9,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Adhesive/Sealant/Primer,08FSBA2004,Elevt BA-2004T EPDM Bonding Adh 5GL,194.99,DR,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Adhesive/Sealant/Primer,08FSLSHST,Elevt Lap Sealant HS 28TB/Pail,12.99,TB,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Adhesive/Sealant/Primer,08FSOPPSBK,Elevt 1PT Pourable Sealr BK W563589090,226.99,EA,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Adhesive/Sealant/Primer,08FSOPPSWH,Elevt 1PT Pourable Sealr WH W563587080,226.99,EA,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Adhesive/Sealant/Primer,08FSQPP,Elevt Quickprime Plus 7044 3GAL,142.99,DR,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Adhesive/Sealant/Primer,08FSQPP1,Elevt Quickprime Plus 7041 1GAL,57.99,GA,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Adhesive/Sealant/Primer,08FSQPP3,Elevt Singlply Quickprime 704A 3GAL,129.99,DR,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Adhesive/Sealant/Primer,08FSS20,10oz Elevt S-20 Water-Block Seal 25/CT,7.99,TB,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Rolls,07FS61010L,Elevt EPDM 060 10'X100' Low SL Frtd,1096.66,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Rolls,07FS6201LT,"Elevt EPDM 060 20'X100' Lsfr 3""Tape",2372.33,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Tape,08FSAC1632,"Elevt Q/S RPF 6""X100' W56RAC1632",228.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Tape,08FSPS4020,"Elevt Q/S Flash 5""X100' 1615",284.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Tape,08FSQSBCS,"Elevt Q/S Batten Cover 6""X100 2R/C",342.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Tape,08FSQSFF12,"Elevt Q/S 12""X50' FormFlash",442.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Tape,08FSQSFF9,"Elevt Q/S 9""X50' FormFlash",313.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Tape,08FSQSST3,Elevt Q/S Splice Tape 3 X100',92.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,EPDM Tape,08FSQSST6,"Elevt Q/S Splice Tape 6""X100'",143.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF112,Elevt 1 1/2 All-Purp Fasteners 1M,145.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF2,Elevt 2 All-Purp Fasteners 1M,166.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF214,Elevt 2 1/4 All-Purp Fasteners 1M,175.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF278,Elevt 2 7/8 All-Purp Fasteners 1M,199.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF314,Elevt 3 1/4 All-Purp Fasteners 1M,259.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF334,Elevt 3 3/4 All-Purp Fasteners 1M,104.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF4,Elevt 4 All-Purp Fasteners 1M,333.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF412,Elevt 4 1/2 All-Purp Fasteners 1M,338.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF5,Elevt 5 All-Purp Fasteners 1M,373.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF6,"Elevt 6"" All-Purp Fasten 1M/BX",473.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF7,Elevt 7 All-Purp Fasteners 500,339.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSAPF8,Elevt 8 All-Purp Fasteners 500,490.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF10,"Elevt 10"" Heavy Duty Fastener 5C",572.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF12,"Elevt 12"" Heavy Duty Fastener 5C",667.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF14,"Elevt 14"" Heavy Duty Fastener 5C",763.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF18,"Elevt 18"" Heavy Duty Fasten 250",873.0,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF2,Elevt 2 Heavy Duty Fastener 1M,175.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF3,Elevt 3 Heavy Duty Fastener 1M,259.0,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF4,Elevt 4 Heavy Duty Fastener 1M,285.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF5,Elevt 5 Heavy Duty Fastener 1M,393.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF6,Elevt 6 Heavy Duty Fastener 5C,277.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF7,Elevt 7 Heavy Duty Fastener 5C,417.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF8,"Elevt 8"" Heavy Duty Fastener 5C",491.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Fasteners,08FSHDF9,"Elevt 9"" Heavy Duty Fastener 5C",,BX,CALL FOR PRICE,2026-05-19,2026-12-31
+EL,BTR - Elevate,ISO,58FSIS2044,Elevt 2.0 Iso 4'X4',20.51,SH,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,ISO,58FSIS2048,Elevt 2.0 Iso 4'X8',40.68,SH,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,ISO,58FSIS2648,Elevt 2.6 Iso 4'X8',51.83,SH,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Plates,08FSIP3,Elevt 3 Insul Plate Metal 1M,283.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Plates,08FSSPH238,"Elevt 2-3/8"" HD Seam Plate 1M",418.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Plates,08FSUTIWP,Elevt Ultraply TPO Invisiweld Plate,514.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSQSWP22,Elevt Q/S Walk Pads 2-1/2X2-1/2 50/,44.99,EA,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSTICG,Elevt TPO IN/Out Corner Gray,11.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSTICWH,Elevt TPO IN/Out Corner White,11.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSTIJC,Elevt TPO T-Joint Cover Wht 100/CT,1.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSTLPB,Elevt TPO Large Pipe Boot Wht 10/CT,39.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSTPP6W,"Elevt 6"" TPO Pene Pocket Kit WH 6/B",243.99,BX,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSTSB13,"Elevt TPO Split Pipe Boot 1-3"" 10/C",39.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSTUPBG,"Elevt TPO Univ Pipe Boot 1-6"" Grey",38.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSTUPBW,"Elevt TPO Univ Pipe Boot 1-6"" White",38.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSUTCECL,Elevt UltraPly TPO Cut Edge Clr Pnt,18.99,PT,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSUTS58G,"Elevt TPO Split Boot 5.5""-8"" Gray",57.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Accessories,08FSUTS58W,"Elevt TPO Split Boot 5.5""-8"" White",57.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Adhesive/Sealant/Primer,08FSAPS,Elevt AP Sealant 10OZ W563587078,13.99,TB,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Adhesive/Sealant/Primer,08FSTBA5,Elevt Ultraply TPO Bonding Adh 5GAL,185.99,DR,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Adhesive/Sealant/Primer,08FSTCESW1,Elevt TPO Cut Edge Sealant Wht 1GL,84.99,GA,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Adhesive/Sealant/Primer,08FSTGPS,Elevt TPO General Purp Sealant 25/C,9.99,TB,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Rolls,07FST6101W,Elevt TPO 060 10X100 White,941.33,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Rolls,07FSUTFLAD,Elevt Ultraply TPO Flex 060 10X100,934.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Tape,08FSQTRPFS,"Elevt TPO Q/S RPF Strip 6""",262.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Tape,08FSTLT55W,"Elevt Q/S TPO Flash 5.5""X100' White",285.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Tape,08FSTUF245,Elevt 060 TPO Unsup Flsh Wht 24X50,391.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,TPO Tape,08FSUTW35W,Elevt Ultraply TPO Walkway 30X50 WH,666.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Universal,08FSQSJC6,"Elevt Q/S Joint Cover 6"" Blk 100/CT",4.99,PC,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Universal,08FSSW100,Elevt SW-100 Clear Splice Wash 5GAL,126.99,DR,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Universal,09FSSP16AS,Elevt Skypaver 16X16X1.6 Ash,,PC,CALL FOR PRICE,2026-05-19,2026-12-31
+EL,BTR - Elevate,Vapor Barrier,09FSVF45,"Elevt V-Force Vapor Barrier 45""X133",464.99,RL,LISTED,2026-05-19,2026-12-31
+EL,BTR - Elevate,Vapor Barrier,16FSVFSB5,Elevt V-Force SB Primer 5GAL,,DR,CALL FOR PRICE,2026-05-19,2026-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,21NXS45DWH,"NDX Summit Manor .040 - WHITE - D4, D5, D4.5DL",89.99,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,21NXS45DSI,"NDX Summit Manor .040 - STANDARD & PREMIUM - D4, D5, D4.5DL",96.33,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,22NXWM4DWH,"NDX Woodsman Select .042 - WHITE - D4, D5, D4DL, D5DL",101.64,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,22NXWM4DSM,"NDX Woodsman Select .042 - STANDARD & PREMIUM - D4, D5, D4DL, D5DL",104.05,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,22NXWM4DSB,"NDX Woodsman Select .042 - DESIGNER - D4, D5, D4DL, D5DL",118.05,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,22NXCK5DWH,"NDX Cedar Knolls .044 - WHITE - D4, D5, D5DL",110.14,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,22NXCK5DSM,"NDX Cedar Knolls .044 - STANDARD & PREMIUM - D4, D5, D5DL",116.07,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,22NXCK5DRU,"NDX Cedar Knolls .044 - DESIGNER - D4, D5, D5DL",132.29,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXGB5DWH,"NDX Great Barrier 12' .046 - WHITE - D4, D5, D5DL",132.4,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXGB5DSK,"NDX Great Barrier 12' .046 - STANDARD & PREMIUM - D4, D5, D5DL",144.38,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXGB5DRU,"NDX Great Barrier 12' .046 - DESIGNER - D4, D5, D5DL",,SQ,CALL FOR PRICE,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXGX5DWH,"NDX Great Barrier 16' .046 - WHITE - D4, D5, D5DL",138.27,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXGX5DOL,"NDX Great Barrier 16' .046 - STANDARD & PREMIUM - D4, D5, D5DL",149.72,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXGX5DGP,"NDX Great Barrier 16' .046 - DESIGNER - D4, D5, D5DL",167.52,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXBBS7WH,NDX Board & Batten .052 - WHITE - S7,184.4,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXBBS7SM,NDX Board & Batten .052 - STANDARD & PREMIUM - S7,188.4,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXBBS7GP,NDX Board & Batten .052 - DESIGNER - S7,223.7,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXPW5DWH,"NDX Polar Wall Plus .046 - WHITE - D6, D5DL, S12",272.1,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXPW5DGR,"NDX Polar Wall Plus .046 - STANDARD & PREMIUM - D6, D5DL, S12",275.7,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,23NXPW5DRU,"NDX Polar Wall Plus .046 - DESIGNER - D6, D5DL, S12",311.1,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Vinyl Siding,25NXHSS123,"NDX Home Accent Split Shake - ALL COLORS - 7""",317.22,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXJ34MWH,"NDX 3/4"" X 12' Matte J-Channel - WHITE",7.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXJ34MSK,"NDX 3/4"" X 12' Matte J-Channel - STANDARD & PREMIUM",9.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXJ34MGP,"NDX 3/4"" X 12' Matte J-Channel - DESIGNER",10.5,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXUTMWH,NDX Matte Utility Trim 12' - WHITE,7.5,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXUTMSK,NDX Matte Utility Trim 12' - STANDARD & PREMIUM,7.5,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXUTMGP,NDX Matte Utility Trim 12' - DESIGNER,10.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXDUTMWH,NDX Matte Dual Utility Trim 12' - WHITE,19.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXDUTMSI,NDX Matte Dual Utility Trim 12' - STANDARD & PREMIUM,19.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXIM34WH,"NDX Matte ISCP 3/4"" X 10' - WHITE",18.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXIM34SK,"NDX Matte ISCP 3/4"" X 10' - STANDARD & PREMIUM",18.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXIM34GP,"NDX Matte ISCP 3/4"" X 10' - DESIGNER",21.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXUO12WH,"NDX 3/4"" X 12' OSCP - WHITE",25.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXUO12SK,"NDX 3/4"" X 12' OSCP - STANDARD & PREMIUM",25.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Standard Vinyl Siding Accessories,26NXUO12GP,"NDX 3/4"" X 12' OSCP - DESIGNER",28.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXJ14MWH,"NDX 1-1/4"" X 12' Matte J-Channel - WHITE",12.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXJ14MSK,"NDX 1-1/4"" X 12' Matte J-Channel - STANDARD & PREMIUM",12.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXJ14MGP,"NDX 1-1/4"" X 12' Matte J-Channel - DESIGNER",15.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXIM14WH,"NDX 1-1/4"" x 10' Matte ISCP - WHITE",21.5,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXIM14SV,"NDX 1-1/4"" x 10' Matte ISCP - STANDARD & PREMIUM",21.5,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXIM14GP,"NDX 1-1/4"" x 10' Matte ISCP - DESIGNER",26.25,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXOCIFWH,"NDX 1-1/4"" x 12' Insulated OSCP - WHITE",68.25,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXOCIFSK,"NDX 1-1/4"" x 12' Insulated OSCP - STANDARD & PREMIUM",43.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXOCIFGP,"NDX 1-1/4"" x 12' Insulated OSCP - DESIGNER",47.5,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Polar Wall Plus Accessories,26NXESSSI,NDX Insulated Starter Strip 12',21.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),34NXT4RSWH,NDX Remodeler T4 Solid - WHITE,121.66,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),34NXT4RSSK,NDX Remodeler T4 Solid - STANDARD & PREMIUM,126.33,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),34NXT4RSGP,NDX Remodeler T4 Solid - DESIGNER,139.66,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),34NXT4RPWH,NDX Remodeler T4 Full Vent - WHITE,121.66,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),34NXT4RPSK,NDX Remodeler T4 Full Vent - STANDARD & PREMIUM,126.33,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),34NXT4RPGP,NDX Remodeler T4 Full Vent - DESIGNER,139.66,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),26NXJ12MWH,"NDX 1/2"" X 12' Matte J-Channel - WHITE",6.5,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),26NXJ12MSK,"NDX 1/2"" X 12' Matte J-Channel - STANDARD & PREMIUM",6.5,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,NDX Remodeler Soffit (Vinyl),26NXJ12MGP,"NDX 1/2"" X 12' Matte J-Channel - DESIGNER",7.75,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,MT Endurance Soffit (Aluminum),35AXT4STB,MT Endurance T4 Solid - ALL COLORS,175.62,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,MT Endurance Soffit (Aluminum),35AXT4LTB,MT Endurance T4 Full Vent - ALL COLORS,175.62,SQ,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,MT Endurance Soffit (Aluminum),37AXEJ38WH,"MT 3/8 X 12' J-Channel 3/4"" Face - ALL COLORS",8.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Trim Coil,38AXS24SWH,"MT S24 24""x50' Smooth Coil - ALL COLORS",115.0,RL,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Trim Coil,38AXS24PWH,"MT S24T 24""x50' PVC/Textured Coil - ALL COLORS",154.56,RL,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Mouldings,31MPMMB123,Mid-AM Mount Master Block Square - ALL COLORS,11.33,EA,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Mouldings,31MPSBM123,Mid-AM Mini Split Block Color - ALL COLORS,11.99,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Mouldings,17MPMEV123,Mid-AM Square Exhaust Vent - ALL COLORS,17.99,EA,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Mouldings,17MPIEM123,Mid-AM Intake/Exhaust Master - ALL COLORS,30.99,EA,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Mouldings,17MPVC1123,Mid-AM Classic 12X12 Gable Vent - SELECT COLORS,42.25,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Mouldings,17MPVC8123,Mid-AM Classic 12X18 Gable Vent - SELECT COLORS,55.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Mouldings,17MPVC2123,Mid-AM Classic 18X24 Gable Vent - SELECT COLORS,73.25,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Mouldings,17MPVC3123,Mid-AM Classic 24X30 Gable Vent - SELECT COLORS,181.0,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,GSS35ML,"Galvanized Starter Strip 3.5"" 10'",6.99,PC,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,NXHW9100,9' x 100' Norandex House Wrap,120.0,RL,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,76MIST255W,"House Wrap Tape 2"" X 55YD",15.0,RL,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,11NXWDF475,"NDX Window/Door Butyl Tape 4""X75'",39.0,RL,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,2214720289,"Nail Trim RS 1# X 1.25"" - ALL COLORS",13.99,BX,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,15MIRN134P,"1-3/4"" EG ROOF NAILS 30# PAIL",57.99,PA,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,15MIRN23P,"2"" EG ROOF NAILS 30# PAIL",51.99,PA,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,15MIRN212P,"2-1/2"" EG ROOF NAILS 30# PAIL",55.99,PA,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,4292804533,"Plastic Cap Nails 1"" 2000/Bx",19.0,BX,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Other Siding Accessories,2875696793,Osi Quad Max 9.5OZ - ALL COLORS,10.75,TB,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Insulation,29MIPWA14,"1/4"" Weatherall Fanfold 2SQ/BD",43.0,BD,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Insulation,29MIPWA38,"3/8"" Weatherall Fanfold 2SQ/BD",52.0,BD,LISTED,2026-06-01,2028-12-31
+NX,BTR - Norandex,Insulation,29MIPWA12,"1/2"" Weatherall Fanfold 2SQ/BD",54.0,BD,LISTED,2026-06-01,2028-12-31
+SS,BTR - Steep Slope,Malarkey,02MLHLXAAB,Highlander Nex AR 242 3/SQ,96.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Malarkey,02MLVIA3AB,Vista AR 252 3/SQ,138.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Malarkey,03MLLAAB,Legacy IR 4/SQ,177.8,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Malarkey,03MLWSAB,Windsor 5/SQ,270.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Malarkey,04MLSS210,Smart Start 114.9LF,76.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Malarkey,04MLWSSAB,Windsor Starter 70LF,126.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Malarkey,04MLHR12AB,227 Hip & Ridge 31LF,68.75,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Malarkey,04MLEZXTAB,EZ Ridge XT 224 20LF,137.0,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,IKO,02IKCA3ADK,Cambridge AR 3/SQ,105.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,IKO,02IKDYARAB,Dynasty AR 3/SQ,114.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,IKO,02IKNDCBS,Nordic 3/SQ,131.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,IKO,03IKASC3WS,IKO AR Armourshake 5/S,241.25,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,IKO,04IKHA1229WW,IKO AR H&R 12 29LF,77.25,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,IKO,04IKC4IRBS,IKO H&R CLASS 4 IR 36LF,96.75,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,IKO,04IKLEP109,IKO Leading Edge Plus Starter 109LF,62.12,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Tamko,02TKFH2RB,Heritage 30 AR 3/SQ,117.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Tamko,02TKTXTAB,Titan XT 3/SQ,124.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Tamko,02TKSFF4BW,StormFight FLEX 3/SQ,135.99,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Tamko,04TKAHRRB,Hip & Ridge 33.3LF,72.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Tamko,04TKPHRRB3,Proline Hip & Ridge 33.3LF,77.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Tamko,04TK10SS,"10"" Starter Shingle 100LF/BD",67.0,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Atlas,02ATP42PBK,Pinnacle Pristine 3/SQ,121.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Atlas,02ATPIBS,Pinnacle Impact 3/S,140.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Atlas,02ATSS42BK,Storm Shake 3/SQ,186.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Atlas,04ATSP31BK,Pro-Cut Hip & Ridge 31LF,88.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Atlas,04ATSSHP42,Pro-Cut Starter 140LF,95.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,02CTLA30MB,Landmark 3/SQ,121.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,03CTLCF3WW,ClimateFlex IR AR 3/S,140.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,02CTNGMDBS,Northgate AR 4/S,145.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,03CLFRPRCB,Presidential AR 5/SQ,238.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,03CTPRIRCB,Presidential IR 5/SQ,260.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,03CLFPTLCP,Presidential TL 6/SQ,305.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,04CTSWST,"SwiftStart Starter 116'4"" LF",63.0,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,04CTPISTCB,Presidential Starter IR 36LF,109.75,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,04CTSHAMB,Shadow Hip & Ridge AR 30LF,81.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,CertainTeed,04CTCICM,Cedar Crest Hip & Ridge IR 20L,98.75,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,03GAGSWW,Grand Sequoia 5/S,238.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,03GASIGSCC,Grand Seq ArmorShield 4/S,261.5,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,04GASCSBO,Startermatch 60LF,119.75,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,03GATUZPSL,Timberline UHDZ 3/SQ,140.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,02GASTZ3CH,Timberline HDZ 3/SQ,132.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,02GASTNSWW,Timberline Natural Shadow 3/SQ,108.51,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,03GAAS2CH,Armorshield II 3/SQ,145.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,04GAPST,Pro-Start Starter 120.33LF,42.99,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,04GASR2CH,Seal-A-Ridge 25LF,67.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,GAF,04GASRACH,Armors Seal-A-Ridge 25LF,96.75,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Owens Corning,02OCTDUDW,OC TruDef Duration Driftwood 3/S,124.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Owens Corning,02OCTDDSH,OC TruDef Duration DC Summer Harvest 3/S,124.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Owens Corning,02OCTDFADW,OC TruDef Dura Flex AR Driftwood 3/S,145.0,SQ,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Owens Corning,04OCAPEDW,OC Proedge H&R AR Driftwood 33LF,89.25,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Owens Corning,04OCAFPEEG,OC Proedge H&R Flex AR Estate Gray 33LF,116.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Owens Corning,04OCSSPL,OC Starter Strip Plus 105LF,64.5,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Owens Corning,11OCPROA10,OC Proarmor Syn Roof Underlymt 10SQ,147.66,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Owens Corning,11OCWLM2,OC Weatherlock Mat 3'X66.7' 2SQ,121.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,05MLSP1029,Mal Secure Start Syn 10SQ,104.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,11GATP10,GAF Tigerpaw 10SQ,179.0,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,05CTSRR10,CERT Roofrunner Syn Felt 10SQ,126.66,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,11IKSTSUL1,IKO Stormtite Syn 10SQ,176.33,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,05TR154869,Tarco 15# Astm 4869 Felt 4SQ/RL,27.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,05TR304869,Tarco 30# Astm 4869 Felt 2SQ/RL,27.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,05ABCPG20,ABC Pro Guard 20 Synthetic 10SQ,66.5,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,05GAFBSR10,GAF Feltbuster 10SQ,146.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,05SERAD42,Roofnado Anchordeck 10SQ,80.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,9466850005,Titanium 30 Surefoot 10SQ,233.66,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Synthetic Underlayment,11ATSUM60,Atlas Summit 60 10SQ,110.33,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11GAWW2,"GAF Weatherwatch 36""X66.7' 2SQ",98.5,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11CTWGS2,CT Winterguard Sand Long 3X65 2SQ,112.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11ML4012,Mal Arctic Seal 2SQ,119.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11ATWMI200,Atlas Weathermaster 200 Ice&Water,117.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11TRICEC2U,Tarco Ice&Water MS300 Unboxed 1.95S,56.75,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11IKSS,IKO Stormshield Ice & Water 2SQ,96.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11IKST2,IKO StormTamer/DAP Ice & Water 2SQ,56.75,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11MIRE365,Resisto Ice & Water 2SQ,76.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ice & Water Guard,11MIRLSSHT,Resisto High Temp Ice & Water 2SQ,113.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,14PMWV24BK,"Phillips 24"" W Valley",30.4,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,14PMRV24ML,"Phillips 24""X50' Roll Valley Mill",140.0,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,14PMRV25ML,"Phillips 20""X50' Roll Valley Mill",118.0,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,78CSK441MB,Una-Clad 24GA Kynar 4x10,96.2,SH,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,14PMGA23BK,Gutter Apron 2X3,7.6,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,14PMDS5BK,Drip Edge,7.6,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,14PMSF88BK,Step Flashing 8X8,76.0,BD,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,14PMWF40BK,Roof-To-Wall Flashing,14.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,GRF410BK,"Reglet Flashing 4""X10'",27.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Metals,14PMTP41BK,Phillips EM Tile Pan 4X4X10,14.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17GAMPP4K,"GAF MASTRFLW 4"" PIVOT",71.5,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,14IP81732,"Ips 0-5"" Elect Mast",40.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17MIALF45,"Lead Flsh 4"" 15X15X15 5/12",64.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17MIALF612,"Lead Flsh 6"" 15X15X15 12/12",69.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17MIALF65,"Lead Flsh 6"" 15X15X15 5/12",69.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17MIALFA2,"Lead Adj 2"" 12X12X16 2.5#",60.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17MIALFA3,"Lead Adj 3"" 15X15X15",55.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17MIALFA4,"Lead Adj 4"" 15X15X15",64.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17MIALJ312,"Lead Jack 3"" 15X15X15 12/12",39.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17MIALJ412,"Lead Jack 4"" 15X15X15 12/12",64.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,14IP81711,IPS 4N1 Flashing Galv Mill,16.5,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,14IP81891,Ips 4N1 Flashing Galv Black,19.5,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17IP81694,IPS Multi-Cap VC35,37.06,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17IP81695,IPS Multi-Cap VC57,46.77,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Pipe Boots/Penetrations,17IP81696,IPS Multi-Cap VC79,58.1,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LO135BK,Lomanco 135 Round Roof Louver,103.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LO750GBK,Lomanco 750G Box Vent,19.5,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LOBI14BK,Lomanco BIB-14 Whirlybird,94.05,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LOBR34BK,Lomanco BRV34 Bath Pro Vent Black,27.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LOBR34KB,Lomanco BRV34 Bath Pro Vent Kit Blk,49.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LOKV68BK,Lomanco KV68 Kitchen Pro Vent Black,60.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LO2000HB,Lomanco 2000H Power Vent,213.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LO2000DB,Lomanco 2000 Alum Dome Cap,68.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LOORPR4S,Lomanco PRO4SWN Omniridge Pro 4',25.33,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LOOR94OV,"Lomanco LOR9-4 9"" Omni Rdge Vent 4'",22.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LOLOR30,Lomanco LOR30 LO Omni Roll Nailable,98.99,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17LODA4VNT,Lomanco DA-4 Deck-Air Intake Vent,18.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17GACSCA,"GAF 12"" Cobra Snow Country 4' Ridge Vent",21.66,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Ventilation,17GACHV4,GAF Cobra Hip Vent 4',39.66,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Roofing Nails,0150080010,"1"" Coil Nails",61.99,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Roofing Nails,0150080011,"1.25"" Coil Nail",40.0,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Roofing Nails,0150080012,"1.5"" Coil Nail",74.0,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Roofing Nails,0150080013,"Coil Nail ABC 1-3/4"" EG",80.0,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Roofing Nails,15MIRN215,"2.5"" Hand Nails 5#/bx",11.99,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Roofing Nails,15MIRN134P,"1-3/4"" EG ROOF NAILS 30# PAIL",57.99,PA,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Plastic Cap Nails,0150080122,"1"" Plastic Cap Nails 3000/Pail",35.99,PA,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Plastic Cap Nails,4292804533,"1"" Plastic Cap Nails 2000/BX",19.0,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Plastic Cap Nails,4292804534,"1.25"" Plastic Cap Nails 2000/BX",19.99,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Plugs/Staples,8120499008,"Quarrix Smart Plug 8""X8""",15.85,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Plugs/Staples,8120499012,"Quarrix Smart Plug 12""X12""",18.05,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Plugs/Staples,15PSGRN17,"7/16"" X 1.5"" Sheathing Staple",66.99,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Sealants/Paints,30MHSEB1PC,MH Sebs 1 Sealant Clear,10.5,TB,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Sealants/Paints,7923966900,Geocel 2300 Clear,10.25,TB,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Sealants/Paints,7923901103,RP-400 Roof Cement,4.0,TB,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Sealants/Paints,0170030032,Roof Touch-Up Spray Paint 12oz Can,10.62,CN,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,High Temp Ice & Water Guard,11TRL600UL,TARCO LEAKBARRIER I/W NR600 ULTRA,140.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,High Temp Ice & Water Guard,05SERLL36,Roofnado Laplock Psu HT 2SQ,106.0,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,High Temp Ice & Water Guard,11FSCGSAR,Elevt Clad-Gard R 2SQ,136.0,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2320062045,Vlx FCM22222004S CM Fixed w/Shade,439.0,EA,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2320062106,VLX FCM22302004S CM Fixed w/Shade,480.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2320062182,Vlx FCM22462004S CM Fixed w/Shade,515.0,EA,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2320063196,VLX FCM30302004S CM Fixed w/Shade,538.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2320064322,VLX FCM46462004S CM Fixed w/Shade,696.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2320064919,Vlx QPF22462004S PF Fixed w/Shade,715.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2320064964,VLX QPF30302004S PF Fixed w/Shade,716.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2320065008,VLX QPF46462004S PF Fixed w/Shade,986.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2329874090,Vlx FSC012004S DM Fxd Lami/Alm w/Shade,624.0,EA,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2329875448,VLX VSSC062004S Solar Vented w/Shd,1919.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2329875608,VLX VSSM062004S Solar Vented w/Shd,2063.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2321547152,Velux Edl-M08-0000B &M02/M04/M06 FL,135.2,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2321547589,Velux Edl-S06-0000B &S01 Flashing,148.72,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2325102241,Velux Edl-C06-0000B &C01/CO4 Flash,123.76,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2325664152,Velux Edl-C12-0000B &C08 Flashing,156.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2325664176,Velux Edl-D06-0000B &D26 Flashing,131.04,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2322882740,Velux Ecl-2246-0000B 2222/2230/2234,117.52,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2322882788,Velux Ecl-4646-0000B Curb Flashing,138.32,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2324352593,Velux Ecl-3046-0000B &3030 Flashing,132.08,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2324769575,Velux ECL-1446-0000B &1430 Flashing,117.52,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2326411977,Velux Ecl-2246-0000C 2222/2230/2234,119.6,EA,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Skylights & Flashing Kits,2327888389,Velux Ecl-3446-0000C &3434 W/Undrly,135.2,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Accessories,62MIZT3349,"Zip System Tape 3-3/4"" X90'",36.35,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Accessories,15PSPC716,"7/16"" Plywood Clips 250/Bx",24.99,BX,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Accessories,0150001228,Flashing Alum. Chimney,62.0,PC,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Self-Adhered/Modified Bitumen Products,06MHSAB,MH SA Base Sheet 2SQ/RL,149.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Self-Adhered/Modified Bitumen Products,06MHSASWW,MH SA-SBS Cap Sheet 1SQ/RL,137.99,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Self-Adhered/Modified Bitumen Products,06MHSANB,MH Nail Base 2SQ/RL,132.33,RL,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Self-Adhered/Modified Bitumen Products,08MHTAPR1,MH Tape Primer 1GAL,53.99,CN,LISTED,2026-05-19,2026-12-31
+SS,BTR - Steep Slope,Self-Adhered/Modified Bitumen Products,16MH27111,MH 271 Mod Bit Sealant 10.3OZ,10.99,TB,LISTED,2026-05-19,2026-12-31

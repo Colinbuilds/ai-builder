@@ -1,0 +1,34 @@
+{
+  "_note": "Seed data for the rules engine. All rules editable in Settings. 'locked' rules require admin to change.",
+  "waste_defaults": {
+    "residential_roofing_pct": 5,
+    "residential_siding_pct": 5,
+    "reference_ranges_for_approval_only": {
+      "TPO/PVC": "5%",
+      "EPDM": "7%",
+      "Standing seam": "8-12%",
+      "Metal wall panels": "5-10%",
+      "Fiber cement siding": "10%",
+      "Lap siding": "10%"
+    },
+    "note": "Never apply waste automatically except the approved residential defaults. Do not use 10% on residential without explicit approval."
+  },
+  "rules": [
+    {"id": "SID-01", "locked": true, "scope": "siding", "rule": "Use EagleView 'Siding' wall area only, excluding windows and doors. Never include masonry-classified wall area or masonry corner LF.", "check": "siding_area_source == 'eagleview_siding' && masonry_sf_included == 0 && masonry_corner_lf_included == 0"},
+    {"id": "SID-02", "locked": false, "scope": "siding", "rule": "Deduct windows and doors only. Stone/stucco zone deductions are a GC decision, not a default deduction."},
+    {"id": "SID-03", "locked": false, "scope": "siding", "rule": "Default residential siding product: 8.25\" HardiePlank unless specified.", "default_items": {"primed_cedarmill": "25H5KEC8", "primed_smooth": "25H5KES8", "statement_cedarmill": "25H5KEC8AW"}},
+    {"id": "SID-04", "locked": false, "scope": "siding", "rule": "House wrap: use the cheapest wrap on the applicable BTR sheet unless the spec requires otherwise.", "logic": "min(unit_price per SF of coverage) among items tagged house_wrap on the sheet in use"},
+    {"id": "ROOF-01", "locked": true, "scope": "roofing", "rule": "Roof SF comes from the roof plan sheet, never floor plan area schedules."},
+    {"id": "ROOF-02", "locked": false, "scope": "residential_shingle", "rule": "Coil roofing nails: 1 box per 15 SQ.", "item_number": "0150080011", "formula": "ceil(roof_sq_with_waste / 15)"},
+    {"id": "ROOF-03", "locked": false, "scope": "residential_shingle", "rule": "Always include 1.25\" plastic cap nails: 1 box per 15 SQ.", "item_number": "4292804534", "formula": "ceil(roof_sq_with_waste / 15)"},
+    {"id": "ROOF-04", "locked": false, "scope": "residential_roofing", "rule": "Ridge vent always included."},
+    {"id": "ROOF-05", "locked": false, "scope": "residential_shingle", "rule": "Starter strip on eaves AND rakes.", "formula": "ceil((eaves_lf + rakes_lf) / starter_lf_per_bundle)"},
+    {"id": "ROOF-06", "locked": false, "scope": "residential_shingle", "rule": "30-yr shingle default when brand unspecified: Malarkey Vista AR (02MLVIA3AB) or CertainTeed Landmark ClimateFlex (03CTLCF3WW). User must pick one."},
+    {"id": "ROOF-07", "locked": false, "scope": "residential_shingle", "rule": "Hip & ridge coverage for takeoff math: 25 LF per bundle.", "formula": "ceil((hips_lf + ridges_lf) / 25)"},
+    {"id": "ROOF-08", "locked": false, "scope": "epdm", "rule": "EPDM cover board is always a standard line item, never optional."},
+    {"id": "ROOF-09", "locked": false, "scope": "epdm_presecured", "rule": "Pre-secured EPDM systems must include pre-securement fasteners and plates."},
+    {"id": "ROOF-10", "locked": false, "scope": "complex_roof", "rule": "Placeholder accessory ratios allowed only until EagleView is received; must be labeled PLACEHOLDER."},
+    {"id": "PUB-01", "locked": true, "scope": "public_tax_exempt", "rule": "Nebraska Form 17 Purchasing Agent Appointment must be executed with owner before materials are purchased. Confirm before setting job tax-exempt in AccuLynx."},
+    {"id": "PUB-02", "locked": false, "scope": "public", "rule": "Pull bid tabs after opening and store as calibration data."}
+  ]
+}

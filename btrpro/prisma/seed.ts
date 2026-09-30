@@ -1,0 +1,152 @@
+// Seeds the price library, company rules, and a first admin user from /data.
+// Re-running is safe: sheets/items/rules are upserted, never duplicated.
+import { Prisma, PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { parseCoverage } from "../src/lib/sheets/coverage";
+
+const prisma = new PrismaClient();
+const dataDir = path.join(__dirname, "..", "data");
+const readJson = (f: string) => JSON.parse(readFileSync(path.join(dataDir, f), "utf8"));
+
+type SheetMeta = {
+  sheet_name: string;
+  source_file: string;
+  account: string;
+  sales_rep: string;
+  effective: string;
+  expiration: string;
+  scope: string;
+  warning?: string;
+};
+type RawItem = {
+  sheet_code: string;
+  section: string;
+  item_number: string;
+  description: string;
+  unit_price: number | null;
+  uom: string;
+  price_status: "LISTED" | "CALL FOR PRICE" | "CALL";
+};
+type RawRule = {
+  id: string;
+  locked: boolean;
+  scope: string;
+  rule: string;
+  formula?: string;
+  item_number?: string;
+  [k: string]: unknown;
+};
+
+// Returns null when an Admin has uploaded a newer version of this sheet; the seed never overwrites an upload.
+type SeedSheet = Omit<Prisma.PriceSheetUncheckedCreateInput, "code" | "importId">;
+async function upsertSheet(code: string, data: SeedSheet) {
+  const existing = await prisma.priceSheet.findFirst({ where: { code, isActive: true } });
+  if (existing?.importId) return null;
+  if (existing) return prisma.priceSheet.update({ where: { id: existing.id }, data });
+  return prisma.priceSheet.create({ data: { code, ...data } });
+}
+
+async function main() {
+  const meta: Record<string, SheetMeta> = readJson("price_sheets_meta.json").sheets;
+  const { items } = readJson("price_items.json") as { items: RawItem[] };
+
+  const sheetIds: Record<string, string> = {};
+  for (const [code, m] of Object.entries(meta)) {
+    const sheet = await upsertSheet(code, {
+      name: m.sheet_name,
+      sourceFile: m.source_file,
+      account: m.account,
+      salesRep: m.sales_rep,
+      effectiveDate: new Date(`${m.effective}T00:00:00Z`),
+      expirationDate: new Date(`${m.expiration}T00:00:00Z`),
+      scope: m.scope,
+      warning: m.warning ?? null,
+      isLoaded: true,
+    });
+    if (sheet) sheetIds[code] = sheet.id;
+    else console.log(`Skipped ${code}: an uploaded version is live.`);
+  }
+
+  // LP SmartSide: record exists so the UI can show it, but no items until a sheet is uploaded.
+  const lp = await prisma.priceSheet.findFirst({ where: { code: "LP", isActive: true } });
+  if (!lp?.isLoaded) await upsertSheet("LP", {
+    name: "LP SmartSide",
+    scope: "LP SmartSide siding/panels (25LP…) and trim (31LPTW…)",
+    warning: "No LP SmartSide price sheet loaded. LP items stay MISSING until a sheet is uploaded.",
+    isLoaded: false,
+  });
+
+  for (const it of items) {
+    if (!(it.sheet_code in meta)) throw new Error(`Item ${it.item_number} references unknown sheet ${it.sheet_code}`);
+    const sheetId = sheetIds[it.sheet_code];
+    if (!sheetId) continue; // sheet replaced by an upload
+    const isCall = it.price_status !== "LISTED";
+    const data = {
+      section: it.section,
+      description: it.description,
+      unitPrice: isCall ? null : it.unit_price,
+      uom: it.uom,
+      priceStatus: isCall ? ("CALL" as const) : ("LISTED" as const),
+    };
+    const where = { sheetId_itemNumber: { sheetId, itemNumber: it.item_number } };
+    const existing = await prisma.priceItem.findUnique({ where, select: { coverageSource: true } });
+    // Parsed coverage never overwrites a value a user entered or took from manufacturer data.
+    const keepCoverage = existing?.coverageSource && existing.coverageSource !== "PARSED_FROM_DESCRIPTION";
+    const c = keepCoverage ? null : parseCoverage(it.description, it.uom);
+    const coverage = keepCoverage
+      ? {}
+      : {
+          coverageQty: c?.qty ?? null,
+          coverageUnit: c?.unit ?? null,
+          coverageSource: c ? ("PARSED_FROM_DESCRIPTION" as const) : null,
+        };
+    await prisma.priceItem.upsert({
+      where,
+      update: { ...data, ...coverage },
+      create: { sheetId, itemNumber: it.item_number, ...data, ...coverage },
+    });
+  }
+
+  const { rules } = readJson("company_rules.json") as { rules: RawRule[] };
+  for (const r of rules) {
+    const { id, locked, scope, rule, formula, item_number, ...extra } = r;
+    const data = {
+      scope,
+      text: rule,
+      formula: formula ?? null,
+      itemNumber: item_number ?? null,
+      extra: Object.keys(extra).length ? (extra as object) : undefined,
+      locked,
+    };
+    await prisma.rule.upsert({ where: { id }, update: data, create: { id, ...data } });
+  }
+
+  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@btrcontracting.local";
+  const password = process.env.SEED_ADMIN_PASSWORD ?? "change-me-now";
+  if (!(await prisma.user.findUnique({ where: { email } }))) {
+    if (process.env.NODE_ENV === "production" && (!process.env.SEED_ADMIN_PASSWORD || password.length < 12))
+      throw new Error("Set SEED_ADMIN_PASSWORD (12+ characters) before the first production start.");
+    await prisma.user.create({
+      data: { name: "Admin", email, role: "ADMIN", passwordHash: await bcrypt.hash(password, 10) },
+    });
+    console.log(`Created admin user ${email}`);
+  }
+
+  const active = { sheet: { isActive: true } };
+  const [sheetCount, itemCount, callCount, ruleCount] = await Promise.all([
+    prisma.priceSheet.count({ where: { isLoaded: true, isActive: true } }),
+    prisma.priceItem.count({ where: active }),
+    prisma.priceItem.count({ where: { priceStatus: "CALL", ...active } }),
+    prisma.rule.count(),
+  ]);
+  console.log(`Seeded ${itemCount} items across ${sheetCount} sheets (${callCount} CALL), ${ruleCount} rules.`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());
