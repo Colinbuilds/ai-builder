@@ -57,11 +57,7 @@ function createMockApi(opts) {
       var x = normalizeExtraction({ isReceipt: true, employee: user.split("@")[0], jobName: "Harvest Ln", address: "8821 Harvest Ln", jobGuess: "", vendor: "Menards", date: "2026-09-29", receiptNumber: "118-3399",
         items: [{ description: "2x4x8 SPF Stud", qty: 20, unit: "ea", lineTotal: 79.8 }, { description: "GRK R4 Screws 3\" 100ct", qty: 2, unit: "box", lineTotal: 49.96 }],
         subtotal: 129.76, tax: 9.08, total: 138.84, notes: "" });
-      var m = resolveJob(x, {}, jobs), j = m.confident && m.job ? m.job : { id: "", name: "" };
-      var priced = priceReceipt(x, { markupPercent: DEFAULT_MARKUP_PERCENT });
-      var r = { id: "u" + receipts.length, createdAt: new Date(clock + receipts.length * 6e4).toISOString(), uploadedBy: user, employee: user.split("@")[0], source: "upload",
-        status: j.id ? "ready" : "needs_review", jobId: j.id, jobName: j.name, note: input.note || "", suggestedAction: input.suggestedAction || "", extracted: x,
-        match: { confident: !!j.id, score: m.score, candidates: [] }, markupPercent: DEFAULT_MARKUP_PERCENT, cost: priced.totals.cost, billed: priced.totals.billed, profit: priced.totals.profit };
+
       receipts.push(r);
       return admin ? r : employeeView(r);
     },
@@ -88,18 +84,6 @@ function createMockApi(opts) {
     apiRetry: function (id) { return find(id); },
     apiSettings: function () {
       return { quickbooks: { connected: false, authUrl: "#connect" }, ai: true,
-        admins: ["office@samplecontracting.com"], defaultMarkup: DEFAULT_MARKUP_PERCENT, changeOrderTemplate: true, people: peopleList() };
-    },
-    apiAddPerson: function (name, isAdmin) {
-      name = String(name || "").trim();
-      if (!name) throw new Error("Type the person's name.");
-      if (people.some(function (p) { return p.name.toLowerCase() === name.toLowerCase(); })) throw new Error(name + " already has a link.");
-      people.push({ name: name, admin: !!isAdmin });
-      return peopleList();
-    },
-    apiRemovePerson: function (name) {
-      people = people.filter(function (p) { return p.name !== name; });
-      return peopleList();
     },
   };
 

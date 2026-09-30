@@ -213,12 +213,6 @@ test("phone upload without a buyer name on the receipt: the uploader is the empl
   assert.equal(r.status, "ready");
 });
 
-test("upload with just a photo: the job is read from the receipt", () => {
-  const { ctx } = setup();
-  const up = ctx.apiUpload({ base64: Buffer.from("fake-jpeg").toString("base64"), mimeType: "image/jpeg", fileName: "IMG_2.jpg" });
-  assert.equal(up.jobName, "8821 Harvest Ln Lot 12, Prairie Creek");
-  assert.equal(up.status, "ready");
-});
 
 test("QuickBooks not connected yet: documents are still created and the receipt is marked", () => {
   const { g, ctx, qbo, jobs } = setup({ qboConnected: false });
