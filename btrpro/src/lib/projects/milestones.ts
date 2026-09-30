@@ -1,17 +1,17 @@
-// AccuLynx-style milestones (Lead → Prospect → Approved → Completed → Invoiced → Closed) over BTR's job stages.
+// Job milestones, in BTR blue from light to dark as the job moves forward (Lead → Prospect → Approved → Completed → Invoiced → Closed) over BTR's job stages.
 import { STAGES, STAGE_LABEL, type Stage } from "./workflow";
 
 export type Milestone = { key: string; letter: string; label: string; stages: Stage[]; color: string };
 
 export const MILESTONES: Milestone[] = [
-  { key: "LEAD", letter: "L", label: "Lead", stages: ["LEAD"], color: "#f2b705" },
-  { key: "PROSPECT", letter: "P", label: "Prospect", stages: ["ESTIMATING", "SUBMITTED"], color: "#f58220" },
-  { key: "APPROVED", letter: "A", label: "Approved", stages: ["SOLD", "SCHEDULED", "IN_PRODUCTION"], color: "#78b833" },
-  { key: "COMPLETED", letter: "C", label: "Completed", stages: ["COMPLETE"], color: "#1ea5dd" },
-  { key: "INVOICED", letter: "I", label: "Invoiced", stages: ["INVOICED", "PAID"], color: "#e23b3b" },
-  { key: "CLOSED", letter: "✓", label: "Closed", stages: ["CLOSED"], color: "#8e959c" },
+  { key: "LEAD", letter: "L", label: "Lead", stages: ["LEAD"], color: "#6fa8ea" },
+  { key: "PROSPECT", letter: "P", label: "Prospect", stages: ["ESTIMATING", "SUBMITTED"], color: "#3f8ae0" },
+  { key: "APPROVED", letter: "A", label: "Approved", stages: ["SOLD", "SCHEDULED", "IN_PRODUCTION"], color: "#1f6fd1" },
+  { key: "COMPLETED", letter: "C", label: "Completed", stages: ["COMPLETE"], color: "#1857a8" },
+  { key: "INVOICED", letter: "I", label: "Invoiced", stages: ["INVOICED", "PAID"], color: "#123f7a" },
+  { key: "CLOSED", letter: "✓", label: "Closed", stages: ["CLOSED"], color: "#0e0f11" },
 ];
-export const LOST_COLOR = "#6b7280";
+export const LOST_COLOR = "#8a9099";
 
 export const milestoneOf = (s: Stage): Milestone | null => MILESTONES.find((m) => m.stages.includes(s)) ?? null;
 export const milestoneIndex = (s: Stage) => MILESTONES.findIndex((m) => m.stages.includes(s));

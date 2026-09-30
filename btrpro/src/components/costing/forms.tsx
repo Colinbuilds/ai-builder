@@ -9,7 +9,6 @@ import {
   bidResultAction,
   closeCostingAction,
   commitmentStatusAction,
-  commissionPlanAction,
   decideChangeOrderAction,
   deleteCostAction,
   freezeBaselineAction,
@@ -728,43 +727,3 @@ export function BidResultForm({
   );
 }
 
-export function CommissionPlanForm({
-  userId,
-  plan,
-}: {
-  userId: string;
-  plan: { basis: string; pct: number; note: string | null } | null;
-}) {
-  const [state, action, pending] = useFormAction(commissionPlanAction, null);
-  return (
-    <form onSubmit={action} className="flex flex-wrap items-center gap-2">
-      <input type="hidden" name="userId" value={userId} />
-      <Input
-        name="pct"
-        inputMode="decimal"
-        className="w-24"
-        placeholder="%"
-        defaultValue={plan?.pct ?? ""}
-      />
-      <Select
-        name="basis"
-        defaultValue={plan?.basis ?? "GROSS_PROFIT"}
-        className="w-44"
-      >
-        <option value="GROSS_PROFIT">of gross profit</option>
-        <option value="REVENUE">of revenue</option>
-      </Select>
-      <Input
-        name="note"
-        className="w-56"
-        placeholder="Note (draw, split…)"
-        defaultValue={plan?.note ?? ""}
-      />
-      <Button size="sm" variant="outline" disabled={pending}>
-        Save
-      </Button>
-      <Saved state={state} />
-      <Problems state={state} className="w-full" />
-    </form>
-  );
-}

@@ -155,14 +155,14 @@ export default async function ProjectPage({
   ];
   const Empty = ({ n, text, children }: { n: number; text: string; children?: React.ReactNode }) => (
     <div className="flex items-start gap-4">
-      <span className="w-4 text-lg text-[#f58220] tabular-nums">{n}</span>
+      <span className="w-4 text-lg text-btr-blue tabular-nums">{n}</span>
       <div className="flex flex-col items-start gap-2 text-sm">
         <span className="text-muted-foreground">{text}</span>
         {children}
       </div>
     </div>
   );
-  const blueBtn = "rounded-sm bg-[#3b7bc8] px-4 py-1.5 text-sm text-white shadow-sm hover:bg-[#2f6cb3]";
+  const blueBtn = "rounded-sm bg-btr-blue px-4 py-1.5 text-sm text-white shadow-sm hover:bg-btr-blue-dark";
   const Field = ({ k, children }: { k: string; children: React.ReactNode }) => (
     <div className="grid grid-cols-[7rem_1fr] gap-2 py-1 text-[13px]">
       <span className="font-semibold">{k}:</span>
@@ -178,7 +178,7 @@ export default async function ProjectPage({
         {strip.map(([label, href, n]) => (
           <Link key={label} href={href} className="flex items-center justify-between gap-2 px-3 py-2.5 text-[13px] hover:bg-muted/50">
             <span className={axLink}>{label}</span>
-            <span className={`text-xl tabular-nums ${n ? "text-[#f58220]" : "text-muted-foreground"}`}>{n}</span>
+            <span className={`text-xl tabular-nums ${n ? "text-btr-blue" : "text-muted-foreground"}`}>{n}</span>
           </Link>
         ))}
       </Panel>
@@ -356,7 +356,7 @@ export default async function ProjectPage({
             {estimates.map((e, i) => (
               <li key={e.id}>
                 <Link href={`${base}/estimates/${e.id}`} className="flex flex-wrap items-center gap-3 border px-3 py-2 text-sm hover:bg-muted/50">
-                  <span className="text-[#f58220]">•</span>
+                  <span className="text-btr-blue">•</span>
                   <span className={`flex-1 font-medium ${axLink}`}>
                     {e.name} <span className="font-normal text-muted-foreground">· {e.scopeType.replace(/_/g, " ").toLowerCase()}</span>
                     {e.locked && <span className="font-normal text-muted-foreground"> · locked</span>}
@@ -365,7 +365,7 @@ export default async function ProjectPage({
                   {canEdit && totals[i] && (
                     <span className="w-32 text-right tabular-nums">
                       {formatUsd(totals[i].grandTotal)}
-                      {totals[i].incomplete && <span className="block text-[10px] text-[#d9412f]">INCOMPLETE cost</span>}
+                      {totals[i].incomplete && <span className="block text-[10px] font-semibold text-btr-ink">INCOMPLETE cost</span>}
                     </span>
                   )}
                 </Link>

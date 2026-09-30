@@ -6,5 +6,5 @@ import { usePathname } from "next/navigation";
 export function JobBody({ id, children }: { id: string; children: React.ReactNode }) {
   const path = usePathname();
   if (path === `/projects/${id}`) return <>{children}</>;
-  return <div className="rounded-sm bg-background p-4 shadow-sm sm:p-6">{children}</div>;
+  return <div className="rounded-lg border border-btr-line bg-background p-4 sm:p-6">{children}</div>;
 }

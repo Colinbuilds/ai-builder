@@ -50,10 +50,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const top = Math.max(1, ...board.map((b) => b.amount));
   const lt30 = data.aging["Current"] + data.aging["1–30"];
   const bars = [
-    { label: "<30", v: lt30, color: "#78b833" },
-    { label: "31-60", v: data.aging["31–60"], color: "#f2b705" },
-    { label: "61-90", v: data.aging["61–90"], color: "#f58220" },
-    { label: ">90", v: data.aging["90+"], color: "#e23b3b" },
+    { label: "<30", v: lt30, color: "var(--btr-future)" },
+    { label: "31-60", v: data.aging["31–60"], color: "#7fb0ea" },
+    { label: "61-90", v: data.aging["61–90"], color: "var(--btr-blue)" },
+    { label: ">90", v: data.aging["90+"], color: "var(--btr-black)" },
   ];
   const maxBar = Math.max(1, ...bars.map((b) => b.v));
   const monthName = new Date().toLocaleString("en-US", { month: "long" });
@@ -66,7 +66,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {view === "ALL" ? "All jobs" : view === "RESIDENTIAL" ? "Residential" : "Commercial"} · change in the menu under your name
         </span>
       </div>
-      {sp.denied && <p className="border-l-4 border-l-[#e23b3b] bg-background p-3 text-sm">Your role can&apos;t open that page.</p>}
+      {sp.denied && <p className="border-l-4 border-l-btr-blue bg-background p-3 text-sm">Your role can&apos;t open that page.</p>}
       <SheetDateBanner />
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -76,7 +76,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               {data.pipeline.map((p) => (
                 <Link key={p.key} href={`/jobs?m=${p.key}`} className="flex flex-col items-center gap-1 rounded py-2 hover:bg-muted/60">
                   <MilestoneDot stage={p.stage} size={48} />
-                  <span className="text-2xl text-[#f58220] tabular-nums">{p.count}</span>
+                  <span className="text-2xl text-btr-blue tabular-nums">{p.count}</span>
                   <span className="text-xs text-muted-foreground tabular-nums">{p.value ? usd0(p.value) : "--"}</span>
                 </Link>
               ))}
@@ -87,10 +87,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <Panel title="Company updates" right={<Link className={axLink} href="/updates">All updates</Link>} bodyClass="divide-y">
               {updates.map((u) => (
                 <article key={u.id} className="flex gap-3 px-4 py-3">
-                  <Megaphone size={18} className="mt-0.5 shrink-0 text-[#3b7bc8]" />
+                  <Megaphone size={18} className="mt-0.5 shrink-0 text-btr-blue" />
                   <div className="min-w-0 text-sm">
                     <Link href={`/updates#${u.id}`} className="font-medium hover:underline">
-                      {u.pinned && <span className="mr-1 text-[#f58220]">Pinned ·</span>}
+                      {u.pinned && <span className="mr-1 text-btr-blue">Pinned ·</span>}
                       {u.title}
                     </Link>
                     <div className="line-clamp-2 text-muted-foreground">
@@ -136,7 +136,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 <div className="grid gap-2 sm:grid-cols-2">
                   <Outbound href="https://www.abcsupply.com/" name="ABC Supply" note="Branch #112 · 402-734-1414" />
                   <Link href="/deliveries" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
-                    <span className="font-medium text-[#2c62a3]">BTR material orders</span>
+                    <span className="font-medium text-btr-link">BTR material orders</span>
                     <span className="text-xs text-muted-foreground">Orders from estimates, deliveries</span>
                   </Link>
                 </div>
@@ -175,7 +175,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                           {usd0(b.amount)} · {b.jobs} job{b.jobs === 1 ? "" : "s"}
                         </span>
                       </span>
-                      <span className="h-6 bg-[#78b833]" style={{ width: `${Math.max(2, (b.amount / top) * 100)}%`, opacity: i === 0 ? 1 : 0.55 }} />
+                      <span className="h-6 bg-btr-blue" style={{ width: `${Math.max(2, (b.amount / top) * 100)}%`, opacity: i === 0 ? 1 : 0.55 }} />
                     </li>
                   ))}
                 </ol>
@@ -185,17 +185,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
           <div className="grid gap-4 md:grid-cols-2">
             <Panel title="Work schedule" right={<Link className={axLink} href="/schedule">Schedule</Link>}>
-              <div className="grid grid-cols-3 text-center text-sm">
+              <div className="grid grid-cols-3 divide-x text-center">
                 {[
-                  ["Completed yesterday", sched.done, "#f58220"],
-                  ["Working today", sched.working, "#78b833"],
-                  ["30 day outlook", sched.outlook, "#3b7bc8"],
+                  ["Finished yesterday", sched.done, "text-muted-foreground"],
+                  ["On a roof today", sched.working, "text-btr-blue"],
+                  ["Next 30 days", sched.outlook, "text-btr-ink"],
                 ].map(([l, n, c]) => (
-                  <Link key={l as string} href="/schedule" className="flex flex-col items-center gap-2">
-                    <span className="h-9 leading-tight">{l}</span>
-                    <span className="flex size-16 items-center justify-center rounded-full text-2xl text-white" style={{ background: c as string }}>
-                      {n}
-                    </span>
+                  <Link key={l as string} href="/schedule" className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-muted/50">
+                    <span className={`text-4xl font-semibold tabular-nums ${c}`}>{n}</span>
+                    <span className="text-xs text-muted-foreground">{l}</span>
                   </Link>
                 ))}
               </div>
@@ -233,7 +231,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             ].map(([l, n]) => (
               <div key={l as string} className="border px-2 py-2 text-center">
                 <div className="text-xs">{l}</div>
-                <div className="text-xl text-[#f58220] tabular-nums">{n}</div>
+                <div className="text-xl text-btr-blue tabular-nums">{n}</div>
               </div>
             ))}
           </Panel>
@@ -243,15 +241,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {feed.length === 0 && <p className="p-4 text-sm text-muted-foreground">Nothing yet.</p>}
           <ol>
             {feed.map((f) => (
-              <li key={f.id} className={`border-b ${f.sold ? "bg-[#eaf4dd] dark:bg-[#243318]" : ""}`}>
+              <li key={f.id} className={`border-b ${f.sold ? "bg-btr-blue-soft" : ""}`}>
                 <Link href={f.href} className="flex gap-3 px-3 py-2.5 hover:bg-muted/50">
                   <span className="flex w-10 shrink-0 flex-col items-center gap-1 text-[10px] text-muted-foreground">
                     <MilestoneDot stage={f.job.status} size={18} />
                     {ago(f.at)}
                   </span>
                   <span className="min-w-0 text-[13px]">
-                    <span className="text-[#d9412f]">{f.title}:</span> {f.by ?? ""}
-                    <span className="block truncate text-[#2c62a3] dark:text-[#7fb0ea]">{f.job.name}</span>
+                    <span className="font-semibold text-btr-ink">{f.title}:</span> {f.by ?? ""}
+                    <span className="block truncate text-btr-link">{f.job.name}</span>
                     {f.text && <span className="line-clamp-2 block text-muted-foreground">{f.text}</span>}
                   </span>
                 </Link>
@@ -277,9 +275,9 @@ function Tile({ n, label, href, icon, k }: { n: number; label: string; href: str
   const Icon = ICON[k as keyof typeof ICON] ?? AlertTriangle;
   return (
     <Link href={href} className={`flex items-center gap-3 border bg-background px-3 py-2.5 hover:bg-muted/60 ${n ? "" : "text-muted-foreground"}`}>
-      <span className={`w-8 text-lg tabular-nums ${n ? "text-[#f58220]" : ""}`}>{n}</span>
+      <span className={`w-8 text-lg tabular-nums ${n ? "text-btr-blue" : ""}`}>{n}</span>
       <span className={`flex-1 text-center text-xs leading-tight ${n ? "text-foreground" : "opacity-60"}`}>{label}</span>
-      {icon ?? <Icon size={22} className={n ? "text-[#e23b3b]" : "opacity-40"} />}
+      {icon ?? <Icon size={22} className={n ? "text-btr-blue" : "opacity-40"} />}
     </Link>
   );
 }
@@ -287,7 +285,7 @@ function Tile({ n, label, href, icon, k }: { n: number; label: string; href: str
 function Outbound({ href, name, note }: { href: string; name: string; note: string }) {
   return (
     <a href={href} target="_blank" rel="noreferrer" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
-      <span className="font-medium text-[#2c62a3]">{name}</span>
+      <span className="font-medium text-btr-link">{name}</span>
       <span className="text-xs text-muted-foreground">{note}</span>
     </a>
   );

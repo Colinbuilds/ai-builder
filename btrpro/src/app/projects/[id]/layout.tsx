@@ -58,7 +58,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
         {/* job header: milestone, name, address | priority, watch, salesperson */}
         <div className="flex flex-wrap items-stretch border-b bg-background">
           <div className="flex min-w-[min(100%,20rem)] flex-1 items-center gap-3 px-3 py-2">
-            <Link href="/jobs" aria-label="Back to jobs" className="text-[#3b7bc8]">
+            <Link href="/jobs" aria-label="Back to jobs" className="text-btr-blue">
               <ChevronLeft size={26} />
             </Link>
             <MilestoneDot stage={project.status} size={30} />
@@ -66,7 +66,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
               <h1 className="text-lg leading-tight sm:truncate sm:text-xl">{project.name}</h1>
               {project.address &&
                 (maps ? (
-                  <a href={maps} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#2c62a3] hover:underline dark:text-[#7fb0ea]">
+                  <a href={maps} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-btr-link hover:underline">
                     {project.address} <ExternalLink size={11} />
                   </a>
                 ) : null)}
@@ -85,7 +85,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
               </span>
               <span className="hidden flex-col sm:flex">
                 <span className="text-muted-foreground">Salesperson</span>
-                <span className="text-[#2c62a3] dark:text-[#7fb0ea]">{project.salesperson?.name ?? "Unassigned"}</span>
+                <span className="text-btr-link">{project.salesperson?.name ?? "Unassigned"}</span>
               </span>
             </div>
           </div>

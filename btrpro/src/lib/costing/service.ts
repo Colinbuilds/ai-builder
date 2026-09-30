@@ -88,7 +88,7 @@ export async function loadCosting(projectId: string) {
   const project = await prisma.project.findUniqueOrThrow({
     where: { id: projectId },
     include: {
-      salesperson: { select: { id: true, name: true, commissionPlan: true } },
+      salesperson: { select: { id: true, name: true } },
       costs: { orderBy: [{ date: "desc" }, { createdAt: "desc" }], include: { enteredBy: { select: { name: true } }, document: { select: { id: true, fileName: true } }, commitment: { select: { vendor: true, description: true } } } },
       commitments: { orderBy: { createdAt: "desc" }, include: { bills: { select: { amount: true } } } },
       changeOrders: { orderBy: { createdAt: "asc" } },
@@ -97,7 +97,6 @@ export async function loadCosting(projectId: string) {
     },
   });
   const s = await getSettings();
-  const plan = project.salesperson?.commissionPlan;
   const pnl = computePnl({
     contractAmount: project.contractAmount,
     changeOrders: project.changeOrders,
@@ -106,9 +105,7 @@ export async function loadCosting(projectId: string) {
     commitments: project.commitments,
     overheadPct: s.overheadPct,
     thresholdPct: s.costVarianceThresholdPct,
-    commission: plan ? { basis: plan.basis, pct: plan.pct, person: project.salesperson!.name } : null,
   });
-  if (!project.salesperson) pnl.missing.splice(pnl.missing.findIndex((m) => m.startsWith("Commission")), 1, "Salesperson on the job (for commission)");
   return { project, pnl, settings: s, noneExpected: (project.costNoneExpected as CostCategory[] | null) ?? [] };
 }
 
@@ -391,19 +388,7 @@ export async function reopenCosting(projectId: string, reason: string, actor: Co
   await activity(projectId, actor, `${actor.name} reopened job costing: ${reason}`);
 }
 
-// ---------- commission plans & bid results ----------
-
-export async function saveCommissionPlan(userId: string, plan: { basis: "REVENUE" | "GROSS_PROFIT"; pct: number; note?: string | null } | null, actor: CostActor) {
-  if (actor.role !== "ADMIN") throw new CostError("Only an Admin sets commission plans.");
-  const before = await prisma.commissionPlan.findUnique({ where: { userId } });
-  if (!plan) {
-    if (before) await prisma.commissionPlan.delete({ where: { userId } });
-  } else {
-    if (!Number.isFinite(plan.pct) || plan.pct < 0 || plan.pct > 100) throw new CostError("Commission % must be between 0 and 100.");
-    await prisma.commissionPlan.upsert({ where: { userId }, update: { ...plan, updatedBy: actor.name }, create: { userId, ...plan, updatedBy: actor.name } });
-  }
-  await audit(actor, "CommissionPlan", userId, "update", before, plan);
-}
+// ---------- bid results ----------
 
 export async function saveBidResult(projectId: string, input: { ourBid: number | null; won: boolean | null; tabs: { bidder: string; amount: number }[]; notes: string | null }, actor: CostActor) {
   if (actor.role === "VIEWER") throw new CostError("Viewers can't enter bid results.");

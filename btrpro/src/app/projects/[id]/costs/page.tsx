@@ -161,23 +161,13 @@ export default async function CostsPage({
           }
         />
         <Stat
-          label="Commission"
-          value={<Money v={pnl.commission} />}
-          sub={
-            pnl.commissionFormula ??
-            (p.salesperson
-              ? `no plan for ${p.salesperson.name}`
-              : "no salesperson on the job")
-          }
-        />
-        <Stat
           label="Net profit (projected)"
           value={
             <>
               <Money v={pnl.netProfit} strong /> <Pct v={pnl.netMarginPct} />
             </>
           }
-          sub="gross profit − overhead − commission"
+          sub="gross profit − overhead (commissions: Reports → Commission calculator)"
         />
       </section>
       {pnl.missing.length > 0 && (

@@ -74,14 +74,14 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
             <Link
               key={m.key}
               href={`/jobs?m=${m.key}`}
-              className={`flex items-center gap-2 rounded-full border bg-background py-1 pr-3 pl-1 ${on ? "ring-2 ring-[#3b7bc8]" : "hover:bg-accent"}`}
+              className={`flex items-center gap-2 rounded-full border bg-background py-1 pr-3 pl-1 ${on ? "ring-2 ring-btr-blue" : "hover:bg-accent"}`}
             >
               <MilestoneDot stage={m.stages[0]} size={22} />
               {m.label} <span className="tabular-nums text-muted-foreground">{n}</span>
             </Link>
           );
         })}
-        <Link href="/jobs?stage=LOST" className={`flex items-center gap-2 rounded-full border bg-background py-1 pr-3 pl-1 ${stage === "LOST" ? "ring-2 ring-[#3b7bc8]" : "hover:bg-accent"}`}>
+        <Link href="/jobs?stage=LOST" className={`flex items-center gap-2 rounded-full border bg-background py-1 pr-3 pl-1 ${stage === "LOST" ? "ring-2 ring-btr-blue" : "hover:bg-accent"}`}>
           <MilestoneDot stage="LOST" size={22} /> Lost <span className="tabular-nums text-muted-foreground">{count("LOST")}</span>
         </Link>
       </div>

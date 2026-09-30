@@ -19,7 +19,7 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 13 | Material orders and deliveries | **Done** |
 | 14 | Schedule, crews & subs, work orders, timesheets | **Done** |
 | 15 | Invoicing, payments, AR aging, change orders with e-signature, QuickBooks push, Stripe card payments | **Done** |
-| 16 | Tasks and reminders (My day), sales & pipeline dashboard, commissions | **Done** |
+| 16 | Tasks and reminders (My day), sales & pipeline dashboard, commission calculator | **Done** |
 | 17 | Customer portal, crew phone link, CompanyCam photos, EagleView order tracking | **Done** |
 | 18 | AccuLynx migration (one-time jobs export import) and setup checklist | **Done** |
 | 19 | Playwright end-to-end test: job → PDF upload → confirm measurements → shingle estimate → PDF → costs → P&L | **Done** |
@@ -141,9 +141,9 @@ Each job has a **Job costing** tab. Admins see every job. Estimators see the job
   - Lines billed at a different price than the price sheet are flagged.
 - **Committed costs:** open orders and accepted sub proposals, so margin is projected rather than only to-date. Linking a bill to a commitment reduces what's still committed.
 - **Change orders and supplements:** only approved ones count toward revenue. Credits subtract.
-- **P&L:** revenue, estimated/actual/projected cost, gross profit and margin, overhead, commission, and net profit.
+- **P&L:** revenue, estimated/actual/projected cost, gross profit and margin, overhead, and net profit (gross profit − overhead). Commissions are not in the job P&L; use the commission calculator.
   - A category over estimate by the company threshold is flagged red.
-  - A number that can't be calculated shows MISSING and says why. Overhead, the threshold, and commission plans start empty in Settings → Company.
+  - A number that can't be calculated shows MISSING and says why. Overhead and the threshold start empty in Settings → Company.
 - **Close-out:** every category needs a bill or a "none expected" mark, with no open commitments or pending change orders. Closing then locks the final P&L. After that, changes are Admin-only and audit-logged.
 - **Profit report (nav → Profit):**
   - Filters: date, side, job type, public/private, salesperson, estimator, and GC.
@@ -263,7 +263,7 @@ Job → **Billing**: contract vs billed vs paid, deposit/progress/final invoices
 
 ## Tasks, dashboards, commissions (Phase 16)
 
-Each job stage adds its next steps as tasks (follow up a bid, Form 17 before ordering, deposit invoice, order materials, schedule, final invoice, close costs). **My day** lists your tasks plus reminders: bids due, proposals unsigned after a week, crew insurance/licenses expiring, past-due invoices. **Reports → Sales & pipeline** and **Commissions**.
+Each job stage adds its next steps as tasks (follow up a bid, Form 17 before ordering, deposit invoice, order materials, schedule, final invoice, close costs). **My day** lists your tasks plus reminders: bids due, proposals unsigned after a week, crew insurance/licenses expiring, past-due invoices. **Reports → Sales & pipeline**, and **Reports → Commission calculator**: pick 10/60/40 or 8/50/50 (overhead % off the contract, then the profit splits company / rep) or custom rates, type the contract price and job cost or fill them from a sold job, and it shows each step. Nothing is saved.
 
 ## Customer portal and crew phone link (Phase 17)
 

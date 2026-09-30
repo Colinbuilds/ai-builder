@@ -95,7 +95,7 @@ export function JobMenuBar({ id, counts, showCosts }: { id: string; counts: JobC
   const base = `/projects/${id}`;
   const section = path === base ? null : (LABEL.find(([r]) => r.test(path.slice(base.length)))?.[1] ?? null);
   const groups = jobMenu(id, counts, showCosts);
-  const tab = (on: boolean) => `-mb-px flex items-center gap-1.5 border-b-[3px] px-3 py-2 text-sm whitespace-nowrap ${on ? "border-[#3b7bc8] text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`;
+  const tab = (on: boolean) => `-mb-px flex items-center gap-1.5 border-b-[3px] px-3 py-2 text-sm whitespace-nowrap ${on ? "border-btr-blue text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`;
   return (
     <div className="flex items-stretch border-b bg-background">
       <nav className="flex min-w-0 flex-1 items-stretch overflow-x-auto">
@@ -112,7 +112,7 @@ export function JobMenuBar({ id, counts, showCosts }: { id: string; counts: JobC
             .map((i) => (
               <Link key={i.href} href={i.href} className={tab(false)}>
                 {i.label}
-                {!!i.n && i.n !== "✓" && <span className={`rounded-full px-1.5 text-[11px] tabular-nums ${i.hot ? "bg-[#e23b3b] text-white" : "bg-muted"}`}>{i.n}</span>}
+                {!!i.n && i.n !== "✓" && <span className={`rounded-full px-1.5 text-[11px] tabular-nums ${i.hot ? "bg-btr-blue text-white" : "bg-muted"}`}>{i.n}</span>}
               </Link>
             ))}
         </span>
@@ -121,7 +121,7 @@ export function JobMenuBar({ id, counts, showCosts }: { id: string; counts: JobC
         label="Job menu"
         align="right"
         width={300}
-        className="flex items-center gap-2 border-l px-4 text-xs font-medium tracking-wide text-[#2c62a3] uppercase hover:bg-muted/60 dark:text-[#7fb0ea]"
+        className="flex items-center gap-2 border-l px-4 text-xs font-medium tracking-wide text-btr-link uppercase hover:bg-muted/60"
         button={
           <>
             <Menu size={18} /> Job menu
@@ -131,10 +131,10 @@ export function JobMenuBar({ id, counts, showCosts }: { id: string; counts: JobC
         {groups.map((g, gi) => (
           <div key={gi} className={gi ? "border-t py-1" : "py-1"}>
             {g.map((i) => (
-              <Link key={i.href} href={i.href} role="menuitem" className="flex items-center gap-3 px-4 py-1.5 text-[#2c62a3] hover:bg-muted dark:text-[#7fb0ea]">
-                <i.icon size={15} className="text-[#3b7bc8]" />
+              <Link key={i.href} href={i.href} role="menuitem" className="flex items-center gap-3 px-4 py-1.5 text-btr-link hover:bg-muted">
+                <i.icon size={15} className="text-btr-blue" />
                 <span className="flex-1">{i.label}</span>
-                {i.n !== undefined && <span className={`min-w-5 text-right text-xs tabular-nums ${i.hot ? "rounded-full bg-[#e23b3b] px-1.5 text-white" : "text-muted-foreground"}`}>{i.n}</span>}
+                {i.n !== undefined && <span className={`min-w-5 text-right text-xs tabular-nums ${i.hot ? "rounded-full bg-btr-blue px-1.5 text-white" : "text-muted-foreground"}`}>{i.n}</span>}
               </Link>
             ))}
           </div>

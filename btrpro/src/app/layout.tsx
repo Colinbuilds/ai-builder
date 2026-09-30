@@ -79,7 +79,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
             items: [
               { href: "/reports/sales", label: "Sales & pipeline" },
               { href: "/reports/profit", label: "Profit" },
-              { href: "/reports/commissions", label: "Commissions" },
+              { href: "/reports/commissions", label: "Commission calculator" },
               ...(admin ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : []),
             ],
           },

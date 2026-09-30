@@ -1,4 +1,4 @@
-/** Dashboard/job panel: blue rule on top, light gray title bar, white body. */
+/** BTR card: white, thin grey border, bold title row. */
 export function Panel({
   title,
   right,
@@ -15,9 +15,9 @@ export function Panel({
   id?: string;
 }) {
   return (
-    <section id={id} className={`scroll-mt-28 border-t-2 border-t-[#3b7bc8] bg-background shadow-sm ${className}`}>
-      <div className="flex min-h-10 flex-wrap items-center justify-between gap-2 bg-[#f4f5f7] px-3 py-1.5 dark:bg-muted">
-        <h2 className="text-[17px] font-light text-foreground/85">{title}</h2>
+    <section id={id} className={`scroll-mt-28 overflow-hidden rounded-lg border border-btr-line bg-background ${className}`}>
+      <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 border-b border-btr-line px-4 py-2">
+        <h2 className="text-[15px] font-semibold tracking-tight text-btr-ink">{title}</h2>
         {right && <div className="flex items-center gap-3 text-xs">{right}</div>}
       </div>
       <div className={bodyClass}>{children}</div>
@@ -25,4 +25,4 @@ export function Panel({
   );
 }
 
-export const axLink = "text-[#2c62a3] hover:underline dark:text-[#7fb0ea]";
+export const axLink = "text-btr-link hover:underline";

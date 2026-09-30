@@ -14,7 +14,6 @@ import {
   previewInvoiceImport,
   reopenCosting,
   saveBidResult,
-  saveCommissionPlan,
   setCommitmentStatus,
   setNoneExpected,
   type CostActor,
@@ -317,27 +316,3 @@ export async function bidResultAction(
   );
 }
 
-export async function commissionPlanAction(
-  _: CResult,
-  f: FormData,
-): Promise<CResult> {
-  const u = await requireUser(["ADMIN"]);
-  const pct = num(f, "pct");
-  try {
-    await saveCommissionPlan(
-      str(f, "userId"),
-      pct == null
-        ? null
-        : {
-            basis: str(f, "basis") as "REVENUE" | "GROSS_PROFIT",
-            pct,
-            note: str(f, "note") || null,
-          },
-      { id: u.id, name: u.name, role: u.role },
-    );
-  } catch (e) {
-    return { problems: [msg(e)] };
-  }
-  revalidatePath("/settings/company");
-  return { problems: [], ok: true };
-}

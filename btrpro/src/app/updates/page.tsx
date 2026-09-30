@@ -25,7 +25,7 @@ export default async function UpdatesPage() {
       <ol className="flex flex-col divide-y">
         {updates.map((u) => (
           <li key={u.id} id={u.id} className="flex scroll-mt-28 gap-3 py-4">
-            {u.pinned ? <Pin size={18} className="mt-1 shrink-0 text-[#f58220]" /> : <Megaphone size={18} className="mt-1 shrink-0 text-[#3b7bc8]" />}
+            {u.pinned ? <Pin size={18} className="mt-1 shrink-0 text-btr-blue" /> : <Megaphone size={18} className="mt-1 shrink-0 text-btr-blue" />}
             <div className="min-w-0 flex-1">
               <h2 className="font-medium">{u.title}</h2>
               <p className="text-xs text-muted-foreground">

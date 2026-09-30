@@ -29,15 +29,15 @@ export function MilestonesCard({
   const at = milestoneIndex(stage);
   const lost = stage === "LOST";
   return (
-    <section className="border-t-2 border-t-[#3b7bc8] bg-background shadow-sm">
-      <div className="flex min-h-10 items-center justify-between gap-2 bg-[#f4f5f7] pl-3 dark:bg-muted">
-        <h2 className="text-[17px] font-light">Milestones</h2>
+    <section className="overflow-hidden rounded-lg border border-btr-line bg-background">
+      <div className="flex min-h-11 items-center justify-between gap-2 border-b border-btr-line pl-4">
+        <h2 className="text-[15px] font-semibold tracking-tight text-btr-ink">Milestones</h2>
         <div className="flex items-stretch gap-3 self-stretch text-xs">
           <span className="self-center text-muted-foreground">
             In {lost ? "Lost" : MILESTONES[at]?.label} milestone: <span className="font-semibold text-foreground">{inFor}</span>
           </span>
           {canEdit && (
-            <button type="button" onClick={() => setMore(!more)} aria-expanded={more} aria-label="More stage options" className={`px-3 ${more ? "bg-[#2c62a3]" : "bg-[#3b7bc8]"} text-white`}>
+            <button type="button" onClick={() => setMore(!more)} aria-expanded={more} aria-label="More stage options" className={`px-3 ${more ? "bg-btr-ink text-white" : "text-btr-ink hover:bg-muted"}`}>
               <MoreHorizontal size={18} />
             </button>
           )}
@@ -51,7 +51,7 @@ export function MilestonesCard({
             </span>
           ) : next ? (
             <span className="text-sm">
-              <span className="text-[#f58220]">NEXT STEP:</span> {STAGE_LABEL[next]}
+              <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Next step</span><br /> {STAGE_LABEL[next]}
             </span>
           ) : (
             <span className="text-sm text-muted-foreground">Job closed.</span>
@@ -68,7 +68,7 @@ export function MilestonesCard({
                   </label>
                 </>
               )}
-              <button disabled={pending} className="self-start rounded-sm bg-[#78b833] px-4 py-2 text-sm text-white shadow hover:bg-[#6aa32a] disabled:opacity-60">
+              <button disabled={pending} className="self-start rounded-md bg-btr-blue px-4 py-2 text-sm font-medium text-white hover:bg-btr-blue-dark disabled:opacity-60">
                 {pending ? "Advancing…" : "Advance job"}
               </button>
             </form>
@@ -79,11 +79,11 @@ export function MilestonesCard({
             const done = !lost && i <= at;
             return (
               <li key={m.key} className={i === 0 ? "flex items-start" : "flex flex-1 items-start"}>
-                {i > 0 && <span className={`mt-5 h-0.5 flex-1 ${done ? "bg-[#9aa3ad]" : "bg-[#d5d9de]"}`} />}
+                {i > 0 && <span className={`mt-5 h-0.5 flex-1 ${done ? "bg-btr-blue" : "bg-btr-line"}`} />}
                 <span className="flex w-14 shrink-0 flex-col items-center gap-1 text-center text-[11px] sm:w-20 sm:text-xs">
                   <span
                     className="flex size-9 items-center justify-center rounded-full text-base font-bold text-white sm:size-10 sm:text-lg"
-                    style={{ background: done ? m.color : "#c4c9cf", boxShadow: i === at ? `0 0 0 3px ${m.color}40` : undefined }}
+                    style={{ background: done ? m.color : "var(--btr-future)", boxShadow: i === at ? "0 0 0 3px var(--background), 0 0 0 5px var(--btr-black)" : undefined }}
                   >
                     {m.letter}
                   </span>

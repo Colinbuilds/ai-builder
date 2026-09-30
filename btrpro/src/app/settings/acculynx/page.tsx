@@ -33,13 +33,9 @@ export default async function AccuLynxMigration({
   await requireUser(["ADMIN"]);
   const { f, n } = await searchParams;
   const s = await getSettings();
-  const [users, reps, withPlan, scheduleJobs, axJobs, crews, linkedCrews, qbo] =
+  const [users, scheduleJobs, axJobs, crews, linkedCrews, qbo] =
     await Promise.all([
       prisma.user.count(),
-      prisma.user
-        .count({ where: { salesProjects: { some: {} } } })
-        .catch(() => 0),
-      prisma.commissionPlan.count(),
       prisma.project.count({ where: { importKey: { not: null } } }),
       prisma.projectActivity.count({
         where: {
@@ -91,12 +87,6 @@ export default async function AccuLynxMigration({
         ]
           .filter(Boolean)
           .join(", ") || "set",
-      href: "/settings/company",
-    },
-    {
-      done: withPlan > 0 && withPlan >= reps,
-      label: "Commission plans for salespeople",
-      detail: `${withPlan} plan${withPlan === 1 ? "" : "s"}`,
       href: "/settings/company",
     },
     {

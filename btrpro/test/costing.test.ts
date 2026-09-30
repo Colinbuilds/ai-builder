@@ -20,7 +20,6 @@ import {
   loadCosting,
   previewInvoiceImport,
   reopenCosting,
-  saveCommissionPlan,
   setNoneExpected,
 } from "@/lib/costing/service";
 
@@ -42,7 +41,6 @@ const base: PnlInput = {
   commitments: [],
   overheadPct: null,
   thresholdPct: null,
-  commission: null,
 };
 
 describe("P&L math", () => {
@@ -98,13 +96,11 @@ describe("P&L math", () => {
     expect(over.buckets.find((b) => b.bucket === "generalConditions")).toMatchObject({ variance: 100, variancePct: 10, flagged: true });
   });
 
-  it("net profit stays MISSING until overhead and a commission plan are set", () => {
+  it("net profit stays MISSING until overhead is set, then is gross profit − overhead", () => {
     expect(computePnl(base).netProfit).toBeNull();
-    const p = computePnl({ ...base, overheadPct: 10, commission: { basis: "GROSS_PROFIT", pct: 10, person: "Sam" }, costs: [{ category: "MATERIALS", amount: 10000 }] });
+    const p = computePnl({ ...base, overheadPct: 10, costs: [{ category: "MATERIALS", amount: 10000 }] });
     expect(p.overhead).toBe(2000);
-    expect(p.commission).toBe(1000);
-    expect(p.netProfit).toBe(7000);
-    expect(p.commissionFormula).toMatch(/Sam/);
+    expect(p.netProfit).toBe(8000);
   });
 
   it("crew hours cost shows its formula", () => {
@@ -241,18 +237,14 @@ describe("job costing service", () => {
     await reopenCosting(p.id, "TEST_ONLY late invoice", admin);
   });
 
-  it("commission plans are Admin-only and feed net profit", async () => {
-    const { admin, est, p, e } = await soldJob();
+  it("net profit uses company overhead (commissions live in the calculator)", async () => {
+    const { admin, p, e } = await soldJob();
     await freezeBaseline(p.id, e.id, admin);
-    await expect(saveCommissionPlan(est.id, { basis: "REVENUE", pct: 5 }, est)).rejects.toThrow(/Admin/);
-    await saveCommissionPlan(est.id, { basis: "REVENUE", pct: 5 }, admin);
     await saveSettings({ overheadPct: 12 }, admin);
     const { pnl } = await loadCosting(p.id);
-    expect(pnl.commission).toBe(750);
     expect(pnl.overhead).toBe(1800);
-    expect(pnl.netProfit).not.toBeNull();
+    expect(pnl.netProfit).toBe(pnl.projectedGrossProfit! - 1800);
     await saveSettings({ overheadPct: null }, admin);
-    await saveCommissionPlan(est.id, null, admin);
   });
 });
 

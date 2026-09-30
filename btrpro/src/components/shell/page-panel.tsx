@@ -8,5 +8,5 @@ const OWN_LAYOUT = [/^\/$/, /^\/projects\/(?!new$)[^/]+/];
 export function PagePanel({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   if (OWN_LAYOUT.some((r) => r.test(path))) return <>{children}</>;
-  return <div className="rounded-sm border-t-2 border-t-[#3b7bc8] bg-background p-4 shadow-sm sm:p-6">{children}</div>;
+  return <div className="rounded-lg border border-btr-line bg-background p-4 sm:p-6">{children}</div>;
 }
