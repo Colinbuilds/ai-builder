@@ -123,15 +123,31 @@ async function main() {
     await prisma.rule.upsert({ where: { id }, update: data, create: { id, ...data } });
   }
 
-  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@btrcontracting.local";
+  // Emails are stored lowercase (login lowercases what's typed). Trim stray spaces/quotes from the Railway variable.
+  const clean = (v: string | undefined) => v?.trim().replace(/^["']|["']$/g, "").trim() || undefined;
+  const email = (clean(process.env.SEED_ADMIN_EMAIL) ?? "admin@btrcontracting.local").toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD ?? "change-me-now";
-  if (!(await prisma.user.findUnique({ where: { email } }))) {
+  // Older versions stored emails as typed; fix any with capitals so they can sign in.
+  for (const u of await prisma.user.findMany({ select: { id: true, email: true } }))
+    if (u.email !== u.email.trim().toLowerCase() && !(await prisma.user.findUnique({ where: { email: u.email.trim().toLowerCase() } })))
+      await prisma.user.update({ where: { id: u.id }, data: { email: u.email.trim().toLowerCase() } });
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (!existing) {
     if (process.env.NODE_ENV === "production" && (!process.env.SEED_ADMIN_PASSWORD || password.length < 12))
       throw new Error("Set SEED_ADMIN_PASSWORD (12+ characters) before the first production start.");
     await prisma.user.create({
       data: { name: "Admin", email, role: "ADMIN", passwordHash: await bcrypt.hash(password, 10) },
     });
     console.log(`Created admin user ${email}`);
+  } else if (process.env.RESET_ADMIN_PASSWORD === "true") {
+    // Locked out: set RESET_ADMIN_PASSWORD=true, redeploy, sign in, then delete the variable.
+    if (!process.env.SEED_ADMIN_PASSWORD || password.length < 12) throw new Error("RESET_ADMIN_PASSWORD needs SEED_ADMIN_PASSWORD (12+ characters).");
+    await prisma.user.update({ where: { id: existing.id }, data: { passwordHash: await bcrypt.hash(password, 10), role: "ADMIN" } });
+    console.log(`Reset the password for ${email}. Remove RESET_ADMIN_PASSWORD now.`);
+  }
+  if (process.env.NODE_ENV === "production") {
+    const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { email: true } });
+    console.log(`Admin sign-ins: ${admins.map((a) => a.email).join(", ")}`);
   }
 
   const active = { sheet: { isActive: true } };
