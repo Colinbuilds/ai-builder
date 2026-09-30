@@ -12,8 +12,9 @@ import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate, formatUsd } from "@/lib/utils";
 import { getMarketView } from "@/lib/market";
 import { unreadCounts } from "@/lib/comms/chat";
+import { BulkDelete } from "@/components/projects/delete-job";
 
-type SP = Promise<{ stage?: string; q?: string; mine?: string }>;
+type SP = Promise<{ stage?: string; q?: string; mine?: string; deleted?: string }>;
 const OPEN: Stage[] = ["LEAD", "ESTIMATING", "SUBMITTED", "SOLD", "SCHEDULED", "IN_PRODUCTION", "COMPLETE", "INVOICED"];
 
 export default async function Dashboard({ searchParams }: { searchParams: SP }) {
@@ -43,6 +44,7 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
   const unread = await unreadCounts(user.id, projects.map((p) => p.id));
   const count = (s: Stage) => counts.find((c) => c.status === s)?._count ?? 0;
   const today = new Date();
+  const admin = user.role === "ADMIN";
 
   return (
     <div className="flex flex-col gap-5">
@@ -87,9 +89,12 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
         <Button variant="outline">Filter</Button>
       </form>
 
+      {sp.deleted && <p className="rounded-md border p-2 text-sm">Job deleted.</p>}
+      {admin && <BulkDelete />}
       <Table>
         <THead>
           <TR>
+            {admin && <TH className="w-8" />}
             <TH>Job</TH>
             <TH>{view === "RESIDENTIAL" ? "Homeowner" : view === "COMMERCIAL" ? "Client" : "Customer"}</TH>
             <TH>Stage</TH>
@@ -103,6 +108,11 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
             const overdue = p.bidDueDate && p.bidDueDate < today && ["LEAD", "ESTIMATING"].includes(p.status);
             return (
               <TR key={p.id}>
+                {admin && (
+                  <TD>
+                    <input type="checkbox" name="ids" value={p.id} form="bulk-delete" aria-label={`Select ${p.name}`} />
+                  </TD>
+                )}
                 <TD>
                   <Link href={`/projects/${p.id}`} className="font-medium hover:underline">
                     {p.name}
@@ -157,7 +167,7 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
           })}
           {projects.length === 0 && (
             <TR>
-              <TD colSpan={6} className="py-8 text-center text-muted-foreground">
+              <TD colSpan={admin ? 7 : 6} className="py-8 text-center text-muted-foreground">
                 No jobs here yet.
               </TD>
             </TR>

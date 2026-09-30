@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { DeleteJob } from "@/components/projects/delete-job";
+import { deleteBlocker } from "@/lib/projects/delete";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -344,6 +346,7 @@ export default async function ProjectPage({
           </p>
         )}
       </section>
+      {user.role === "ADMIN" && <DeleteJob id={project.id} name={project.name} blocker={await deleteBlocker(project.id)} />}
     </div>
   );
 }
