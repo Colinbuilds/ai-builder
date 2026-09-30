@@ -362,6 +362,9 @@ export async function sendOrder(
   const o = await loadOrder(orderId);
   if (o.status !== "DRAFT")
     throw new OrderError(`${o.number} was already sent.`);
+  const closed = await prisma.project.findUnique({ where: { id: o.projectId }, select: { costClosedAt: true } });
+  if (closed?.costClosedAt && actor.role !== "ADMIN")
+    throw new OrderError("Job costing is closed on this job. An Admin has to reopen it before new materials are committed.");
   const problems = sendProblems(o);
   if (problems.length) throw new OrderError(problems.join(" "));
   const pdf = await orderPdf(orderId);

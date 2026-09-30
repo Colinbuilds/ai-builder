@@ -428,6 +428,8 @@ export async function sendWorkOrder(id: string, actor: ProdActor) {
   });
   if (w.status !== "DRAFT")
     throw new ProductionError(`${w.number} was already sent.`);
+  if (w.project.costClosedAt && actor.role !== "ADMIN")
+    throw new ProductionError("Job costing is closed on this job. An Admin has to reopen it before new work is committed.");
   const scope = (w.scope as string[] | null) ?? [];
   const problems: string[] = [];
   if (!scope.length) problems.push("Add the scope (what the crew will do).");
@@ -521,6 +523,8 @@ export async function setWorkOrderStatus(
   reason?: string,
 ) {
   const w = await prisma.workOrder.findUniqueOrThrow({ where: { id } });
+  if (w.status === "CANCELLED")
+    throw new ProductionError(`${w.number} was cancelled. Make a new work order instead.`);
   if (w.status === "DRAFT" && status !== "CANCELLED")
     throw new ProductionError("Send the work order first.");
   if (w.status === "COMPLETE" && status !== "COMPLETE" && by.role !== "ADMIN")
