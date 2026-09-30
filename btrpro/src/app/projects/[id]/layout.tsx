@@ -13,12 +13,21 @@ import { canSeeCosts } from "@/lib/costing/service";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatUsd } from "@/lib/utils";
 
-export default async function ProjectLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
+export default async function ProjectLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ id: string }>;
+}) {
   const user = await requireUser();
   const { id } = await params;
   const project = await prisma.project.findUnique({
     where: { id },
-    include: { clientCompany: true, _count: { select: { emails: true, documents: true, estimates: true } } },
+    include: {
+      clientCompany: true,
+      _count: { select: { emails: true, documents: true, estimates: true } },
+    },
   });
   if (!project) notFound();
   const canEdit = user.role !== "VIEWER";
@@ -35,10 +44,14 @@ export default async function ProjectLayout({ children, params }: { children: Re
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="mr-1 text-2xl font-semibold">{project.name}</h1>
-          <Badge variant="outline">{project.market === "RESIDENTIAL" ? "Residential" : "Commercial"}</Badge>
+          <Badge variant="outline">
+            {project.market === "RESIDENTIAL" ? "Residential" : "Commercial"}
+          </Badge>
           <StageBadge stage={project.status} />
           <ReadinessBadge readiness={readiness} />
-          {project.isInsuranceClaim && <Badge variant="blue">Insurance claim</Badge>}
+          {project.isInsuranceClaim && (
+            <Badge variant="blue">Insurance claim</Badge>
+          )}
           {project.clientCompany?.type === "BUILDER" && (
             <Link href={`/builders/${project.clientCompany.id}?tab=pricing`}>
               <Badge variant="blue">{project.clientCompany.name} pricing</Badge>
@@ -46,16 +59,29 @@ export default async function ProjectLayout({ children, params }: { children: Re
           )}
           {project.isPublic && <Badge variant="outline">Public</Badge>}
           {project.isTaxExempt && <Badge variant="outline">Tax-exempt</Badge>}
-          {project.prevailingWage && <Badge variant="outline">Prevailing wage</Badge>}
+          {project.prevailingWage && (
+            <Badge variant="outline">Prevailing wage</Badge>
+          )}
           {project.bidBondRequired && <Badge variant="outline">Bid bond</Badge>}
-          {project.perfBondRequired && <Badge variant="outline">P&amp;P bond</Badge>}
+          {project.perfBondRequired && (
+            <Badge variant="outline">P&amp;P bond</Badge>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
-          {[project.address, project.clientCompany?.name, scopes.map((s) => SCOPE_LABEL[s]).join(", ")].filter(Boolean).join(" · ")}
+          {[
+            project.address,
+            project.clientCompany?.name,
+            scopes.map((s) => SCOPE_LABEL[s]).join(", "),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
           {project.bidDueDate && ` · bid due ${formatDate(project.bidDueDate)}`}
-          {project.acculynxJobNumber && ` · AccuLynx #${project.acculynxJobNumber}`}
+          {project.acculynxJobNumber &&
+            ` · AccuLynx #${project.acculynxJobNumber}`}
         </p>
-        {project.status === "LOST" && project.lostReason && <p className="text-sm">Lost: {project.lostReason}</p>}
+        {project.status === "LOST" && project.lostReason && (
+          <p className="text-sm">Lost: {project.lostReason}</p>
+        )}
         {project.isInsuranceClaim && (
           <p className="text-sm">
             <span className="font-medium">Claim:</span>{" "}
@@ -63,7 +89,9 @@ export default async function ProjectLayout({ children, params }: { children: Re
               project.insuranceCarrier,
               project.claimNumber && `#${project.claimNumber}`,
               project.dateOfLoss && `loss ${formatDate(project.dateOfLoss)}`,
-              canEdit && project.deductible != null && `deductible ${formatUsd(project.deductible)}`,
+              canEdit &&
+                project.deductible != null &&
+                `deductible ${formatUsd(project.deductible)}`,
               project.adjusterName && `adjuster ${project.adjusterName}`,
               project.adjusterPhone,
               project.adjusterEmail,
@@ -73,11 +101,19 @@ export default async function ProjectLayout({ children, params }: { children: Re
           </p>
         )}
       </div>
-      {showForm17Banner(project) && <Form17Banner id={project.id} canEdit={canEdit} />}
+      {showForm17Banner(project) && (
+        <Form17Banner id={project.id} canEdit={canEdit} />
+      )}
       <ProjectTabs
         id={project.id}
         showCosts={canSeeCosts(user, project)}
-        counts={{ chat: unread?.unread ?? 0, mentioned: !!unread?.mentioned, email: project._count.emails, documents: project._count.documents, estimates: project._count.estimates }}
+        counts={{
+          chat: unread?.unread ?? 0,
+          mentioned: !!unread?.mentioned,
+          email: project._count.emails,
+          documents: project._count.documents,
+          estimates: project._count.estimates,
+        }}
       />
       {children}
     </div>

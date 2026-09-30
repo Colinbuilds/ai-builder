@@ -62,7 +62,9 @@ export function ProjectForm({
   const [state, formAction, pending] = useFormAction(action, null);
   const v = values;
   const [market, setMarket] = useState<Market>(v.market ?? "COMMERCIAL");
-  const [scopes, setScopes] = useState<string[]>(v.scopes ?? MARKET_DEFAULTS[v.market ?? "COMMERCIAL"].scopes);
+  const [scopes, setScopes] = useState<string[]>(
+    v.scopes ?? MARKET_DEFAULTS[v.market ?? "COMMERCIAL"].scopes,
+  );
   const [insurance, setInsurance] = useState(!!v.isInsuranceClaim);
   const res = market === "RESIDENTIAL";
 
@@ -74,13 +76,24 @@ export function ProjectForm({
   return (
     <form onSubmit={formAction} className="grid gap-3 sm:grid-cols-2">
       {v.id && <input type="hidden" name="id" value={v.id} />}
-      <div className="flex gap-2 sm:col-span-2" role="radiogroup" aria-label="Market">
+      <div
+        className="flex gap-2 sm:col-span-2"
+        role="radiogroup"
+        aria-label="Market"
+      >
         {(["RESIDENTIAL", "COMMERCIAL"] as const).map((m) => (
           <label
             key={m}
             className={`flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm ${market === m ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
           >
-            <input type="radio" name="market" value={m} checked={market === m} onChange={() => pickMarket(m)} className="sr-only" />
+            <input
+              type="radio"
+              name="market"
+              value={m}
+              checked={market === m}
+              onChange={() => pickMarket(m)}
+              className="sr-only"
+            />
             {m === "RESIDENTIAL" ? "Residential" : "Commercial"}
           </label>
         ))}
@@ -91,7 +104,11 @@ export function ProjectForm({
           name="name"
           defaultValue={v.name}
           required
-          placeholder={res ? "e.g. Johnson — hail reroof + gutters" : "e.g. Fontenelle Hills Apartments — Bldg C reroof"}
+          placeholder={
+            res
+              ? "e.g. Johnson — hail reroof + gutters"
+              : "e.g. Fontenelle Hills Apartments — Bldg C reroof"
+          }
         />
       </Field>
       <Field label={res ? "Property address" : "Job site address"}>
@@ -106,8 +123,13 @@ export function ProjectForm({
           <Input name="hoPhone" placeholder="Phone" />
           <Input name="hoEmail" type="email" placeholder="Email" />
           <div className="col-span-2 mt-2 flex flex-col gap-1">
-            <span className="text-sm font-medium">Builder (new construction)</span>
-            <Select name="clientCompanyId" defaultValue={v.clientCompanyId ?? ""}>
+            <span className="text-sm font-medium">
+              Builder (new construction)
+            </span>
+            <Select
+              name="clientCompanyId"
+              defaultValue={v.clientCompanyId ?? ""}
+            >
               <option value="">— none: homeowner job, BTR pricing —</option>
               {companies
                 .filter((c) => c.type === "BUILDER")
@@ -117,11 +139,20 @@ export function ProjectForm({
                   </option>
                 ))}
             </Select>
-            <span className="text-xs text-muted-foreground">A builder job is priced from that builder&apos;s own ABC sheets. Homeowner is optional on builder jobs.</span>
+            <span className="text-xs text-muted-foreground">
+              A builder job is priced from that builder&apos;s own ABC sheets.
+              Homeowner is optional on builder jobs.
+            </span>
           </div>
         </fieldset>
       ) : (
-        <Field label={res ? "Company (property manager / builder), if any" : "Client (GC / owner / property manager)"}>
+        <Field
+          label={
+            res
+              ? "Company (property manager / builder), if any"
+              : "Client (GC / owner / property manager)"
+          }
+        >
           <Select name="clientCompanyId" defaultValue={v.clientCompanyId ?? ""}>
             <option value="">— none —</option>
             {companies.map((c) => (
@@ -137,12 +168,21 @@ export function ProjectForm({
       <Field label="Building use">
         <Input
           name="buildingUse"
-          defaultValue={v.buildingUse ?? (isNew && res ? "Single-family residence" : "")}
-          placeholder={res ? "Single-family, townhome, detached garage…" : "Multi-family, retail, school…"}
+          defaultValue={
+            v.buildingUse ?? (isNew && res ? "Single-family residence" : "")
+          }
+          placeholder={
+            res
+              ? "Single-family, townhome, detached garage…"
+              : "Multi-family, retail, school…"
+          }
         />
       </Field>
       <Field label="New construction or reroof">
-        <Select name="constructionType" defaultValue={v.constructionType ?? (isNew && res ? "REROOF" : "")}>
+        <Select
+          name="constructionType"
+          defaultValue={v.constructionType ?? (isNew && res ? "REROOF" : "")}
+        >
           <option value="">— not known yet —</option>
           <option value="NEW">New construction</option>
           <option value="REROOF">Reroof / re-side</option>
@@ -150,7 +190,9 @@ export function ProjectForm({
       </Field>
 
       <fieldset className="sm:col-span-2">
-        <legend className="mb-1 text-sm font-medium">Scopes (decides which intake fields apply)</legend>
+        <legend className="mb-1 text-sm font-medium">
+          Scopes (decides which intake fields apply)
+        </legend>
         <div className="flex flex-wrap gap-4">
           {SCOPES.map((s) => (
             <label key={s} className="flex items-center gap-2 text-sm">
@@ -159,7 +201,13 @@ export function ProjectForm({
                 name="scopes"
                 value={s}
                 checked={scopes.includes(s)}
-                onChange={(e) => setScopes(e.target.checked ? [...scopes, s] : scopes.filter((x) => x !== s))}
+                onChange={(e) =>
+                  setScopes(
+                    e.target.checked
+                      ? [...scopes, s]
+                      : scopes.filter((x) => x !== s),
+                  )
+                }
               />
               {SCOPE_LABEL[s]}
             </label>
@@ -170,58 +218,133 @@ export function ProjectForm({
       {res ? (
         <fieldset className="grid gap-3 rounded-md border p-3 sm:col-span-2 sm:grid-cols-2">
           <label className="flex items-center gap-2 text-sm sm:col-span-2">
-            <input type="checkbox" name="isInsuranceClaim" checked={insurance} onChange={(e) => setInsurance(e.target.checked)} />
+            <input
+              type="checkbox"
+              name="isInsuranceClaim"
+              checked={insurance}
+              onChange={(e) => setInsurance(e.target.checked)}
+            />
             Insurance claim
           </label>
           {insurance && (
             <>
-              <Input name="insuranceCarrier" defaultValue={v.insuranceCarrier ?? ""} placeholder="Carrier" />
-              <Input name="claimNumber" defaultValue={v.claimNumber ?? ""} placeholder="Claim #" />
+              <Input
+                name="insuranceCarrier"
+                defaultValue={v.insuranceCarrier ?? ""}
+                placeholder="Carrier"
+              />
+              <Input
+                name="claimNumber"
+                defaultValue={v.claimNumber ?? ""}
+                placeholder="Claim #"
+              />
               <Field label="Date of loss">
-                <Input name="dateOfLoss" type="date" defaultValue={v.dateOfLoss ?? ""} />
+                <Input
+                  name="dateOfLoss"
+                  type="date"
+                  defaultValue={v.dateOfLoss ?? ""}
+                />
               </Field>
               <Field label="Deductible">
-                <Input name="deductible" inputMode="decimal" defaultValue={v.deductible ?? ""} />
+                <Input
+                  name="deductible"
+                  inputMode="decimal"
+                  defaultValue={v.deductible ?? ""}
+                />
               </Field>
-              <Input name="adjusterName" defaultValue={v.adjusterName ?? ""} placeholder="Adjuster name" />
-              <Input name="adjusterPhone" defaultValue={v.adjusterPhone ?? ""} placeholder="Adjuster phone" />
-              <Input name="adjusterEmail" defaultValue={v.adjusterEmail ?? ""} placeholder="Adjuster email" className="sm:col-span-2" />
+              <Input
+                name="adjusterName"
+                defaultValue={v.adjusterName ?? ""}
+                placeholder="Adjuster name"
+              />
+              <Input
+                name="adjusterPhone"
+                defaultValue={v.adjusterPhone ?? ""}
+                placeholder="Adjuster phone"
+              />
+              <Input
+                name="adjusterEmail"
+                defaultValue={v.adjusterEmail ?? ""}
+                placeholder="Adjuster email"
+                className="sm:col-span-2"
+              />
             </>
           )}
         </fieldset>
       ) : (
         <fieldset className="grid gap-3 rounded-md border p-3 sm:col-span-2 sm:grid-cols-3">
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="isPublic" defaultChecked={v.isPublic} /> Public / government job
+            <input
+              type="checkbox"
+              name="isPublic"
+              defaultChecked={v.isPublic}
+            />{" "}
+            Public / government job
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="isTaxExempt" defaultChecked={v.isTaxExempt} /> Tax-exempt
+            <input
+              type="checkbox"
+              name="isTaxExempt"
+              defaultChecked={v.isTaxExempt}
+            />{" "}
+            Tax-exempt
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="prevailingWage" defaultChecked={v.prevailingWage} /> Prevailing wage
+            <input
+              type="checkbox"
+              name="prevailingWage"
+              defaultChecked={v.prevailingWage}
+            />{" "}
+            Prevailing wage
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="bidBondRequired" defaultChecked={v.bidBondRequired} /> Bid bond required
+            <input
+              type="checkbox"
+              name="bidBondRequired"
+              defaultChecked={v.bidBondRequired}
+            />{" "}
+            Bid bond required
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="perfBondRequired" defaultChecked={v.perfBondRequired} /> Performance / payment bond
+            <input
+              type="checkbox"
+              name="perfBondRequired"
+              defaultChecked={v.perfBondRequired}
+            />{" "}
+            Performance / payment bond
           </label>
           <Field label="Retainage %">
-            <Input name="retainagePct" inputMode="decimal" defaultValue={v.retainagePct ?? ""} placeholder="Per contract" />
+            <Input
+              name="retainagePct"
+              inputMode="decimal"
+              defaultValue={v.retainagePct ?? ""}
+              placeholder="Per contract"
+            />
           </Field>
         </fieldset>
       )}
 
       {!res && (
         <Field label="Bid due">
-          <Input name="bidDueDate" type="date" defaultValue={v.bidDueDate ?? ""} />
+          <Input
+            name="bidDueDate"
+            type="date"
+            defaultValue={v.bidDueDate ?? ""}
+          />
         </Field>
       )}
       <Field label="AccuLynx job #">
-        <Input name="acculynxJobNumber" defaultValue={v.acculynxJobNumber ?? ""} />
+        <Input
+          name="acculynxJobNumber"
+          defaultValue={v.acculynxJobNumber ?? ""}
+        />
       </Field>
       <Field label="Lead source">
-        <Input name="leadSource" defaultValue={v.leadSource ?? ""} list={`lead-sources-${market}`} />
+        <Input
+          name="leadSource"
+          defaultValue={v.leadSource ?? ""}
+          list={`lead-sources-${market}`}
+        />
         <datalist id={`lead-sources-${market}`}>
           {MARKET_DEFAULTS[market].leadSources.map((s) => (
             <option key={s} value={s} />
@@ -230,7 +353,11 @@ export function ProjectForm({
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Salesperson">
-          <UserSelect name="salespersonId" users={users} value={v.salespersonId} />
+          <UserSelect
+            name="salespersonId"
+            users={users}
+            value={v.salespersonId}
+          />
         </Field>
         <Field label="Estimator">
           <UserSelect name="estimatorId" users={users} value={v.estimatorId} />
@@ -239,23 +366,44 @@ export function ProjectForm({
       {showContract && (
         <>
           <Field label="Contract amount">
-            <Input name="contractAmount" inputMode="decimal" defaultValue={v.contractAmount ?? ""} placeholder="Set when sold" />
+            <Input
+              name="contractAmount"
+              inputMode="decimal"
+              defaultValue={v.contractAmount ?? ""}
+              placeholder="Set when sold"
+            />
           </Field>
           <Field label="Contract signed">
-            <Input name="contractSignedAt" type="date" defaultValue={v.contractSignedAt ?? ""} />
+            <Input
+              name="contractSignedAt"
+              type="date"
+              defaultValue={v.contractSignedAt ?? ""}
+            />
           </Field>
         </>
       )}
       <div className="flex items-center gap-3 sm:col-span-2">
         <Button disabled={pending}>{pending ? "Saving…" : submitLabel}</Button>
-        {state?.ok && <span className="text-sm text-green-700 dark:text-green-400">Saved.</span>}
+        {state?.ok && (
+          <span className="text-sm text-green-700 dark:text-green-400">
+            Saved.
+          </span>
+        )}
       </div>
       <Problems state={state} className="sm:col-span-2" />
     </form>
   );
 }
 
-function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+function Field({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`flex flex-col gap-1 ${className ?? ""}`}>
       <Label>{label}</Label>
@@ -264,7 +412,15 @@ function Field({ label, children, className }: { label: string; children: React.
   );
 }
 
-function UserSelect({ name, users, value }: { name: string; users: Opt[]; value?: string | null }) {
+function UserSelect({
+  name,
+  users,
+  value,
+}: {
+  name: string;
+  users: Opt[];
+  value?: string | null;
+}) {
   return (
     <Select name={name} defaultValue={value ?? ""}>
       <option value="">—</option>

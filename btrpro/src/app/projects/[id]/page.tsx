@@ -18,9 +18,18 @@ import { formatDate, formatUsd } from "@/lib/utils";
 import { updateDetailsAction, removeProjectContactAction } from "../actions";
 
 const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
-const fmt = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" });
+const fmt = (d: Date) =>
+  d.toLocaleString("en-US", {
+    timeZone: "America/Chicago",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
-export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProjectPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const user = await requireUser();
   const { id } = await params;
   const project = await prisma.project.findUnique({
@@ -30,15 +39,24 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       clientCompany: true,
       salesperson: { select: { name: true } },
       estimator: { select: { name: true } },
-      contacts: { include: { contact: { include: { company: true } } }, orderBy: [{ isPrimary: "desc" }] },
-      activity: { include: { user: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 50 },
+      contacts: {
+        include: { contact: { include: { company: true } } },
+        orderBy: [{ isPrimary: "desc" }],
+      },
+      activity: {
+        include: { user: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
     },
   });
   if (!project) notFound();
   const canEdit = user.role !== "VIEWER";
 
   // Readiness is recomputed on every view so sheet expirations are picked up the day they happen.
-  const { readiness, blockers } = computeReadiness(await loadReadinessInput(id));
+  const { readiness, blockers } = computeReadiness(
+    await loadReadinessInput(id),
+  );
   const latestSummary = await prisma.jobSummary.findFirst({
     where: { projectId: id, kind: "CATCH_UP", createdById: user.id },
     include: { createdBy: { select: { name: true } } },
@@ -46,9 +64,30 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   });
 
   const [companies, users, allContacts] = await Promise.all([
-    prisma.company.findMany({ select: { id: true, name: true, type: true }, orderBy: { name: "asc" } }),
-    prisma.user.findMany({ where: { role: { not: "VIEWER" } }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.contact.findMany({ include: { company: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
+    prisma.company.findMany({
+      select: { id: true, name: true, type: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.user.findMany({
+      where: { role: { not: "VIEWER" } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.contact.findMany({
+      include: { company: true },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    }),
+  ]);
+  const [estimateCount, latestReview, openRfis] = await Promise.all([
+    prisma.estimate.count({ where: { projectId: id } }),
+    prisma.planReview.findFirst({
+      where: { projectId: id, status: "OK" },
+      include: { document: { select: { fileName: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.openItem.count({
+      where: { projectId: id, resolved: false, text: { startsWith: "RFI (" } },
+    }),
   ]);
   const intakeByKey = new Map(project.intake.map((f) => [f.key, f]));
   const scopes = parseScopes(project.scopes);
@@ -63,7 +102,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           latestSummary && {
             content: latestSummary.content,
             createdAt: fmt(latestSummary.createdAt),
-            coversFrom: latestSummary.coversFrom ? fmt(latestSummary.coversFrom) : null,
+            coversFrom: latestSummary.coversFrom
+              ? fmt(latestSummary.coversFrom)
+              : null,
             by: latestSummary.createdBy?.name ?? null,
           }
         }
@@ -71,23 +112,35 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
       {canEdit && (
         <section className="rounded-md border p-4">
-          <StageControl key={project.status} id={project.id} current={project.status} />
+          <StageControl
+            key={project.status}
+            id={project.id}
+            current={project.status}
+          />
         </section>
       )}
 
       <section id="readiness" className="rounded-md border p-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-semibold">{readiness === "BID_READY" ? "Bid ready" : "Why not bid ready?"}</h2>
+          <h2 className="font-semibold">
+            {readiness === "BID_READY" ? "Bid ready" : "Why not bid ready?"}
+          </h2>
           <ReadinessBadge readiness={readiness} />
         </div>
         {blockers.length === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">Nothing is missing or assumed.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Nothing is missing or assumed.
+          </p>
         ) : (
           <ul className="mt-2 flex flex-col gap-1 text-sm">
             {blockers.map((b) => (
               <li key={b.message} className="flex items-start gap-2">
-                <Badge variant={b.severity === "blocks_number" ? "red" : "amber"}>
-                  {b.severity === "blocks_number" ? "Blocks the number" : "Assumption"}
+                <Badge
+                  variant={b.severity === "blocks_number" ? "red" : "amber"}
+                >
+                  {b.severity === "blocks_number"
+                    ? "Blocks the number"
+                    : "Assumption"}
                 </Badge>
                 <a href={b.href} className="underline-offset-2 hover:underline">
                   {b.message}
@@ -101,8 +154,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       <section id="intake" className="flex flex-col gap-2">
         <h2 className="font-semibold">Missing-information checklist</h2>
         <p className="text-sm text-muted-foreground">
-          Values come only from documents, client answers, or approved assumptions. An assumption needs a basis and is NOT FOR
-          FINAL BID.
+          Values come only from documents, client answers, or approved
+          assumptions. An assumption needs a basis and is NOT FOR FINAL BID.
         </p>
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-sm">
@@ -132,25 +185,78 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </div>
       </section>
 
-      <section id="estimates" className="rounded-md border p-4 text-sm">
-        <h2 className="font-semibold">Estimates</h2>
-        <p className="mt-1 text-muted-foreground">The estimate builder arrives in Phase 7. Readiness already checks estimate lines, waste, labor, and sheet dates.</p>
+      <section
+        id="estimates"
+        className="grid gap-3 rounded-md border p-4 text-sm sm:grid-cols-2"
+      >
+        <div className="flex flex-col gap-1">
+          <h2 className="font-semibold">Estimates</h2>
+          <p className="text-muted-foreground">
+            {estimateCount
+              ? `${estimateCount} revision${estimateCount === 1 ? "" : "s"}.`
+              : "None yet."}{" "}
+            Start one from a product-system template (GAF HDZ, Hardie Cedarmill,
+            Mulehide EPDM…) so the products are filled in for you.
+          </p>
+          <Link
+            className="self-start underline"
+            href={`/projects/${id}/estimates`}
+          >
+            {estimateCount ? "Open estimates" : "Start an estimate"} →
+          </Link>
+        </div>
+        <div className="flex flex-col gap-1">
+          <h2 className="font-semibold">Plan review</h2>
+          {latestReview ? (
+            <p className="text-muted-foreground">
+              Latest brief: {latestReview.document.fileName}. {openRfis} open
+              RFI{openRfis === 1 ? "" : "s"}.
+            </p>
+          ) : (
+            <p className="text-muted-foreground">
+              New construction? Upload the plans and specs, and get a brief with
+              scope, products, requirements and RFIs.
+            </p>
+          )}
+          <Link
+            className="self-start underline"
+            href={
+              latestReview
+                ? `/projects/${id}/plans/${latestReview.id}`
+                : `/projects/${id}/plans`
+            }
+          >
+            {latestReview ? "Open the brief" : "Review plans"} →
+          </Link>
+        </div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="flex flex-col gap-3">
           <h2 className="font-semibold">Contacts</h2>
-          {project.contacts.length === 0 && <p className="text-sm text-muted-foreground">No contacts on this job yet.</p>}
+          {project.contacts.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No contacts on this job yet.
+            </p>
+          )}
           <ul className="flex flex-col gap-2 text-sm">
             {project.contacts.map((pc) => (
               <li key={pc.id} className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">
                   {pc.contact.firstName} {pc.contact.lastName}
                 </span>
-                <Badge variant="outline">{pc.role.replace(/_/g, " ").toLowerCase()}</Badge>
+                <Badge variant="outline">
+                  {pc.role.replace(/_/g, " ").toLowerCase()}
+                </Badge>
                 {pc.isPrimary && <Badge variant="blue">primary</Badge>}
                 <span className="text-muted-foreground">
-                  {[pc.contact.company?.name, pc.contact.phone, pc.contact.email].filter(Boolean).join(" · ")}
+                  {[
+                    pc.contact.company?.name,
+                    pc.contact.phone,
+                    pc.contact.email,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
                 {canEdit && (
                   <form action={removeProjectContactAction}>
@@ -169,9 +275,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                 projectId={project.id}
                 contacts={allContacts
                   .filter((c) => !onJob.has(c.id))
-                  .map((c) => ({ id: c.id, label: `${c.lastName}, ${c.firstName}${c.company ? ` — ${c.company.name}` : ""}` }))}
+                  .map((c) => ({
+                    id: c.id,
+                    label: `${c.lastName}, ${c.firstName}${c.company ? ` — ${c.company.name}` : ""}`,
+                  }))}
               />
-              <Link href={`/customers/new?kind=contact&returnTo=/projects/${project.id}`} className="text-sm underline">
+              <Link
+                href={`/customers/new?kind=contact&returnTo=/projects/${project.id}`}
+                className="text-sm underline"
+              >
                 New contact
               </Link>
             </>
@@ -184,7 +296,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             {project.activity.map((a) => (
               <li key={a.id} className="flex gap-2">
                 <span className="shrink-0 text-muted-foreground tabular-nums">
-                  {a.createdAt.toLocaleString("en-US", { timeZone: "America/Chicago", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  {a.createdAt.toLocaleString("en-US", {
+                    timeZone: "America/Chicago",
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
                 </span>
                 <span>{a.text}</span>
               </li>
@@ -212,14 +330,17 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           />
         ) : (
           <p className="text-sm text-muted-foreground">
-            Salesperson {project.salesperson?.name ?? "—"} · Estimator {project.estimator?.name ?? "—"} · Lead source{" "}
+            Salesperson {project.salesperson?.name ?? "—"} · Estimator{" "}
+            {project.estimator?.name ?? "—"} · Lead source{" "}
             {project.leadSource ?? "—"}
           </p>
         )}
         {canEdit && project.contractAmount != null && (
           <p className="text-sm text-muted-foreground">
             Contract {formatUsd(project.contractAmount)}
-            {project.contractSignedAt ? `, signed ${formatDate(project.contractSignedAt)}` : ", not signed yet"}
+            {project.contractSignedAt
+              ? `, signed ${formatDate(project.contractSignedAt)}`
+              : ", not signed yet"}
           </p>
         )}
       </section>

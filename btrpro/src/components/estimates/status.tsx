@@ -26,5 +26,9 @@ const VARIANT: Record<string, "green" | "amber" | "red" | "blue"> = {
   PENDING_AI: "blue",
 };
 export function LineStatus({ status }: { status: string }) {
-  return <Badge variant={VARIANT[status] ?? "outline"}>{LABEL[status] ?? status}</Badge>;
+  return (
+    <Badge variant={VARIANT[status] ?? "outline"}>
+      {LABEL[status] ?? status}
+    </Badge>
+  );
 }

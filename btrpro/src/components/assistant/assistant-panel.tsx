@@ -44,12 +44,23 @@ export function AssistantPanel({
     if (!text.trim() || busy) return;
     setBusy(true);
     setDraft("");
-    setMsgs((m) => [...m, { role: "user", content: text }, { role: "assistant", content: "", tools: [] }]);
-    const patch = (fn: (a: Msg) => Msg) => setMsgs((m) => [...m.slice(0, -1), fn(m[m.length - 1])]);
+    setMsgs((m) => [
+      ...m,
+      { role: "user", content: text },
+      { role: "assistant", content: "", tools: [] },
+    ]);
+    const patch = (fn: (a: Msg) => Msg) =>
+      setMsgs((m) => [...m.slice(0, -1), fn(m[m.length - 1])]);
     try {
-      const res = await fetch(`/api/projects/${projectId}/assistant`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: text }) });
+      const res = await fetch(`/api/projects/${projectId}/assistant`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
       if (!res.ok || !res.body) {
-        const err = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        const err = await res
+          .json()
+          .catch(() => ({ error: `Error ${res.status}` }));
         patch((a) => ({ ...a, content: `_${err.error}_` }));
         return;
       }
@@ -64,10 +75,21 @@ export function AssistantPanel({
         buf = lines.pop() ?? "";
         for (const l of lines) {
           if (!l.trim()) continue;
-          const ev = JSON.parse(l) as { type: string; text?: string; name?: string; message?: string };
-          if (ev.type === "text") patch((a) => ({ ...a, content: a.content + ev.text }));
-          if (ev.type === "tool") patch((a) => ({ ...a, tools: [...(a.tools ?? []), ev.name!] }));
-          if (ev.type === "error") patch((a) => ({ ...a, content: `${a.content}\n\n_${ev.message}_` }));
+          const ev = JSON.parse(l) as {
+            type: string;
+            text?: string;
+            name?: string;
+            message?: string;
+          };
+          if (ev.type === "text")
+            patch((a) => ({ ...a, content: a.content + ev.text }));
+          if (ev.type === "tool")
+            patch((a) => ({ ...a, tools: [...(a.tools ?? []), ev.name!] }));
+          if (ev.type === "error")
+            patch((a) => ({
+              ...a,
+              content: `${a.content}\n\n_${ev.message}_`,
+            }));
         }
         bottom.current?.scrollIntoView({ block: "end" });
       }
@@ -81,7 +103,13 @@ export function AssistantPanel({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
         {quickActions.map((q) => (
-          <Button key={q.key} size="sm" variant="outline" disabled={busy || !enabled} onClick={() => send(q.prompt)}>
+          <Button
+            key={q.key}
+            size="sm"
+            variant="outline"
+            disabled={busy || !enabled}
+            onClick={() => send(q.prompt)}
+          >
             {q.label}
           </Button>
         ))}
@@ -89,20 +117,37 @@ export function AssistantPanel({
       <div className="flex max-h-[65vh] min-h-72 flex-col gap-3 overflow-y-auto rounded-md border p-3">
         {msgs.length === 0 && (
           <p className="m-auto max-w-md text-center text-sm text-muted-foreground">
-            Ask about this job. The assistant reads the intake, measurements, price sheets, documents, and chat/email, runs the
-            calculator, and proposes lines for you to accept. It never invents prices or measurements.
+            Ask about this job. The assistant reads the intake, measurements,
+            price sheets, documents, and chat/email, runs the calculator, and
+            proposes lines for you to accept. It never invents prices or
+            measurements.
           </p>
         )}
         {msgs.map((m, i) => (
-          <div key={i} className={m.role === "user" ? "self-end rounded-md bg-muted px-3 py-2 text-sm" : "text-sm"}>
+          <div
+            key={i}
+            className={
+              m.role === "user"
+                ? "self-end rounded-md bg-muted px-3 py-2 text-sm"
+                : "text-sm"
+            }
+          >
             {m.role === "user" ? (
               <p className="whitespace-pre-wrap">{m.content}</p>
             ) : (
               <>
                 {m.tools && m.tools.length > 0 && (
-                  <p className="mb-1 text-xs text-muted-foreground">{[...new Set(m.tools)].map((t) => TOOL_LABEL[t] ?? t).join(" · ")}</p>
+                  <p className="mb-1 text-xs text-muted-foreground">
+                    {[...new Set(m.tools)]
+                      .map((t) => TOOL_LABEL[t] ?? t)
+                      .join(" · ")}
+                  </p>
                 )}
-                {m.content ? <Markdown text={m.content} /> : busy && i === msgs.length - 1 ? <p className="text-muted-foreground">Working…</p> : null}
+                {m.content ? (
+                  <Markdown text={m.content} />
+                ) : busy && i === msgs.length - 1 ? (
+                  <p className="text-muted-foreground">Working…</p>
+                ) : null}
               </>
             )}
           </div>
@@ -124,10 +169,16 @@ export function AssistantPanel({
           }}
           rows={2}
           disabled={!enabled}
-          placeholder={enabled ? "e.g. What's the coverage on the Omniridge? · Price the EPDM system per the spec · (Ctrl+Enter sends)" : "AI isn't configured on this server."}
+          placeholder={
+            enabled
+              ? "e.g. What's the coverage on the Omniridge? · Price the EPDM system per the spec · (Ctrl+Enter sends)"
+              : "AI isn't configured on this server."
+          }
           className="flex-1 rounded-md border border-input bg-background p-2 text-sm"
         />
-        <Button disabled={busy || !enabled || !draft.trim()}>{busy ? "Working…" : "Send"}</Button>
+        <Button disabled={busy || !enabled || !draft.trim()}>
+          {busy ? "Working…" : "Send"}
+        </Button>
       </form>
     </div>
   );

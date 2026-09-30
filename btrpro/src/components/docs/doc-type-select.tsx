@@ -14,11 +14,25 @@ const TYPES: [string, string][] = [
   ["OTHER", "Other"],
 ];
 
-export function DocTypeSelect({ id, type, disabled }: { id: string; type: string; disabled?: boolean }) {
+export function DocTypeSelect({
+  id,
+  type,
+  disabled,
+}: {
+  id: string;
+  type: string;
+  disabled?: boolean;
+}) {
   return (
     <form action={setDocTypeAction}>
       <input type="hidden" name="id" value={id} />
-      <Select name="type" defaultValue={type} disabled={disabled} className="h-8" onChange={(e) => e.currentTarget.form?.requestSubmit()}>
+      <Select
+        name="type"
+        defaultValue={type}
+        disabled={disabled}
+        className="h-8"
+        onChange={(e) => e.currentTarget.form?.requestSubmit()}
+      >
         {TYPES.map(([v, l]) => (
           <option key={v} value={v}>
             {l}

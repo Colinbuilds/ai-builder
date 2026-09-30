@@ -414,6 +414,7 @@ model Document {
   facts        ExtractedFact[]
   runs         ExtractionRun[]
   costs        JobCost[]
+  planReviews  PlanReview[]
 }
 
 enum MeasurementStatus {
@@ -760,6 +761,26 @@ model ExtractionRun {
   message    String?
   model      String?
   createdAt  DateTime @default(now())
+}
+
+// New-construction plan & spec review: an estimator brief read from a plan set or project manual.
+// Every item carries the original PDF page and quote. Facts, pitches, roof area and RFIs also go to the
+// confirmation queue / open items; nothing here is used in math until a person confirms it.
+model PlanReview {
+  id          String   @id @default(cuid())
+  projectId   String
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  status      String // OK | FAILED
+  pagesSent   Json? // original page numbers sent, null = whole document
+  brief       Json?
+  message     String?
+  model       String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([documentId])
 }
 
 // OAuth/API connections for integrations (Drive, QuickBooks, Procore, Buildertrend, CompanyCam, EagleView, ABC).

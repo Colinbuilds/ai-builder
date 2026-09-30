@@ -4,22 +4,43 @@ import { prisma } from "@/lib/db";
 import { defaultMailQuery } from "@/lib/comms/email";
 import { providerConfigured } from "@/lib/comms/mailbox";
 import { aiConfigured } from "@/lib/ai/claude";
-import { summarizeEmailAction, disconnectMailboxAction } from "@/app/projects/comms-actions";
+import {
+  summarizeEmailAction,
+  disconnectMailboxAction,
+} from "@/app/projects/comms-actions";
 import { PasteEmail, PullMailbox } from "@/components/comms/email-forms";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" });
+const when = (d: Date) =>
+  d.toLocaleString("en-US", {
+    timeZone: "America/Chicago",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
-export default async function EmailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ mail?: string }> }) {
+export default async function EmailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ mail?: string }>;
+}) {
   const user = await requireUser();
   const { id } = await params;
   const { mail } = await searchParams;
   const project = await prisma.project.findUnique({ where: { id } });
   if (!project) notFound();
   const [emails, mailboxes] = await Promise.all([
-    prisma.jobEmail.findMany({ where: { projectId: id }, include: { attachments: true }, orderBy: { sentAt: "desc" } }),
-    prisma.mailboxConnection.findMany({ where: { userId: user.id }, select: { provider: true, email: true } }),
+    prisma.jobEmail.findMany({
+      where: { projectId: id },
+      include: { attachments: true },
+      orderBy: { sentAt: "desc" },
+    }),
+    prisma.mailboxConnection.findMany({
+      where: { userId: user.id },
+      select: { provider: true, email: true },
+    }),
   ]);
   const canEdit = user.role !== "VIEWER";
   const domain = process.env.INBOUND_EMAIL_DOMAIN;
@@ -32,7 +53,11 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
     <div className="flex flex-col gap-5">
       {mail && (
         <p className="rounded-md border p-2 text-sm">
-          {mail === "connected" ? "Mailbox connected." : mail === "denied" ? "Mailbox connection was cancelled." : mail}
+          {mail === "connected"
+            ? "Mailbox connected."
+            : mail === "denied"
+              ? "Mailbox connection was cancelled."
+              : mail}
         </p>
       )}
       <section className="grid gap-4 lg:grid-cols-2">
@@ -40,9 +65,11 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
           <h2 className="font-semibold">Forward or CC this job</h2>
           <p className="mt-1 font-mono break-all">{address}</p>
           <p className="mt-1 text-muted-foreground">
-            Anything sent or CC&apos;d to this address lands here with its attachments. Give it to the GC, adjuster, or
-            supplier, or BCC it on your own replies.
-            {!domain && " Set INBOUND_EMAIL_DOMAIN and point your inbound email provider's webhook at /api/inbound-email."}
+            Anything sent or CC&apos;d to this address lands here with its
+            attachments. Give it to the GC, adjuster, or supplier, or BCC it on
+            your own replies.
+            {!domain &&
+              " Set INBOUND_EMAIL_DOMAIN and point your inbound email provider's webhook at /api/inbound-email."}
           </p>
         </div>
         {canEdit && (
@@ -53,7 +80,10 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
                 <PullMailbox
                   projectId={id}
                   query={project.mailQuery ?? defaultMailQuery(project)}
-                  providers={mailboxes.map((m) => ({ value: m.provider, label: `${label[m.provider]} (${m.email})` }))}
+                  providers={mailboxes.map((m) => ({
+                    value: m.provider,
+                    label: `${label[m.provider]} (${m.email})`,
+                  }))}
                 />
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                   {mailboxes.map((m) => (
@@ -66,7 +96,10 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
                 </div>
               </>
             ) : (
-              <p className="text-muted-foreground">Connect a mailbox to search it for this job&apos;s email (read-only).</p>
+              <p className="text-muted-foreground">
+                Connect a mailbox to search it for this job&apos;s email
+                (read-only).
+              </p>
             )}
             <div className="flex gap-2">
               {(["GOOGLE", "MICROSOFT"] as const)
@@ -74,7 +107,11 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
                 .map((p) =>
                   providerConfigured(p) ? (
                     <Button key={p} asChild size="sm" variant="outline">
-                      <a href={`/api/mail/${p.toLowerCase()}/start?returnTo=${encodeURIComponent(back)}`}>Connect {label[p]}</a>
+                      <a
+                        href={`/api/mail/${p.toLowerCase()}/start?returnTo=${encodeURIComponent(back)}`}
+                      >
+                        Connect {label[p]}
+                      </a>
                     </Button>
                   ) : (
                     <span key={p} className="text-xs text-muted-foreground">
@@ -99,9 +136,23 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
                 {" "}
                 · {e.fromAddr} · {when(e.sentAt)}
               </span>{" "}
-              <Badge variant="outline">{e.source === "FORWARDED" ? "forwarded" : e.source === "GMAIL" ? "mailbox" : "pasted"}</Badge>
-              {e.attachments.length > 0 && <Badge variant="outline">{e.attachments.length} attachment(s)</Badge>}
-              {e.summary && <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{e.summary}</p>}
+              <Badge variant="outline">
+                {e.source === "FORWARDED"
+                  ? "forwarded"
+                  : e.source === "GMAIL"
+                    ? "mailbox"
+                    : "pasted"}
+              </Badge>
+              {e.attachments.length > 0 && (
+                <Badge variant="outline">
+                  {e.attachments.length} attachment(s)
+                </Badge>
+              )}
+              {e.summary && (
+                <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                  {e.summary}
+                </p>
+              )}
             </summary>
             <div className="mt-2 flex flex-col gap-2">
               {!e.summary && canEdit && ai && (
@@ -123,7 +174,9 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
                   ))}
                 </ul>
               )}
-              <pre className="max-h-96 overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">{e.bodyText}</pre>
+              <pre className="max-h-96 overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">
+                {e.bodyText}
+              </pre>
             </div>
           </details>
         ))}
@@ -131,7 +184,9 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
 
       {canEdit && (
         <details className="rounded-md border p-4 text-sm">
-          <summary className="cursor-pointer font-semibold">Paste an email</summary>
+          <summary className="cursor-pointer font-semibold">
+            Paste an email
+          </summary>
           <div className="mt-3">
             <PasteEmail projectId={id} />
           </div>

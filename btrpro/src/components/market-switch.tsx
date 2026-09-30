@@ -9,7 +9,10 @@ const OPTS: [MarketView, string][] = [
 
 export function MarketSwitch({ view }: { view: MarketView }) {
   return (
-    <form action={setMarketView} className="flex overflow-hidden rounded-md border text-xs">
+    <form
+      action={setMarketView}
+      className="flex overflow-hidden rounded-md border text-xs"
+    >
       {OPTS.map(([v, label]) => (
         <button
           key={v}

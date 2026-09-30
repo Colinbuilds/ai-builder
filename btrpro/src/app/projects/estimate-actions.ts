@@ -4,7 +4,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { applyTemplate, createEstimateFromTemplate, saveAsTemplate, updateTemplateMeta } from "@/lib/estimates/templates";
+import {
+  applyTemplate,
+  createEstimateFromTemplate,
+  saveAsTemplate,
+  updateTemplateMeta,
+} from "@/lib/estimates/templates";
 import {
   addLine,
   createEstimate,
@@ -20,11 +25,19 @@ import {
   type ScopeType,
   type WasteSection,
 } from "@/lib/estimates/service";
-import { addLaborLine, deleteLaborLine, saveLaborStandard } from "@/lib/estimates/labor";
+import {
+  addLaborLine,
+  deleteLaborLine,
+  saveLaborStandard,
+} from "@/lib/estimates/labor";
 import type { Module } from "@/lib/estimates/takeoff";
 
 const EDITORS = ["ADMIN", "ESTIMATOR"] as const;
-export type EstResult = { problems: string[]; ok?: boolean; note?: string } | null;
+export type EstResult = {
+  problems: string[];
+  ok?: boolean;
+  note?: string;
+} | null;
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const str = (f: FormData, k: string) => {
   const v = f.get(k);
@@ -37,7 +50,10 @@ const numOrNull = (f: FormData, k: string) => {
   return Number.isFinite(n) ? n : NaN;
 };
 async function revalidateEstimate(estimateId: string) {
-  const e = await prisma.estimate.findUnique({ where: { id: estimateId }, select: { projectId: true } });
+  const e = await prisma.estimate.findUnique({
+    where: { id: estimateId },
+    select: { projectId: true },
+  });
   if (e) {
     revalidatePath(`/projects/${e.projectId}/estimates/${estimateId}`);
     revalidatePath(`/projects/${e.projectId}`, "layout");
@@ -48,14 +64,20 @@ const actor = async () => {
   return { id: u.id, name: u.name, role: u.role };
 };
 
-export async function createEstimateAction(_: EstResult, f: FormData): Promise<EstResult> {
+export async function createEstimateAction(
+  _: EstResult,
+  f: FormData,
+): Promise<EstResult> {
   const a = await actor();
   const projectId = String(f.get("projectId"));
   const scope = String(f.get("scopeType")) as ScopeType;
   const templateId = str(f, "templateId");
   let id: string;
   try {
-    if (templateId) ({ estimate: { id } } = await createEstimateFromTemplate(projectId, templateId, a));
+    if (templateId)
+      ({
+        estimate: { id },
+      } = await createEstimateFromTemplate(projectId, templateId, a));
     else ({ id } = await createEstimate(projectId, scope, a));
   } catch (e) {
     return { problems: [msg(e)] };
@@ -63,7 +85,12 @@ export async function createEstimateAction(_: EstResult, f: FormData): Promise<E
   redirect(`/projects/${projectId}/estimates/${id}`);
 }
 
-export async function saveAndRunTakeoffAction(estimateId: string, module: Module, config: unknown, run: boolean): Promise<EstResult> {
+export async function saveAndRunTakeoffAction(
+  estimateId: string,
+  module: Module,
+  config: unknown,
+  run: boolean,
+): Promise<EstResult> {
   const a = await actor();
   try {
     await saveTakeoff(estimateId, module, config);
@@ -71,7 +98,11 @@ export async function saveAndRunTakeoffAction(estimateId: string, module: Module
       const lines = await runTakeoff(estimateId, module, a);
       await revalidateEstimate(estimateId);
       const missing = lines.filter((l) => l.missing.length).length;
-      return { problems: [], ok: true, note: `${lines.length} lines calculated${missing ? `, ${missing} still missing inputs` : ""}.` };
+      return {
+        problems: [],
+        ok: true,
+        note: `${lines.length} lines calculated${missing ? `, ${missing} still missing inputs` : ""}.`,
+      };
     }
   } catch (e) {
     return { problems: [msg(e)] };
@@ -91,13 +122,22 @@ export async function runTakeoffAction(f: FormData) {
   await revalidateEstimate(id);
 }
 
-export async function setWasteAction(_: EstResult, f: FormData): Promise<EstResult> {
+export async function setWasteAction(
+  _: EstResult,
+  f: FormData,
+): Promise<EstResult> {
   const a = await actor();
   const id = String(f.get("estimateId"));
   const pct = numOrNull(f, "pct");
   if (Number.isNaN(pct)) return { problems: ["Waste must be a number."] };
   try {
-    await setWaste(id, String(f.get("section")) as WasteSection, pct, f.get("approve") === "1", a);
+    await setWaste(
+      id,
+      String(f.get("section")) as WasteSection,
+      pct,
+      f.get("approve") === "1",
+      a,
+    );
   } catch (e) {
     return { problems: [msg(e)] };
   }
@@ -105,12 +145,16 @@ export async function setWasteAction(_: EstResult, f: FormData): Promise<EstResu
   return { problems: [], ok: true };
 }
 
-export async function addLineAction(_: EstResult, f: FormData): Promise<EstResult> {
+export async function addLineAction(
+  _: EstResult,
+  f: FormData,
+): Promise<EstResult> {
   const a = await actor();
   const id = String(f.get("estimateId"));
   const quantity = numOrNull(f, "quantity");
   const unitCost = numOrNull(f, "unitCost");
-  if (Number.isNaN(quantity) || Number.isNaN(unitCost)) return { problems: ["Quantity and cost must be numbers."] };
+  if (Number.isNaN(quantity) || Number.isNaN(unitCost))
+    return { problems: ["Quantity and cost must be numbers."] };
   try {
     await addLine(
       id,
@@ -137,12 +181,27 @@ export async function lineAction(f: FormData): Promise<string | null> {
   const a = await actor();
   const lineId = String(f.get("lineId"));
   const kind = String(f.get("kind"));
-  const line = await prisma.estimateLine.findUniqueOrThrow({ where: { id: lineId } });
+  const line = await prisma.estimateLine.findUniqueOrThrow({
+    where: { id: lineId },
+  });
   try {
     if (kind === "delete") await deleteLine(lineId, a);
-    else if (kind === "quantity") await overrideQuantity(lineId, Number(String(f.get("quantity")).replace(/,/g, "")), String(f.get("reason") ?? ""), a);
-    else if (kind === "accept_ai" || kind === "reject_ai") await decideAiLine(lineId, kind === "accept_ai", a);
-    else if (kind === "substitute") await substituteLine(lineId, String(f.get("itemNumber") ?? ""), String(f.get("reason") ?? ""), a);
+    else if (kind === "quantity")
+      await overrideQuantity(
+        lineId,
+        Number(String(f.get("quantity")).replace(/,/g, "")),
+        String(f.get("reason") ?? ""),
+        a,
+      );
+    else if (kind === "accept_ai" || kind === "reject_ai")
+      await decideAiLine(lineId, kind === "accept_ai", a);
+    else if (kind === "substitute")
+      await substituteLine(
+        lineId,
+        String(f.get("itemNumber") ?? ""),
+        String(f.get("reason") ?? ""),
+        a,
+      );
   } catch (e) {
     return msg(e);
   }
@@ -162,16 +221,31 @@ export async function setContingencyAction(f: FormData) {
   const e = await prisma.estimate.findUniqueOrThrow({ where: { id } });
   if (e.locked) return;
   const v = numOrNull(f, "contingencyPct");
-  await prisma.estimate.update({ where: { id }, data: { contingencyPct: v == null || Number.isNaN(v) ? null : v } });
+  await prisma.estimate.update({
+    where: { id },
+    data: { contingencyPct: v == null || Number.isNaN(v) ? null : v },
+  });
   await revalidateEstimate(id);
 }
 
-export async function addLaborAction(_: EstResult, f: FormData): Promise<EstResult> {
+export async function addLaborAction(
+  _: EstResult,
+  f: FormData,
+): Promise<EstResult> {
   const a = await actor();
   const id = String(f.get("estimateId"));
-  const nums = ["quantity", "crewSize", "productionRate", "hourlyRate", "burdenPct", "unitRate"].map((k) => numOrNull(f, k));
-  if (nums.some((x) => Number.isNaN(x))) return { problems: ["Numbers only in the labor fields."] };
-  const [quantity, crewSize, productionRate, hourlyRate, burdenPct, unitRate] = nums;
+  const nums = [
+    "quantity",
+    "crewSize",
+    "productionRate",
+    "hourlyRate",
+    "burdenPct",
+    "unitRate",
+  ].map((k) => numOrNull(f, k));
+  if (nums.some((x) => Number.isNaN(x)))
+    return { problems: ["Numbers only in the labor fields."] };
+  const [quantity, crewSize, productionRate, hourlyRate, burdenPct, unitRate] =
+    nums;
   try {
     await addLaborLine(
       id,
@@ -206,14 +280,18 @@ export async function deleteLaborAction(f: FormData) {
   await revalidateEstimate(l.estimateId);
 }
 
-export async function saveLaborStandardAction(_: EstResult, f: FormData): Promise<EstResult> {
+export async function saveLaborStandardAction(
+  _: EstResult,
+  f: FormData,
+): Promise<EstResult> {
   const a = await actor();
   const rate = numOrNull(f, "productionRate");
   const crew = numOrNull(f, "crewSize");
   const hourly = numOrNull(f, "hourlyRate");
   const burden = numOrNull(f, "burdenPct");
   const unitRate = numOrNull(f, "unitRate");
-  if ([rate, crew, hourly, burden, unitRate].some((x) => Number.isNaN(x))) return { problems: ["Numbers only."] };
+  if ([rate, crew, hourly, burden, unitRate].some((x) => Number.isNaN(x)))
+    return { problems: ["Numbers only."] };
   const rateType = str(f, "rateType") === "UNIT" ? "UNIT" : "HOURLY";
   try {
     await saveLaborStandard(
@@ -244,13 +322,33 @@ export async function openItemAction(f: FormData) {
   const kind = String(f.get("kind"));
   if (kind === "add") {
     const estimateId = String(f.get("estimateId"));
-    const e = await prisma.estimate.findUniqueOrThrow({ where: { id: estimateId } });
+    const e = await prisma.estimate.findUniqueOrThrow({
+      where: { id: estimateId },
+    });
     const text = str(f, "text");
-    if (text) await prisma.openItem.create({ data: { projectId: e.projectId, estimateId, text, owner: str(f, "owner") } });
+    if (text)
+      await prisma.openItem.create({
+        data: {
+          projectId: e.projectId,
+          estimateId,
+          text,
+          owner: str(f, "owner"),
+        },
+      });
     await revalidateEstimate(estimateId);
   } else {
-    const o = await prisma.openItem.update({ where: { id: String(f.get("id")) }, data: { resolved: kind === "resolve" } });
-    await prisma.projectActivity.create({ data: { projectId: o.projectId!, userId: a.id, kind: "estimate", text: `${a.name} ${kind === "resolve" ? "resolved" : "reopened"} open item: ${o.text}` } });
+    const o = await prisma.openItem.update({
+      where: { id: String(f.get("id")) },
+      data: { resolved: kind === "resolve" },
+    });
+    await prisma.projectActivity.create({
+      data: {
+        projectId: o.projectId!,
+        userId: a.id,
+        kind: "estimate",
+        text: `${a.name} ${kind === "resolve" ? "resolved" : "reopened"} open item: ${o.text}`,
+      },
+    });
     if (o.estimateId) await revalidateEstimate(o.estimateId);
   }
 }
@@ -258,30 +356,48 @@ export async function openItemAction(f: FormData) {
 export async function scopeItemAction(f: FormData) {
   await actor();
   const estimateId = String(f.get("estimateId"));
-  const e = await prisma.estimate.findUniqueOrThrow({ where: { id: estimateId } });
+  const e = await prisma.estimate.findUniqueOrThrow({
+    where: { id: estimateId },
+  });
   if (e.locked) return;
-  if (f.get("kind") === "delete") await prisma.scopeItem.delete({ where: { id: String(f.get("id")) } });
+  if (f.get("kind") === "delete")
+    await prisma.scopeItem.delete({ where: { id: String(f.get("id")) } });
   else {
     const text = str(f, "text");
     const type = f.get("type") === "WE_WILL_NOT" ? "WE_WILL_NOT" : "WE_WILL";
-    if (text) await prisma.scopeItem.create({ data: { estimateId, type, text, sortOrder: Date.now() % 1_000_000 } });
+    if (text)
+      await prisma.scopeItem.create({
+        data: { estimateId, type, text, sortOrder: Date.now() % 1_000_000 },
+      });
   }
   await revalidateEstimate(estimateId);
 }
 
-export async function applyTemplateAction(_: EstResult, f: FormData): Promise<EstResult> {
+export async function applyTemplateAction(
+  _: EstResult,
+  f: FormData,
+): Promise<EstResult> {
   const a = await actor();
   const estimateId = String(f.get("estimateId"));
   try {
     const r = await applyTemplate(estimateId, String(f.get("templateId")), a);
     await revalidateEstimate(estimateId);
-    return { problems: [], ok: true, note: r.missing.length ? `Applied. Not on this job's pricing: ${r.missing.join(", ")} — those stay MISSING or flagged.` : "Applied. Run the takeoff to calculate quantities." };
+    return {
+      problems: [],
+      ok: true,
+      note: r.missing.length
+        ? `Applied. Not on this job's pricing: ${r.missing.join(", ")} — those stay MISSING or flagged.`
+        : "Applied. Run the takeoff to calculate quantities.",
+    };
   } catch (e) {
     return { problems: [msg(e)] };
   }
 }
 
-export async function saveAsTemplateAction(_: EstResult, f: FormData): Promise<EstResult> {
+export async function saveAsTemplateAction(
+  _: EstResult,
+  f: FormData,
+): Promise<EstResult> {
   const u = await requireUser(["ADMIN", "ESTIMATOR"]);
   const estimateId = String(f.get("estimateId"));
   try {
@@ -307,12 +423,22 @@ export async function saveAsTemplateAction(_: EstResult, f: FormData): Promise<E
   }
 }
 
-export async function updateTemplateMetaAction(_: EstResult, f: FormData): Promise<EstResult> {
+export async function updateTemplateMetaAction(
+  _: EstResult,
+  f: FormData,
+): Promise<EstResult> {
   const u = await requireUser(["ADMIN"]);
   try {
     await updateTemplateMeta(
       String(f.get("id")),
-      { name: str(f, "name") ?? "", group: str(f, "group") ?? "", impactClass: str(f, "impactClass"), impactSource: str(f, "impactSource"), notes: str(f, "notes"), active: f.get("active") === "on" },
+      {
+        name: str(f, "name") ?? "",
+        group: str(f, "group") ?? "",
+        impactClass: str(f, "impactClass"),
+        impactSource: str(f, "impactSource"),
+        notes: str(f, "notes"),
+        active: f.get("active") === "on",
+      },
       { id: u.id, name: u.name, role: u.role },
     );
   } catch (e) {

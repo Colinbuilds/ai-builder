@@ -17,7 +17,11 @@ import {
 } from "@/lib/projects/service";
 
 const EDITORS = ["ADMIN", "ESTIMATOR"] as const;
-export type ActionResult = { problems: string[]; overridable?: boolean; ok?: boolean } | null;
+export type ActionResult = {
+  problems: string[];
+  overridable?: boolean;
+  ok?: boolean;
+} | null;
 
 const str = (f: FormData, k: string) => {
   const v = f.get(k);
@@ -41,7 +45,8 @@ const num = (f: FormData, k: string) => {
 
 function detailsFromForm(f: FormData): ProjectInput {
   const ct = str(f, "constructionType");
-  const market = str(f, "market") === "RESIDENTIAL" ? "RESIDENTIAL" : "COMMERCIAL";
+  const market =
+    str(f, "market") === "RESIDENTIAL" ? "RESIDENTIAL" : "COMMERCIAL";
   const res = market === "RESIDENTIAL";
   return {
     name: str(f, "name") ?? "",
@@ -74,22 +79,37 @@ function detailsFromForm(f: FormData): ProjectInput {
 }
 
 const fail = (e: unknown): ActionResult => {
-  if (e instanceof ProjectError) return { problems: e.problems, overridable: e.overridable };
+  if (e instanceof ProjectError)
+    return { problems: e.problems, overridable: e.overridable };
   throw e;
 };
 
-export async function createProjectAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+export async function createProjectAction(
+  _: ActionResult,
+  f: FormData,
+): Promise<ActionResult> {
   const user = await requireUser([...EDITORS]);
   const input = detailsFromForm(f);
   if (!input.scopes.length) return { problems: ["Pick at least one scope."] };
   let id: string;
   try {
     const homeowner =
-      input.market === "RESIDENTIAL" && str(f, "hoFirstName") && str(f, "hoLastName")
-        ? { firstName: str(f, "hoFirstName")!, lastName: str(f, "hoLastName")!, phone: str(f, "hoPhone"), email: str(f, "hoEmail") }
+      input.market === "RESIDENTIAL" &&
+      str(f, "hoFirstName") &&
+      str(f, "hoLastName")
+        ? {
+            firstName: str(f, "hoFirstName")!,
+            lastName: str(f, "hoLastName")!,
+            phone: str(f, "hoPhone"),
+            email: str(f, "hoEmail"),
+          }
         : null;
     if (input.market === "RESIDENTIAL" && !homeowner && !input.clientCompanyId)
-      return { problems: ["Enter the homeowner's first and last name, or pick the builder."] };
+      return {
+        problems: [
+          "Enter the homeowner's first and last name, or pick the builder.",
+        ],
+      };
     ({ id } = await createProject(input, user, homeowner));
   } catch (e) {
     return fail(e);
@@ -97,15 +117,27 @@ export async function createProjectAction(_: ActionResult, f: FormData): Promise
   redirect(`/projects/${id}`);
 }
 
-export async function updateDetailsAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+export async function updateDetailsAction(
+  _: ActionResult,
+  f: FormData,
+): Promise<ActionResult> {
   const user = await requireUser([...EDITORS]);
   const id = String(f.get("id"));
   const input = detailsFromForm(f);
   if (!input.scopes.length) return { problems: ["Pick at least one scope."] };
   const contractAmount = money(f, "contractAmount");
-  if (Number.isNaN(contractAmount)) return { problems: ["Contract amount must be a number."] };
+  if (Number.isNaN(contractAmount))
+    return { problems: ["Contract amount must be a number."] };
   try {
-    await updateProjectDetails(id, { ...input, contractAmount, contractSignedAt: date(f, "contractSignedAt") }, user);
+    await updateProjectDetails(
+      id,
+      {
+        ...input,
+        contractAmount,
+        contractSignedAt: date(f, "contractSignedAt"),
+      },
+      user,
+    );
   } catch (e) {
     return fail(e);
   }
@@ -113,12 +145,29 @@ export async function updateDetailsAction(_: ActionResult, f: FormData): Promise
   return { problems: [], ok: true };
 }
 
-export async function updateIntakeAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+export async function updateIntakeAction(
+  _: ActionResult,
+  f: FormData,
+): Promise<ActionResult> {
   const user = await requireUser([...EDITORS]);
   const id = String(f.get("projectId"));
-  const status = String(f.get("status")) as "VERIFIED" | "MISSING" | "ASSUMED" | "NOT_APPLICABLE";
+  const status = String(f.get("status")) as
+    | "VERIFIED"
+    | "MISSING"
+    | "ASSUMED"
+    | "NOT_APPLICABLE";
   try {
-    await updateIntakeField(id, String(f.get("key")), { value: str(f, "value"), unit: str(f, "unit"), status, note: str(f, "note") }, user);
+    await updateIntakeField(
+      id,
+      String(f.get("key")),
+      {
+        value: str(f, "value"),
+        unit: str(f, "unit"),
+        status,
+        note: str(f, "note"),
+      },
+      user,
+    );
   } catch (e) {
     return fail(e);
   }
@@ -126,13 +175,24 @@ export async function updateIntakeAction(_: ActionResult, f: FormData): Promise<
   return { problems: [], ok: true };
 }
 
-export async function changeStageAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+export async function changeStageAction(
+  _: ActionResult,
+  f: FormData,
+): Promise<ActionResult> {
   const user = await requireUser([...EDITORS]);
   const id = String(f.get("id"));
   const to = String(f.get("to")) as Stage;
   if (!STAGES.includes(to)) return { problems: ["Pick a stage."] };
   try {
-    await changeStage(id, to, { reason: str(f, "reason") ?? undefined, override: f.get("override") === "on" }, user);
+    await changeStage(
+      id,
+      to,
+      {
+        reason: str(f, "reason") ?? undefined,
+        override: f.get("override") === "on",
+      },
+      user,
+    );
   } catch (e) {
     return fail(e);
   }
@@ -141,11 +201,15 @@ export async function changeStageAction(_: ActionResult, f: FormData): Promise<A
   return { problems: [], ok: true };
 }
 
-export async function executeForm17Action(_: ActionResult, f: FormData): Promise<ActionResult> {
+export async function executeForm17Action(
+  _: ActionResult,
+  f: FormData,
+): Promise<ActionResult> {
   const user = await requireUser([...EDITORS]);
   const id = String(f.get("id"));
   const executedAt = date(f, "executedAt");
-  if (!executedAt) return { problems: ["Enter the date Form 17 was executed."] };
+  if (!executedAt)
+    return { problems: ["Enter the date Form 17 was executed."] };
   try {
     await executeForm17(id, { executedAt, note: str(f, "note") }, user);
   } catch (e) {
@@ -156,20 +220,35 @@ export async function executeForm17Action(_: ActionResult, f: FormData): Promise
   return { problems: [], ok: true };
 }
 
-export async function addProjectContactAction(_: ActionResult, f: FormData): Promise<ActionResult> {
+export async function addProjectContactAction(
+  _: ActionResult,
+  f: FormData,
+): Promise<ActionResult> {
   const user = await requireUser([...EDITORS]);
   const projectId = String(f.get("projectId"));
   const contactId = str(f, "contactId");
   const role = String(f.get("role"));
   if (!contactId) return { problems: ["Pick a contact."] };
-  const exists = await prisma.projectContact.findUnique({ where: { projectId_contactId: { projectId, contactId } } });
+  const exists = await prisma.projectContact.findUnique({
+    where: { projectId_contactId: { projectId, contactId } },
+  });
   if (exists) return { problems: ["That contact is already on this job."] };
   const c = await prisma.projectContact.create({
-    data: { projectId, contactId, role: role as never, isPrimary: f.get("isPrimary") === "on" },
+    data: {
+      projectId,
+      contactId,
+      role: role as never,
+      isPrimary: f.get("isPrimary") === "on",
+    },
     include: { contact: true },
   });
   await prisma.projectActivity.create({
-    data: { projectId, userId: user.id, kind: "contact", text: `${user.name} added ${c.contact.firstName} ${c.contact.lastName} (${role.replace(/_/g, " ").toLowerCase()})` },
+    data: {
+      projectId,
+      userId: user.id,
+      kind: "contact",
+      text: `${user.name} added ${c.contact.firstName} ${c.contact.lastName} (${role.replace(/_/g, " ").toLowerCase()})`,
+    },
   });
   revalidatePath(`/projects/${projectId}`);
   return { problems: [], ok: true };
@@ -178,19 +257,31 @@ export async function addProjectContactAction(_: ActionResult, f: FormData): Pro
 export async function setMarketView(f: FormData) {
   const v = String(f.get("market"));
   const { cookies } = await import("next/headers");
-  (await cookies()).set("ep_market", ["RESIDENTIAL", "COMMERCIAL"].includes(v) ? v : "ALL", {
-    path: "/",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 365,
-  });
+  (await cookies()).set(
+    "ep_market",
+    ["RESIDENTIAL", "COMMERCIAL"].includes(v) ? v : "ALL",
+    {
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+    },
+  );
   revalidatePath("/", "layout");
 }
 
 export async function removeProjectContactAction(f: FormData) {
   const user = await requireUser([...EDITORS]);
-  const pc = await prisma.projectContact.delete({ where: { id: String(f.get("id")) }, include: { contact: true } });
+  const pc = await prisma.projectContact.delete({
+    where: { id: String(f.get("id")) },
+    include: { contact: true },
+  });
   await prisma.projectActivity.create({
-    data: { projectId: pc.projectId, userId: user.id, kind: "contact", text: `${user.name} removed ${pc.contact.firstName} ${pc.contact.lastName}` },
+    data: {
+      projectId: pc.projectId,
+      userId: user.id,
+      kind: "contact",
+      text: `${user.name} removed ${pc.contact.firstName} ${pc.contact.lastName}`,
+    },
   });
   revalidatePath(`/projects/${pc.projectId}`);
 }

@@ -18,7 +18,8 @@ export type PickedItem = {
   builderPrice?: boolean;
 };
 
-const money = (n: number | null, s: string) => (s === "CALL" || n == null ? "CALL" : `$${n.toFixed(2)}`);
+const money = (n: number | null, s: string) =>
+  s === "CALL" || n == null ? "CALL" : `$${n.toFixed(2)}`;
 
 /** Search-as-you-type picker over the live price sheets. */
 export function ItemPicker({
@@ -59,7 +60,8 @@ export function ItemPicker({
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
-      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+      if (box.current && !box.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -119,12 +121,21 @@ export function ItemPicker({
               <span className="flex-1 truncate">{r.description}</span>
               <span className="text-xs whitespace-nowrap text-muted-foreground">
                 {money(r.unitPrice, r.priceStatus)}/{r.uom} · {r.sheetCode}
-                {r.builderPrice && <span className="ml-1 rounded bg-blue-100 px-1 text-blue-800 dark:bg-blue-950 dark:text-blue-300">builder</span>}
-                {r.coverageQty != null && ` · ${r.coverageQty} ${r.coverageUnit}`}
+                {r.builderPrice && (
+                  <span className="ml-1 rounded bg-blue-100 px-1 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                    builder
+                  </span>
+                )}
+                {r.coverageQty != null &&
+                  ` · ${r.coverageQty} ${r.coverageUnit}`}
               </span>
             </button>
           ))}
-          {results.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">No matches on the loaded sheets.</p>}
+          {results.length === 0 && (
+            <p className="px-3 py-2 text-xs text-muted-foreground">
+              No matches on the loaded sheets.
+            </p>
+          )}
         </div>
       )}
     </div>

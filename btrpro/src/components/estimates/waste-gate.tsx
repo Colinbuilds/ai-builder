@@ -15,26 +15,54 @@ export function WasteGate({
 }: {
   estimateId: string;
   section: string;
-  entry: { pct: number | null; approved: boolean; basis: string; approvedBy?: string | null };
+  entry: {
+    pct: number | null;
+    approved: boolean;
+    basis: string;
+    approvedBy?: string | null;
+  };
   reference: string;
   locked: boolean;
 }) {
   const [state, action, pending] = useFormAction(setWasteAction, null);
   return (
-    <form onSubmit={action} className="flex flex-col gap-1 rounded-md border p-3 text-sm">
+    <form
+      onSubmit={action}
+      className="flex flex-col gap-1 rounded-md border p-3 text-sm"
+    >
       <input type="hidden" name="estimateId" value={estimateId} />
       <input type="hidden" name="section" value={section} />
       <div className="flex flex-wrap items-center gap-2">
-        <span className="w-20 font-medium capitalize">{section.toLowerCase()}</span>
-        <Input name="pct" defaultValue={entry.pct ?? ""} inputMode="decimal" className="h-8 w-20" disabled={locked} />
+        <span className="w-20 font-medium capitalize">
+          {section.toLowerCase()}
+        </span>
+        <Input
+          name="pct"
+          defaultValue={entry.pct ?? ""}
+          inputMode="decimal"
+          className="h-8 w-20"
+          disabled={locked}
+        />
         <span>%</span>
-        {entry.pct == null ? <Badge variant="red">MISSING</Badge> : entry.approved ? <Badge variant="green">Approved</Badge> : <Badge variant="amber">Not approved</Badge>}
+        {entry.pct == null ? (
+          <Badge variant="red">MISSING</Badge>
+        ) : entry.approved ? (
+          <Badge variant="green">Approved</Badge>
+        ) : (
+          <Badge variant="amber">Not approved</Badge>
+        )}
         {!locked && (
           <>
             <Button size="sm" name="approve" value="1" disabled={pending}>
               Approve
             </Button>
-            <Button size="sm" variant="ghost" name="approve" value="0" disabled={pending}>
+            <Button
+              size="sm"
+              variant="ghost"
+              name="approve"
+              value="0"
+              disabled={pending}
+            >
               Save without approving
             </Button>
           </>
