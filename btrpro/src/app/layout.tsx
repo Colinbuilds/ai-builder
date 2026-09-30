@@ -13,7 +13,14 @@ function navFor(role: string): NavGroup[] {
   return [
     { href: "/", label: "Jobs" },
     { href: "/customers", label: "Customers" },
-    { label: "Operations", items: [{ href: "/deliveries", label: "Deliveries" }] },
+    {
+      label: "Operations",
+      items: [
+        { href: "/schedule", label: "Schedule" },
+        { href: "/deliveries", label: "Deliveries" },
+        { href: "/crews", label: "Crews & subs" },
+      ],
+    },
     {
       label: "Estimating",
       items: [

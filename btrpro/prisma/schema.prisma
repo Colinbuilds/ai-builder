@@ -246,6 +246,9 @@ model Project {
   // the P&L as it stood when the job was closed; later edits are Admin-only and audit-logged
   finalPnl         Json?
   materialOrders   MaterialOrder[]
+  scheduleEvents   ScheduleEvent[]
+  workOrders       WorkOrder[]
+  timeEntries      TimeEntry[]
 }
 
 // Timeline of everything that happened on a job: stage changes, intake edits, Form 17, overrides.
@@ -1005,4 +1008,125 @@ model DeliveryTicket {
   note         String?
   receivedBy   String
   createdAt    DateTime      @default(now())
+}
+
+// ---------- Production: crews, subs, schedule, work orders, timesheets (§13) ----------
+
+enum CrewKind {
+  CREW
+  SUB
+}
+
+model Crew {
+  id                 String          @id @default(cuid())
+  name               String
+  kind               CrewKind        @default(CREW)
+  trade              String? // roofing, siding, gutters, metal…
+  leadName           String?
+  phone              String?
+  email              String?
+  // default pay: HOURLY (rate/h + burden) or PIECE (rate per unit, e.g. $/SQ)
+  payType            String?
+  defaultRate        Float?
+  rateUnit           String? // SQ, SF, LF, H
+  burdenPct          Float?
+  coiExpires         DateTime?
+  workersCompExpires DateTime?
+  licenseNumber      String?
+  licenseExpires     DateTime?
+  complianceFileUrl  String?
+  notes              String?
+  active             Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  events             ScheduleEvent[]
+  workOrders         WorkOrder[]
+  timeEntries        TimeEntry[]
+}
+
+enum EventKind {
+  INSTALL
+  TEAR_OFF
+  INSPECTION
+  DUMPSTER
+  REPAIR
+  OTHER
+}
+
+model ScheduleEvent {
+  id          String    @id @default(cuid())
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kind        EventKind @default(INSTALL)
+  title       String
+  // all-day, inclusive date range (stored at noon UTC)
+  startDate   DateTime
+  endDate     DateTime
+  crewId      String?
+  crew        Crew?     @relation(fields: [crewId], references: [id], onDelete: SetNull)
+  // TENTATIVE | CONFIRMED | DONE | CANCELLED
+  status      String    @default("TENTATIVE")
+  weatherNote String?
+  notes       String?
+  // why it was scheduled despite a conflict or expired insurance
+  override    String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model WorkOrder {
+  id           String    @id @default(cuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number       String    @unique
+  crewId       String
+  crew         Crew      @relation(fields: [crewId], references: [id])
+  // DRAFT | SENT | IN_PROGRESS | COMPLETE | CANCELLED
+  status       String    @default("DRAFT")
+  scope        Json? // string[] — "We will" lines
+  exclusions   Json? // string[] — "We will not" lines
+  instructions String?
+  startDate    DateTime?
+  // what we pay: PIECE (qty × rate) or LUMP (agreed amount); HOURLY crews log time instead
+  payBasis     String? // PIECE | LUMP | HOURLY
+  payQty       Float?
+  payUnit      String?
+  payRate      Float?
+  amount       Float?
+  payFormula   String?
+  token        String    @unique
+  sentAt       DateTime?
+  viewedAt     DateTime?
+  completedAt  DateTime?
+  completedBy  String?
+  createdBy    String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  commitmentId String?
+}
+
+model TimeEntry {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  crewId     String
+  crew       Crew      @relation(fields: [crewId], references: [id])
+  date       DateTime
+  // HOURLY: hours (total crew-hours) × rate × burden; PIECE: qty × rate
+  basis      String
+  hours      Float?
+  qty        Float?
+  unit       String?
+  rate       Float
+  burdenPct  Float?
+  amount     Float
+  formula    String
+  note       String?
+  enteredBy  String
+  // set when an Admin/estimator approves it; approval posts it to job costing
+  approvedBy String?
+  approvedAt DateTime?
+  jobCostId  String?
+  createdAt  DateTime  @default(now())
 }

@@ -17,7 +17,8 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 11 | Outputs (AccuLynx copy, order CSV, estimate & takeoff PDFs) + customer proposals with e-signature | **Done** |
 | 12 | Job costing and profit analysis | **Done** |
 | 13 | Material orders and deliveries | **Done** |
-| 14–18 | AccuLynx replacement: scheduling/crews, invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | Next |
+| 14 | Schedule, crews & subs, work orders, timesheets | **Done** |
+| 15–18 | AccuLynx replacement: invoicing/payments/QuickBooks, tasks/reports/commissions, portal/mobile, migration | Next |
 | 19 | End-to-end test | |
 
 The full schema, including the job chat/email models, is already in `prisma/schema.prisma`. Later phases add features without reshaping the data model.
@@ -161,6 +162,20 @@ Each job has a **Job costing** tab. Admins see every job. Estimators see the job
 - **Job costing link:** imported invoices carrying the PO (or ABC's order #) bill that order's commitment automatically.
 - **Operations → Deliveries:** every open order across jobs by date, with overdue orders flagged and backorders listed.
 - The ABC ordering API is not connected; that needs ABC to grant access.
+
+## Production (Phase 14)
+
+- **Operations → Crews & subs:** crew and sub records with default pay (hourly + burden, or piece rate per SQ/SF/LF).
+  - Insurance tracking: subs need a current COI and workers' comp on file. Expiring (≤30 days), expired, and missing insurance show up everywhere the crew is picked.
+- **Operations → Schedule:** a two-week board of installs, tear-offs, inspections, dumpster swaps, and repairs, plus material deliveries from orders. Filter by crew.
+  - Double-booking a crew, or scheduling a sub without current insurance, needs a stated reason. The reason is kept, and the event shows amber instead of red.
+  - Putting an install on a sold job moves it to Scheduled. The stage gates apply: a signed contract, and the Form 17 on public tax-exempt jobs.
+- **Job → Production tab:** the job's schedule, its work orders, and its time.
+  - **Work orders:** pull the "We will / We will not" scope from the estimate and add instructions, a start date, and pay (piece or lump sum; hourly crews use timesheets).
+    - A work order can't be sent to a sub whose insurance isn't current.
+    - Sending emails the crew a link (or you text it) and adds the pay to committed cost.
+    - The link (`/w/…`, no login) shows the crew the address with a Maps link, the customer contact, dates, scope, materials and delivery status, and their own pay. They can tap "Started" / "Job complete".
+  - **Time & piece work:** logged per crew per day. Approving it posts it to Job costing (labor for crews, subcontractors for subs) and bills the crew's work order.
 
 ## Environment variables
 
