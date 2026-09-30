@@ -248,7 +248,8 @@ export async function loadReadinessInput(projectId: string): Promise<ReadinessIn
       })),
       labor: estimate.laborLines.map((l) => ({ id: l.id, task: l.task, sourceStatus: l.sourceStatus })),
     },
-    expiredSheets: expired.filter((s) => sheetDateStatus(s).status === "EXPIRED").map((s) => `${s.code} ${s.name}`),
+    // only the sheets this job can be priced from: BTR standard, plus its builder's own
+    expiredSheets: expired.filter((s) => (!s.companyId || s.companyId === p.clientCompanyId) && sheetDateStatus(s).status === "EXPIRED").map((s) => `${s.code} ${s.name}`),
   };
 }
 

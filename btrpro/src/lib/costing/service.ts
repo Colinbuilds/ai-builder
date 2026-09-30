@@ -4,6 +4,7 @@ import { round } from "@/lib/calc/core";
 import { totalsFor } from "@/lib/estimates/service";
 import { getSettings } from "@/lib/settings";
 import { getPriceItem } from "@/lib/price";
+import { priceScopeFor } from "@/lib/pricing-scope";
 import { addDocument } from "@/lib/docs/documents";
 import { COST_CATEGORIES, computePnl, crewCost, type Baseline, type CostCategory } from "./pnl";
 import { parseInvoiceCsv, type InvoiceRow } from "./invoice-csv";
@@ -240,6 +241,8 @@ export type ImportPreviewRow = InvoiceRow & { status: "NEW" | "DUPLICATE" | "OTH
 
 async function classifyRows(projectId: string, rows: InvoiceRow[]) {
   const out: ImportPreviewRow[] = [];
+  // builder jobs are checked against the builder's negotiated prices
+  const scope = await priceScopeFor(projectId);
   for (const r of rows) {
     const same = r.invoice
       ? await prisma.jobCost.findFirst({ where: { kind: "IMPORT", reference: r.invoice, description: r.description, amount: r.amount, itemNumber: r.itemNumber }, include: { project: { select: { name: true } } } })
@@ -247,7 +250,7 @@ async function classifyRows(projectId: string, rows: InvoiceRow[]) {
     let sheetPrice: number | null = null;
     let priceFlag: string | null = null;
     if (r.itemNumber && r.unitPrice != null) {
-      const item = await getPriceItem(r.itemNumber);
+      const item = await getPriceItem(r.itemNumber, undefined, scope);
       if (item?.unitPrice != null && r.uom && item.uom.toUpperCase() === r.uom) {
         sheetPrice = item.unitPrice;
         if (Math.abs(r.unitPrice - item.unitPrice) > Math.max(0.01, item.unitPrice * 0.005))

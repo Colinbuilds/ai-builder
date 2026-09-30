@@ -6,6 +6,8 @@ import { showForm17Banner } from "@/lib/projects/workflow";
 import { addDocument } from "@/lib/docs/documents";
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 import { PdfWriter } from "@/lib/pdf/writer";
+import { liveItems } from "@/lib/estimates/service";
+import { priceScopeFor } from "@/lib/pricing-scope";
 import { deliveryStatus, orderLinePrice, toOrderUnit } from "./price";
 
 export type OrderActor = { id: string; name: string; role: "ADMIN" | "ESTIMATOR" | "VIEWER" };
@@ -100,12 +102,14 @@ export async function setLineQuantity(lineId: string, quantity: number | null, a
 
 export async function addOrderLine(orderId: string, input: { itemNumber: string | null; description: string | null; quantity: number | null; unit: string | null }, actor: OrderActor) {
   guard(actor);
-  await draftOrThrow(orderId);
+  const order = await draftOrThrow(orderId);
   if (input.quantity == null || !Number.isFinite(input.quantity) || input.quantity <= 0) throw new OrderError("Enter a quantity.");
   let item = null;
   if (input.itemNumber) {
-    item = await prisma.priceItem.findFirst({ where: { itemNumber: input.itemNumber.trim(), sheet: { isActive: true } } });
-    if (!item) throw new OrderError(`${input.itemNumber} isn't on a loaded price sheet. Leave the item # blank and describe it to order it anyway (priced by the supplier).`);
+    const scope = await priceScopeFor(order.projectId);
+    const live = (await liveItems([input.itemNumber.trim()], scope)).get(input.itemNumber.trim());
+    item = live ? await prisma.priceItem.findUnique({ where: { id: live.id } }) : null;
+    if (!item) throw new OrderError(`${input.itemNumber} isn't on ${scope.builderId ? `${scope.builderName}'s pricing` : "a loaded price sheet"}. Leave the item # blank and describe it to order it anyway (priced by the supplier).`);
   } else if (!input.description?.trim() || !input.unit?.trim()) throw new OrderError("Pick an item, or type a description and unit.");
   const unit = item ? item.uom : input.unit!.trim().toUpperCase();
   const price = orderLinePrice(input.quantity, unit, item);

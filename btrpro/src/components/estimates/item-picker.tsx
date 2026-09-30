@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 
 export type PickedItem = {
@@ -14,6 +15,7 @@ export type PickedItem = {
   warning: string | null;
   coverageQty: number | null;
   coverageUnit: string | null;
+  builderPrice?: boolean;
 };
 
 const money = (n: number | null, s: string) => (s === "CALL" || n == null ? "CALL" : `$${n.toFixed(2)}`);
@@ -25,13 +27,18 @@ export function ItemPicker({
   onPick,
   placeholder = "Search item #, product, or section",
   sheets,
+  builderId,
 }: {
   value: { itemNumber: string | null; description?: string | null };
   label?: string;
   onPick: (item: PickedItem | null) => void;
   placeholder?: string;
   sheets?: string[];
+  builderId?: string;
 }) {
+  // on a job's pages, search that job's pricing (a builder's own sheets on builder jobs)
+  const path = usePathname();
+  const projectId = path.match(/^\/projects\/([^/]+)/)?.[1];
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<PickedItem[]>([]);
@@ -42,11 +49,13 @@ export function ItemPicker({
     const t = setTimeout(async () => {
       const params = new URLSearchParams({ q, limit: "20" });
       if (sheets?.length) params.set("sheets", sheets.join(","));
+      if (projectId && projectId !== "new") params.set("projectId", projectId);
+      else if (builderId) params.set("builderId", builderId);
       const r = await fetch(`/api/price-items?${params}`);
       if (r.ok) setResults(await r.json());
     }, 200);
     return () => clearTimeout(t);
-  }, [q, open, sheets]);
+  }, [q, open, sheets, projectId, builderId]);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -110,6 +119,7 @@ export function ItemPicker({
               <span className="flex-1 truncate">{r.description}</span>
               <span className="text-xs whitespace-nowrap text-muted-foreground">
                 {money(r.unitPrice, r.priceStatus)}/{r.uom} · {r.sheetCode}
+                {r.builderPrice && <span className="ml-1 rounded bg-blue-100 px-1 text-blue-800 dark:bg-blue-950 dark:text-blue-300">builder</span>}
                 {r.coverageQty != null && ` · ${r.coverageQty} ${r.coverageUnit}`}
               </span>
             </button>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { priceScopeFor } from "@/lib/pricing-scope";
 import { cheapestWrapOnSheet, measureMap, totalsFor, WASTE_REFERENCE, wasteSectionsFor, liveItems, type WasteMap } from "@/lib/estimates/service";
 import { rulesForEstimate } from "@/lib/estimates/rules";
 import { defaultConfig, MODULE_LABEL, MODULES_FOR_SCOPE, type Module, type TakeoffConfig } from "@/lib/estimates/takeoff";
@@ -40,7 +41,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
     where: { id: estimateId },
     include: {
       project: true,
-      lines: { orderBy: [{ section: "asc" }, { sortOrder: "asc" }], include: { priceItem: { include: { sheet: { select: { code: true, warning: true } } } } } },
+      lines: { orderBy: [{ section: "asc" }, { sortOrder: "asc" }], include: { priceItem: { include: { sheet: { select: { code: true, warning: true, companyId: true } } } } } },
       laborLines: { orderBy: { sortOrder: "asc" } },
       openItems: { orderBy: { createdAt: "asc" } },
       scopeItems: { orderBy: { sortOrder: "asc" } },
@@ -52,7 +53,17 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
   const takeoff = (e.takeoff as TakeoffConfig) ?? {};
   const modules = MODULES_FOR_SCOPE[e.scopeType] as Module[];
   const waste = e.wastePctBySection as WasteMap;
-  const plank = takeoff.siding?.plank.itemNumber ? (await liveItems([takeoff.siding.plank.itemNumber])).get(takeoff.siding.plank.itemNumber) : null;
+  const scope = await priceScopeFor(id);
+  const plank = takeoff.siding?.plank.itemNumber ? (await liveItems([takeoff.siding.plank.itemNumber], scope)).get(takeoff.siding.plank.itemNumber) : null;
+  const builderSheets = scope.builderId ? await prisma.priceSheet.count({ where: { companyId: scope.builderId, isActive: true } }) : 0;
+  // lines priced from a builder's sheet that isn't this job's builder (the job's client changed after pricing)
+  // or from BTR standard on what is now a builder job (and not as the builder's chosen fallback)
+  const stale = e.lines.filter((l) => {
+    const sheetOwner = l.priceItem?.sheet.companyId;
+    if (!l.priceItem) return false;
+    if (sheetOwner) return sheetOwner !== scope.builderId;
+    return !!scope.builderId && !(l.note ?? "").includes("Not on ");
+  }).length;
   const [totals, rules, mm, standards, measurements] = await Promise.all([
     totalsFor(estimateId),
     rulesForEstimate(estimateId, modules.includes("siding") ? await cheapestWrapOnSheet(plank?.sheetCode ?? takeoff.siding?.plank.sheetCode) : null),
@@ -72,6 +83,18 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="flex flex-col gap-6">
+      {scope.builderId && (
+        <p className="rounded-md border border-blue-300 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+          Priced from <strong>{scope.builderName}</strong>&apos;s own ABC pricing.{" "}
+          {builderSheets === 0 ? <strong>No {scope.builderName} pricing is loaded yet, so </strong> : "Items not on it: "}
+          {scope.fallback === "STANDARD" ? "BTR standard price, flagged on the line." : "MISSING."}
+        </p>
+      )}
+      {stale > 0 && (
+        <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+          {stale} line{stale === 1 ? " was" : "s were"} priced under different pricing than this job uses now (the job&apos;s client changed). Re-run the takeoff and re-add those lines.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <Link href={`/projects/${id}/estimates`} className="text-sm text-muted-foreground">
           ← Estimates

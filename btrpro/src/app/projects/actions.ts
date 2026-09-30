@@ -89,7 +89,7 @@ export async function createProjectAction(_: ActionResult, f: FormData): Promise
         ? { firstName: str(f, "hoFirstName")!, lastName: str(f, "hoLastName")!, phone: str(f, "hoPhone"), email: str(f, "hoEmail") }
         : null;
     if (input.market === "RESIDENTIAL" && !homeowner && !input.clientCompanyId)
-      return { problems: ["Enter the homeowner's first and last name."] };
+      return { problems: ["Enter the homeowner's first and last name, or pick the builder."] };
     ({ id } = await createProject(input, user, homeowner));
   } catch (e) {
     return fail(e);

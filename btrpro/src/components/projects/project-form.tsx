@@ -53,7 +53,7 @@ export function ProjectForm({
 }: {
   action: (s: ActionResult, f: FormData) => Promise<ActionResult>;
   values?: ProjectFormValues;
-  companies: Opt[];
+  companies: (Opt & { type?: string })[];
   users: Opt[];
   showContract?: boolean;
   isNew?: boolean;
@@ -105,6 +105,20 @@ export function ProjectForm({
           <Input name="hoLastName" placeholder="Last name" />
           <Input name="hoPhone" placeholder="Phone" />
           <Input name="hoEmail" type="email" placeholder="Email" />
+          <div className="col-span-2 mt-2 flex flex-col gap-1">
+            <span className="text-sm font-medium">Builder (new construction)</span>
+            <Select name="clientCompanyId" defaultValue={v.clientCompanyId ?? ""}>
+              <option value="">— none: homeowner job, BTR pricing —</option>
+              {companies
+                .filter((c) => c.type === "BUILDER")
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — their pricing
+                  </option>
+                ))}
+            </Select>
+            <span className="text-xs text-muted-foreground">A builder job is priced from that builder&apos;s own ABC sheets. Homeowner is optional on builder jobs.</span>
+          </div>
         </fieldset>
       ) : (
         <Field label={res ? "Company (property manager / builder), if any" : "Client (GC / owner / property manager)"}>
@@ -113,6 +127,7 @@ export function ProjectForm({
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
+                {c.type === "BUILDER" ? " (builder pricing)" : ""}
               </option>
             ))}
           </Select>

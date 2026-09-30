@@ -177,6 +177,20 @@ Each job has a **Job costing** tab. Admins see every job. Estimators see the job
     - The link (`/w/…`, no login) shows the crew the address with a Maps link, the customer contact, dates, scope, materials and delivery status, and their own pay. They can tap "Started" / "Job complete".
   - **Time & piece work:** logged per crew per day. Approving it posts it to Job costing (labor for crews, subcontractors for subs) and bills the crew's work order.
 
+## Builders and builder pricing
+
+Home builders often have their own negotiated ABC pricing. **Builders** (top menu) holds each one with tabs:
+- **Pricing:** their price sheets. Upload the PDF ABC gave them, or a CSV ([template](/api/builders/template.csv)); you review it like any BTR sheet. You can also search their items there.
+- **Jobs:** every job for that builder, plus "New job" with the builder preselected.
+- **Contacts:** superintendents, purchasing, AP.
+- **Builder info:** ABC account, sheet prefix (their sheets are coded `PREFIX-XX`), standard specs, billing terms, and whether a PO is required.
+
+How prices are picked:
+- A job whose client is a builder is priced from **that builder's sheets only**. This applies to takeoffs, added lines, substitutions, the item search, the AI assistant, material orders, and invoice price checks.
+- For an item that isn't on the builder's sheets, each builder has a required setting: use BTR's standard price with the line flagged "not on builder pricing", or leave it MISSING.
+- Builder prices never appear on any other job or in the main price library.
+- If a job's client changes after it was priced, the estimate warns which lines were priced under the old pricing.
+
 ## Environment variables
 
 | Name | Used for |

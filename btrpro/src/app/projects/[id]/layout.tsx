@@ -39,6 +39,11 @@ export default async function ProjectLayout({ children, params }: { children: Re
           <StageBadge stage={project.status} />
           <ReadinessBadge readiness={readiness} />
           {project.isInsuranceClaim && <Badge variant="blue">Insurance claim</Badge>}
+          {project.clientCompany?.type === "BUILDER" && (
+            <Link href={`/builders/${project.clientCompany.id}?tab=pricing`}>
+              <Badge variant="blue">{project.clientCompany.name} pricing</Badge>
+            </Link>
+          )}
           {project.isPublic && <Badge variant="outline">Public</Badge>}
           {project.isTaxExempt && <Badge variant="outline">Tax-exempt</Badge>}
           {project.prevailingWage && <Badge variant="outline">Prevailing wage</Badge>}

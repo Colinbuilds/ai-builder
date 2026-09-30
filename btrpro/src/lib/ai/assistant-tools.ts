@@ -4,6 +4,7 @@ import { z } from "zod";
 import type Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/db";
 import { searchPriceItems } from "@/lib/price";
+import { notOnBuilderNote, priceScopeFor } from "@/lib/pricing-scope";
 import { sheetDateStatus } from "@/lib/sheets/date-status";
 import { INTAKE_BY_KEY } from "@/lib/projects/intake";
 import { MEASUREMENT_BY_KEY } from "@/lib/docs/measurements";
@@ -99,20 +100,22 @@ export async function runTool(name: string, rawInput: unknown, ctx: ToolCtx): Pr
 type Impl = { [K in ToolName]: (i: z.infer<(typeof TOOL_SCHEMAS)[K]>, ctx: ToolCtx) => Promise<string> };
 
 const TOOLS: Impl = {
-  async search_price_items(i) {
-    const r = await searchPriceItems({ q: i.query, sheetCodes: i.sheet_codes, pageSize: 25 });
+  async search_price_items(i, ctx) {
+    const scope = await priceScopeFor(ctx.projectId);
+    const r = await searchPriceItems({ q: i.query, sheetCodes: i.sheet_codes, pageSize: 25, scope });
     if (!r.items.length) return `No items match "${i.query}" on the loaded sheets.`;
     return r.items
       .map(
         (it) =>
-          `${it.itemNumber} | ${it.description} | ${money(it.unitPrice)}/${it.uom} | sheet ${it.sheet.code} (${sheetDateStatus(it.sheet).status})${it.coverageQty != null ? ` | coverage ${it.coverageQty} ${it.coverageUnit}` : ""}${it.sheet.warning ? " | CONFIRM ACCOUNT" : ""}`,
+          `${it.itemNumber} | ${it.description} | ${money(it.unitPrice)}/${it.uom} | sheet ${it.sheet.code}${scope.builderId ? (it.sheet.companyId ? ` (${scope.builderName} pricing)` : " (BTR standard — not builder pricing)") : ""} (${sheetDateStatus(it.sheet).status})${it.coverageQty != null ? ` | coverage ${it.coverageQty} ${it.coverageUnit}` : ""}${it.sheet.warning ? " | CONFIRM ACCOUNT" : ""}`,
       )
       .join("\n");
   },
-  async get_price_item(i) {
-    const it = (await liveItems([i.item_number.trim()])).get(i.item_number.trim());
-    if (!it) return `${i.item_number} is not on any loaded BTR price sheet. Mark it MISSING and ask for the correct sheet.`;
-    return `${it.itemNumber} | ${it.description} | ${money(it.unitPrice)}/${it.uom} | sheet ${it.sheetCode} (${it.sheetStatus})${it.coverageQty != null ? ` | coverage ${it.coverageQty} ${it.coverageUnit}` : ""}${it.sheetWarning ? ` | WARNING: ${it.sheetWarning}` : ""}`;
+  async get_price_item(i, ctx) {
+    const scope = await priceScopeFor(ctx.projectId);
+    const it = (await liveItems([i.item_number.trim()], scope)).get(i.item_number.trim());
+    if (!it) return scope.builderId ? `${i.item_number} — ${notOnBuilderNote(scope)} Mark it MISSING.` : `${i.item_number} is not on any loaded BTR price sheet. Mark it MISSING and ask for the correct sheet.`;
+    return `${it.itemNumber} | ${it.description} | ${money(it.unitPrice)}/${it.uom} | sheet ${it.sheetCode}${it.priceSource === "BUILDER" ? ` (${scope.builderName} pricing)` : it.priceSource === "STANDARD_FALLBACK" ? " (BTR standard fallback — not on the builder's sheet)" : ""} (${it.sheetStatus})${it.coverageQty != null ? ` | coverage ${it.coverageQty} ${it.coverageUnit}` : ""}${it.sheetWarning ? ` | WARNING: ${it.sheetWarning}` : ""}`;
   },
   async get_measurements(_i, ctx) {
     const ms = await prisma.measurement.findMany({ where: { projectId: ctx.projectId }, include: { sourceDoc: { select: { fileName: true } } } });
@@ -147,7 +150,7 @@ const TOOLS: Impl = {
     const config = { [i.module]: { ...(saved as object), ...(i.overrides ?? {}) } } as TakeoffConfig;
     const w = (e?.wastePctBySection as Record<string, { pct: number | null; approved: boolean; basis: string }>) ?? {};
     const pick = (s: string) => w[s] ?? { pct: null, approved: false, basis: "not set" };
-    const items = await liveItems(JSON.stringify(config).match(/"itemNumber":"([^"]+)"/g)?.map((m) => m.slice(14, -1)) ?? []);
+    const items = await liveItems(JSON.stringify(config).match(/"itemNumber":"([^"]+)"/g)?.map((m) => m.slice(14, -1)) ?? [], await priceScopeFor(ctx.projectId));
     const { lines, problems } = runModule(i.module as Module, config, {
       m: await measureMap(ctx.projectId),
       items,
@@ -159,7 +162,7 @@ const TOOLS: Impl = {
   async propose_line_items(i, ctx) {
     const e = await currentEstimate(ctx.projectId);
     if (!e) return "There's no open estimate on this job. Ask the user to start one on the Estimates tab.";
-    const items = await liveItems(i.lines.map((l) => l.item_number ?? "").filter(Boolean));
+    const items = await liveItems(i.lines.map((l) => l.item_number ?? "").filter(Boolean), await priceScopeFor(ctx.projectId));
     const results: string[] = [];
     let accepted = 0;
     for (const l of i.lines) {

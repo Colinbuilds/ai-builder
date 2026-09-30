@@ -12,7 +12,7 @@ const str = (f: FormData, k: string) => {
   const v = f.get(k);
   return typeof v === "string" && v.trim() ? v.trim() : null;
 };
-const TYPES = ["GC", "OWNER", "PROPERTY_MANAGER", "PUBLIC_AGENCY", "ARCHITECT", "SUBCONTRACTOR", "SUPPLIER", "OTHER"];
+const TYPES = ["BUILDER", "GC", "OWNER", "PROPERTY_MANAGER", "PUBLIC_AGENCY", "ARCHITECT", "SUBCONTRACTOR", "SUPPLIER", "OTHER"];
 
 export async function createCompanyAction(_: CustomerResult, f: FormData): Promise<CustomerResult> {
   await requireUser(["ADMIN", "ESTIMATOR"]);

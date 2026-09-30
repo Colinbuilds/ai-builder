@@ -73,6 +73,9 @@ model PriceSheet {
   importId       String?      @unique
   import         SheetImport? @relation(fields: [importId], references: [id])
   replacedAt     DateTime?
+  // null = BTR standard pricing; set = a builder's own pricing, used only on that builder's jobs
+  companyId      String?
+  company        Company?     @relation(fields: [companyId], references: [id])
 
   items PriceItem[]
 
@@ -124,6 +127,7 @@ model SheetImport {
   createdBy     User         @relation(fields: [createdById], references: [id])
   createdAt     DateTime     @default(now())
   appliedAt     DateTime?
+  companyId     String?
 
   sheet PriceSheet?
 }
@@ -271,6 +275,7 @@ model ProjectActivity {
 // ---------- Customers (CRM) ----------
 
 enum CompanyType {
+  BUILDER
   GC
   OWNER
   PROPERTY_MANAGER
@@ -282,17 +287,28 @@ enum CompanyType {
 }
 
 model Company {
-  id        String      @id @default(cuid())
-  name      String
-  type      CompanyType @default(OTHER)
-  phone     String?
-  email     String?
-  address   String?
-  notes     String?
-  createdAt DateTime    @default(now())
+  id              String      @id @default(cuid())
+  name            String
+  type            CompanyType @default(OTHER)
+  phone           String?
+  email           String?
+  address         String?
+  notes           String?
+  // Home builders: their own negotiated ABC pricing (builder price sheets)
+  // short code prefixed to their sheet codes, e.g. LEG → LEG-SS
+  sheetPrefix     String?
+  abcAccount      String?
+  // items missing from the builder's sheets: STANDARD = BTR standard price, flagged · MISSING = leave MISSING
+  pricingFallback String?
+  poRequired      Boolean     @default(false)
+  standardSpecs   String?
+  billingTerms    String?
+  website         String?
+  createdAt       DateTime    @default(now())
 
-  contacts Contact[]
-  projects Project[]
+  contacts    Contact[]
+  projects    Project[]
+  priceSheets PriceSheet[]
 }
 
 model Contact {

@@ -46,7 +46,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   });
 
   const [companies, users, allContacts] = await Promise.all([
-    prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.company.findMany({ select: { id: true, name: true, type: true }, orderBy: { name: "asc" } }),
     prisma.user.findMany({ where: { role: { not: "VIEWER" } }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.contact.findMany({ include: { company: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
   ]);

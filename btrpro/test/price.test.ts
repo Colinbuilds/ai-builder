@@ -6,12 +6,12 @@ import { getPriceItem, searchPriceItems } from "@/lib/price";
 afterAll(() => prisma.$disconnect());
 
 // Other test files upload TEST_ONLY sheets into the same DB; count only what the seed created.
-const seeded = { sheet: { importId: null, isActive: true } };
+const seeded = { sheet: { importId: null, isActive: true, companyId: null } };
 
 describe("seed", () => {
   it("loads exactly 527 items across 6 sheets, 8 of them CALL", async () => {
     expect(await prisma.priceItem.count({ where: seeded })).toBe(527);
-    expect(await prisma.priceSheet.count({ where: { isLoaded: true, importId: null } })).toBe(6);
+    expect(await prisma.priceSheet.count({ where: { isLoaded: true, importId: null, companyId: null } })).toBe(6);
     expect(await prisma.priceItem.count({ where: { priceStatus: "CALL", ...seeded } })).toBe(8);
     expect(await prisma.priceItem.count({ where: { priceStatus: "CALL", unitPrice: { not: null } } })).toBe(0);
   });

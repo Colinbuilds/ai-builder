@@ -1,6 +1,7 @@
 // Estimates: creation, waste gate, takeoff runs, lines, substitutions, revisions (BUILD_PROMPT §4–5).
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { notOnBuilderNote, priceScopeFor, sheetWhere, STANDARD_SCOPE, type PriceScope } from "@/lib/pricing-scope";
 import { priceStatusFor, estimateTotals, toSheetUnit, type SheetDateStatus } from "@/lib/calc/pricing";
 import { cheapestHouseWrap } from "@/lib/calc/siding";
 import { sheetDateStatus } from "@/lib/sheets/date-status";
@@ -122,31 +123,45 @@ export type LiveItem = ItemInfo & {
   uom: string;
   sheetStatus: SheetDateStatus;
   sheetWarning: string | null;
+  // STANDARD = BTR sheet · BUILDER = the job's builder's sheet · STANDARD_FALLBACK = BTR price on a builder job
+  priceSource: "STANDARD" | "BUILDER" | "STANDARD_FALLBACK";
 };
 
-/** Looks up item numbers on the live sheets. */
-export async function liveItems(itemNumbers: string[]): Promise<Map<string, LiveItem>> {
-  const nums = [...new Set(itemNumbers.filter(Boolean))];
+/**
+ * Looks up item numbers on the live sheets for a pricing scope (BTR standard by default). On a builder job
+ * the builder's sheets win; standard prices are used only if the builder is set to fall back, and are marked.
+ */
+export async function liveItems(itemNumbers: string[], scope: PriceScope = STANDARD_SCOPE): Promise<Map<string, LiveItem>> {
+  const nums = [...new Set(itemNumbers.filter(Boolean).map((n) => n.trim()))];
   if (!nums.length) return new Map();
-  const rows = await prisma.priceItem.findMany({ where: { itemNumber: { in: nums }, sheet: { isActive: true } }, include: { sheet: true } });
-  return new Map(
-    rows.map((r) => [
-      r.itemNumber,
-      {
-        id: r.id,
-        itemNumber: r.itemNumber,
-        description: r.description,
-        sheetCode: r.sheet.code,
-        coverageQty: r.coverageQty,
-        coverageUnit: r.coverageUnit,
-        unitPrice: r.unitPrice,
-        priceStatus: r.priceStatus,
-        uom: r.uom,
-        sheetStatus: sheetDateStatus(r.sheet).status,
-        sheetWarning: r.sheet.warning,
-      },
-    ]),
-  );
+  const rows = await prisma.priceItem.findMany({ where: { itemNumber: { in: nums }, sheet: sheetWhere(scope) }, include: { sheet: true } });
+  const out = new Map<string, LiveItem>();
+  // standard rows first so a builder's own row for the same item number replaces it
+  for (const r of [...rows.filter((x) => !x.sheet.companyId), ...rows.filter((x) => x.sheet.companyId)]) {
+    const source: LiveItem["priceSource"] = !scope.builderId ? "STANDARD" : r.sheet.companyId ? "BUILDER" : "STANDARD_FALLBACK";
+    out.set(r.itemNumber, {
+      id: r.id,
+      itemNumber: r.itemNumber,
+      description: r.description,
+      sheetCode: r.sheet.code,
+      coverageQty: r.coverageQty,
+      coverageUnit: r.coverageUnit,
+      unitPrice: r.unitPrice,
+      priceStatus: r.priceStatus,
+      uom: r.uom,
+      sheetStatus: sheetDateStatus(r.sheet).status,
+      sheetWarning: r.sheet.warning,
+      priceSource: source,
+    });
+  }
+  return out;
+}
+
+/** Note for a line priced under a builder scope (fallback used, or item missing from the builder's sheets). */
+export function scopeNote(scope: PriceScope, it: LiveItem | undefined, requested: string | null | undefined) {
+  if (!scope.builderId || !requested) return null;
+  if (!it || it.priceSource === "STANDARD_FALLBACK") return notOnBuilderNote(scope);
+  return null;
 }
 
 /** SID-04: cheapest house wrap per SF of coverage on a sheet (by item description + parsed SF/RL coverage). */
@@ -181,12 +196,13 @@ export async function runTakeoff(estimateId: string, module: Module, actor: Acto
   assertEditable(e);
   const config = ((e.takeoff as TakeoffConfig) ?? {}) as TakeoffConfig;
   if (!config[module]) (config as Record<string, unknown>)[module] = defaultConfig(module, e.project.market);
+  const scope = await priceScopeFor(e.projectId);
   if (module === "siding" && config.siding && config.siding.houseWrap.mode === "cheapest") {
-    const plank = config.siding.plank.itemNumber ? (await liveItems([config.siding.plank.itemNumber])).get(config.siding.plank.itemNumber) : null;
+    const plank = config.siding.plank.itemNumber ? (await liveItems([config.siding.plank.itemNumber], scope)).get(config.siding.plank.itemNumber) : null;
     const wrap = await cheapestWrapOnSheet(plank?.sheetCode ?? config.siding.plank.sheetCode);
     config.siding.houseWrap.pick = { ...config.siding.houseWrap.pick, itemNumber: wrap, coverage: null };
   }
-  const items = await liveItems([...collectItemNumbers(config[module]), "0150080011", "4292804534"]);
+  const items = await liveItems([...collectItemNumbers(config[module]), "0150080011", "4292804534"], scope);
   const w = wasteOf(e);
   const asWaste = (s: WasteSection) => ({ pct: w[s].pct, approved: w[s].approved, basis: w[s].basis });
   const ctx: Ctx = { m: await measureMap(e.projectId), items, waste: { ROOFING: asWaste("ROOFING"), SIDING: asWaste("SIDING"), DECK: asWaste("DECK") } };
@@ -218,7 +234,7 @@ export async function runTakeoff(estimateId: string, module: Module, actor: Acto
         sourceStatus: status,
         ruleId: l.ruleId ?? null,
         calcKey: `${module}:${l.key}`,
-        note: [l.note, conv.note].filter(Boolean).join(" ") || null,
+        note: [l.note, conv.note, l.itemNumber !== "N/A" ? scopeNote(scope, it, l.itemNumber) : null].filter(Boolean).join(" ") || null,
         sortOrder: ++order,
       },
     });
@@ -247,7 +263,8 @@ export async function addLine(estimateId: string, input: ManualLine, actor: Acto
   let data: Prisma.EstimateLineUncheckedCreateInput;
   const base = { estimateId, section: input.section, quantity: input.quantity, sortOrder: 9999 };
   if (input.itemNumber) {
-    const it = (await liveItems([input.itemNumber])).get(input.itemNumber.trim());
+    const scope = await priceScopeFor(e.projectId);
+    const it = (await liveItems([input.itemNumber], scope)).get(input.itemNumber.trim());
     const priced = priceStatusFor(input.quantity, it ?? null, input.itemNumber.trim());
     data = {
       ...base,
@@ -259,7 +276,7 @@ export async function addLine(estimateId: string, input: ManualLine, actor: Acto
       total: priced.total,
       sourceStatus: priced.sourceStatus,
       formula: input.quantity != null ? `${input.quantity} entered by ${actor.name}` : null,
-      note: it ? null : "Item number not on any loaded BTR sheet — request the correct sheet or substitute (requires approval).",
+      note: scopeNote(scope, it, input.itemNumber) ?? (it ? null : "Item number not on any loaded BTR sheet — request the correct sheet or substitute (requires approval)."),
     };
   } else {
     if (!input.itemName.trim()) throw new EstimateError("Name the line.");
@@ -288,7 +305,7 @@ export async function overrideQuantity(lineId: string, quantity: number, reason:
   assertEditable(l.estimate);
   if (!Number.isFinite(quantity) || quantity < 0) throw new EstimateError("Quantity must be a positive number.");
   if (!reason.trim()) throw new EstimateError("Say why the calculated quantity is being changed.");
-  const it = l.supplierItemNumber ? (await liveItems([l.supplierItemNumber])).get(l.supplierItemNumber) : undefined;
+  const it = l.supplierItemNumber ? (await liveItems([l.supplierItemNumber], await priceScopeFor(l.estimate.projectId))).get(l.supplierItemNumber) : undefined;
   const priced = l.unitCost != null && !it ? { unitCost: l.unitCost, total: Math.round(l.unitCost * quantity * 100) / 100, sourceStatus: l.sourceStatus } : priceStatusFor(quantity, it ?? null, l.supplierItemNumber);
   await prisma.estimateLine.update({
     where: { id: lineId },
@@ -309,8 +326,9 @@ export async function substituteLine(lineId: string, itemNumber: string, reason:
   const l = await prisma.estimateLine.findUniqueOrThrow({ where: { id: lineId }, include: { estimate: true } });
   assertEditable(l.estimate);
   if (!reason.trim()) throw new EstimateError("A substitution needs a reason (who approved it and why).");
-  const it = (await liveItems([itemNumber.trim()])).get(itemNumber.trim());
-  if (!it) throw new EstimateError(`${itemNumber} isn't on any loaded sheet.`);
+  const scope = await priceScopeFor(l.estimate.projectId);
+  const it = (await liveItems([itemNumber.trim()], scope)).get(itemNumber.trim());
+  if (!it) throw new EstimateError(`${itemNumber} isn't on any loaded sheet${scope.builderId ? ` for ${scope.builderName}` : ""}.`);
   const priced = priceStatusFor(l.quantity, it, it.itemNumber);
   await prisma.estimateLine.update({
     where: { id: lineId },
@@ -412,7 +430,7 @@ export async function decideAiLine(lineId: string, accept: boolean, actor: Actor
     await prisma.estimateLine.delete({ where: { id: lineId } });
     await log(l.estimate.projectId, actor, `${actor.name} rejected AI suggestion "${l.itemName}"`);
   } else {
-    const it = l.supplierItemNumber ? (await liveItems([l.supplierItemNumber])).get(l.supplierItemNumber) : undefined;
+    const it = l.supplierItemNumber ? (await liveItems([l.supplierItemNumber], await priceScopeFor(l.estimate.projectId))).get(l.supplierItemNumber) : undefined;
     if (l.supplierItemNumber && !it) throw new EstimateError(`${l.supplierItemNumber} is no longer on a loaded sheet.`);
     if (it && l.unitCost != null && it.unitPrice !== l.unitCost) throw new EstimateError("The sheet price changed since the suggestion. Reject it and ask again.");
     const priced = it ? priceStatusFor(l.quantity, it, it.itemNumber) : { sourceStatus: "MISSING_PRICE" as const, unitCost: null, total: null };
