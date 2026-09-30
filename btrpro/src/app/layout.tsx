@@ -29,11 +29,27 @@ function navFor(role: string): NavGroup[] {
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },
         { href: "/settings/templates", label: "Estimate templates" },
-        ...(staff ? [{ href: "/settings/labor", label: "Labor standards" }] : []),
+        ...(staff
+          ? [{ href: "/settings/labor", label: "Labor standards" }]
+          : []),
         { href: "/settings/rules", label: "Rules" },
       ],
     },
-    { label: "Reports", items: [...(staff ? [{ href: "/reports/sales", label: "Sales & pipeline" }, { href: "/reports/profit", label: "Profit" }, { href: "/reports/commissions", label: "Commissions" }] : []), ...(role === "ADMIN" ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : [])] },
+    {
+      label: "Reports",
+      items: [
+        ...(staff
+          ? [
+              { href: "/reports/sales", label: "Sales & pipeline" },
+              { href: "/reports/profit", label: "Profit" },
+              { href: "/reports/commissions", label: "Commissions" },
+            ]
+          : []),
+        ...(role === "ADMIN"
+          ? [{ href: "/reports/ar", label: "Receivables (AR)" }]
+          : []),
+      ],
+    },
     {
       label: "Admin",
       items:
@@ -52,10 +68,15 @@ function navFor(role: string): NavGroup[] {
 
 export const metadata: Metadata = {
   title: "BTRpro — BTR Contracting",
-  description: "BTR Contracting operations: estimating, jobs, orders, and job costing",
+  description:
+    "BTR Contracting operations: estimating, jobs, orders, and job costing",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const user = await getCurrentUser();
   const view = await getMarketView();
   return (
@@ -67,14 +88,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/" className="mr-2 font-semibold">
                 BTRpro
               </Link>
-              <NavMenu groups={navFor(user.role)} />
-              <span className="ml-auto">
+              <NavMenu groups={navFor(user.role)}>
+                <MarketSwitch view={view} />
+                <span className="text-muted-foreground">
+                  {user.name} · {user.role.toLowerCase()}
+                </span>
+                <form action={logout}>
+                  <Button variant="outline" size="sm">
+                    Sign out
+                  </Button>
+                </form>
+              </NavMenu>
+              <span className="ml-auto hidden md:inline">
                 <MarketSwitch view={view} />
               </span>
-              <span className="text-muted-foreground">
+              <span className="hidden text-muted-foreground md:inline">
                 {user.name} · {user.role.toLowerCase()}
               </span>
-              <form action={logout}>
+              <form action={logout} className="hidden md:block">
                 <Button variant="ghost" size="sm">
                   Sign out
                 </Button>

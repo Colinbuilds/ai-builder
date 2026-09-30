@@ -211,6 +211,20 @@ async function main() {
     console.log("Price-sheet sync folder set to BTR's Current folder.");
   }
 
+  // Re-read coverage on every live item (newer sheets from Drive included) when the parser learns a pattern.
+  // Coverage a person entered or took from manufacturer data is never touched.
+  let reparsed = 0;
+  for (const it of await prisma.priceItem.findMany({
+    where: { sheet: { isActive: true }, OR: [{ coverageSource: null }, { coverageSource: "PARSED_FROM_DESCRIPTION" }] },
+    select: { id: true, description: true, uom: true, coverageQty: true, coverageUnit: true },
+  })) {
+    const c = parseCoverage(it.description, it.uom ?? "");
+    if ((c?.qty ?? null) === it.coverageQty && (c?.unit ?? null) === it.coverageUnit) continue;
+    await prisma.priceItem.update({ where: { id: it.id }, data: { coverageQty: c?.qty ?? null, coverageUnit: c?.unit ?? null, coverageSource: c ? "PARSED_FROM_DESCRIPTION" : null } });
+    reparsed++;
+  }
+  if (reparsed) console.log(`Coverage re-read on ${reparsed} live items.`);
+
   const active = { sheet: { isActive: true, companyId: null } };
   const [sheetCount, itemCount, callCount, ruleCount] = await Promise.all([
     prisma.priceSheet.count({ where: { isLoaded: true, isActive: true, companyId: null } }),

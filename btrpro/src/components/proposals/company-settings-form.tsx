@@ -65,6 +65,16 @@ export function CompanySettingsForm({ s }: { s: CompanySettings }) {
           "Due date = issue date + this. Blank = due on receipt.",
         )}
         {field(
+          "iceWaterEavesFt",
+          "Ice & water at eaves (FT wide)",
+          "Company standard. Used on shingle takeoffs with the job's confirmed eaves LF when no rows are entered on the estimate. Blank = enter per job.",
+        )}
+        {field(
+          "iceWaterValleysFt",
+          "Ice & water in valleys (FT wide)",
+          "Company standard for valleys, with the job's confirmed valleys LF. Blank = enter per job.",
+        )}
+        {field(
           "cardSurchargePct",
           "Card surcharge %",
           "Added to card payments only, where permitted (up to 3%). Blank = none.",

@@ -140,12 +140,19 @@ export async function uploadDeliveryTicket(
   const crew = await crewJob(token, projectId);
   if (!file.bytes.length)
     throw new CrewLinkError("Take or choose a photo of the ticket.");
-  const ext = file.name.split(".").pop() ?? "jpg";
+  const kind = sniff(file.bytes);
+  if (!kind)
+    throw new CrewLinkError(
+      "That isn't a photo or PDF. Take a picture of the ticket.",
+    );
   const { doc } = await addDocument({
     projectId,
     bytes: file.bytes,
-    fileName: `Delivery ticket ${new Date().toISOString().slice(0, 10)} (${crew.name}).${ext}`,
-    contentType: file.type,
+    fileName: `Delivery ticket ${new Date().toISOString().slice(0, 10)} (${crew.name}).${kind}`,
+    contentType:
+      kind === "pdf"
+        ? "application/pdf"
+        : `image/${kind === "jpg" ? "jpeg" : kind}`,
   });
   await prisma.projectActivity.create({
     data: {
@@ -155,4 +162,22 @@ export async function uploadDeliveryTicket(
     },
   });
   return doc;
+}
+
+/** Photo or PDF, by the file's actual bytes (the name and type come from the phone and can't be trusted). */
+export function sniff(
+  b: Uint8Array,
+): "jpg" | "png" | "pdf" | "heic" | "webp" | null {
+  const ascii = (from: number, to: number) =>
+    String.fromCharCode(...b.slice(from, to));
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpg";
+  if (b[0] === 0x89 && ascii(1, 4) === "PNG") return "png";
+  if (ascii(0, 4) === "%PDF") return "pdf";
+  if (
+    ascii(4, 8) === "ftyp" &&
+    /^(heic|heix|hevc|mif1|msf1)$/.test(ascii(8, 12))
+  )
+    return "heic";
+  if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "webp";
+  return null;
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { canSeeCosts } from "@/lib/costing/service";
 import {
   BillingError,
   createInvoice,
@@ -47,6 +48,17 @@ async function actor(): Promise<BillActor> {
   const u = await requireUser(["ADMIN", "ESTIMATOR"]);
   return { id: u.id, name: u.name, role: u.role };
 }
+/** Billing is limited to Admins and the job's own estimator/salesperson, same as job costing. */
+async function mayBill(a: BillActor, projectId: string) {
+  const p = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { estimatorId: true, salespersonId: true },
+  });
+  if (!p || !canSeeCosts({ id: a.id!, role: a.role }, p))
+    throw new Error(
+      "Only an Admin or this job's estimator/salesperson can do billing on it.",
+    );
+}
 const paths = (projectId: string) => {
   revalidatePath(`/projects/${projectId}/billing`);
   revalidatePath(`/projects/${projectId}/costs`);
@@ -54,7 +66,7 @@ const paths = (projectId: string) => {
 };
 
 export async function suggestAction(projectId: string, kind: string) {
-  await actor();
+  await mayBill(await actor(), projectId);
   return suggest(projectId, kind);
 }
 
@@ -64,6 +76,11 @@ export async function createInvoiceAction(
 ): Promise<BResult> {
   const a = await actor();
   const projectId = str(f, "projectId");
+  try {
+    await mayBill(a, projectId);
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
   const kind = str(f, "kind");
   if (!(kind in INVOICE_KIND_LABEL))
     return { problems: ["Pick the kind of invoice."] };
@@ -116,6 +133,7 @@ export async function sendInvoiceAction(
   const id = str(f, "id");
   try {
     const inv = await prisma.invoice.findUniqueOrThrow({ where: { id } });
+    await mayBill(a, inv.projectId);
     const r = await sendInvoice(
       id,
       { name: str(f, "name") || null, email: str(f, "email") || null },
@@ -143,6 +161,7 @@ export async function voidInvoiceAction(
   const id = str(f, "id");
   try {
     const inv = await prisma.invoice.findUniqueOrThrow({ where: { id } });
+    await mayBill(a, inv.projectId);
     await voidInvoice(id, str(f, "reason"), a);
     paths(inv.projectId);
     return { problems: [], ok: true };
@@ -161,6 +180,7 @@ export async function recordPaymentAction(
   const date = day(str(f, "date"));
   try {
     const inv = await prisma.invoice.findUniqueOrThrow({ where: { id } });
+    await mayBill(a, inv.projectId);
     await recordPayment(
       id,
       {
@@ -204,6 +224,11 @@ export async function coFromEstimateAction(
 ): Promise<BResult> {
   const a = await actor();
   const projectId = str(f, "projectId");
+  try {
+    await mayBill(a, projectId);
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
   const markup = str(f, "markupPct");
   const markupPct = markup ? num(markup) : null;
   if (Number.isNaN(markupPct))
@@ -236,6 +261,7 @@ export async function sendCoAction(_: BResult, f: FormData): Promise<BResult> {
   const id = str(f, "id");
   try {
     const co = await prisma.changeOrder.findUniqueOrThrow({ where: { id } });
+    await mayBill(a, co.projectId);
     const r = await sendChangeOrder(
       id,
       { name: str(f, "name") || null, email: str(f, "email") || null },
@@ -261,6 +287,11 @@ export async function importCoAction(
 ): Promise<BResult> {
   const a = await actor();
   const projectId = str(f, "projectId");
+  try {
+    await mayBill(a, projectId);
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
   const file = f.get("file");
   if (!(file instanceof File) || !file.size)
     return { problems: ["Choose the CSV export."] };

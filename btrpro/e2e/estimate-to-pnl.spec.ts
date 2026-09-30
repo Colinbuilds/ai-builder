@@ -88,6 +88,10 @@ test("estimate to job P&L", async ({ page }) => {
   const lines = await db.estimateLine.findMany({ where: { estimateId } });
   const coil = lines.find((l) => l.supplierItemNumber === "0150080011");
   expect(coil?.quantity).toBe(3); // 32.4 SQ × 1.05 = 34.02 SQ → ceil(34.02 / 15) = 3 BX (acceptance test 4)
+  // ridge vent coverage is read from "Omniridge Pro 4'": 40 LF ridge ÷ 4 LF/PC = 10 PC
+  expect(lines.find((l) => l.calcKey === "steep:ridge_vent")?.quantity).toBe(
+    10,
+  );
 
   // 5. Export the BTR estimate PDF
   const pdf = await page.request.get(

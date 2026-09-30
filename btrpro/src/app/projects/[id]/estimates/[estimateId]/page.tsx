@@ -75,7 +75,8 @@ export default async function EstimatePage({
   const user = await requireUser();
   const { id, estimateId } = await params;
   const cutover = (await getSettings()).acculynxCutoverDate;
-  const acculynxRetired = !!cutover && new Date().toISOString().slice(0, 10) > cutover;
+  const acculynxRetired =
+    !!cutover && new Date().toISOString().slice(0, 10) > cutover;
   const e = await prisma.estimate.findUnique({
     where: { id: estimateId },
     include: {
@@ -440,6 +441,11 @@ export default async function EstimatePage({
                           {l.note}
                         </p>
                       )}
+                      <MissingFix
+                        formula={l.formula}
+                        priceItemId={l.priceItemId}
+                        projectId={id}
+                      />
                       {l.priceItem?.sheet.warning && (
                         <Badge variant="amber" className="mt-1">
                           Confirm account ({l.priceItem.sheet.code})
@@ -807,6 +813,72 @@ function MeasurementsUsed({
       {sidingFormula && (
         <p className="w-full text-muted-foreground">{sidingFormula}</p>
       )}
+    </div>
+  );
+}
+
+/** Says what to do about a MISSING line, with a link to where it's fixed. */
+function MissingFix({
+  formula,
+  priceItemId,
+  projectId,
+}: {
+  formula: string | null;
+  priceItemId: string | null;
+  projectId: string;
+}) {
+  if (!formula?.startsWith("MISSING:")) return null;
+  const what = formula
+    .slice(8)
+    .split(",")
+    .map((x) => x.trim());
+  const link = (href: string, text: string) => (
+    <Link className="underline" href={href}>
+      {text}
+    </Link>
+  );
+  const tips: React.ReactNode[] = [];
+  if (what.some((w) => /_per_|coverage/.test(w)))
+    tips.push(
+      priceItemId ? (
+        <>
+          The item&apos;s coverage isn&apos;t on the price sheet.{" "}
+          {link(
+            `/library/items/${priceItemId}`,
+            "Enter it once on the price item",
+          )}{" "}
+          (with its source) and every estimate uses it.
+        </>
+      ) : (
+        <>Enter the coverage in the takeoff below, with its source.</>
+      ),
+    );
+  if (what.includes("ice_water_sf"))
+    tips.push(
+      <>
+        Add ice &amp; water rows in the takeoff, or set the company standard
+        widths once in {link("/settings/company", "Company settings")}.
+      </>,
+    );
+  const measures = what.filter(
+    (w) => /_(lf|sf|sq|count)$/.test(w) && w !== "ice_water_sf",
+  );
+  if (measures.length)
+    tips.push(
+      <>
+        Confirm {measures.join(", ")} on the{" "}
+        {link(`/projects/${projectId}/documents`, "Documents tab")} (EagleView
+        or entered with a source).
+      </>,
+    );
+  if (what.includes("waste"))
+    tips.push(<>Approve the waste % for this estimate.</>);
+  if (!tips.length) return null;
+  return (
+    <div className="mt-1 flex flex-col gap-0.5 text-xs text-amber-800 dark:text-amber-300">
+      {tips.map((t, i) => (
+        <p key={i}>{t}</p>
+      ))}
     </div>
   );
 }

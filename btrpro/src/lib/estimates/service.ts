@@ -1,6 +1,7 @@
 // Estimates: creation, waste gate, takeoff runs, lines, substitutions, revisions (BUILD_PROMPT §4–5).
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { getSettings } from "@/lib/settings";
 import { notOnBuilderNote, priceScopeFor, sheetWhere, STANDARD_SCOPE, type PriceScope } from "@/lib/pricing-scope";
 import { priceStatusFor, estimateTotals, toSheetUnit, type SheetDateStatus } from "@/lib/calc/pricing";
 import { cheapestHouseWrap } from "@/lib/calc/siding";
@@ -205,7 +206,13 @@ export async function runTakeoff(estimateId: string, module: Module, actor: Acto
   const items = await liveItems([...collectItemNumbers(config[module]), "0150080011", "4292804534"], scope);
   const w = wasteOf(e);
   const asWaste = (s: WasteSection) => ({ pct: w[s].pct, approved: w[s].approved, basis: w[s].basis });
-  const ctx: Ctx = { m: await measureMap(e.projectId), items, waste: { ROOFING: asWaste("ROOFING"), SIDING: asWaste("SIDING"), DECK: asWaste("DECK") } };
+  const std = await getSettings();
+  const ctx: Ctx = {
+    m: await measureMap(e.projectId),
+    items,
+    waste: { ROOFING: asWaste("ROOFING"), SIDING: asWaste("SIDING"), DECK: asWaste("DECK") },
+    iceWaterStd: { eavesFt: std.iceWaterEavesFt, valleysFt: std.iceWaterValleysFt },
+  };
   const { lines, problems } = runModule(module, config, ctx);
   if (problems.length) throw new EstimateError(problems.join(" "));
 
