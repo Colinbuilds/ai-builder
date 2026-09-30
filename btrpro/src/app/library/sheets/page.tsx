@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
+import { getSettings } from "@/lib/settings";
+import { getConnection } from "@/lib/integrations/oauth";
+import { DriveSyncPanel } from "./drive-sync-panel";
 
 type SP = Promise<{ applied?: string }>;
 
@@ -29,6 +32,12 @@ export default async function SheetsPage({ searchParams }: { searchParams: SP })
     }),
   ]);
   const isAdmin = user.role === "ADMIN";
+  const [settings, driveFiles, connected] = await Promise.all([
+    getSettings(),
+    prisma.driveSheetFile.findMany({ orderBy: { checkedAt: "desc" }, take: 12 }),
+    getConnection("GOOGLE_DRIVE", user.id),
+  ]);
+  const heldReasons = new Map((await prisma.driveSheetFile.findMany({ where: { status: "DRAFT", importId: { in: drafts.map((d) => d.id) } } })).map((f) => [f.importId, f.message]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -52,6 +61,29 @@ export default async function SheetsPage({ searchParams }: { searchParams: SP })
         </p>
       )}
 
+      <section className="flex flex-col gap-2 rounded-md border p-4">
+        <h2 className="font-semibold">Stay current from Google Drive</h2>
+        <p className="text-sm text-muted-foreground">
+          New ABC sheets dropped in the Drive folder are read automatically. A sheet goes live on its own when it reads cleanly and is newer than the live one; anything doubtful (unreadable rows, missing dates, lots of removed items, or many prices moving more than 25%) is held below for review. Older files are ignored.
+        </p>
+        {isAdmin ? (
+          <DriveSyncPanel folder={settings.priceSheetFolder} connected={!!connected} lastCheck={settings.priceSheetLastCheck} />
+        ) : (
+          <p className="text-sm">{settings.priceSheetFolder ? "Watching the Drive price-sheet folder." : "Not set up yet — an Admin sets the Drive folder here."}</p>
+        )}
+        {driveFiles.length > 0 && (
+          <ul className="flex flex-col gap-1 text-xs">
+            {driveFiles.map((f) => (
+              <li key={f.id}>
+                <Badge variant={f.status === "APPLIED" ? "green" : f.status === "DRAFT" ? "amber" : f.status === "ERROR" || f.status === "UNMATCHED" ? "red" : "outline"}>{f.status.toLowerCase().replace("_", " ")}</Badge>{" "}
+                <span className="font-medium">{f.name}</span> {f.code && <span className="font-mono">({f.code})</span>} — {f.message}{" "}
+                <span className="text-muted-foreground">{f.checkedAt.toLocaleString("en-US", { timeZone: "America/Chicago" })}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {drafts.length > 0 && (
         <div className="rounded-md border p-4">
           <h2 className="mb-2 font-semibold">Uploads waiting for review</h2>
@@ -61,6 +93,7 @@ export default async function SheetsPage({ searchParams }: { searchParams: SP })
                 <Link href={`/library/sheets/imports/${d.id}`} className="font-medium underline">
                   {d.code} — {d.fileName}
                 </Link>{" "}
+                {heldReasons.get(d.id) && <span className="block text-xs text-amber-700 dark:text-amber-400">From Drive — {heldReasons.get(d.id)}</span>}
                 <span className="text-muted-foreground">
                   uploaded by {d.createdBy.name}, {d.createdAt.toLocaleString("en-US", { timeZone: "America/Chicago" })}
                 </span>

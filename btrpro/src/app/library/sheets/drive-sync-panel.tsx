@@ -1,0 +1,41 @@
+"use client";
+
+import { useFormAction } from "@/components/use-form-action";
+import { saveSheetFolderAction, syncSheetsNowAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Problems } from "@/components/projects/problems";
+
+export function DriveSyncPanel({ folder, connected, lastCheck }: { folder: string | null; connected: boolean; lastCheck: string | null }) {
+  const [state, action, pending] = useFormAction(saveSheetFolderAction, null);
+  const [sState, sAction, sPending] = useFormAction(syncSheetsNowAction, null);
+  return (
+    <div className="flex flex-col gap-2">
+      <form onSubmit={action} className="flex flex-wrap items-center gap-2">
+        <Input name="folder" defaultValue={folder ?? ""} placeholder="Google Drive folder link — the &quot;Current&quot; price sheets folder" className="min-w-96 flex-1" />
+        <Button size="sm" variant="outline" disabled={pending}>
+          Save folder
+        </Button>
+      </form>
+      {state?.ok && <p className="text-sm text-green-700 dark:text-green-400">{state.note}</p>}
+      <Problems state={state} />
+      {!connected && (
+        <p className="text-sm text-amber-700 dark:text-amber-400">
+          Your Google Drive isn&apos;t connected. <a href="/settings/integrations" className="underline">Connect it under Integrations</a>, then save the folder.
+        </p>
+      )}
+      {folder && (
+        <form onSubmit={sAction} className="flex flex-wrap items-center gap-2">
+          <Button size="sm" disabled={sPending}>
+            {sPending ? "Checking Drive…" : "Check now"}
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {lastCheck ? `Last checked ${new Date(lastCheck).toLocaleString("en-US", { timeZone: "America/Chicago" })}` : "Not checked yet"} · checks on start and every 6 hours
+          </span>
+        </form>
+      )}
+      {sState?.ok && <p className="text-sm">{sState.note}</p>}
+      <Problems state={sState} />
+    </div>
+  );
+}

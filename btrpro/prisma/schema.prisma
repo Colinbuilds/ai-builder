@@ -1274,3 +1274,21 @@ model EstimateTemplate {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+// ---------- Price sheets from Google Drive ----------
+
+// One row per Drive file version seen in the price-sheet folder, so each is processed once.
+model DriveSheetFile {
+  id           String   @id @default(cuid())
+  driveFileId  String
+  name         String
+  modifiedTime String
+  // APPLIED | DRAFT (held for review) | SKIPPED_OLDER | UNMATCHED | ERROR
+  status       String
+  code         String?
+  importId     String?
+  message      String?
+  checkedAt    DateTime @default(now())
+
+  @@index([driveFileId, modifiedTime])
+}

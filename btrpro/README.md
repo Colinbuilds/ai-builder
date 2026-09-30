@@ -227,6 +227,30 @@ Business names only; no customer emails or addresses are stored in the repositor
 
 Labor standards can now be **piece rates** ($ per SQ/LF/EA, how crews and subs are paid) as well as hourly production rates.
 
+## Price sheets stay current from Google Drive
+
+BTRpro watches the Drive folder where ABC price sheets are dropped (Unit Pricing Sheets → **Current**).
+- **When it checks:** on start, every 6 hours, and when you click **Check now** (Estimating → Price sheets).
+- **Matching:** each new or updated file is matched to its sheet by name: Steep slope → SS, Mulehide → MH, Elevate → EL, Statement → HS, Primed/Hardie → HP, NDX/Norandex/Vinyl → NX, SmartSide/LP → LP, Central States → CSM.
+- **Reading:** it's read with the same parser as a manual upload, including ABC's two-column layout.
+- **Goes live on its own** when it reads cleanly and is **newer** than the live sheet. The old version is kept under Previous versions, and open estimates pick up the new prices when their takeoff is re-run.
+- **Held for review** (shown on the Price sheets page with the reason) when:
+  - dates are missing, or rows can't be read;
+  - more than 20% of live items are missing from the new sheet;
+  - more than 10% of prices moved over 25%.
+- **Ignored:** older files. **Listed as unmatched:** unrecognized names, such as manufacturer price lists; upload those by hand.
+- A sheet from `/data` never replaces a newer live one: newest effective date wins.
+
+One-time setup (Railway + Google):
+1. In Google Cloud (signed in with a btrcontracting.com account):
+   - Create a project and enable the **Google Drive API**.
+   - Set the OAuth consent screen to **Internal**.
+   - Create an **OAuth client ID** (Web application) with the redirect URI `https://YOUR-RAILWAY-DOMAIN/api/integrations/google_drive/callback`.
+2. In Railway → Variables, add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `APP_URL=https://YOUR-RAILWAY-DOMAIN`.
+3. In BTRpro, as an Admin:
+   - Admin → Integrations → connect Google Drive.
+   - Estimating → Price sheets → paste the Current folder link → **Save folder** → **Check now**.
+
 ## Environment variables
 
 | Name | Used for |

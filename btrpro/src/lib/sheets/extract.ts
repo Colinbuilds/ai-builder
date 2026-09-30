@@ -47,9 +47,36 @@ export async function pdfPages(bytes: Uint8Array): Promise<string[]> {
       line.parts.push({ x, s: it.str });
     }
     lines.sort((a, b) => b.y - a.y);
-    for (const l of lines) out.push(l.parts.sort((a, b) => a.x - b.x).map((q) => q.s.trim()).join(" "));
+    for (const l of lines) l.parts.sort((a, b) => a.x - b.x);
+    const split = columnSplit(lines, page.getViewport({ scale: 1 }).width);
+    if (split == null) for (const l of lines) out.push(l.parts.map((q) => q.s.trim()).join(" "));
+    else {
+      // two item lists side by side: read the left column top to bottom, then the right one
+      const side = (right: boolean) =>
+        lines.map((l) => l.parts.filter((q) => (q.x >= split) === right).map((q) => q.s.trim()).join(" ")).filter((t) => t.trim());
+      out.push(...side(false), ...side(true));
+    }
     pages.push(out.join("\n"));
   }
   await task.destroy();
   return pages;
+}
+
+const ITEM_TOKEN = /^(?=.*\d)[A-Z0-9][A-Z0-9-]{3,}$/;
+/**
+ * ABC customer price lists print two item lists side by side. On one baseline that reads as
+ * "item desc $price UOM item desc $price UOM". It's two columns when several lines have a priced row on
+ * the left AND an item number starting a row in the right half; the split is where those right rows start.
+ * A single-column table (price column on the right) never has item numbers there, so it's left alone.
+ */
+export function columnSplit(lines: { parts: { x: number; s: string }[] }[], pageWidth: number): number | null {
+  const starts: number[] = [];
+  for (const l of lines) {
+    const right = l.parts.find((q) => q.x > pageWidth * 0.4 && ITEM_TOKEN.test(q.s.trim().split(/\s+/)[0]));
+    if (!right) continue;
+    const leftText = l.parts.filter((q) => q.x < right.x).map((q) => q.s).join(" ");
+    if (/\$\s?[\d,]+/.test(leftText) || ITEM_TOKEN.test(leftText.trim().split(/\s+/)[0] ?? "")) starts.push(right.x);
+  }
+  if (starts.length < 3) return null;
+  return Math.min(...starts) - 1;
 }

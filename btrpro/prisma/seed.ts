@@ -39,12 +39,16 @@ type RawRule = {
   [k: string]: unknown;
 };
 
-// Returns null when an Admin has uploaded a newer version of this sheet; the seed never overwrites an upload.
+// The newest effective date wins. A sheet from /data never replaces a live version that is as new or newer
+// (e.g. one an Admin uploaded or the Drive sync applied); a newer one becomes a new version and the old one
+// is kept, inactive, for history. Returns null when the live version stays.
 type SeedSheet = Omit<Prisma.PriceSheetUncheckedCreateInput, "code" | "importId">;
 async function upsertSheet(code: string, data: SeedSheet) {
-  const existing = await prisma.priceSheet.findFirst({ where: { code, isActive: true } });
-  if (existing?.importId) return null;
-  if (existing) return prisma.priceSheet.update({ where: { id: existing.id }, data });
+  const existing = await prisma.priceSheet.findFirst({ where: { code, isActive: true, companyId: null } });
+  const eff = data.effectiveDate ? new Date(data.effectiveDate) : null;
+  const newer = !!eff && (!existing?.effectiveDate || eff > existing.effectiveDate);
+  if (existing && !newer) return existing.importId ? null : prisma.priceSheet.update({ where: { id: existing.id }, data });
+  if (existing) await prisma.priceSheet.update({ where: { id: existing.id }, data: { isActive: false, replacedAt: new Date() } });
   return prisma.priceSheet.create({ data: { code, ...data } });
 }
 

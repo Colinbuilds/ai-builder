@@ -15,8 +15,11 @@ export type CompanySettings = {
   remitTo: string | null; // payment instructions printed on invoices (check address, ACH)
   cardSurchargePct: number | null; // card surcharge on customer card payments, only where permitted; null = none
   qboItemId: string | null; // QuickBooks item used for invoice lines
+  priceSheetFolder: string | null; // Google Drive folder the current ABC price sheets are dropped into
+  priceSheetSyncUserId: string | null; // whose Drive connection reads that folder (the Admin who set it)
+  priceSheetLastCheck: string | null; // ISO time of the last check
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });
