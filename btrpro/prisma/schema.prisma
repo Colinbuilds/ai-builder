@@ -175,55 +175,61 @@ enum Readiness {
 }
 
 model Project {
-  id                String            @id @default(cuid())
-  name              String
-  market            Market            @default(COMMERCIAL)
-  address           String?
-  buildingUse       String?
-  constructionType  ConstructionType?
+  id                 String            @id @default(cuid())
+  name               String
+  market             Market            @default(COMMERCIAL)
+  address            String?
+  buildingUse        String?
+  constructionType   ConstructionType?
   // STEEP | LOW_SLOPE | DECK | SIDING | PANELS — drives which intake fields apply
-  scopes            Json?
-  isPublic          Boolean           @default(false)
-  isTaxExempt       Boolean           @default(false)
-  form17Status      Form17Status      @default(NOT_REQUIRED)
-  form17ExecutedAt  DateTime?
-  form17ExecutedBy  String?
-  form17Note        String?
-  bidDueDate        DateTime?
-  acculynxJobNumber String?
+  scopes             Json?
+  isPublic           Boolean           @default(false)
+  isTaxExempt        Boolean           @default(false)
+  form17Status       Form17Status      @default(NOT_REQUIRED)
+  form17ExecutedAt   DateTime?
+  form17ExecutedBy   String?
+  form17Note         String?
+  bidDueDate         DateTime?
+  acculynxJobNumber  String?
   // set by the job-schedule import; the same schedule row maps to the same job on every re-import
-  importKey         String?
-  leadSource        String?
-  status            ProjectStatus     @default(LEAD)
-  statusChangedAt   DateTime          @default(now())
-  lostReason        String?
-  readiness         Readiness         @default(NOT_READY)
-  contractAmount    Float?
-  contractSignedAt  DateTime?
+  importKey          String?
+  // customer portal link (secret; null = not shared)
+  portalToken        String?
+  // CompanyCam project id, and the EagleView report on order
+  companyCamId       String?
+  eagleViewReportId  String?
+  eagleViewOrderedAt DateTime?
+  leadSource         String?
+  status             ProjectStatus     @default(LEAD)
+  statusChangedAt    DateTime          @default(now())
+  lostReason         String?
+  readiness          Readiness         @default(NOT_READY)
+  contractAmount     Float?
+  contractSignedAt   DateTime?
   // Residential insurance restoration
-  isInsuranceClaim  Boolean           @default(false)
-  insuranceCarrier  String?
-  claimNumber       String?
-  dateOfLoss        DateTime?
-  adjusterName      String?
-  adjusterPhone     String?
-  adjusterEmail     String?
-  deductible        Float?
+  isInsuranceClaim   Boolean           @default(false)
+  insuranceCarrier   String?
+  claimNumber        String?
+  dateOfLoss         DateTime?
+  adjusterName       String?
+  adjusterPhone      String?
+  adjusterEmail      String?
+  deductible         Float?
   // Commercial
-  bidBondRequired   Boolean           @default(false)
-  perfBondRequired  Boolean           @default(false)
-  prevailingWage    Boolean           @default(false)
-  retainagePct      Float?
-  clientCompanyId   String?
-  clientCompany     Company?          @relation(fields: [clientCompanyId], references: [id])
-  salespersonId     String?
-  salesperson       User?             @relation("ProjectSalesperson", fields: [salespersonId], references: [id])
-  estimatorId       String?
-  estimator         User?             @relation("ProjectEstimator", fields: [estimatorId], references: [id])
+  bidBondRequired    Boolean           @default(false)
+  perfBondRequired   Boolean           @default(false)
+  prevailingWage     Boolean           @default(false)
+  retainagePct       Float?
+  clientCompanyId    String?
+  clientCompany      Company?          @relation(fields: [clientCompanyId], references: [id])
+  salespersonId      String?
+  salesperson        User?             @relation("ProjectSalesperson", fields: [salespersonId], references: [id])
+  estimatorId        String?
+  estimator          User?             @relation("ProjectEstimator", fields: [estimatorId], references: [id])
   // inbound address token for forwarding job emails (e.g. job-<token>@…)
-  emailToken        String            @unique @default(cuid())
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  emailToken         String            @unique @default(cuid())
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   intake       IntakeField[]
   documents    Document[]
@@ -261,6 +267,7 @@ model Project {
   tasks            Task[]
 
   @@index([importKey])
+  @@index([portalToken])
 }
 
 // Timeline of everything that happened on a job: stage changes, intake edits, Form 17, overrides.
@@ -1111,6 +1118,10 @@ model Crew {
   events             ScheduleEvent[]
   workOrders         WorkOrder[]
   timeEntries        TimeEntry[]
+  // crew's phone link: their schedule, work orders, hours, delivery tickets
+  portalToken        String?
+
+  @@index([portalToken])
 }
 
 enum EventKind {

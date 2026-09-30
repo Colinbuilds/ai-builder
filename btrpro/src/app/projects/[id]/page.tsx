@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { DeleteJob } from "@/components/projects/delete-job";
+import { PortalCard } from "@/components/portal/forms";
+import { portalUrl } from "@/lib/portal/customer";
 import { JobTasks, type TaskRow } from "@/components/tasks/task-list";
 import { deleteBlocker } from "@/lib/projects/delete";
 import { notFound } from "next/navigation";
@@ -194,6 +196,16 @@ export default async function ProjectPage({
       </section>
 
       <JobTasks projectId={id} tasks={jobTasks} users={users} canEdit={canEdit} meId={user.id} />
+
+      {canEdit && (
+        <section className="rounded-md border p-4 text-sm">
+          <PortalCard
+            projectId={id}
+            url={project.portalToken ? portalUrl(project.portalToken) : null}
+            contactEmail={project.contacts.find((c) => c.isPrimary)?.contact.email ?? null}
+          />
+        </section>
+      )}
 
       <section
         id="estimates"

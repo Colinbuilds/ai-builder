@@ -6,6 +6,8 @@ import { INTAKE_BY_KEY, parseScopes } from "@/lib/projects/intake";
 import { aiConfigured } from "@/lib/ai/claude";
 import { oauthConfigured } from "@/lib/integrations/oauth";
 import { driveAvailable } from "@/lib/integrations/google-sa";
+import { CompanyCamLink, EagleViewOrder } from "@/components/portal/forms";
+import { companyCamConfigured, companyCamPhotos, companyCamProjectUrl } from "@/lib/integrations/companycam";
 import { UploadDocs, DriveImport } from "@/components/docs/upload";
 import { DocTypeSelect } from "@/components/docs/doc-type-select";
 import { ExtractButton } from "@/components/docs/extract-button";
@@ -55,6 +57,15 @@ export default async function DocumentsPage({
   const driveConn = await driveAvailable(user.id);
   const driveReady = driveConn || oauthConfigured("GOOGLE_DRIVE");
   const back = `/projects/${id}/documents`;
+  let photos: Awaited<ReturnType<typeof companyCamPhotos>> = [];
+  let photoError: string | null = null;
+  if (project.companyCamId && companyCamConfigured()) {
+    try {
+      photos = await companyCamPhotos(project.companyCamId);
+    } catch (e) {
+      photoError = e instanceof Error ? e.message : String(e);
+    }
+  }
 
   const queue: QueueItem[] = [
     ...measurements
@@ -151,6 +162,40 @@ export default async function DocumentsPage({
           {m.note}
         </p>
       ))}
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="flex flex-col gap-2 rounded-md border p-4 text-sm">
+          <h2 className="font-semibold">Photos (CompanyCam)</h2>
+          {project.companyCamId ? (
+            <a href={companyCamProjectUrl(project.companyCamId)} target="_blank" className="self-start underline">
+              Open in CompanyCam
+            </a>
+          ) : (
+            <p className="text-muted-foreground">Link this job to its CompanyCam project to see the photos here.</p>
+          )}
+          {canEdit && <CompanyCamLink projectId={id} current={project.companyCamId} />}
+          {photoError && <p className="text-xs text-destructive">{photoError}</p>}
+          {!companyCamConfigured() && project.companyCamId && <p className="text-xs text-muted-foreground">Add COMPANYCAM_TOKEN on the server to show the photos here.</p>}
+          {photos.length > 0 && (
+            <div className="grid grid-cols-4 gap-1">
+              {photos.map((ph) => (
+                <a key={ph.id} href={ph.web} target="_blank" title={[ph.takenAt?.toLocaleDateString("en-US"), ph.by].filter(Boolean).join(" · ")}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={ph.thumb} alt="" className="aspect-square w-full rounded object-cover" loading="lazy" />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-2 rounded-md border p-4 text-sm">
+          <h2 className="font-semibold">EagleView</h2>
+          {canEdit ? (
+            <EagleViewOrder projectId={id} reportId={project.eagleViewReportId} orderedAt={project.eagleViewOrderedAt ? project.eagleViewOrderedAt.toLocaleDateString("en-US") : null} />
+          ) : (
+            <p className="text-muted-foreground">{project.eagleViewOrderedAt ? `Ordered ${project.eagleViewOrderedAt.toLocaleDateString("en-US")}` : "Not ordered."}</p>
+          )}
+        </div>
+      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">Documents</h2>

@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compliance } from "@/lib/production/rules";
 import { CrewForm } from "@/components/production/forms";
+import { CrewLink } from "@/components/portal/forms";
+import { crewUrl } from "@/lib/portal/crew";
 import { ComplianceBadge } from "@/components/production/compliance-badge";
 import { formatDate } from "@/lib/utils";
 
@@ -27,6 +29,7 @@ export default async function CrewPage({ params }: { params: Promise<{ cid: stri
         <ComplianceBadge c={compliance(crew, new Date())} />
       </div>
       <CrewForm crew={crew} />
+      <CrewLink crewId={crew.id} url={crew.portalToken ? crewUrl(crew.portalToken) : null} />
       <section>
         <h2 className="font-semibold">Upcoming</h2>
         {crew.events.length === 0 ? (

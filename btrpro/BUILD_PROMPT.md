@@ -333,7 +333,7 @@ Rules for every integration:
 14. Production scheduling, crews/subs, work orders, timesheets ✅
 15. Invoicing, payments, change orders/supplements, QuickBooks sync, Buildertrend/Procore change-order sync ✅ (Buildertrend/Procore by CSV until API access)
 16. Tasks/reminders, dashboards and reports, commissions ✅
-17. CompanyCam and EagleView links, customer portal, field mobile view
+17. CompanyCam and EagleView links, customer portal, field mobile view ✅ (EagleView ordering API waits on credentials)
 18. AccuLynx data migration and cutover
 19. Playwright end-to-end: create project → upload a sample EagleView-style PDF → confirm measurements → build a shingle estimate → export PDF → record costs → see job P&L
 
