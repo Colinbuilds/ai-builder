@@ -14,9 +14,6 @@
     "postinstall": "prisma generate",
     "start:prod": "mkdir -p /data/uploads && prisma db push --skip-generate && tsx prisma/seed.ts && next start -p ${PORT:-3000}"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
     "@aws-sdk/client-s3": "^3.1143.0",
