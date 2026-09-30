@@ -65,6 +65,7 @@ export async function createInvoice(
     throw new BillingError("The job isn't sold. Invoices go on sold jobs.");
   if (summary.revenue == null) throw new BillingError("Contract amount is MISSING on this job. Set it (or have the customer sign the proposal) before billing.");
   let totals;
+  let overContract = false;
   try {
     const pct = input.retainagePct !== undefined ? input.retainagePct : project.market === "COMMERCIAL" ? project.retainagePct : null;
     totals = invoiceTotals(input.lines, pct, input.kind);
@@ -79,6 +80,7 @@ export async function createInvoice(
     const onInvoices = round(invoices.filter((i) => i.status !== "VOID" && i.kind !== "RETAINAGE_RELEASE").reduce((a, i) => a + i.subtotal, 0), 2);
     if (onInvoices + totals.subtotal > summary.revenue + 0.005) {
       const over = round(onInvoices + totals.subtotal - summary.revenue, 2);
+      overContract = true;
       if (!input.override?.trim())
         throw new BillingError(`This bills $${over.toFixed(2)} past the contract ($${summary.revenue.toFixed(2)} incl. approved change orders; $${onInvoices.toFixed(2)} already on invoices). Add the change order first, or say why.`, true);
     }
@@ -97,7 +99,7 @@ export async function createInvoice(
       issueDate,
       dueDate,
       notes: input.notes?.trim() || null,
-      override: input.override?.trim() || null,
+      override: overContract ? input.override?.trim() || null : null,
       token: randomBytes(18).toString("base64url"),
       billTo: client?.name ?? (contact ? `${contact.firstName} ${contact.lastName}` : null),
       billToEmail: client?.email ?? contact?.email ?? null,

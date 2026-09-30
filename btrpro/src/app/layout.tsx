@@ -32,7 +32,7 @@ function navFor(role: string): NavGroup[] {
         { href: "/settings/rules", label: "Rules" },
       ],
     },
-    { label: "Reports", items: staff ? [{ href: "/reports/profit", label: "Profit" }] : [] },
+    { label: "Reports", items: [...(staff ? [{ href: "/reports/profit", label: "Profit" }] : []), ...(role === "ADMIN" ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : [])] },
     {
       label: "Admin",
       items:

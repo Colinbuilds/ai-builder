@@ -95,7 +95,9 @@ describe("invoices and payments", () => {
 
   it("won't bill past the contract without a reason; approved change orders raise the cap", async () => {
     const { a, p } = await soldJob();
-    await createInvoice(p.id, { kind: "PROGRESS", lines: [{ description: "Tear-off & install", amount: 15000 }] }, a);
+    // a reason given for an invoice that isn't over the contract isn't stored
+    const first = await createInvoice(p.id, { kind: "PROGRESS", lines: [{ description: "Tear-off & install", amount: 15000 }], override: "left over from an earlier try" }, a);
+    expect(first.override).toBeNull();
     const over = createInvoice(p.id, { kind: "FINAL", lines: [{ description: "Balance", amount: 6000 }] }, a);
     await expect(over).rejects.toMatchObject({ needsOverride: true });
     await expect(createInvoice(p.id, { kind: "FINAL", lines: [{ description: "Balance", amount: 6000 }] }, a)).rejects.toThrow(/\$1000.00 past the contract/);

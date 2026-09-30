@@ -49,7 +49,7 @@ export function ProjectTabs({
     [`${base}/orders`, "Orders"],
     [`${base}/production`, "Production"],
     ...(showCosts
-      ? ([[`${base}/costs`, "Job costing"]] as [string, string][])
+      ? ([[`${base}/billing`, "Billing"], [`${base}/costs`, "Job costing"]] as [string, string][])
       : []),
     [`${base}/assistant`, "AI assistant"],
   ];

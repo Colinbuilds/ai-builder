@@ -58,6 +58,28 @@ export function CompanySettingsForm({ s }: { s: CompanySettings }) {
           "A job-cost category gets a red flag when it runs this far over its estimate.",
         )}
       </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {field(
+          "invoiceNetDays",
+          "Invoices due in (days)",
+          "Due date = issue date + this. Blank = due on receipt.",
+        )}
+        {field(
+          "cardSurchargePct",
+          "Card surcharge %",
+          "Added to card payments only, where permitted (up to 3%). Blank = none.",
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
+        <Label>How to pay (printed on invoices)</Label>
+        <textarea
+          name="remitTo"
+          defaultValue={s.remitTo ?? ""}
+          rows={3}
+          className="rounded-md border border-input bg-background p-2 text-sm"
+          placeholder="Make checks payable to BTR Contracting, 10852 Hanover St., Omaha, NE 68142. ACH details on request."
+        />
+      </div>
       <div className="flex flex-col gap-1">
         <Label>ABC branch order email</Label>
         <Input
