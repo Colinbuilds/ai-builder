@@ -37,6 +37,8 @@ model User {
   estimatorProjects  Project[]           @relation("ProjectEstimator")
   projectViews       ProjectView[]
   mailboxConnections MailboxConnection[]
+  costsEntered       JobCost[]
+  commissionPlan     CommissionPlan?
 }
 
 // ---------- Price library ----------
@@ -230,6 +232,19 @@ model Project {
   views        ProjectView[]
   // search words for pulling this job's email from a connected mailbox (defaults to name/claim #/address)
   mailQuery    String?
+
+  // Job costing (§12). The baseline is frozen from one estimate revision when the job is sold.
+  costBaseline     Json?
+  costBaselineAt   DateTime?
+  costs            JobCost[]
+  commitments      CostCommitment[]
+  changeOrders     ChangeOrder[]
+  // categories an Admin/estimator marked "no bills expected" for close-out
+  costNoneExpected Json?
+  costClosedAt     DateTime?
+  costClosedBy     String?
+  // the P&L as it stood when the job was closed; later edits are Admin-only and audit-logged
+  finalPnl         Json?
 }
 
 // Timeline of everything that happened on a job: stage changes, intake edits, Form 17, overrides.
@@ -376,6 +391,7 @@ model Document {
   measurements Measurement[]
   facts        ExtractedFact[]
   runs         ExtractionRun[]
+  costs        JobCost[]
 }
 
 enum MeasurementStatus {
@@ -744,4 +760,172 @@ model AssistantMessage {
   createdAt DateTime @default(now())
 
   @@index([projectId, createdAt])
+}
+
+// Company-wide settings entered by an Admin (markup, tax, deposit, proposal terms). Start empty.
+model CompanySetting {
+  key       String   @id
+  value     Json
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+// Customer proposal made from an estimate revision, signed electronically through a private link.
+model Proposal {
+  id                 String    @id @default(cuid())
+  projectId          String
+  estimateId         String
+  number             String    @unique
+  title              String
+  status             String    @default("DRAFT") // DRAFT | SENT | VIEWED | SIGNED | DECLINED | VOID
+  token              String    @unique
+  costTotal          Float
+  taxPct             Float?
+  taxAmount          Float     @default(0)
+  markupPct          Float
+  basePrice          Float
+  priceNote          String?
+  alternates         Json? // [{ name, description, price }]
+  selectedAlternates Json? // names picked by the customer
+  acceptedTotal      Float?
+  depositPct         Float?
+  terms              String
+  scope              Json // { weWill: string[], weWillNot: string[] }
+  validUntil         DateTime?
+  recipientName      String?
+  recipientEmail     String?
+  sentAt             DateTime?
+  viewedAt           DateTime?
+  signedAt           DateTime?
+  declinedAt         DateTime?
+  declineReason      String?
+  signerName         String?
+  signerEmail        String?
+  signerIp           String?
+  signerAgent        String?
+  signatureImage     String? // PNG data URL when drawn
+  signedDocumentId   String?
+  createdById        String?
+  createdAt          DateTime  @default(now())
+
+  @@index([projectId])
+}
+
+// ---------- Job costing (§12) ----------
+
+enum CostCategory {
+  MATERIALS
+  LABOR
+  SUBCONTRACTOR
+  EQUIPMENT
+  DISPOSAL
+  PERMITS
+  OTHER
+}
+
+model JobCost {
+  id           String          @id @default(cuid())
+  projectId    String
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category     CostCategory
+  date         DateTime
+  vendor       String
+  reference    String? // invoice #, ticket #, check #
+  description  String
+  // negative for returns and credits
+  amount       Float
+  // how the amount was reached, when the app did the arithmetic (hours × rate × burden, qty × price)
+  formula      String?
+  // INVOICE | RECEIPT | CREDIT | CREW_HOURS | SUB_BILL | PAY | IMPORT
+  kind         String          @default("INVOICE")
+  hours        Float?
+  rate         Float?
+  burdenPct    Float?
+  quantity     Float?
+  unit         String?
+  unitPrice    Float?
+  itemNumber   String?
+  // unit price on the current price sheet when the invoice line was imported (for price checks)
+  sheetPrice   Float?
+  importBatch  String?
+  commitmentId String?
+  commitment   CostCommitment? @relation(fields: [commitmentId], references: [id], onDelete: SetNull)
+  documentId   String?
+  document     Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  enteredById  String?
+  enteredBy    User?           @relation(fields: [enteredById], references: [id], onDelete: SetNull)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([projectId])
+}
+
+// Money the job has committed to but hasn't been billed for yet: open material orders, accepted sub proposals.
+model CostCommitment {
+  id          String       @id @default(cuid())
+  projectId   String
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category    CostCategory
+  vendor      String
+  description String
+  amount      Float
+  reference   String?
+  // OPEN | BILLED | CANCELLED
+  status      String       @default("OPEN")
+  documentId  String?
+  enteredBy   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  bills       JobCost[]
+}
+
+enum ChangeOrderKind {
+  CHANGE_ORDER
+  SUPPLEMENT
+  CREDIT
+}
+
+enum ChangeOrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Revenue changes after the contract. Only APPROVED ones count toward revenue.
+model ChangeOrder {
+  id          String            @id @default(cuid())
+  projectId   String
+  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number      String
+  kind        ChangeOrderKind   @default(CHANGE_ORDER)
+  description String
+  // always entered positive; CREDIT subtracts
+  amount      Float
+  // added cost the change brings, if known (feeds the estimated-cost baseline)
+  costImpact  Float?
+  status      ChangeOrderStatus @default(PENDING)
+  source      String? // "Signed CO", "Adjuster supplement email 9/12", …
+  documentId  String?
+  decidedAt   DateTime?
+  decidedBy   String?
+  createdBy   String?
+  externalRef String? // Buildertrend / Procore CO id once synced
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+enum CommissionBasis {
+  REVENUE
+  GROSS_PROFIT
+}
+
+model CommissionPlan {
+  id        String          @id @default(cuid())
+  userId    String          @unique
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  basis     CommissionBasis
+  pct       Float
+  note      String?
+  updatedBy String?
+  updatedAt DateTime        @updatedAt
 }

@@ -6,8 +6,10 @@ import { usePathname } from "next/navigation";
 export function ProjectTabs({
   id,
   counts,
+  showCosts,
 }: {
   id: string;
+  showCosts: boolean;
   counts: { chat: number; mentioned: boolean; email: number; documents: number; estimates: number };
 }) {
   const path = usePathname();
@@ -18,6 +20,8 @@ export function ProjectTabs({
     [`${base}/email`, "Email", counts.email ? <Pill key="e" n={counts.email} /> : null],
     [`${base}/documents`, "Documents", counts.documents ? <Pill key="d" n={counts.documents} /> : null],
     [`${base}/estimates`, "Estimates", counts.estimates ? <Pill key="s" n={counts.estimates} /> : null],
+    [`${base}/proposals`, "Proposals"],
+    ...(showCosts ? ([[`${base}/costs`, "Job costing"]] as [string, string][]) : []),
     [`${base}/assistant`, "AI assistant"],
   ];
   return (

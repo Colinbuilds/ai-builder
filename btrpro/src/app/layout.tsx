@@ -37,6 +37,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 Sheets
               </Link>
               {user.role !== "VIEWER" && (
+                <Link href="/reports/profit" className="text-muted-foreground hover:text-foreground">
+                  Profit
+                </Link>
+              )}
+              {user.role !== "VIEWER" && (
                 <Link href="/settings/labor" className="text-muted-foreground hover:text-foreground">
                   Labor
                 </Link>
@@ -51,6 +56,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   </Link>
                   <Link href="/settings/integrations" className="text-muted-foreground hover:text-foreground">
                     Integrations
+                  </Link>
+                  <Link href="/settings/company" className="text-muted-foreground hover:text-foreground">
+                    Company
                   </Link>
                 </>
               )}

@@ -173,7 +173,7 @@ export function parsePriceCsv(csv: string): ParseResult | null {
   };
 }
 
-function splitCsv(line: string): string[] {
+export function splitCsv(line: string): string[] {
   const out: string[] = [];
   let cur = "";
   let q = false;
