@@ -1747,3 +1747,26 @@ model EstimateLog {
   @@index([board, market])
   @@index([dueAt])
 }
+
+// Ideas from the team: what would make their work faster. Claude reads the open ones and builds them.
+model Idea {
+  id          String    @id @default(cuid())
+  title       String
+  details     String
+  // how often the problem comes up: DAILY | WEEKLY | MONTHLY | RARELY
+  often       String    @default("WEEKLY")
+  // minutes it would save each time (their guess)
+  minutes     Int?
+  area        String?
+  // NEW | PLANNED | BUILDING | DONE | NOT_NOW
+  status      String    @default("NEW")
+  reply       String?
+  votes       Json      @default("[]")
+  createdById String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  doneAt      DateTime?
+
+  @@index([status])
+}

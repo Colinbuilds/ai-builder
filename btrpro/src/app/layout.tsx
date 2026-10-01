@@ -64,6 +64,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
     },
     { key: "leads", label: "Leads", icon: "User", href: "/jobs?stage=LEAD" },
     { key: "today", label: "My day", icon: "CalendarDays", href: "/today" },
+    ...(staff ? [{ key: "ideas", label: "Ideas", icon: "Megaphone" as const, href: "/ideas" }] : []),
     {
       key: "production",
       label: "Production",
