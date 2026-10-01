@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/claude";
 import { providerConfigured } from "@/lib/comms/mailbox";
 import { oauthConfigured, type OAuthProvider } from "./oauth";
-import { serviceAccountEmail } from "./google-sa";
+import { serviceAccountEmail, serviceAccountProblem } from "./google-sa";
 
 export type IntegrationStatus = "connected" | "ready" | "not_configured" | "manual_only";
 export type Integration = {
@@ -70,10 +70,16 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
       fallback: "Upload files directly.",
       ...(serviceAccountEmail()
         ? { status: "connected" as const, statusText: "Company service account" }
-        : oauth("GOOGLE_DRIVE", "you")),
+        : serviceAccountProblem()
+          ? { status: "not_configured" as const, statusText: "Service account key can't be read" }
+          : oauth("GOOGLE_DRIVE", "you")),
       note: serviceAccountEmail()
         ? `BTRpro reads Drive as ${serviceAccountEmail()}. Share each folder or shared drive it should read with that address (Viewer).`
-        : "Without a service account, each user connects their own Drive and the price-sheet sync runs as the Admin who saved the folder.",
+        : serviceAccountProblem()
+          ? `GOOGLE_SERVICE_ACCOUNT_JSON is set, but: ${serviceAccountProblem()}`
+          : process.env.GOOGLE_SERVICE_ACCOUNT_JSON === undefined
+            ? "GOOGLE_SERVICE_ACCOUNT_JSON isn't reaching the app — check the variable is on the BTRpro service (not the project's shared variables only) and spelled exactly, then redeploy."
+            : "Without a service account, each user connects their own Drive and the price-sheet sync runs as the Admin who saved the folder.",
     },
     {
       key: "quickbooks",

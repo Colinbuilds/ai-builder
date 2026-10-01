@@ -8,18 +8,43 @@ import { accessToken, getConnection, oauthConfigured } from "./oauth";
 type Key = { client_email: string; private_key: string; token_uri?: string };
 const SCOPE = "https://www.googleapis.com/auth/drive.readonly";
 
-export function serviceAccountKey(): Key | null {
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON?.trim();
-  if (!raw) return null;
-  try {
-    const json = raw.startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8");
-    const k = JSON.parse(json) as Key;
-    if (!k.client_email || !k.private_key) return null;
-    return { ...k, private_key: k.private_key.replace(/\\n/g, "\n") };
-  } catch {
-    return null;
+/**
+ * Reads the key however it was pasted: the whole JSON file, base64 of it, wrapped in quotes, or with the
+ * private key's \n turned into real line breaks by the hosting dashboard (which breaks strict JSON).
+ */
+export function readServiceAccount(raw: string | undefined): { key: Key | null; problem: string | null } {
+  let t = (raw ?? "").trim();
+  if (!t) return { key: null, problem: null };
+  if ((t.startsWith("'") && t.endsWith("'")) || (t.startsWith('"') && t.endsWith('"') && !t.startsWith('"{'))) t = t.slice(1, -1).trim();
+  if (!t.includes("{")) {
+    try {
+      t = Buffer.from(t, "base64").toString("utf8").trim();
+    } catch {
+      /* not base64 */
+    }
   }
+  if (!t.includes("{")) return { key: null, problem: "It isn't the JSON key file. Paste the whole downloaded .json file, from { to }." };
+  let k: Partial<Key> = {};
+  try {
+    k = JSON.parse(t);
+  } catch {
+    // fall back to pulling the two fields out directly
+    k = {
+      client_email: t.match(/"client_email"\s*:\s*"([^"]+)"/)?.[1],
+      private_key: t.match(/"private_key"\s*:\s*"(-----BEGIN[\s\S]*?-----END PRIVATE KEY-----[^"]*)"/)?.[1],
+      token_uri: t.match(/"token_uri"\s*:\s*"([^"]+)"/)?.[1],
+    };
+  }
+  if (!k.client_email) return { key: null, problem: "No client_email in it — this looks like the wrong file or only part of it. Paste the whole service-account .json file." };
+  if (!k.private_key) return { key: null, problem: "No private_key in it — the paste was cut off. Paste the whole .json file, from { to }." };
+  return { key: { client_email: k.client_email, token_uri: k.token_uri, private_key: k.private_key.replace(/\\n/g, "\n") }, problem: null };
 }
+
+export function serviceAccountKey(): Key | null {
+  return readServiceAccount(process.env.GOOGLE_SERVICE_ACCOUNT_JSON).key;
+}
+/** Why a GOOGLE_SERVICE_ACCOUNT_JSON that is set can't be used (null when fine or not set). */
+export const serviceAccountProblem = () => readServiceAccount(process.env.GOOGLE_SERVICE_ACCOUNT_JSON).problem;
 export const serviceAccountEmail = () => serviceAccountKey()?.client_email ?? null;
 
 const b64url = (b: Buffer | string) => Buffer.from(b).toString("base64url");
