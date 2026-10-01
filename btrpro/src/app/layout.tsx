@@ -34,16 +34,6 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
     { key: "recent", label: "Recent", icon: "History", orange: true },
     { key: "dashboard", label: "Dashboard", icon: "Gauge", href: "/" },
     {
-      key: "contacts",
-      label: "Contacts",
-      icon: "BookUser",
-      items: [
-        { href: "/customers", label: "Customers & contacts" },
-        { href: "/builders", label: "Builders" },
-      ],
-    },
-    { key: "leads", label: "Leads", icon: "User", href: "/jobs?stage=LEAD" },
-    {
       key: "jobs",
       label: "Jobs",
       icon: "Hammer",
@@ -61,13 +51,24 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
         { href: "/jobs?stage=LOST", label: "Lost" },
       ],
     },
+    { key: "schedule", label: "Schedule", icon: "CalendarDays", href: "/schedule" },
+    { key: "estsched", label: "Estimating schedule", icon: "FileText", href: "/estimating/schedule" },
+    {
+      key: "contacts",
+      label: "Contacts",
+      icon: "BookUser",
+      items: [
+        { href: "/customers", label: "Customers & contacts" },
+        { href: "/builders", label: "Builders" },
+      ],
+    },
+    { key: "leads", label: "Leads", icon: "User", href: "/jobs?stage=LEAD" },
     { key: "today", label: "My day", icon: "CalendarDays", href: "/today" },
     {
       key: "production",
       label: "Production",
       icon: "CalendarDays",
       items: [
-        { href: "/schedule", label: "Schedule" },
         { href: "/takeoff", label: "Blueprint measurer" },
         { href: "/deliveries", label: "Deliveries" },
         { href: "/crews", label: "Crews & subs" },
@@ -104,7 +105,6 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       label: "Estimating",
       icon: "Wrench",
       items: [
-        { href: "/estimating/schedule", label: "Estimating schedule" },
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },
         { href: "/settings/templates", label: "Estimate templates" },
