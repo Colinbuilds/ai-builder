@@ -52,7 +52,6 @@ export type PnlInput = {
   commitments: { id: string; category: CostCategory; amount: number; status: string }[];
   overheadPct: number | null;
   thresholdPct: number | null;
-  commission: { basis: "REVENUE" | "GROSS_PROFIT"; pct: number; person: string } | null;
 };
 
 export type BucketRow = { bucket: Bucket; estimated: number | null; actual: number; committed: number; projected: number; variance: number | null; variancePct: number | null; flagged: boolean };
@@ -108,9 +107,8 @@ export function computePnl(i: PnlInput) {
   const estimatedGrossProfit = revenue == null || estimated == null ? null : r2(revenue - estimated);
   const margin = (gp: number | null) => (gp == null || revenue == null ? null : pct(gp, revenue));
   const overhead = revenue == null || i.overheadPct == null ? null : r2((revenue * i.overheadPct) / 100);
-  const commissionBase = !i.commission ? null : i.commission.basis === "REVENUE" ? revenue : projectedGrossProfit;
-  const commission = commissionBase == null || !i.commission ? null : r2((commissionBase * i.commission.pct) / 100);
-  const netProfit = projectedGrossProfit == null || overhead == null || commission == null ? null : r2(projectedGrossProfit - overhead - commission);
+  // commissions are worked out separately (Reports → Commission calculator), not in the job P&L
+  const netProfit = projectedGrossProfit == null || overhead == null ? null : r2(projectedGrossProfit - overhead);
 
   const missing: string[] = [];
   const hasCosts = i.costs.length > 0 || committed > 0;
@@ -121,7 +119,6 @@ export function computePnl(i: PnlInput) {
   if (b?.uncostedAddOns?.length) missing.push(`Cost of accepted add-on(s) not in the estimate: ${b.uncostedAddOns.join(", ")} — an Admin can re-freeze the baseline from a revision that includes them`);
   if (coCostMissing) missing.push("Cost impact on an approved change order");
   if (i.overheadPct == null) missing.push("Company overhead % (Settings → Company)");
-  if (!i.commission) missing.push("Commission plan for the salesperson (Settings → Company)");
   if (i.thresholdPct == null) missing.push("Over-budget flag threshold (Settings → Company)");
 
   return {
@@ -147,8 +144,6 @@ export function computePnl(i: PnlInput) {
     estimatedMarginPct: margin(estimatedGrossProfit),
     overhead,
     overheadFormula: overhead == null ? null : `${revenue!.toFixed(2)} revenue × ${i.overheadPct}%`,
-    commission,
-    commissionFormula: commission == null ? null : `${commissionBase!.toFixed(2)} ${i.commission!.basis === "REVENUE" ? "revenue" : "projected gross profit"} × ${i.commission!.pct}% (${i.commission!.person})`,
     netProfit,
     netMarginPct: margin(netProfit),
     missing,

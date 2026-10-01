@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/claude";
 import { providerConfigured } from "@/lib/comms/mailbox";
 import { oauthConfigured, type OAuthProvider } from "./oauth";
+import { serviceAccountEmail } from "./google-sa";
 
 export type IntegrationStatus = "connected" | "ready" | "not_configured" | "manual_only";
 export type Integration = {
@@ -64,11 +65,15 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
     {
       key: "drive",
       name: "Google Drive",
-      does: "Import plans, specs, reports, and photos into a job from a file or folder link. (Next: save proposals and PDFs to the job's folder.)",
-      needs: ["APP_URL", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "Google Drive API enabled on that Google Cloud project"],
+      does: "Price-sheet sync from the Current folder, job-schedule import, and plans/specs/reports/photos into a job from a file or folder link.",
+      needs: ["Recommended: GOOGLE_SERVICE_ACCOUNT_JSON (a service account key, Drive API enabled) and share the folders with its email", "Or per user: APP_URL + GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET"],
       fallback: "Upload files directly.",
-      ...oauth("GOOGLE_DRIVE", "you"),
-      note: "Each user connects their own Drive.",
+      ...(serviceAccountEmail()
+        ? { status: "connected" as const, statusText: "Company service account" }
+        : oauth("GOOGLE_DRIVE", "you")),
+      note: serviceAccountEmail()
+        ? `BTRpro reads Drive as ${serviceAccountEmail()}. Share each folder or shared drive it should read with that address (Viewer).`
+        : "Without a service account, each user connects their own Drive and the price-sheet sync runs as the Admin who saved the folder.",
     },
     {
       key: "quickbooks",

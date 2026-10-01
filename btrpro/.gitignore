@@ -9,3 +9,5 @@ uploads/
 test-results/
 playwright-report/
 prisma/test-uploads/
+prisma/e2e.db*
+prisma/e2e-uploads/

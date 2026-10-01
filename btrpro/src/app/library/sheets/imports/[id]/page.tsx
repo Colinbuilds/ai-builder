@@ -12,6 +12,7 @@ export default async function ReviewImportPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const imp = await prisma.sheetImport.findUnique({ where: { id } });
   if (!imp) notFound();
+  const builder = imp.companyId ? await prisma.company.findUnique({ where: { id: imp.companyId }, select: { name: true } }) : null;
   const current = await prisma.priceSheet.findFirst({
     where: { code: imp.code, isActive: true },
     include: { items: { orderBy: { itemNumber: "asc" } } },
@@ -30,6 +31,7 @@ export default async function ReviewImportPage({ params }: { params: Promise<{ i
         <div>
           <h1 className="text-2xl font-semibold">
             Review upload: {imp.code} — {imp.fileName}
+            {builder && <span className="ml-2 text-base font-normal text-blue-700">{builder.name} pricing</span>}
           </h1>
           <p className="text-sm text-muted-foreground">
             Read as {imp.format === "ZIP_TXT" ? "a ZIP container of .txt files" : imp.format}. Nothing is live until

@@ -45,8 +45,8 @@ const STATUS: Record<string, string> = {
   MISSING: "MISSING",
 };
 
-/** AccuLynx copy view: item, quantity, unit only — no codes, no metadata. */
-export function acculynxText(b: Bundle) {
+/** Copy-paste material list: item, quantity, unit only — no codes, no metadata (CLAUDE.md §8). */
+export function materialListText(b: Bundle) {
   const rows = b.e.lines.filter((l) => MATERIAL(l.section) && l.quantity != null && l.sourceStatus !== "PENDING_AI");
   return {
     text: rows.map((l) => `${l.itemName}\t${qty(l.quantity)}\t${l.unit ?? ""}`).join("\n"),

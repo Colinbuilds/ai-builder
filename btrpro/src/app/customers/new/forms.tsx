@@ -28,7 +28,7 @@ function Dups({ state }: { state: CustomerResult }) {
   );
 }
 
-const TYPES = ["GC", "OWNER", "PROPERTY_MANAGER", "PUBLIC_AGENCY", "ARCHITECT", "SUBCONTRACTOR", "SUPPLIER", "OTHER"];
+const TYPES = ["BUILDER", "GC", "OWNER", "PROPERTY_MANAGER", "PUBLIC_AGENCY", "ARCHITECT", "SUBCONTRACTOR", "SUPPLIER", "OTHER"];
 
 export function CompanyForm() {
   const [state, action, pending] = useFormAction(createCompanyAction, null);

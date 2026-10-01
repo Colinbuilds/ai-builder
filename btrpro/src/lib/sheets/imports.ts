@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { saveUpload } from "@/lib/storage";
 import { accountWarning } from "@/lib/company";
+import { builderSheetWarning } from "@/lib/builders";
 import { parseCoverage } from "./coverage";
 import { extractSheetText } from "./extract";
 import { parsePriceCsv, parseSheetText, UOMS, type ParsedHeader, type ParsedRow } from "./parse";
@@ -17,6 +18,7 @@ export async function createImport(opts: {
   name: string;
   scope?: string | null;
   userId: string;
+  companyId?: string | null;
 }) {
   const { format, text } = await extractSheetText(opts.bytes, opts.fileName);
   const parsed = (format === "CSV" && parsePriceCsv(text)) || parseSheetText(text);
@@ -34,6 +36,7 @@ export async function createImport(opts: {
       rows: parsed.rows,
       unparsed: parsed.unparsed,
       createdById: opts.userId,
+      companyId: opts.companyId ?? null,
     },
   });
 }
@@ -77,8 +80,9 @@ export async function applyImport(importId: string, reviewed: ReviewedImport, us
     const imp = await tx.sheetImport.findUnique({ where: { id: importId } });
     if (!imp || imp.status !== "DRAFT") throw new ImportError(["This upload was already applied or discarded."]);
 
+    const builder = imp.companyId ? await tx.company.findUniqueOrThrow({ where: { id: imp.companyId } }) : null;
     const previous = await tx.priceSheet.findMany({
-      where: { code: imp.code, isActive: true },
+      where: { code: imp.code, isActive: true, companyId: imp.companyId ?? null },
       include: { items: true },
     });
     const prevItems = previous.flatMap((s) => s.items);
@@ -98,9 +102,11 @@ export async function applyImport(importId: string, reviewed: ReviewedImport, us
         salesRep: reviewed.header.salesRep?.trim() || null,
         effectiveDate: effective,
         expirationDate: expiration,
-        warning: accountWarning(reviewed.header.account),
+        // BTR sheets must be on BTR's account; a builder's sheet on the builder's account
+        warning: builder ? builderSheetWarning(reviewed.header.account, builder) : accountWarning(reviewed.header.account),
         isLoaded: true,
         importId: imp.id,
+        companyId: imp.companyId ?? null,
       },
     });
 

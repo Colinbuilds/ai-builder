@@ -34,7 +34,7 @@ export async function profitReport(f: ReportFilters, user: { id: string; role: s
     prisma.project.findMany({
       where,
       include: {
-        salesperson: { select: { id: true, name: true, commissionPlan: true } },
+        salesperson: { select: { id: true, name: true } },
         estimator: { select: { name: true } },
         clientCompany: { select: { name: true } },
         costs: { select: { category: true, amount: true, commitmentId: true } },
@@ -56,7 +56,6 @@ export async function profitReport(f: ReportFilters, user: { id: string; role: s
       return true;
     })
     .map((p) => {
-      const plan = p.salesperson?.commissionPlan;
       const pnl = computePnl({
         contractAmount: p.contractAmount,
         changeOrders: p.changeOrders,
@@ -65,7 +64,6 @@ export async function profitReport(f: ReportFilters, user: { id: string; role: s
         commitments: p.commitments,
         overheadPct: s.overheadPct,
         thresholdPct: s.costVarianceThresholdPct,
-        commission: plan ? { basis: plan.basis, pct: plan.pct, person: p.salesperson!.name } : null,
       });
       const sum = (k: string) => p.measurements.filter((m) => m.key === k).reduce((a, m) => a + (m.value ?? 0), 0);
       // 1 SQ = 100 SF by definition; roof_sq wins when it was measured directly

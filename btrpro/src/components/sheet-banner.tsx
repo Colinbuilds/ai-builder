@@ -4,12 +4,17 @@ import { describeDateStatus, sheetDateStatus } from "@/lib/sheets/date-status";
 
 // Dashboard banner for every live sheet that isn't CURRENT (BUILD_PROMPT §1).
 export async function SheetDateBanner() {
-  const sheets = await prisma.priceSheet.findMany({ where: { isActive: true, isLoaded: true }, orderBy: { code: "asc" } });
+  const sheets = await prisma.priceSheet.findMany({
+    where: { isActive: true, isLoaded: true },
+    orderBy: { code: "asc" },
+  });
   const flagged = sheets
     .map((s) => ({ s, st: sheetDateStatus(s) }))
     .filter(({ st }) => st.status !== "CURRENT");
   if (!flagged.length) return null;
-  const expired = flagged.some(({ st }) => st.status === "EXPIRED" || st.status === "UNKNOWN");
+  const expired = flagged.some(
+    ({ st }) => st.status === "EXPIRED" || st.status === "UNKNOWN",
+  );
   return (
     <div
       className={
@@ -19,7 +24,8 @@ export async function SheetDateBanner() {
       }
     >
       <p className="font-semibold">
-        {flagged.length} price sheet{flagged.length === 1 ? " needs" : "s need"} attention before bid numbers are final.{" "}
+        {flagged.length} price sheet{flagged.length === 1 ? " needs" : "s need"}{" "}
+        attention before bid numbers are final.{" "}
         <Link href="/library/sheets" className="underline">
           Review sheets
         </Link>

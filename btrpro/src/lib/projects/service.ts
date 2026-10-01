@@ -1,12 +1,13 @@
 // Project data operations. Every change writes to the job's activity timeline and recomputes readiness.
 import { prisma } from "@/lib/db";
+import { createStageTasks } from "@/lib/tasks/service";
 import { normEmail, phoneKey } from "@/lib/customers";
 import { sheetDateStatus } from "@/lib/sheets/date-status";
 import { INTAKE_BY_KEY, INTAKE_FIELDS, parseScopes, reconcileIntake, type Scope } from "./intake";
 import { computeReadiness, type ReadinessInput } from "./readiness";
 import { checkStageChange, nextForm17Status, type Stage } from "./workflow";
 
-type Actor = { id: string; name: string };
+type Actor = { id: string | null; name: string };
 type ConstructionType = "NEW" | "REROOF";
 
 export class ProjectError extends Error {
@@ -33,6 +34,7 @@ export type ProjectInput = {
   buildingUse?: string | null;
   constructionType?: ConstructionType | null;
   scopes: Scope[];
+  workTypes?: string[];
   isPublic: boolean;
   isTaxExempt: boolean;
   bidDueDate?: Date | null;
@@ -57,7 +59,7 @@ export type ProjectInput = {
   retainagePct?: number | null;
 };
 
-export type HomeownerInput = { firstName: string; lastName: string; phone?: string | null; email?: string | null };
+export type HomeownerInput = { firstName: string; lastName: string; phone?: string | null; email?: string | null; role?: "HOMEOWNER" | "OWNER_REP" };
 
 export async function createProject(input: ProjectInput, actor: Actor, homeowner?: HomeownerInput | null) {
   if (!input.name.trim()) throw new ProjectError(["Project name is required."]);
@@ -111,12 +113,12 @@ export async function createProject(input: ProjectInput, actor: Actor, homeowner
           address: input.address ?? null,
         },
       }));
-    await prisma.projectContact.create({ data: { projectId: project.id, contactId: contact.id, role: "HOMEOWNER", isPrimary: true } });
+    await prisma.projectContact.create({ data: { projectId: project.id, contactId: contact.id, role: homeowner.role ?? "HOMEOWNER", isPrimary: true } });
     await activity(
       project.id,
       actor.id,
       "contact",
-      `${existing ? "Linked existing" : "Added"} homeowner ${contact.firstName} ${contact.lastName}`,
+      `${existing ? "Linked existing" : "Added"} ${homeowner.role === "OWNER_REP" ? "contact" : "homeowner"} ${contact.firstName} ${contact.lastName}`,
     );
   }
   if (project.form17Status === "PENDING")
@@ -248,7 +250,8 @@ export async function loadReadinessInput(projectId: string): Promise<ReadinessIn
       })),
       labor: estimate.laborLines.map((l) => ({ id: l.id, task: l.task, sourceStatus: l.sourceStatus })),
     },
-    expiredSheets: expired.filter((s) => sheetDateStatus(s).status === "EXPIRED").map((s) => `${s.code} ${s.name}`),
+    // only the sheets this job can be priced from: BTR standard, plus its builder's own
+    expiredSheets: expired.filter((s) => (!s.companyId || s.companyId === p.clientCompanyId) && sheetDateStatus(s).status === "EXPIRED").map((s) => `${s.code} ${s.name}`),
   };
 }
 
@@ -278,6 +281,7 @@ export async function changeStage(projectId: string, to: Stage, opts: { reason?:
   });
   const why = opts.reason?.trim() ? ` — ${opts.reason.trim()}` : "";
   await activity(projectId, actor.id, "stage", `${actor.name} moved the job ${p.status} → ${to}${why}`, { from: p.status, to });
+  await createStageTasks(p, to, actor);
   if (gate.overridden) {
     await activity(projectId, actor.id, "override", `${actor.name} submitted while NOT READY FOR HARD BID${why}`);
     await prisma.auditLog.create({

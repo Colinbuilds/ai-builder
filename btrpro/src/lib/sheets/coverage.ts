@@ -32,7 +32,9 @@ const rules: Rule[] = [
   // "116'4" LF" → feet + inches per sold unit
   (d, uom) => {
     const m = d.match(/(?<![\d.])(\d+)'\s?(\d+(?:\.\d+)?)"\s?LF\b/i);
-    return m ? { qty: round(+m[1] + +m[2] / 12), unit: `LF/${uom}`, matched: m[0] } : null;
+    return m
+      ? { qty: round(+m[1] + +m[2] / 12), unit: `LF/${uom}`, matched: m[0] }
+      : null;
   },
   // "31LF", "33.3LF", "120.33LF" → LF per sold unit
   (d, uom) => {
@@ -41,14 +43,30 @@ const rules: Rule[] = [
   },
   // "10'X100'", "9' x 150'", "4'X8'" → SF per sold unit (both sides marked in feet)
   (d, uom) => {
-    const m = d.match(new RegExp(String.raw`(?<![\d.X])${NUM}'\s?X\s?${NUM}'(?!\s?X)`, "i"));
-    return m ? { qty: round(+m[1] * +m[2]), unit: `SF/${uom}`, matched: m[0] } : null;
+    const m = d.match(
+      new RegExp(String.raw`(?<![\d.X])${NUM}'\s?X\s?${NUM}'(?!\s?X)`, "i"),
+    );
+    return m
+      ? { qty: round(+m[1] * +m[2]), unit: `SF/${uom}`, matched: m[0] }
+      : null;
   },
   // "4X8", "4x10" on sheet goods (SH/PNL) → standard 4-ft-wide boards, SF per sheet
   (d, uom) => {
     if (!SHEET_UOMS.has(uom)) return null;
     const m = d.match(/(?<![\d.X"'])4\s?X\s?(\d{1,2})(?![\d."'X])/i);
     return m ? { qty: 4 * +m[1], unit: `SF/${uom}`, matched: m[0] } : null;
+  },
+  // Pieces with one length in feet: "Omniridge Pro 4'", "3/4" X 12' J-Channel", "Starter Strip 10'" → LF per piece.
+  // Only for items sold by the piece, and only when a single foot-marked length is printed.
+  (d, uom) => {
+    if (uom !== "PC" && uom !== "LG") return null;
+    const all = [
+      ...d.matchAll(
+        /(?<![\d.X"'])(\d+(?:\.\d+)?)\s?(?:'|FT\b\.?)(?!\s?X)(?!\s?\d)/gi,
+      ),
+    ];
+    if (all.length !== 1) return null;
+    return { qty: +all[0][1], unit: `LF/${uom}`, matched: all[0][0].trim() };
   },
   // Count per box/pail: "2000/BX", "4/Box", "3000/Pail", "1M", "4.8M", "5C", trailing "250"
   (d, uom) => {
@@ -68,7 +86,10 @@ const rules: Rule[] = [
   },
 ];
 
-export function parseCoverage(description: string, uom: string): Coverage | null {
+export function parseCoverage(
+  description: string,
+  uom: string,
+): Coverage | null {
   const d = description.trim();
   for (const rule of rules) {
     const c = rule(d, uom.toUpperCase());

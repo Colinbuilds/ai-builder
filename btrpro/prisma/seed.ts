@@ -2,7 +2,7 @@
 // Re-running is safe: sheets/items/rules are upserted, never duplicated.
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseCoverage } from "../src/lib/sheets/coverage";
 
@@ -39,12 +39,16 @@ type RawRule = {
   [k: string]: unknown;
 };
 
-// Returns null when an Admin has uploaded a newer version of this sheet; the seed never overwrites an upload.
+// The newest effective date wins. A sheet from /data never replaces a live version that is as new or newer
+// (e.g. one an Admin uploaded or the Drive sync applied); a newer one becomes a new version and the old one
+// is kept, inactive, for history. Returns null when the live version stays.
 type SeedSheet = Omit<Prisma.PriceSheetUncheckedCreateInput, "code" | "importId">;
 async function upsertSheet(code: string, data: SeedSheet) {
-  const existing = await prisma.priceSheet.findFirst({ where: { code, isActive: true } });
-  if (existing?.importId) return null;
-  if (existing) return prisma.priceSheet.update({ where: { id: existing.id }, data });
+  const existing = await prisma.priceSheet.findFirst({ where: { code, isActive: true, companyId: null } });
+  const eff = data.effectiveDate ? new Date(data.effectiveDate) : null;
+  const newer = !!eff && (!existing?.effectiveDate || eff > existing.effectiveDate);
+  if (existing && !newer) return existing.importId ? null : prisma.priceSheet.update({ where: { id: existing.id }, data });
+  if (existing) await prisma.priceSheet.update({ where: { id: existing.id }, data: { isActive: false, replacedAt: new Date() } });
   return prisma.priceSheet.create({ data: { code, ...data } });
 }
 
@@ -123,20 +127,107 @@ async function main() {
     await prisma.rule.upsert({ where: { id }, update: data, create: { id, ...data } });
   }
 
-  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@btrcontracting.local";
+  // Emails are stored lowercase (login lowercases what's typed). Trim stray spaces/quotes from the Railway variable.
+  const clean = (v: string | undefined) => v?.trim().replace(/^["']|["']$/g, "").trim() || undefined;
+  const email = (clean(process.env.SEED_ADMIN_EMAIL) ?? "admin@btrcontracting.local").toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD ?? "change-me-now";
-  if (!(await prisma.user.findUnique({ where: { email } }))) {
+  // Older versions stored emails as typed; fix any with capitals so they can sign in.
+  for (const u of await prisma.user.findMany({ select: { id: true, email: true } }))
+    if (u.email !== u.email.trim().toLowerCase() && !(await prisma.user.findUnique({ where: { email: u.email.trim().toLowerCase() } })))
+      await prisma.user.update({ where: { id: u.id }, data: { email: u.email.trim().toLowerCase() } });
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (!existing) {
     if (process.env.NODE_ENV === "production" && (!process.env.SEED_ADMIN_PASSWORD || password.length < 12))
       throw new Error("Set SEED_ADMIN_PASSWORD (12+ characters) before the first production start.");
     await prisma.user.create({
       data: { name: "Admin", email, role: "ADMIN", passwordHash: await bcrypt.hash(password, 10) },
     });
     console.log(`Created admin user ${email}`);
+  } else if (process.env.RESET_ADMIN_PASSWORD === "true") {
+    // Locked out: set RESET_ADMIN_PASSWORD=true, redeploy, sign in, then delete the variable.
+    if (!process.env.SEED_ADMIN_PASSWORD || password.length < 12) throw new Error("RESET_ADMIN_PASSWORD needs SEED_ADMIN_PASSWORD (12+ characters).");
+    await prisma.user.update({ where: { id: existing.id }, data: { passwordHash: await bcrypt.hash(password, 10), role: "ADMIN" } });
+    console.log(`Reset the password for ${email}. Remove RESET_ADMIN_PASSWORD now.`);
+  }
+  if (process.env.NODE_ENV === "production") {
+    const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { email: true } });
+    console.log(`Admin sign-ins: ${admins.map((a) => a.email).join(", ")}`);
   }
 
-  const active = { sheet: { isActive: true } };
+  // Built-in estimate templates (product systems). Created once; later edits in the app are kept.
+  const tplFile = path.join(dataDir, "estimate_templates.json");
+  if (existsSync(tplFile)) {
+    const { templates } = JSON.parse(readFileSync(tplFile, "utf8")) as { templates: { key: string; config: object; [k: string]: unknown }[] };
+    let added = 0;
+    for (const t of templates) {
+      if (await prisma.estimateTemplate.findUnique({ where: { key: t.key } })) continue;
+      await prisma.estimateTemplate.create({
+        data: { key: t.key, name: String(t.name), category: String(t.category), group: String(t.group), brand: (t.brand as string) ?? null, impactClass: (t.impactClass as string) ?? null, impactSource: (t.impactSource as string) ?? null, scopeType: String(t.scopeType), module: String(t.module), config: t.config as Prisma.InputJsonValue, notes: (t.notes as string) ?? null, builtIn: true, createdBy: "BTRpro starter set" },
+      });
+      added++;
+    }
+    if (added) console.log(`Added ${added} built-in estimate templates.`);
+  }
+
+  // BTR company data from their Drive (labor piece rates, crews/subs, companies). Created once; edits in the app are kept.
+  const coFile = path.join(dataDir, "btr_company_data.json");
+  if (existsSync(coFile)) {
+    const co = JSON.parse(readFileSync(coFile, "utf8")) as {
+      laborStandards: { seedKey: string; category: string; task: string; unit: string; unitRate: number; source: string }[];
+      crews: { name: string; leadName: string; trade: string; notes?: string }[];
+      companies: { name: string; type: string }[];
+    };
+    let n = 0;
+    for (const l of co.laborStandards) {
+      if (await prisma.laborStandard.findFirst({ where: { seedKey: l.seedKey } })) continue;
+      await prisma.laborStandard.create({ data: { ...l, rateType: "UNIT", enteredBy: "BTR Drive import" } });
+      n++;
+    }
+    const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const crewNames = new Set((await prisma.crew.findMany({ select: { name: true } })).map((c) => norm(c.name)));
+    for (const c of co.crews)
+      if (!crewNames.has(norm(c.name))) {
+        // insurance dates aren't in the files: they show as missing until entered
+        await prisma.crew.create({ data: { name: c.name, kind: "SUB", leadName: c.leadName, trade: c.trade, notes: c.notes ?? "From BTR's Drive files. Add phone, email, pay, and insurance dates." } });
+        n++;
+      }
+    const coNames = new Set((await prisma.company.findMany({ select: { name: true } })).map((c) => norm(c.name)));
+    for (const c of co.companies)
+      if (!coNames.has(norm(c.name))) {
+        await prisma.company.create({ data: { name: c.name, type: c.type as never, notes: "From BTR's Drive files (estimating schedule / job list)." } });
+        n++;
+      }
+    if (n) console.log(`Added ${n} records from BTR company data.`);
+  }
+
+  // BTR's "Current" price-sheet folder in the company shared drive. Set once so the Drive sync can start on its own;
+  // if an Admin ever changed or cleared it (audit log has an entry), leave their choice alone.
+  const CURRENT_SHEETS = "https://drive.google.com/drive/folders/1tyaYSwNNPG3571FEFxEA0K6ohWzzWYFj";
+  if (
+    !(await prisma.companySetting.findUnique({ where: { key: "priceSheetFolder" } })) &&
+    !(await prisma.auditLog.findFirst({ where: { entity: "CompanySetting", entityId: "priceSheetFolder" } }))
+  ) {
+    await prisma.companySetting.create({ data: { key: "priceSheetFolder", value: CURRENT_SHEETS, updatedBy: "Seed" } });
+    console.log("Price-sheet sync folder set to BTR's Current folder.");
+  }
+
+  // Re-read coverage on every live item (newer sheets from Drive included) when the parser learns a pattern.
+  // Coverage a person entered or took from manufacturer data is never touched.
+  let reparsed = 0;
+  for (const it of await prisma.priceItem.findMany({
+    where: { sheet: { isActive: true }, OR: [{ coverageSource: null }, { coverageSource: "PARSED_FROM_DESCRIPTION" }] },
+    select: { id: true, description: true, uom: true, coverageQty: true, coverageUnit: true },
+  })) {
+    const c = parseCoverage(it.description, it.uom ?? "");
+    if ((c?.qty ?? null) === it.coverageQty && (c?.unit ?? null) === it.coverageUnit) continue;
+    await prisma.priceItem.update({ where: { id: it.id }, data: { coverageQty: c?.qty ?? null, coverageUnit: c?.unit ?? null, coverageSource: c ? "PARSED_FROM_DESCRIPTION" : null } });
+    reparsed++;
+  }
+  if (reparsed) console.log(`Coverage re-read on ${reparsed} live items.`);
+
+  const active = { sheet: { isActive: true, companyId: null } };
   const [sheetCount, itemCount, callCount, ruleCount] = await Promise.all([
-    prisma.priceSheet.count({ where: { isLoaded: true, isActive: true } }),
+    prisma.priceSheet.count({ where: { isLoaded: true, isActive: true, companyId: null } }),
     prisma.priceItem.count({ where: active }),
     prisma.priceItem.count({ where: { priceStatus: "CALL", ...active } }),
     prisma.rule.count(),

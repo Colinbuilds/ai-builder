@@ -1,6 +1,6 @@
 // Import plans, specs, reports, and photos from a Google Drive file or folder link into a job.
 import { addDocument } from "@/lib/docs/documents";
-import { accessToken } from "./oauth";
+import { driveNotFound, driveToken } from "./google-sa";
 
 const API = "https://www.googleapis.com/drive/v3/files";
 const FOLDER = "application/vnd.google-apps.folder";
@@ -21,11 +21,11 @@ type DriveFile = { id: string; name: string; mimeType: string; size?: string };
 export async function importFromDrive(projectId: string, link: string, user: { id: string }) {
   const id = parseDriveLink(link);
   if (!id) throw new Error("That doesn't look like a Google Drive file or folder link.");
-  const { token } = await accessToken("GOOGLE_DRIVE", user.id);
+  const token = await driveToken(user.id);
   const auth = { authorization: `Bearer ${token}` };
   const get = async (url: string) => {
     const r = await fetch(url, { headers: auth });
-    if (r.status === 404) throw new Error("Drive says that file doesn't exist or isn't shared with your account.");
+    if (r.status === 404) throw new Error(driveNotFound());
     if (!r.ok) throw new Error(`Google Drive error (${r.status}).`);
     return r;
   };

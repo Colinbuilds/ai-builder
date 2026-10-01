@@ -6,10 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { Problems } from "./problems";
 
-const ROLES = ["HOMEOWNER", "OWNER_REP", "GC_PM", "SUPERINTENDENT", "PROPERTY_MANAGER", "ARCHITECT", "BILLING", "OTHER"];
+const ROLES = [
+  "HOMEOWNER",
+  "OWNER_REP",
+  "GC_PM",
+  "SUPERINTENDENT",
+  "PROPERTY_MANAGER",
+  "ARCHITECT",
+  "BILLING",
+  "OTHER",
+];
 
-export function AddContact({ projectId, contacts }: { projectId: string; contacts: { id: string; label: string }[] }) {
-  const [state, action, pending] = useFormAction(addProjectContactAction, null, { resetOnOk: true });
+export function AddContact({
+  projectId,
+  contacts,
+}: {
+  projectId: string;
+  contacts: { id: string; label: string }[];
+}) {
+  const [state, action, pending] = useFormAction(
+    addProjectContactAction,
+    null,
+    { resetOnOk: true },
+  );
   return (
     <form onSubmit={action} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="projectId" value={projectId} />

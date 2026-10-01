@@ -5,6 +5,9 @@ export const BTR = {
   phone: "402-739-9811",
   email: "trevin@btrcontracting.com",
   abcAccount: "2057372-2",
+  // BTR's own addresses (office, bill-to, shop — from CLAUDE.md and ABC's delivery tickets). Material shipped to
+  // one of these says nothing about which job it's for, so receipt matching ignores them.
+  ownAddresses: ["10852 Hanover St", "9350 G Ct", "2755 River Rd"],
 } as const;
 
 export const SUPPLIER = {

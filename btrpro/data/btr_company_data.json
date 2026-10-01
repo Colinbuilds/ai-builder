@@ -1,0 +1,416 @@
+{
+ "_source": "Loaded from BTR's Google Drive on 2026-09-30: Residential Price Book Template 4/29/26, Labor pricing screenshot 6/29/26, Colin Jobs / Commissions (crews), BTR Estimating Schedule (GCs, builders, property managers). Business names only \u2014 no customer contact details.",
+ "laborStandards": [
+  {
+   "seedKey": "rf-tearoff-install-lam",
+   "category": "Roofing",
+   "task": "Tear off and install laminated shingles",
+   "unit": "SQ",
+   "unitRate": 90,
+   "source": "\"Labor pricing\" screenshot (Google Drive, 6/29/26), crew pricing"
+  },
+  {
+   "seedKey": "rf-height-charge",
+   "category": "Roofing",
+   "task": "Height charge",
+   "unit": "SQ",
+   "unitRate": 7.5,
+   "source": "\"Labor pricing\" screenshot (Google Drive, 6/29/26), crew pricing"
+  },
+  {
+   "seedKey": "rf-750-vents",
+   "category": "Roofing",
+   "task": "Install new 750 box vents",
+   "unit": "EA",
+   "unitRate": 12.5,
+   "source": "\"Labor pricing\" screenshot (Google Drive, 6/29/26), crew pricing"
+  },
+  {
+   "seedKey": "sd-hardie-lap-4",
+   "category": "Siding",
+   "task": "Hardie lap (4\" reveal)",
+   "unit": "SQ",
+   "unitRate": 150,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-hardie-448",
+   "category": "Siding",
+   "task": "Hardie 4-4-8 alternating",
+   "unit": "SQ",
+   "unitRate": 150,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-hardie-lap-8-12",
+   "category": "Siding",
+   "task": "Hardie 8\"\u201312\" lap",
+   "unit": "SQ",
+   "unitRate": 200,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-lp-lap-8",
+   "category": "Siding",
+   "task": "LP SmartSide 8\" standard lap",
+   "unit": "SQ",
+   "unitRate": 130,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-lp-448",
+   "category": "Siding",
+   "task": "LP 4-4-8 alternating lap",
+   "unit": "SQ",
+   "unitRate": 150,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-hardie-shingles",
+   "category": "Siding",
+   "task": "Hardie shingles",
+   "unit": "SQ",
+   "unitRate": 155,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-lp-shingles",
+   "category": "Siding",
+   "task": "LP shingles",
+   "unit": "SQ",
+   "unitRate": 140,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column \u2014 price book note: \"LP is 140/30\""
+  },
+  {
+   "seedKey": "sd-stucco-panel",
+   "category": "Siding",
+   "task": "Hardie or LP stucco panel",
+   "unit": "SQ",
+   "unitRate": 150,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-bb-hardie",
+   "category": "Siding",
+   "task": "Board & batten \u2014 Hardie (smooth)",
+   "unit": "SQ",
+   "unitRate": 165,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-bb-lp",
+   "category": "Siding",
+   "task": "Board & batten \u2014 LP (smooth)",
+   "unit": "SQ",
+   "unitRate": 165,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-prefinished-addon",
+   "category": "Siding",
+   "task": "Hardie/LP prefinished add-on",
+   "unit": "SQ",
+   "unitRate": 35,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-tearoff",
+   "category": "Siding",
+   "task": "Siding tear-off",
+   "unit": "SQ",
+   "unitRate": 65,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-housewrap",
+   "category": "Siding",
+   "task": "House wrap (Tyvek) install",
+   "unit": "SQ",
+   "unitRate": 35,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-trim-boards",
+   "category": "Siding",
+   "task": "Trim boards",
+   "unit": "LF",
+   "unitRate": 1,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-flashing",
+   "category": "Siding",
+   "task": "Flashing (any)",
+   "unit": "LF",
+   "unitRate": 1,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-tamlyn",
+   "category": "Siding",
+   "task": "Tamlyn flashing",
+   "unit": "LF",
+   "unitRate": 1,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-coping",
+   "category": "Siding",
+   "task": "Coping metal",
+   "unit": "LF",
+   "unitRate": 23.5,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-metal-soffit-fascia",
+   "category": "Siding",
+   "task": "Metal soffit & fascia incl. tear-off",
+   "unit": "LF",
+   "unitRate": 5.5,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-metal-porch",
+   "category": "Siding",
+   "task": "Metal \u2014 covered deck/porch ceiling",
+   "unit": "SF",
+   "unitRate": 2,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-cedar-truss-lg",
+   "category": "Siding",
+   "task": "Cedar truss \u2014 large",
+   "unit": "EA",
+   "unitRate": 250,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-cedar-truss-sm",
+   "category": "Siding",
+   "task": "Cedar truss \u2014 small",
+   "unit": "EA",
+   "unitRate": 150,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-shutters",
+   "category": "Siding",
+   "task": "Install shutters",
+   "unit": "PR",
+   "unitRate": 30,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column \u2014 per pair"
+  },
+  {
+   "seedKey": "sd-gable-vents",
+   "category": "Siding",
+   "task": "Premade gable vents",
+   "unit": "EA",
+   "unitRate": 20,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-garage-double",
+   "category": "Siding",
+   "task": "Wrap double garage door",
+   "unit": "EA",
+   "unitRate": 90,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-garage-single",
+   "category": "Siding",
+   "task": "Wrap single garage door",
+   "unit": "EA",
+   "unitRate": 60,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "sd-columns-2story",
+   "category": "Siding",
+   "task": "2-story columns",
+   "unit": "EA",
+   "unitRate": 200,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), crew cost column"
+  },
+  {
+   "seedKey": "gt-alum-5",
+   "category": "Gutters",
+   "task": "5\" aluminum gutter",
+   "unit": "LF",
+   "unitRate": 6,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), Gutters tab payout column"
+  },
+  {
+   "seedKey": "gt-downspout-3x4",
+   "category": "Gutters",
+   "task": "3x4 downspout",
+   "unit": "LF",
+   "unitRate": 6,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), Gutters tab payout column"
+  },
+  {
+   "seedKey": "gt-elbow-3x4",
+   "category": "Gutters",
+   "task": "3x4 elbows",
+   "unit": "EA",
+   "unitRate": 6,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), Gutters tab payout column"
+  },
+  {
+   "seedKey": "gt-endcap-5",
+   "category": "Gutters",
+   "task": "5\" end caps",
+   "unit": "EA",
+   "unitRate": 6,
+   "source": "Residential Price Book Template 4/29/26 (Google Drive), Gutters tab payout column"
+  }
+ ],
+ "crews": [
+  {
+   "name": "Arne's Innovation",
+   "leadName": "Kevin Padilla",
+   "trade": "roofing"
+  },
+  {
+   "name": "D&I Creations",
+   "leadName": "Kevin Padilla",
+   "trade": "roofing"
+  },
+  {
+   "name": "Betos Construction LLC",
+   "leadName": "Beto",
+   "trade": "roofing, repairs"
+  },
+  {
+   "name": "ERZ Exteriors",
+   "leadName": "Enrique",
+   "trade": "roofing, metal, gutters"
+  },
+  {
+   "name": "ONIX Construction",
+   "leadName": "Neo Santana",
+   "trade": "repairs, siding, gutters"
+  },
+  {
+   "name": "Jorge (roofing crew)",
+   "leadName": "Jorge",
+   "trade": "roofing",
+   "notes": "Crew vs. sub not confirmed \u2014 set the type and insurance."
+  }
+ ],
+ "companies": [
+  {
+   "name": "Brester",
+   "type": "GC"
+  },
+  {
+   "name": "Overland",
+   "type": "GC"
+  },
+  {
+   "name": "Perry Reid",
+   "type": "GC"
+  },
+  {
+   "name": "Pedcore",
+   "type": "GC"
+  },
+  {
+   "name": "Lund Ross",
+   "type": "GC"
+  },
+  {
+   "name": "Ronco",
+   "type": "GC"
+  },
+  {
+   "name": "Signature Companies",
+   "type": "GC"
+  },
+  {
+   "name": "Signature Construction",
+   "type": "GC"
+  },
+  {
+   "name": "Brahams",
+   "type": "GC"
+  },
+  {
+   "name": "Sampson",
+   "type": "GC"
+  },
+  {
+   "name": "Straub",
+   "type": "GC"
+  },
+  {
+   "name": "Hawthorn",
+   "type": "GC"
+  },
+  {
+   "name": "Hausmann",
+   "type": "GC"
+  },
+  {
+   "name": "Kingery",
+   "type": "GC"
+  },
+  {
+   "name": "Lueder",
+   "type": "GC"
+  },
+  {
+   "name": "NGC",
+   "type": "GC"
+  },
+  {
+   "name": "Pinnacle",
+   "type": "GC"
+  },
+  {
+   "name": "Broadmoor",
+   "type": "PROPERTY_MANAGER"
+  },
+  {
+   "name": "Richdale",
+   "type": "PROPERTY_MANAGER"
+  },
+  {
+   "name": "Asset Living",
+   "type": "PROPERTY_MANAGER"
+  },
+  {
+   "name": "DR Horton (Omaha)",
+   "type": "BUILDER"
+  },
+  {
+   "name": "DR Horton (Kansas City)",
+   "type": "BUILDER"
+  },
+  {
+   "name": "Hildy Homes",
+   "type": "BUILDER"
+  },
+  {
+   "name": "Drake Homes",
+   "type": "BUILDER"
+  },
+  {
+   "name": "Blake Builders",
+   "type": "BUILDER"
+  },
+  {
+   "name": "Bridgewater Homes",
+   "type": "BUILDER"
+  },
+  {
+   "name": "Sharf",
+   "type": "BUILDER"
+  },
+  {
+   "name": "Echelon Homes",
+   "type": "BUILDER"
+  }
+ ]
+}

@@ -16,7 +16,15 @@ export function Markdown({ text }: { text: string }) {
   };
   const flushTable = () => {
     if (table.length) {
-      const rows = table.filter((r) => !/^\s*\|?\s*:?-{2,}/.test(r)).map((r) => r.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((c) => c.trim()));
+      const rows = table
+        .filter((r) => !/^\s*\|?\s*:?-{2,}/.test(r))
+        .map((r) =>
+          r
+            .replace(/^\s*\|/, "")
+            .replace(/\|\s*$/, "")
+            .split("|")
+            .map((c) => c.trim()),
+        );
       const [head, ...body] = rows;
       blocks.push(
         <div key={blocks.length} className="mb-2 overflow-x-auto">
@@ -24,7 +32,10 @@ export function Markdown({ text }: { text: string }) {
             <thead>
               <tr>
                 {head.map((h, i) => (
-                  <th key={i} className="border px-2 py-1 text-left font-semibold">
+                  <th
+                    key={i}
+                    className="border px-2 py-1 text-left font-semibold"
+                  >
                     {inline(h)}
                   </th>
                 ))}

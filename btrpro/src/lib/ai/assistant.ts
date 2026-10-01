@@ -32,6 +32,8 @@ async function jobSnapshot(projectId: string) {
     `Job: ${p.name} (${p.market.toLowerCase()}), stage ${STAGE_LABEL[p.status]}, readiness ${p.readiness}.`,
     p.address && `Address: ${p.address}.`,
     p.clientCompany && `Client: ${p.clientCompany.name}.`,
+    p.clientCompany?.type === "BUILDER" &&
+      `PRICING: this is a ${p.clientCompany.name} job. Price only from ${p.clientCompany.name}'s own sheets (the tools already do). Items not on them: ${p.clientCompany.pricingFallback === "STANDARD" ? "BTR standard price, flagged" : "MISSING"}. Never quote BTR standard prices as builder pricing.`,
     p.isPublic && `Public job${p.isTaxExempt ? `, tax-exempt, Form 17 ${p.form17Status}` : ""}.`,
     p.isInsuranceClaim && `Insurance claim ${p.claimNumber ?? ""} with ${p.insuranceCarrier ?? "carrier"}.`,
     `Missing intake: ${missing.join(", ") || "none"}.`,

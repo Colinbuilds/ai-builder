@@ -1,0 +1,2181 @@
+{
+ "_source": "Built from the loaded BTR price sheets (data/price_items.csv). Class 4 only where the sheet text says IR / Impact / CLASS 4. Every pick is editable.",
+ "templates": [
+  {
+   "key": "mal-highlander",
+   "name": "Malarkey Highlander NEX AR",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Malarkey",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02MLHLXAAB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04MLSS210",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04MLHR12AB",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05MLSP1029",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11ML4012",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "mal-vista",
+   "name": "Malarkey Vista AR",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Malarkey",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02MLVIA3AB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04MLSS210",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04MLHR12AB",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05MLSP1029",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11ML4012",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "Company 30-year default option (with CertainTeed Landmark ClimateFlex)."
+  },
+  {
+   "key": "mal-legacy",
+   "name": "Malarkey Legacy IR",
+   "category": "SHINGLE",
+   "group": "Class 4 / impact-resistant",
+   "brand": "Malarkey",
+   "impactClass": "CLASS_4",
+   "impactSource": "Price sheet description: \"Legacy IR 4/SQ\"",
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "03MLLAAB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04MLSS210",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04MLHR12AB",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05MLSP1029",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11ML4012",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "mal-windsor",
+   "name": "Malarkey Windsor (designer)",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Malarkey",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "03MLWSAB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04MLWSSAB",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": null
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05MLSP1029",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11ML4012",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "Hip & ridge for Windsor not picked \u2014 choose it (EZ Ridge XT or 227) before running the takeoff."
+  },
+  {
+   "key": "iko-cambridge",
+   "name": "IKO Cambridge AR",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "IKO",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02IKCA3ADK",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04IKLEP109",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04IKHA1229WW",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11IKSTSUL1",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11IKSS",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "iko-dynasty",
+   "name": "IKO Dynasty AR",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "IKO",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02IKDYARAB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04IKLEP109",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04IKHA1229WW",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11IKSTSUL1",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11IKSS",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "iko-nordic",
+   "name": "IKO Nordic",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "IKO",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02IKNDCBS",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04IKLEP109",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04IKC4IRBS",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11IKSTSUL1",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11IKSS",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "Uses IKO \"H&R CLASS 4 IR 36LF\". The shingle line's own impact rating isn't on the sheet \u2014 confirm."
+  },
+  {
+   "key": "tamko-heritage",
+   "name": "Tamko Heritage 30 AR",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Tamko",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02TKFH2RB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04TK10SS",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04TKAHRRB",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05ABCPG20",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11MIRE365",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "No Tamko underlayment or ice & water on the sheet \u2014 ABC Pro Guard 20 and Resisto used. Confirm."
+  },
+  {
+   "key": "tamko-titan",
+   "name": "Tamko Titan XT",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Tamko",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02TKTXTAB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04TK10SS",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04TKAHRRB",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05ABCPG20",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11MIRE365",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "No Tamko underlayment or ice & water on the sheet \u2014 ABC Pro Guard 20 and Resisto used. Confirm."
+  },
+  {
+   "key": "tamko-stormfight",
+   "name": "Tamko StormFight FLEX",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Tamko",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02TKSFF4BW",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04TK10SS",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04TKPHRRB3",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05ABCPG20",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11MIRE365",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "Impact rating isn't on the sheet \u2014 confirm before selling as Class 4."
+  },
+  {
+   "key": "atlas-pristine",
+   "name": "Atlas Pinnacle Pristine",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Atlas",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02ATP42PBK",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04ATSSHP42",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04ATSP31BK",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11ATSUM60",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11ATWMI200",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "atlas-impact",
+   "name": "Atlas Pinnacle Impact",
+   "category": "SHINGLE",
+   "group": "Class 4 / impact-resistant",
+   "brand": "Atlas",
+   "impactClass": "CLASS_4",
+   "impactSource": "Price sheet description: \"Pinnacle Impact 3/S\" \u2014 impact-resistant line; confirm the UL 2218 class on the spec sheet",
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02ATPIBS",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04ATSSHP42",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04ATSP31BK",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11ATSUM60",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11ATWMI200",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "ct-landmark",
+   "name": "CertainTeed Landmark",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "CertainTeed",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02CTLA30MB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04CTSWST",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04CTSHAMB",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05CTSRR10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11CTWGS2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "ct-climateflex",
+   "name": "CertainTeed Landmark ClimateFlex IR",
+   "category": "SHINGLE",
+   "group": "Class 4 / impact-resistant",
+   "brand": "CertainTeed",
+   "impactClass": "CLASS_4",
+   "impactSource": "Price sheet description: \"ClimateFlex IR AR 3/S\"",
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "03CTLCF3WW",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04CTSWST",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04CTSHAMB",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05CTSRR10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11CTWGS2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "Company 30-year default option (with Malarkey Vista)."
+  },
+  {
+   "key": "ct-northgate",
+   "name": "CertainTeed Northgate AR",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "CertainTeed",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02CTNGMDBS",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04CTSWST",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04CTSHAMB",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05CTSRR10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11CTWGS2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "ct-presidential-ir",
+   "name": "CertainTeed Presidential IR",
+   "category": "SHINGLE",
+   "group": "Class 4 / impact-resistant",
+   "brand": "CertainTeed",
+   "impactClass": "CLASS_4",
+   "impactSource": "Price sheet description: \"Presidential IR 5/SQ\"",
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "03CTPRIRCB",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04CTPISTCB",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04CTCICM",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "05CTSRR10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11CTWGS2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "gaf-hdz",
+   "name": "GAF Timberline HDZ",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "GAF",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02GASTZ3CH",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04GAPST",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04GASR2CH",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17GACSCA",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11GATP10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11GAWW2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "gaf-uhdz",
+   "name": "GAF Timberline UHDZ",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "GAF",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "03GATUZPSL",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04GAPST",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04GASR2CH",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17GACSCA",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11GATP10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11GAWW2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "gaf-natural-shadow",
+   "name": "GAF Timberline Natural Shadow",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "GAF",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02GASTNSWW",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04GAPST",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04GASR2CH",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17GACSCA",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11GATP10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11GAWW2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": null
+  },
+  {
+   "key": "gaf-armorshield",
+   "name": "GAF ArmorShield II",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "GAF",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "03GAAS2CH",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04GAPST",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04GASRACH",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17GACSCA",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11GATP10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11GAWW2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "Uses Armor Seal-A-Ridge. Impact rating isn't on the sheet \u2014 confirm before selling as Class 4."
+  },
+  {
+   "key": "oc-duration",
+   "name": "Owens Corning TruDefinition Duration (Driftwood)",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Owens Corning",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02OCTDUDW",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04OCSSPL",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": "04OCAPEDW",
+     "sheetCode": "SS"
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11OCPROA10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11OCWLM2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "Sheet items are color-specific (Driftwood). Pick the job's color."
+  },
+  {
+   "key": "oc-duration-flex",
+   "name": "Owens Corning Duration FLEX (Driftwood)",
+   "category": "SHINGLE",
+   "group": "Standard \u2014 impact rating not on sheet",
+   "brand": "Owens Corning",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "STEEP",
+   "module": "steep",
+   "config": {
+    "shingle": {
+     "itemNumber": "02OCTDFADW",
+     "sheetCode": "SS"
+    },
+    "starter": {
+     "itemNumber": "04OCSSPL",
+     "sheetCode": "SS"
+    },
+    "hipRidge": {
+     "itemNumber": null
+    },
+    "ridgeVent": {
+     "itemNumber": "17LOORPR4S",
+     "sheetCode": "SS"
+    },
+    "underlayment": {
+     "itemNumber": "11OCPROA10",
+     "sheetCode": "SS"
+    },
+    "iceWater": {
+     "itemNumber": "11OCWLM2",
+     "sheetCode": "SS",
+     "rows": []
+    },
+    "dripEdge": {
+     "itemNumber": "14PMDS5BK",
+     "sheetCode": "SS"
+    },
+    "stepFlashing": {
+     "itemNumber": "14PMSF88BK",
+     "sheetCode": "SS",
+     "unit": "BD"
+    },
+    "pipeBoot": {
+     "itemNumber": "14IP81891",
+     "sheetCode": "SS"
+    }
+   },
+   "notes": "The only FLEX hip & ridge on the sheet is Estate Gray \u2014 pick hip & ridge to match the color. Impact rating isn't on the sheet \u2014 confirm."
+  },
+  {
+   "key": "mh-epdm-060-adhered",
+   "name": "Mulehide EPDM .060 fully adhered",
+   "category": "FLAT",
+   "group": "EPDM",
+   "brand": "Mulehide",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "LOW_SLOPE",
+   "module": "lowSlope",
+   "config": {
+    "system": "EPDM",
+    "preSecured": false,
+    "membrane": {
+     "itemNumber": "07MH610X1B",
+     "sheetCode": "MH"
+    },
+    "allowances": [],
+    "insulation": [
+     {
+      "itemNumber": "58MHP12048",
+      "sheetCode": "MH",
+      "layer": "1",
+      "fastening": []
+     }
+    ],
+    "coverBoard": {
+     "itemNumber": "62MHDP1244",
+     "sheetCode": "MH",
+     "fastening": []
+    },
+    "fastener": {
+     "itemNumber": "08MHHD3",
+     "sheetCode": "MH"
+    },
+    "plate": {
+     "itemNumber": "08MHGLV3",
+     "sheetCode": "MH"
+    },
+    "preSecurement": {
+     "fastener": {
+      "itemNumber": null
+     },
+     "plate": {
+      "itemNumber": null
+     },
+     "count": null
+    },
+    "seamTape": {
+     "itemNumber": "08MHINSMT3",
+     "sheetCode": "MH",
+     "lf": null
+    },
+    "primer": {
+     "itemNumber": "08MHTAPR1",
+     "sheetCode": "SS",
+     "unit": "CN"
+    },
+    "adhesive": {
+     "itemNumber": "08MHBOND5",
+     "sheetCode": "MH",
+     "unit": "PA"
+    },
+    "terminationBar": {
+     "itemNumber": "08MHTB125",
+     "sheetCode": "MH",
+     "lf": null
+    },
+    "edgeMetal": {
+     "itemNumber": null,
+     "lf": null,
+     "lfFrom": "perimeter_lf"
+    },
+    "accessories": []
+   },
+   "notes": "Cover board is always included on EPDM (company rule). Fastener length depends on the insulation stack and deck \u2014 confirm, and enter fastening patterns per the manufacturer's spec (they stay MISSING until entered)."
+  },
+  {
+   "key": "mh-epdm-060-presecured",
+   "name": "Mulehide EPDM .060 pre-secured",
+   "category": "FLAT",
+   "group": "EPDM",
+   "brand": "Mulehide",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "LOW_SLOPE",
+   "module": "lowSlope",
+   "config": {
+    "system": "EPDM",
+    "preSecured": true,
+    "membrane": {
+     "itemNumber": "07MH610X1B",
+     "sheetCode": "MH"
+    },
+    "allowances": [],
+    "insulation": [
+     {
+      "itemNumber": "58MHP12048",
+      "sheetCode": "MH",
+      "layer": "1",
+      "fastening": []
+     }
+    ],
+    "coverBoard": {
+     "itemNumber": "62MHDP1244",
+     "sheetCode": "MH",
+     "fastening": []
+    },
+    "fastener": {
+     "itemNumber": "08MHHD3",
+     "sheetCode": "MH"
+    },
+    "plate": {
+     "itemNumber": "08MHGLV3",
+     "sheetCode": "MH"
+    },
+    "preSecurement": {
+     "fastener": {
+      "itemNumber": "08MHHD3",
+      "sheetCode": "MH"
+     },
+     "plate": {
+      "itemNumber": "08MHBSP241",
+      "sheetCode": "MH"
+     },
+     "count": null
+    },
+    "seamTape": {
+     "itemNumber": "08MHINSMT3",
+     "sheetCode": "MH",
+     "lf": null
+    },
+    "primer": {
+     "itemNumber": "08MHTAPR1",
+     "sheetCode": "SS",
+     "unit": "CN"
+    },
+    "adhesive": {
+     "itemNumber": "08MHBOND5",
+     "sheetCode": "MH",
+     "unit": "PA"
+    },
+    "terminationBar": {
+     "itemNumber": "08MHTB125",
+     "sheetCode": "MH",
+     "lf": null
+    },
+    "edgeMetal": {
+     "itemNumber": null,
+     "lf": null,
+     "lfFrom": "perimeter_lf"
+    },
+    "accessories": []
+   },
+   "notes": "Pre-securement fasteners and plates are included (company rule) \u2014 enter the count from the spec. Cover board always included. Fastener length depends on the insulation stack and deck \u2014 confirm, and enter fastening patterns per the manufacturer's spec (they stay MISSING until entered)."
+  },
+  {
+   "key": "mh-tpo-060-mech",
+   "name": "Mulehide TPO .060 mechanically attached",
+   "category": "FLAT",
+   "group": "TPO",
+   "brand": "Mulehide",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "LOW_SLOPE",
+   "module": "lowSlope",
+   "config": {
+    "system": "TPO",
+    "preSecured": false,
+    "membrane": {
+     "itemNumber": "07MHT6101W",
+     "sheetCode": "MH"
+    },
+    "allowances": [],
+    "insulation": [
+     {
+      "itemNumber": "58MHP12048",
+      "sheetCode": "MH",
+      "layer": "1",
+      "fastening": []
+     }
+    ],
+    "coverBoard": null,
+    "fastener": {
+     "itemNumber": "08MHHD3",
+     "sheetCode": "MH"
+    },
+    "plate": {
+     "itemNumber": "08MHGLV3",
+     "sheetCode": "MH"
+    },
+    "preSecurement": {
+     "fastener": {
+      "itemNumber": null
+     },
+     "plate": {
+      "itemNumber": null
+     },
+     "count": null
+    },
+    "seamTape": {
+     "itemNumber": null,
+     "lf": null
+    },
+    "primer": {
+     "itemNumber": null,
+     "unit": "CN"
+    },
+    "adhesive": {
+     "itemNumber": null,
+     "unit": "PA"
+    },
+    "terminationBar": {
+     "itemNumber": "08MHTB125",
+     "sheetCode": "MH",
+     "lf": null
+    },
+    "edgeMetal": {
+     "itemNumber": null,
+     "lf": null,
+     "lfFrom": "perimeter_lf"
+    },
+    "accessories": []
+   },
+   "notes": "Seams are heat-welded (no seam tape). Membrane seam plates/fasteners per the spec. Fastener length depends on the insulation stack and deck \u2014 confirm, and enter fastening patterns per the manufacturer's spec (they stay MISSING until entered)."
+  },
+  {
+   "key": "el-epdm-060-adhered",
+   "name": "Elevate EPDM .060 fully adhered",
+   "category": "FLAT",
+   "group": "EPDM",
+   "brand": "Elevate",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "LOW_SLOPE",
+   "module": "lowSlope",
+   "config": {
+    "system": "EPDM",
+    "preSecured": false,
+    "membrane": {
+     "itemNumber": "07FS61010L",
+     "sheetCode": "EL"
+    },
+    "allowances": [],
+    "insulation": [
+     {
+      "itemNumber": "58FSIS2048",
+      "sheetCode": "EL",
+      "layer": "1",
+      "fastening": []
+     }
+    ],
+    "coverBoard": {
+     "itemNumber": "62MHDP1244",
+     "sheetCode": "MH",
+     "fastening": []
+    },
+    "fastener": {
+     "itemNumber": "08FSHDF3",
+     "sheetCode": "EL"
+    },
+    "plate": {
+     "itemNumber": "08FSIP3",
+     "sheetCode": "EL"
+    },
+    "preSecurement": {
+     "fastener": {
+      "itemNumber": null
+     },
+     "plate": {
+      "itemNumber": null
+     },
+     "count": null
+    },
+    "seamTape": {
+     "itemNumber": "08FSQSST3",
+     "sheetCode": "EL",
+     "lf": null
+    },
+    "primer": {
+     "itemNumber": "08FSQPP1",
+     "sheetCode": "EL",
+     "unit": "GA"
+    },
+    "adhesive": {
+     "itemNumber": "08FSBA2004",
+     "sheetCode": "EL",
+     "unit": "DR"
+    },
+    "terminationBar": {
+     "itemNumber": "08FSTB",
+     "sheetCode": "EL",
+     "lf": null
+    },
+    "edgeMetal": {
+     "itemNumber": null,
+     "lf": null,
+     "lfFrom": "perimeter_lf"
+    },
+    "accessories": []
+   },
+   "notes": "Cover board (DensDeck) is from the Mulehide sheet \u2014 no cover board on the Elevate sheet. Always included on EPDM. Fastener length depends on the insulation stack and deck \u2014 confirm, and enter fastening patterns per the manufacturer's spec (they stay MISSING until entered)."
+  },
+  {
+   "key": "el-tpo-060-mech",
+   "name": "Elevate TPO .060 mechanically attached",
+   "category": "FLAT",
+   "group": "TPO",
+   "brand": "Elevate",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "LOW_SLOPE",
+   "module": "lowSlope",
+   "config": {
+    "system": "TPO",
+    "preSecured": false,
+    "membrane": {
+     "itemNumber": "07FST6101W",
+     "sheetCode": "EL"
+    },
+    "allowances": [],
+    "insulation": [
+     {
+      "itemNumber": "58FSIS2048",
+      "sheetCode": "EL",
+      "layer": "1",
+      "fastening": []
+     }
+    ],
+    "coverBoard": null,
+    "fastener": {
+     "itemNumber": "08FSHDF3",
+     "sheetCode": "EL"
+    },
+    "plate": {
+     "itemNumber": "08FSIP3",
+     "sheetCode": "EL"
+    },
+    "preSecurement": {
+     "fastener": {
+      "itemNumber": null
+     },
+     "plate": {
+      "itemNumber": null
+     },
+     "count": null
+    },
+    "seamTape": {
+     "itemNumber": null,
+     "lf": null
+    },
+    "primer": {
+     "itemNumber": null,
+     "unit": "GA"
+    },
+    "adhesive": {
+     "itemNumber": null,
+     "unit": "DR"
+    },
+    "terminationBar": {
+     "itemNumber": "08FSTB",
+     "sheetCode": "EL",
+     "lf": null
+    },
+    "edgeMetal": {
+     "itemNumber": null,
+     "lf": null,
+     "lfFrom": "perimeter_lf"
+    },
+    "accessories": []
+   },
+   "notes": "Seams are heat-welded. Membrane seam plates per the spec (Elevate 2-3/8\" HD seam plate 08FSSPH238 is on the sheet). Fastener length depends on the insulation stack and deck \u2014 confirm, and enter fastening patterns per the manufacturer's spec (they stay MISSING until entered)."
+  },
+  {
+   "key": "hardie-primed-cm-825",
+   "name": "Hardie Primed Cedarmill 8.25\"",
+   "category": "SIDING",
+   "group": "Hardie (Primed)",
+   "brand": "James Hardie",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": "25H5KEC8",
+     "sheetCode": "HP",
+     "exposureIn": null,
+     "lengthFt": 12
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": "25H5NS43",
+      "sheetCode": "HP",
+      "key": "outside_corners",
+      "label": "Outside corners",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": 12
+     },
+     {
+      "itemNumber": null,
+      "key": "inside_corners",
+      "label": "Inside corners",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": 12
+     }
+    ],
+    "soffit": {
+     "itemNumber": "25H5SVC2",
+     "sheetCode": "HP",
+     "sfFrom": "soffit_sf"
+    },
+    "counted": [
+     {
+      "itemNumber": "5400500672",
+      "sheetCode": "HS",
+      "key": "nails",
+      "label": "Coil nails",
+      "qty": null,
+      "unit": "BX"
+     }
+    ]
+   },
+   "notes": "Company residential default (SID-03). Inside-corner product not picked. Enter the plank exposure from the Hardie spec for this product (stays MISSING until entered). House wrap: cheapest on the sheet (company rule). Soffit panel coverage must be entered."
+  },
+  {
+   "key": "hardie-primed-sm-825",
+   "name": "Hardie Primed Smooth 8.25\"",
+   "category": "SIDING",
+   "group": "Hardie (Primed)",
+   "brand": "James Hardie",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": "25H5KES8",
+     "sheetCode": "HP",
+     "exposureIn": null,
+     "lengthFt": 12
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": "25H5NS43",
+      "sheetCode": "HP",
+      "key": "outside_corners",
+      "label": "Outside corners",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": 12
+     },
+     {
+      "itemNumber": null,
+      "key": "inside_corners",
+      "label": "Inside corners",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": 12
+     }
+    ],
+    "soffit": {
+     "itemNumber": "25H5SVC2",
+     "sheetCode": "HP",
+     "sfFrom": "soffit_sf"
+    },
+    "counted": [
+     {
+      "itemNumber": "5400500672",
+      "sheetCode": "HS",
+      "key": "nails",
+      "label": "Coil nails",
+      "qty": null,
+      "unit": "BX"
+     }
+    ]
+   },
+   "notes": "Inside-corner product not picked. Enter the plank exposure from the Hardie spec for this product (stays MISSING until entered). House wrap: cheapest on the sheet (company rule). Soffit panel coverage must be entered."
+  },
+  {
+   "key": "hardie-statement-cm-825",
+   "name": "Hardie Statement Cedarmill 8.25\"",
+   "category": "SIDING",
+   "group": "Hardie (Statement, prefinished)",
+   "brand": "James Hardie",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": "25H5KEC8AW",
+     "sheetCode": "HS",
+     "exposureIn": null,
+     "lengthFt": 12
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": "25H5NS43AW",
+      "sheetCode": "HS",
+      "key": "outside_corners",
+      "label": "Outside corners",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": 12
+     },
+     {
+      "itemNumber": null,
+      "key": "inside_corners",
+      "label": "Inside corners",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": 12
+     }
+    ],
+    "soffit": {
+     "itemNumber": "25H5SVC2AW",
+     "sheetCode": "HS",
+     "sfFrom": "soffit_sf"
+    },
+    "counted": [
+     {
+      "itemNumber": "5400500672",
+      "sheetCode": "HS",
+      "key": "nails",
+      "label": "Coil nails",
+      "qty": null,
+      "unit": "BX"
+     },
+     {
+      "itemNumber": "25MIHTUKAW",
+      "sheetCode": "HS",
+      "key": "touchup",
+      "label": "Touch-up kit",
+      "qty": null,
+      "unit": "KT"
+     },
+     {
+      "itemNumber": "2875696787",
+      "sheetCode": "HS",
+      "key": "sealant",
+      "label": "OSI Quad Max",
+      "qty": null,
+      "unit": "TB"
+     }
+    ]
+   },
+   "notes": "Statement sheet is issued to another ABC account \u2014 confirm pricing applies to BTR. Enter the plank exposure from the Hardie spec for this product (stays MISSING until entered). House wrap: cheapest on the sheet (company rule). Soffit panel coverage must be entered."
+  },
+  {
+   "key": "ndx-summit-manor",
+   "name": "NDX Summit Manor .040",
+   "category": "SIDING",
+   "group": "Vinyl",
+   "brand": "Norandex",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": "21NXS45DWH",
+     "sheetCode": "NX",
+     "exposureIn": null,
+     "lengthFt": null
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": "26NXUO12WH",
+      "sheetCode": "NX",
+      "key": "outside_corners",
+      "label": "Outside corners (OSCP 12')",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": 12
+     },
+     {
+      "itemNumber": "26NXIM34WH",
+      "sheetCode": "NX",
+      "key": "inside_corners",
+      "label": "Inside corners (ISCP 10')",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": 10
+     },
+     {
+      "itemNumber": "26NXJ34MWH",
+      "sheetCode": "NX",
+      "key": "j_channel",
+      "label": "J-channel 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     },
+     {
+      "itemNumber": "GSS35ML",
+      "sheetCode": "NX",
+      "key": "starter",
+      "label": "Starter strip 10'",
+      "lfFrom": null,
+      "pieceLengthFt": 10,
+      "lf": null
+     },
+     {
+      "itemNumber": "26NXUTMWH",
+      "sheetCode": "NX",
+      "key": "utility",
+      "label": "Utility trim 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     }
+    ],
+    "soffit": {
+     "itemNumber": null,
+     "sfFrom": "soffit_sf"
+    },
+    "counted": [
+     {
+      "itemNumber": "2875696793",
+      "sheetCode": "NX",
+      "key": "sealant",
+      "label": "OSI Quad Max",
+      "qty": null,
+      "unit": "TB"
+     }
+    ]
+   },
+   "notes": "Vinyl sells by the square: quantity = siding SF \u00d7 waste \u00f7 100. White items shown \u2014 switch to the color tier (Standard & Premium / Designer). Trim lengths without a measurement stay MISSING until entered."
+  },
+  {
+   "key": "ndx-woodsman",
+   "name": "NDX Woodsman Select .042",
+   "category": "SIDING",
+   "group": "Vinyl",
+   "brand": "Norandex",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": "22NXWM4DWH",
+     "sheetCode": "NX",
+     "exposureIn": null,
+     "lengthFt": null
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": "26NXUO12WH",
+      "sheetCode": "NX",
+      "key": "outside_corners",
+      "label": "Outside corners (OSCP 12')",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": 12
+     },
+     {
+      "itemNumber": "26NXIM34WH",
+      "sheetCode": "NX",
+      "key": "inside_corners",
+      "label": "Inside corners (ISCP 10')",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": 10
+     },
+     {
+      "itemNumber": "26NXJ34MWH",
+      "sheetCode": "NX",
+      "key": "j_channel",
+      "label": "J-channel 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     },
+     {
+      "itemNumber": "GSS35ML",
+      "sheetCode": "NX",
+      "key": "starter",
+      "label": "Starter strip 10'",
+      "lfFrom": null,
+      "pieceLengthFt": 10,
+      "lf": null
+     },
+     {
+      "itemNumber": "26NXUTMWH",
+      "sheetCode": "NX",
+      "key": "utility",
+      "label": "Utility trim 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     }
+    ],
+    "soffit": {
+     "itemNumber": null,
+     "sfFrom": "soffit_sf"
+    },
+    "counted": [
+     {
+      "itemNumber": "2875696793",
+      "sheetCode": "NX",
+      "key": "sealant",
+      "label": "OSI Quad Max",
+      "qty": null,
+      "unit": "TB"
+     }
+    ]
+   },
+   "notes": "Vinyl sells by the square: quantity = siding SF \u00d7 waste \u00f7 100. White items shown \u2014 switch to the color tier (Standard & Premium / Designer). Trim lengths without a measurement stay MISSING until entered."
+  },
+  {
+   "key": "ndx-cedar-knolls",
+   "name": "NDX Cedar Knolls .044",
+   "category": "SIDING",
+   "group": "Vinyl",
+   "brand": "Norandex",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": "22NXCK5DWH",
+     "sheetCode": "NX",
+     "exposureIn": null,
+     "lengthFt": null
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": "26NXUO12WH",
+      "sheetCode": "NX",
+      "key": "outside_corners",
+      "label": "Outside corners (OSCP 12')",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": 12
+     },
+     {
+      "itemNumber": "26NXIM34WH",
+      "sheetCode": "NX",
+      "key": "inside_corners",
+      "label": "Inside corners (ISCP 10')",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": 10
+     },
+     {
+      "itemNumber": "26NXJ34MWH",
+      "sheetCode": "NX",
+      "key": "j_channel",
+      "label": "J-channel 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     },
+     {
+      "itemNumber": "GSS35ML",
+      "sheetCode": "NX",
+      "key": "starter",
+      "label": "Starter strip 10'",
+      "lfFrom": null,
+      "pieceLengthFt": 10,
+      "lf": null
+     },
+     {
+      "itemNumber": "26NXUTMWH",
+      "sheetCode": "NX",
+      "key": "utility",
+      "label": "Utility trim 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     }
+    ],
+    "soffit": {
+     "itemNumber": null,
+     "sfFrom": "soffit_sf"
+    },
+    "counted": [
+     {
+      "itemNumber": "2875696793",
+      "sheetCode": "NX",
+      "key": "sealant",
+      "label": "OSI Quad Max",
+      "qty": null,
+      "unit": "TB"
+     }
+    ]
+   },
+   "notes": "Vinyl sells by the square: quantity = siding SF \u00d7 waste \u00f7 100. White items shown \u2014 switch to the color tier (Standard & Premium / Designer). Trim lengths without a measurement stay MISSING until entered."
+  },
+  {
+   "key": "ndx-great-barrier",
+   "name": "NDX Great Barrier 12' .046",
+   "category": "SIDING",
+   "group": "Vinyl",
+   "brand": "Norandex",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": "23NXGB5DWH",
+     "sheetCode": "NX",
+     "exposureIn": null,
+     "lengthFt": null
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": "26NXUO12WH",
+      "sheetCode": "NX",
+      "key": "outside_corners",
+      "label": "Outside corners (OSCP 12')",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": 12
+     },
+     {
+      "itemNumber": "26NXIM34WH",
+      "sheetCode": "NX",
+      "key": "inside_corners",
+      "label": "Inside corners (ISCP 10')",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": 10
+     },
+     {
+      "itemNumber": "26NXJ34MWH",
+      "sheetCode": "NX",
+      "key": "j_channel",
+      "label": "J-channel 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     },
+     {
+      "itemNumber": "GSS35ML",
+      "sheetCode": "NX",
+      "key": "starter",
+      "label": "Starter strip 10'",
+      "lfFrom": null,
+      "pieceLengthFt": 10,
+      "lf": null
+     },
+     {
+      "itemNumber": "26NXUTMWH",
+      "sheetCode": "NX",
+      "key": "utility",
+      "label": "Utility trim 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     }
+    ],
+    "soffit": {
+     "itemNumber": null,
+     "sfFrom": "soffit_sf"
+    },
+    "counted": [
+     {
+      "itemNumber": "2875696793",
+      "sheetCode": "NX",
+      "key": "sealant",
+      "label": "OSI Quad Max",
+      "qty": null,
+      "unit": "TB"
+     }
+    ]
+   },
+   "notes": "Vinyl sells by the square: quantity = siding SF \u00d7 waste \u00f7 100. White items shown \u2014 switch to the color tier (Standard & Premium / Designer). Trim lengths without a measurement stay MISSING until entered."
+  },
+  {
+   "key": "ndx-board-batten",
+   "name": "NDX Board & Batten .052",
+   "category": "SIDING",
+   "group": "Vinyl",
+   "brand": "Norandex",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": "23NXBBS7WH",
+     "sheetCode": "NX",
+     "exposureIn": null,
+     "lengthFt": null
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": "26NXUO12WH",
+      "sheetCode": "NX",
+      "key": "outside_corners",
+      "label": "Outside corners (OSCP 12')",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": 12
+     },
+     {
+      "itemNumber": "26NXIM34WH",
+      "sheetCode": "NX",
+      "key": "inside_corners",
+      "label": "Inside corners (ISCP 10')",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": 10
+     },
+     {
+      "itemNumber": "26NXJ34MWH",
+      "sheetCode": "NX",
+      "key": "j_channel",
+      "label": "J-channel 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     },
+     {
+      "itemNumber": "GSS35ML",
+      "sheetCode": "NX",
+      "key": "starter",
+      "label": "Starter strip 10'",
+      "lfFrom": null,
+      "pieceLengthFt": 10,
+      "lf": null
+     },
+     {
+      "itemNumber": "26NXUTMWH",
+      "sheetCode": "NX",
+      "key": "utility",
+      "label": "Utility trim 12'",
+      "lfFrom": null,
+      "pieceLengthFt": 12,
+      "lf": null
+     }
+    ],
+    "soffit": {
+     "itemNumber": null,
+     "sfFrom": "soffit_sf"
+    },
+    "counted": [
+     {
+      "itemNumber": "2875696793",
+      "sheetCode": "NX",
+      "key": "sealant",
+      "label": "OSI Quad Max",
+      "qty": null,
+      "unit": "TB"
+     }
+    ]
+   },
+   "notes": "Vinyl sells by the square: quantity = siding SF \u00d7 waste \u00f7 100. White items shown \u2014 switch to the color tier (Standard & Premium / Designer). Trim lengths without a measurement stay MISSING until entered."
+  },
+  {
+   "key": "lp-smartside-lap",
+   "name": "LP SmartSide lap",
+   "category": "SIDING",
+   "group": "LP SmartSide",
+   "brand": "LP",
+   "impactClass": null,
+   "impactSource": null,
+   "scopeType": "SIDING",
+   "module": "siding",
+   "config": {
+    "plank": {
+     "itemNumber": null,
+     "exposureIn": null,
+     "lengthFt": null
+    },
+    "houseWrap": {
+     "mode": "cheapest",
+     "pick": {
+      "itemNumber": null
+     }
+    },
+    "trim": [
+     {
+      "itemNumber": null,
+      "key": "outside_corners",
+      "label": "Outside corners",
+      "lfFrom": "outside_corners_lf",
+      "pieceLengthFt": null
+     },
+     {
+      "itemNumber": null,
+      "key": "inside_corners",
+      "label": "Inside corners",
+      "lfFrom": "inside_corners_lf",
+      "pieceLengthFt": null
+     }
+    ],
+    "soffit": {
+     "itemNumber": null,
+     "sfFrom": "soffit_sf"
+    },
+    "counted": []
+   },
+   "notes": "No LP SmartSide sheet is loaded, so every product here stays MISSING until the LP sheet is uploaded (CLAUDE.md \u00a75). Pick 25LP\u2026 siding and 31LPTW\u2026 trim then."
+  }
+ ]
+}

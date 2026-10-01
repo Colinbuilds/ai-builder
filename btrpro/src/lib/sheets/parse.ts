@@ -3,7 +3,7 @@
 // Section headers are numbered ("3. Plastic Cap Nails"). Anything else is reported as unparsed
 // so the admin can see it on the review screen. Nothing goes live without review.
 
-export const UOMS = ["PC", "PNL", "SH", "BX", "BD", "RL", "SQ", "EA", "PK", "KT", "TB", "DR", "PA", "CN", "GA", "BO", "PT"] as const;
+export const UOMS = ["PC", "PNL", "SH", "BX", "BD", "RL", "SQ", "EA", "PK", "KT", "TB", "DR", "PA", "CN", "GA", "BO", "PT", "LF", "SF"] as const;
 export type Uom = (typeof UOMS)[number];
 
 export type ParsedRow = {

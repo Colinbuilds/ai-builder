@@ -4,6 +4,7 @@ import { round } from "@/lib/calc/core";
 import { totalsFor } from "@/lib/estimates/service";
 import { getSettings } from "@/lib/settings";
 import { getPriceItem } from "@/lib/price";
+import { priceScopeFor } from "@/lib/pricing-scope";
 import { addDocument } from "@/lib/docs/documents";
 import { COST_CATEGORIES, computePnl, crewCost, type Baseline, type CostCategory } from "./pnl";
 import { parseInvoiceCsv, type InvoiceRow } from "./invoice-csv";
@@ -47,6 +48,9 @@ async function guardEdit(projectId: string, actor: CostActor) {
   return { closed: !!p.costClosedAt };
 }
 
+/** For other modules (receipt filing) to check cost access before touching the job. */
+export const guardCostEdit = guardEdit;
+
 // ---------- baseline ----------
 
 export async function freezeBaseline(projectId: string, estimateId: string, actor: CostActor, reason?: string | null, addOns: string[] = []) {
@@ -87,7 +91,7 @@ export async function loadCosting(projectId: string) {
   const project = await prisma.project.findUniqueOrThrow({
     where: { id: projectId },
     include: {
-      salesperson: { select: { id: true, name: true, commissionPlan: true } },
+      salesperson: { select: { id: true, name: true } },
       costs: { orderBy: [{ date: "desc" }, { createdAt: "desc" }], include: { enteredBy: { select: { name: true } }, document: { select: { id: true, fileName: true } }, commitment: { select: { vendor: true, description: true } } } },
       commitments: { orderBy: { createdAt: "desc" }, include: { bills: { select: { amount: true } } } },
       changeOrders: { orderBy: { createdAt: "asc" } },
@@ -96,7 +100,6 @@ export async function loadCosting(projectId: string) {
     },
   });
   const s = await getSettings();
-  const plan = project.salesperson?.commissionPlan;
   const pnl = computePnl({
     contractAmount: project.contractAmount,
     changeOrders: project.changeOrders,
@@ -105,9 +108,7 @@ export async function loadCosting(projectId: string) {
     commitments: project.commitments,
     overheadPct: s.overheadPct,
     thresholdPct: s.costVarianceThresholdPct,
-    commission: plan ? { basis: plan.basis, pct: plan.pct, person: project.salesperson!.name } : null,
   });
-  if (!project.salesperson) pnl.missing.splice(pnl.missing.findIndex((m) => m.startsWith("Commission")), 1, "Salesperson on the job (for commission)");
   return { project, pnl, settings: s, noneExpected: (project.costNoneExpected as CostCategory[] | null) ?? [] };
 }
 
@@ -240,6 +241,8 @@ export type ImportPreviewRow = InvoiceRow & { status: "NEW" | "DUPLICATE" | "OTH
 
 async function classifyRows(projectId: string, rows: InvoiceRow[]) {
   const out: ImportPreviewRow[] = [];
+  // builder jobs are checked against the builder's negotiated prices
+  const scope = await priceScopeFor(projectId);
   for (const r of rows) {
     const same = r.invoice
       ? await prisma.jobCost.findFirst({ where: { kind: "IMPORT", reference: r.invoice, description: r.description, amount: r.amount, itemNumber: r.itemNumber }, include: { project: { select: { name: true } } } })
@@ -247,7 +250,7 @@ async function classifyRows(projectId: string, rows: InvoiceRow[]) {
     let sheetPrice: number | null = null;
     let priceFlag: string | null = null;
     if (r.itemNumber && r.unitPrice != null) {
-      const item = await getPriceItem(r.itemNumber);
+      const item = await getPriceItem(r.itemNumber, undefined, scope);
       if (item?.unitPrice != null && r.uom && item.uom.toUpperCase() === r.uom) {
         sheetPrice = item.unitPrice;
         if (Math.abs(r.unitPrice - item.unitPrice) > Math.max(0.01, item.unitPrice * 0.005))
@@ -272,18 +275,32 @@ export async function previewInvoiceImport(projectId: string, csv: string) {
 }
 
 export async function importInvoices(projectId: string, csv: string, opts: { pos: string[] | null; vendor: string; file?: { bytes: Uint8Array; name: string } | null }, actor: CostActor) {
-  const { closed } = await guardEdit(projectId, actor);
-  if (!opts.vendor.trim()) throw new CostError("Enter the supplier name.");
   const parsed = parseInvoiceCsv(csv);
   if (!parsed.rows.length) throw new CostError(parsed.problems[0] ?? "Nothing to import.");
   const keep = parsed.rows.filter((r) => !opts.pos?.length || (r.po != null && opts.pos.includes(r.po)));
-  const rows = (await classifyRows(projectId, keep)).filter((r) => r.status === "NEW");
-  if (!rows.length) throw new CostError("Every line in this file is already imported (or filtered out by PO).");
   let documentId: string | null = null;
   if (opts.file?.bytes.length) {
+    await guardEdit(projectId, actor);
     const { doc } = await addDocument({ projectId, bytes: opts.file.bytes, fileName: opts.file.name, contentType: "text/csv", userId: actor.id });
     documentId = doc.id;
   }
+  return importInvoiceRows(projectId, keep, { vendor: opts.vendor, documentId, source: "imported" }, actor);
+}
+
+/** Files invoice lines (from a CSV export or a scanned receipt) as material costs, with the price-sheet check on each line. */
+export async function importInvoiceRows(projectId: string, keep: InvoiceRow[], opts: { vendor: string; documentId: string | null; source: string }, actor: CostActor) {
+  const { closed } = await guardEdit(projectId, actor);
+  if (!opts.vendor.trim()) throw new CostError("Enter the supplier name.");
+  if (!keep.length) throw new CostError("Nothing to import.");
+  const rows = (await classifyRows(projectId, keep)).filter((r) => r.status === "NEW");
+  if (!rows.length) throw new CostError("Every line is already imported (or filtered out by PO).");
+  const documentId = opts.documentId;
+  // an invoice carrying our PO (or ABC's order #) bills that material order's commitment
+  const orders = await prisma.materialOrder.findMany({ where: { projectId }, select: { number: true, supplierOrderNumber: true, commitment: { select: { id: true } } } });
+  const commitmentFor = (r: InvoiceRow) => {
+    const keys = [r.po, r.invoice].filter(Boolean).map((k) => k!.toUpperCase());
+    return orders.find((o) => o.commitment && keys.some((k) => k === o.number.toUpperCase() || (o.supplierOrderNumber && k === o.supplierOrderNumber.toUpperCase())))?.commitment?.id ?? null;
+  };
   const batch = `imp_${Date.now().toString(36)}`;
   const today = new Date();
   const created = await prisma.$transaction(async (tx) => {
@@ -307,6 +324,7 @@ export async function importInvoices(projectId: string, csv: string, opts: { pos
             itemNumber: r.itemNumber,
             sheetPrice: r.sheetPrice,
             importBatch: batch,
+            commitmentId: commitmentFor(r),
             documentId,
             enteredById: actor.id,
           },
@@ -331,7 +349,7 @@ export async function importInvoices(projectId: string, csv: string, opts: { pos
   });
   const total = round(created.reduce((a, c) => a + c.amount, 0), 2);
   const flagged = rows.filter((r) => r.priceFlag).length;
-  await activity(projectId, actor, `${actor.name} imported ${created.length} invoice line(s) from ${opts.vendor.trim()} totaling $${total.toFixed(2)}${flagged ? ` — ${flagged} billed off the price sheet` : ""}`);
+  await activity(projectId, actor, `${actor.name} ${opts.source} ${created.length} invoice line(s) from ${opts.vendor.trim()} totaling $${total.toFixed(2)}${flagged ? ` — ${flagged} billed off the price sheet` : ""}`);
   if (closed) await audit(actor, "JobCost", batch, "import-after-close", null, { lines: created.length, total });
   return { count: created.length, total, flagged, skipped: keep.length - rows.length };
 }
@@ -381,19 +399,7 @@ export async function reopenCosting(projectId: string, reason: string, actor: Co
   await activity(projectId, actor, `${actor.name} reopened job costing: ${reason}`);
 }
 
-// ---------- commission plans & bid results ----------
-
-export async function saveCommissionPlan(userId: string, plan: { basis: "REVENUE" | "GROSS_PROFIT"; pct: number; note?: string | null } | null, actor: CostActor) {
-  if (actor.role !== "ADMIN") throw new CostError("Only an Admin sets commission plans.");
-  const before = await prisma.commissionPlan.findUnique({ where: { userId } });
-  if (!plan) {
-    if (before) await prisma.commissionPlan.delete({ where: { userId } });
-  } else {
-    if (!Number.isFinite(plan.pct) || plan.pct < 0 || plan.pct > 100) throw new CostError("Commission % must be between 0 and 100.");
-    await prisma.commissionPlan.upsert({ where: { userId }, update: { ...plan, updatedBy: actor.name }, create: { userId, ...plan, updatedBy: actor.name } });
-  }
-  await audit(actor, "CommissionPlan", userId, "update", before, plan);
-}
+// ---------- bid results ----------
 
 export async function saveBidResult(projectId: string, input: { ourBid: number | null; won: boolean | null; tabs: { bidder: string; amount: number }[]; notes: string | null }, actor: CostActor) {
   if (actor.role === "VIEWER") throw new CostError("Viewers can't enter bid results.");

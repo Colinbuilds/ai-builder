@@ -1,7 +1,10 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+export function Input({
+  className,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       className={cn(
@@ -13,7 +16,10 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   );
 }
 
-export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({
+  className,
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       className={cn(
@@ -25,6 +31,9 @@ export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLS
   );
 }
 
-export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
+export function Label({
+  className,
+  ...props
+}: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return <label className={cn("text-sm font-medium", className)} {...props} />;
 }

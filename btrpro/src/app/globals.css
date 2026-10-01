@@ -7,7 +7,7 @@
   --foreground: oklch(0.18 0.01 250);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 250);
-  --primary: oklch(0.32 0.06 250);
+  --primary: #1c1f23;
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.95 0.005 250);
   --secondary-foreground: oklch(0.25 0.01 250);
@@ -19,6 +19,16 @@
   --border: oklch(0.9 0.005 250);
   --input: oklch(0.88 0.005 250);
   --ring: oklch(0.55 0.08 250);
+  /* BTR brand: black, grey, blue, white */
+  --btr-black: #0e0f11;
+  --btr-ink: #1c1f23;
+  --btr-blue: #1f6fd1;
+  --btr-blue-dark: #1857a8;
+  --btr-blue-soft: #eaf2fc;
+  --btr-link: #1857a8;
+  --btr-line: #dfe2e6;
+  --btr-future: #c9cdd2;
+  --canvas: #f2f3f5;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,6 +48,14 @@
     --border: oklch(0.3 0.01 250);
     --input: oklch(0.34 0.01 250);
     --ring: oklch(0.6 0.08 250);
+    --btr-ink: #e6e8eb;
+    --btr-blue: #3d86e0;
+    --btr-blue-dark: #2f74c9;
+    --btr-blue-soft: #16243a;
+    --btr-link: #7fb0ea;
+    --btr-line: #2e3238;
+    --btr-future: #4a4f57;
+    --canvas: oklch(0.13 0.01 250);
   }
 }
 
@@ -58,6 +76,14 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-btr-black: var(--btr-black);
+  --color-btr-ink: var(--btr-ink);
+  --color-btr-blue: var(--btr-blue);
+  --color-btr-blue-dark: var(--btr-blue-dark);
+  --color-btr-blue-soft: var(--btr-blue-soft);
+  --color-btr-link: var(--btr-link);
+  --color-btr-line: var(--btr-line);
+  --color-btr-future: var(--btr-future);
 }
 
 @layer base {
