@@ -108,6 +108,13 @@ export function aiErrorMessage(e: unknown): string {
   if (e instanceof Anthropic.RateLimitError) return "The AI service is busy. Try again in a minute.";
   if (e instanceof Anthropic.AuthenticationError)
     return "The AI key was rejected. In Railway, ANTHROPIC_API_KEY must be a key from console.anthropic.com → API Keys (starts sk-ant-api03-), and ANTHROPIC_AUTH_TOKEN should be deleted.";
-  if (e instanceof Anthropic.APIError) return `AI service error (${e.status ?? "network"}). Try again.`;
+  if (e instanceof Anthropic.APIError) {
+    // Anthropic's own reason (no secrets in it) — e.g. low credit balance, image too large
+    const reason = ((e.error as { error?: { message?: string } } | undefined)?.error?.message ?? "").slice(0, 300);
+    if (/credit balance/i.test(reason))
+      return "The Anthropic account is out of credit. console.anthropic.com → Settings → Billing → add credit (and turn on auto-reload), then try again.";
+    if (e.status === 400 || e.status === 403 || e.status === 404) return `AI request rejected (${e.status})${reason ? `: ${reason}` : ""}.`;
+    return `AI service error (${e.status ?? "network"}). Try again.`;
+  }
   return e instanceof Error ? e.message : String(e);
 }
