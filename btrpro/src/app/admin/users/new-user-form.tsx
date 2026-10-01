@@ -13,7 +13,9 @@ export function NewUserForm() {
       <Input name="email" type="email" placeholder="Email" required />
       <Input name="password" type="password" placeholder="Temporary password (10+ characters)" required />
       <Select name="role" defaultValue="ESTIMATOR">
-        <option value="ESTIMATOR">Estimator</option>
+        <option value="ESTIMATOR">Sales / Estimator</option>
+        <option value="OFFICE">Office</option>
+        <option value="PURCHASING">Purchasing</option>
         <option value="VIEWER">Viewer</option>
         <option value="ADMIN">Admin</option>
       </Select>

@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -8,8 +9,8 @@ import { receiptsAddress } from "@/lib/receipts/inbox";
 import { AutoRefresh } from "@/components/receipts/auto-refresh";
 
 export default async function Receipts() {
-  await requireUser(["ADMIN", "ESTIMATOR"]);
-  const scans = await prisma.receiptScan.findMany({ include: { project: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 50 });
+  await requireUser(STAFF_ROLES);
+  const scans = await prisma.receiptScan.findMany({ where: { bill: null }, include: { project: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 50 });
   const inbox = receiptsAddress();
   const label = (s: (typeof scans)[number]): [string, "green" | "red" | "amber" | "outline" | "blue"] =>
     s.status === "READING"

@@ -149,6 +149,8 @@ async function main() {
     await prisma.user.update({ where: { id: existing.id }, data: { passwordHash: await bcrypt.hash(password, 10), role: "ADMIN" } });
     console.log(`Reset the password for ${email}. Remove RESET_ADMIN_PASSWORD now.`);
   }
+  // the seeded admin is the owner until someone else is made one (owners see the Audit tools)
+  if (!(await prisma.user.count({ where: { isOwner: true } }))) await prisma.user.updateMany({ where: { email }, data: { isOwner: true } });
   if (process.env.NODE_ENV === "production") {
     const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { email: true } });
     console.log(`Admin sign-ins: ${admins.map((a) => a.email).join(", ")}`);

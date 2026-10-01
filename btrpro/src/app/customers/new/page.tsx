@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CompanyForm, ContactForm } from "./forms";
@@ -5,7 +6,7 @@ import { CompanyForm, ContactForm } from "./forms";
 type SP = Promise<{ kind?: string; companyId?: string; returnTo?: string }>;
 
 export default async function NewCustomerPage({ searchParams }: { searchParams: SP }) {
-  await requireUser(["ADMIN", "ESTIMATOR"]);
+  await requireUser(STAFF_ROLES);
   const sp = await searchParams;
   const companies = await prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
   const isCompany = sp.kind === "company";

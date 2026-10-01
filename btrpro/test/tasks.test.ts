@@ -36,21 +36,21 @@ describe("tasks", () => {
       { override: true, reason: "TEST_ONLY" },
       a,
     ).catch(() => changeStage(p.id, "SUBMITTED", {}, a));
-    const t = await prisma.task.findMany({ where: { projectId: p.id } });
-    expect(t).toHaveLength(1);
-    expect(t[0]).toMatchObject({
-      title: "Follow up on the bid / proposal",
-      assigneeId: a.id,
-      auto: "SUBMITTED:follow-up-bid",
-    });
-    expect(Math.round((t[0].dueDate!.getTime() - Date.now()) / DAY)).toBe(3);
-    // re-entering the stage doesn't repeat it, even after it's done
+    const t = await prisma.task.findMany({ where: { projectId: p.id }, orderBy: { dueDate: "asc" } });
+    // follow-up schedule: call day 2, text day 5, call day 10, email day 21 — all for the rep
+    expect(t.map((x) => x.auto)).toEqual(["SUBMITTED:fu-2", "SUBMITTED:fu-5", "SUBMITTED:fu-10", "SUBMITTED:fu-21"]);
+    expect(t.every((x) => x.assigneeId === a.id)).toBe(true);
+    expect(Math.round((t[0].dueDate!.getTime() - Date.now()) / DAY)).toBe(2);
+    // re-entering the stage doesn't repeat them, even after one is done
     await setTaskDone(t[0].id, true, a);
     const again = await prisma.project.findUniqueOrThrow({
       where: { id: p.id },
     });
     await createStageTasks(again, "SUBMITTED", a);
-    expect(await prisma.task.count({ where: { projectId: p.id } })).toBe(1);
+    expect(await prisma.task.count({ where: { projectId: p.id } })).toBe(4);
+    // leaving Submitted (signed, lost or moved back) stops the rest
+    await changeStage(p.id, "ESTIMATING", { reason: "TEST_ONLY revise the bid" }, a);
+    expect(await prisma.task.count({ where: { projectId: p.id, doneAt: null } })).toBe(0);
   });
 
   it("Sold on a public tax-exempt job adds the Form 17 task; residential adds the deposit invoice", async () => {

@@ -1,3 +1,4 @@
+import type { Role } from "@/lib/session";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { nextInSequence } from "@/lib/numbering";
@@ -16,7 +17,7 @@ import {
 export type ProdActor = {
   id: string;
   name: string;
-  role: "ADMIN" | "ESTIMATOR" | "VIEWER";
+  role: Role;
 };
 export class ProductionError extends Error {
   constructor(

@@ -10,7 +10,7 @@ export default async function NewProjectPage({
   searchParams: Promise<{ client?: string; property?: string }>;
 }) {
   const { client, property } = await searchParams;
-  const me = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const me = await requireUser(["ADMIN", "ESTIMATOR", "OFFICE"]);
   const view = await getMarketView();
   const [companies, users, properties] = await Promise.all([
     prisma.company.findMany({

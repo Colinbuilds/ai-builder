@@ -1,5 +1,6 @@
 "use server";
 
+import { BILLING_ROLES } from "@/lib/roles";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -45,7 +46,7 @@ const num = (v: string) => {
 const day = (v: string) => (v ? new Date(`${v}T12:00:00Z`) : null);
 
 async function actor(): Promise<BillActor> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(BILLING_ROLES);
   return { id: u.id, name: u.name, role: u.role };
 }
 /** Billing is limited to Admins and the job's own estimator/salesperson, same as job costing. */

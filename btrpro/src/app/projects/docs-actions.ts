@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -20,7 +21,7 @@ export type DocsResult = {
   ok?: boolean;
   note?: string;
 } | null;
-const EDITORS = ["ADMIN", "ESTIMATOR"] as const;
+const EDITORS = STAFF_ROLES;
 const DOC_TYPES = [
   "EAGLEVIEW",
   "PLANS",

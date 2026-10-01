@@ -3,7 +3,7 @@ import { listSheets } from "@/lib/price";
 import { UploadForm } from "./upload-form";
 
 export default async function UploadPage() {
-  await requireUser(["ADMIN"]);
+  await requireUser(["ADMIN", "PURCHASING"]);
   const sheets = await listSheets();
   return (
     <div className="flex max-w-xl flex-col gap-4">

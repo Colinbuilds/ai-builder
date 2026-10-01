@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
@@ -15,7 +16,7 @@ const str = (f: FormData, k: string) => {
 const TYPES = ["BUILDER", "GC", "OWNER", "PROPERTY_MANAGER", "PUBLIC_AGENCY", "ARCHITECT", "SUBCONTRACTOR", "SUPPLIER", "OTHER"];
 
 export async function createCompanyAction(_: CustomerResult, f: FormData): Promise<CustomerResult> {
-  await requireUser(["ADMIN", "ESTIMATOR"]);
+  await requireUser(STAFF_ROLES);
   const name = str(f, "name");
   const type = String(f.get("type"));
   if (!name) return { problems: ["Company name is required."] };
@@ -36,7 +37,7 @@ export async function createCompanyAction(_: CustomerResult, f: FormData): Promi
 }
 
 export async function createContactAction(_: CustomerResult, f: FormData): Promise<CustomerResult> {
-  await requireUser(["ADMIN", "ESTIMATOR"]);
+  await requireUser(STAFF_ROLES);
   const firstName = str(f, "firstName");
   const lastName = str(f, "lastName");
   if (!firstName || !lastName) return { problems: ["First and last name are required."] };

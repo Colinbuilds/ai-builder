@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormAction } from "@/components/use-form-action";
 import { changeStageAction } from "@/app/projects/actions";
-import { STAGES, STAGE_LABEL, type Stage } from "@/lib/projects/workflow";
+import { LOST_REASONS, STAGES, STAGE_LABEL, type Stage } from "@/lib/projects/workflow";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Problems } from "./problems";
@@ -29,11 +29,21 @@ export function StageControl({ id, current }: { id: string; current: Stage }) {
             </option>
           ))}
         </Select>
+        {to === "LOST" && (
+          <Select name="lostWhy" defaultValue="" required aria-label="Why it was lost">
+            <option value="" disabled>
+              Why was it lost?
+            </option>
+            {LOST_REASONS.map((r) => (
+              <option key={r}>{r}</option>
+            ))}
+          </Select>
+        )}
         <Input
           name="reason"
           placeholder={
             to === "LOST"
-              ? "Why was it lost?"
+              ? "Details (e.g. went $1,200 cheaper)"
               : "Reason (needed to go back or override)"
           }
           className="w-72"

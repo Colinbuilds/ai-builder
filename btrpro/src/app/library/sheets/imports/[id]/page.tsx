@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ReviewGrid } from "./review-grid";
 
 export default async function ReviewImportPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser(["ADMIN"]);
+  await requireUser(["ADMIN", "PURCHASING"]);
   const { id } = await params;
   const imp = await prisma.sheetImport.findUnique({ where: { id } });
   if (!imp) notFound();

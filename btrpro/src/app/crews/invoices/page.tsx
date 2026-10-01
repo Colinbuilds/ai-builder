@@ -1,3 +1,4 @@
+import { BILLING_ROLES } from "@/lib/roles";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -17,7 +18,7 @@ const TABS = [
 ] as const;
 
 export default async function CrewInvoices({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
-  const user = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const user = await requireUser(BILLING_ROLES);
   const want = (await searchParams).s;
   const s = TABS.find(([k]) => k === want)?.[0] ?? "SUBMITTED";
   const [rows, counts] = await Promise.all([

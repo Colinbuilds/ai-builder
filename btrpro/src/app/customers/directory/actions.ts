@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
@@ -10,7 +11,7 @@ export type DResult = { problems: string[]; ok?: boolean; note?: string } | null
 const msg = (e: unknown) => (e instanceof DirectoryError ? e.message : aiErrorMessage(e));
 
 export async function uploadDirectoryAction(_: DResult, f: FormData): Promise<DResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(STAFF_ROLES);
   const file = f.get("file");
   if (!(file instanceof File) || !file.size) return { problems: ["Choose the directory file."] };
   let id: string;
@@ -25,7 +26,7 @@ export async function uploadDirectoryAction(_: DResult, f: FormData): Promise<DR
 }
 
 export async function importDirectoryAction(_: DResult, f: FormData): Promise<DResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(STAFF_ROLES);
   const id = String(f.get("id") ?? "");
   const companyId = String(f.get("companyId") ?? "");
   let r;
@@ -43,7 +44,7 @@ export async function importDirectoryAction(_: DResult, f: FormData): Promise<DR
 }
 
 export async function rereadDirectoryAction(_: DResult, f: FormData): Promise<DResult> {
-  await requireUser(["ADMIN", "ESTIMATOR"]);
+  await requireUser(STAFF_ROLES);
   const id = String(f.get("id") ?? "");
   const { prisma } = await import("@/lib/db");
   await prisma.directoryImport.update({ where: { id }, data: { status: "READING", error: null } });

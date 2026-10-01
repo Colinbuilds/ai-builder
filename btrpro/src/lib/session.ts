@@ -4,7 +4,7 @@ import { SignJWT, jwtVerify } from "jose";
 export const SESSION_COOKIE = "ep_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 14; // 14 days
 
-export type Role = "ADMIN" | "ESTIMATOR" | "VIEWER";
+export type Role = "ADMIN" | "ESTIMATOR" | "OFFICE" | "PURCHASING" | "VIEWER";
 export type SessionPayload = { sub: string; role: Role; name: string };
 
 function secret() {

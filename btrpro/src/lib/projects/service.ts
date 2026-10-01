@@ -261,7 +261,7 @@ export async function refreshReadiness(projectId: string) {
   return result;
 }
 
-export async function changeStage(projectId: string, to: Stage, opts: { reason?: string; override?: boolean }, actor: Actor) {
+export async function changeStage(projectId: string, to: Stage, opts: { reason?: string; override?: boolean; lostCategory?: string | null }, actor: Actor) {
   const p = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
   const { readiness } = await refreshReadiness(projectId);
   const gate = checkStageChange({
@@ -277,8 +277,18 @@ export async function changeStage(projectId: string, to: Stage, opts: { reason?:
   if (!gate.ok) throw new ProjectError(gate.problems, gate.overridable);
   await prisma.project.update({
     where: { id: projectId },
-    data: { status: to, statusChangedAt: new Date(), lostReason: to === "LOST" ? opts.reason!.trim() : null },
+    data: {
+      status: to,
+      statusChangedAt: new Date(),
+      lostReason: to === "LOST" ? opts.reason!.trim() : null,
+      lostCategory: to === "LOST" ? (opts.lostCategory ?? "Other") : null,
+      // leaving Lead means someone reached the customer
+      ...(p.status === "LEAD" && to !== "LOST" && !p.firstContactAt ? { firstContactAt: new Date() } : {}),
+    },
   });
+  // follow-up reminders stop once the job leaves Submitted (signed, lost or moved back)
+  if (p.status === "SUBMITTED" && to !== "SUBMITTED")
+    await prisma.task.updateMany({ where: { projectId, doneAt: null, auto: { startsWith: "SUBMITTED:fu-" } }, data: { doneAt: new Date(), doneBy: `Auto — job moved to ${to.toLowerCase().replace("_", " ")}` } });
   const why = opts.reason?.trim() ? ` — ${opts.reason.trim()}` : "";
   await activity(projectId, actor.id, "stage", `${actor.name} moved the job ${p.status} → ${to}${why}`, { from: p.status, to });
   await createStageTasks(p, to, actor);

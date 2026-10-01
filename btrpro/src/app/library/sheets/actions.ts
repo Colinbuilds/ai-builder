@@ -1,5 +1,6 @@
 "use server";
 
+import { PURCHASING_ROLES } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
@@ -13,7 +14,7 @@ import { syncPriceSheets } from "@/lib/sheets/drive-sync";
 const MAX_BYTES = 50 * 1024 * 1024;
 
 export async function uploadSheet(_prev: string | null, form: FormData): Promise<string | null> {
-  const admin = await requireUser(["ADMIN"]);
+  const admin = await requireUser(["ADMIN", "PURCHASING"]);
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0) return "Choose a price-sheet file.";
   if (file.size > MAX_BYTES) return "That file is over 50 MB.";
@@ -65,7 +66,7 @@ export async function uploadSheet(_prev: string | null, form: FormData): Promise
 }
 
 export async function applyReviewedImport(importId: string, reviewed: ReviewedImport): Promise<string[]> {
-  const admin = await requireUser(["ADMIN"]);
+  const admin = await requireUser(["ADMIN", "PURCHASING"]);
   try {
     await applyImport(importId, reviewed, admin.id);
   } catch (e) {
@@ -78,7 +79,7 @@ export async function applyReviewedImport(importId: string, reviewed: ReviewedIm
 }
 
 export async function discardImport(form: FormData) {
-  const admin = await requireUser(["ADMIN"]);
+  const admin = await requireUser(["ADMIN", "PURCHASING"]);
   const id = String(form.get("id"));
   await prisma.sheetImport.updateMany({ where: { id, status: "DRAFT" }, data: { status: "DISCARDED" } });
   await prisma.auditLog.create({ data: { userId: admin.id, entity: "SheetImport", entityId: id, action: "discard" } });
@@ -86,7 +87,7 @@ export async function discardImport(form: FormData) {
 }
 
 export async function saveCoverage(_prev: string | null, form: FormData): Promise<string | null> {
-  const user = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const user = await requireUser(PURCHASING_ROLES);
   const id = String(form.get("id"));
   const clear = form.get("clear") === "1";
   const qty = Number(form.get("qty"));
@@ -115,7 +116,7 @@ export async function saveCoverage(_prev: string | null, form: FormData): Promis
 export type SyncState = { problems: string[]; ok?: boolean; note?: string } | null;
 
 export async function saveSheetFolderAction(_: SyncState, f: FormData): Promise<SyncState> {
-  const admin = await requireUser(["ADMIN"]);
+  const admin = await requireUser(["ADMIN", "PURCHASING"]);
   const link = String(f.get("folder") ?? "").trim();
   if (!link) {
     await saveSettings({ priceSheetFolder: null, priceSheetSyncUserId: null }, admin);
@@ -130,7 +131,7 @@ export async function saveSheetFolderAction(_: SyncState, f: FormData): Promise<
 }
 
 export async function syncSheetsNowAction(_: SyncState): Promise<SyncState> {
-  await requireUser(["ADMIN"]);
+  await requireUser(["ADMIN", "PURCHASING"]);
   try {
     const r = await syncPriceSheets();
     revalidatePath("/", "layout");

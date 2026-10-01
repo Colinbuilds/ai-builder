@@ -302,9 +302,11 @@ export function CommitmentStatus({
 export function ChangeOrderForm({
   projectId,
   market,
+  description,
 }: {
   projectId: string;
   market: string;
+  description?: string;
 }) {
   const [state, action, pending] = useFormAction(addChangeOrderAction, null, {
     resetOnOk: true,
@@ -336,7 +338,7 @@ export function ChangeOrderForm({
         />
         <Input name="source" placeholder="Source: signed CO, adjuster email…" />
       </div>
-      <Input name="description" placeholder="What changed" required />
+      <Input name="description" placeholder="What changed" defaultValue={description} autoFocus={!!description} required />
       <div className="flex items-center gap-2">
         <Button size="sm" variant="outline" disabled={pending}>
           Add

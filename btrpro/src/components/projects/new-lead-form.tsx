@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useFormAction } from "@/components/use-form-action";
 import type { ActionResult } from "@/app/projects/actions";
 import { MARKET_DEFAULTS, type Market } from "@/lib/market-shared";
@@ -43,6 +44,27 @@ export function NewLeadForm({
   const [address, setAddress] = useState(properties.find((p) => p.id === propertyId)?.address ?? "");
   const [insurance, setInsurance] = useState(false);
   const sites = properties.filter((p) => p.companyId === clientId);
+  // past jobs for this phone, email or address — warranty calls, repeat customers, duplicates
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [history, setHistory] = useState<{ hits: { id: string; name: string; status: string; address: string | null; amount: number | null; year: number; why: string }[]; contact?: string } | null>(null);
+  useEffect(() => {
+    const ctl = new AbortController();
+    const t = setTimeout(async () => {
+      const q = new URLSearchParams({ phone, email, address });
+      if ((phone.replace(/\D/g, "").length < 7) && !email.includes("@") && address.trim().length < 6) return setHistory(null);
+      try {
+        const r = await fetch(`/api/leads/lookup?${q}`, { signal: ctl.signal });
+        setHistory(await r.json());
+      } catch {
+        /* typing again cancels */
+      }
+    }, 400);
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
+  }, [phone, email, address]);
   const res = market === "RESIDENTIAL";
 
   return (
@@ -61,16 +83,36 @@ export function NewLeadForm({
       <Section n={2} title="Phone / email">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Phone">
-            <Input name="hoPhone" type="tel" inputMode="tel" autoComplete="off" />
+            <Input name="hoPhone" type="tel" inputMode="tel" autoComplete="off" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </Field>
           <Field label="Email">
-            <Input name="hoEmail" type="email" autoComplete="off" />
+            <Input name="hoEmail" type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
         </div>
       </Section>
 
       <Section n={3} title="Address">
         <AddressInput value={address} onChange={setAddress} placeholder="Start typing — pick the match" ariaLabel="Address" />
+        {history && (history.hits.length > 0 || history.contact) && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
+            <div className="font-medium">Been here before</div>
+            {history.contact && !history.hits.length && <p>{history.contact} is already a contact (no jobs yet).</p>}
+            <ul className="mt-1 flex flex-col gap-0.5">
+              {history.hits.map((h) => (
+                <li key={h.id}>
+                  <Link href={`/projects/${h.id}`} target="_blank" className="text-btr-link hover:underline">
+                    {h.name}
+                  </Link>{" "}
+                  <span className="text-muted-foreground">
+                    · {h.status.toLowerCase().replace("_", " ")} · {h.year}
+                    {h.amount != null ? ` · $${h.amount.toLocaleString()}` : ""} · {h.why}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 text-xs text-muted-foreground">Warranty call or repeat customer? Check the old job before creating a new one.</p>
+          </div>
+        )}
       </Section>
 
       <Section n={4} title="What kind of job">

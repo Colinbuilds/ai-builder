@@ -17,6 +17,8 @@ import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
+import { readyChecklist, walkthrough } from "@/lib/production/field";
+import { IssuesPanel, PunchPanel, ReadyPanel, WalkthroughPanel } from "@/components/production/field-panels";
 
 const usd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -45,10 +47,14 @@ export default async function Production({
           include: { crew: { select: { name: true } } },
           orderBy: { date: "desc" },
         },
+        punchItems: { orderBy: [{ doneAt: { sort: "asc", nulls: "first" } }, { createdAt: "asc" }] },
+        fieldIssues: { orderBy: { createdAt: "desc" } },
       },
     }),
     crewsWithCompliance(),
   ]);
+  const [ready, walk] = await Promise.all([readyChecklist(id), walkthrough(id)]);
+  const crewName = new Map(crews.map((c) => [c.id, c.name]));
   const canEdit = user.role !== "VIEWER";
   const money = canSeeCosts(user, p);
   const crewOpts = crews
@@ -66,6 +72,13 @@ export default async function Production({
   const unapproved = p.timeEntries.filter((t) => !t.approvedAt);
   return (
     <div className="flex flex-col gap-6">
+      {!["COMPLETE", "INVOICED", "CLOSED"].includes(p.status) && <ReadyPanel projectId={id} items={ready} canEdit={canEdit} />}
+      <IssuesPanel
+        projectId={id}
+        canEdit={canEdit}
+        canPrice={money}
+        issues={p.fieldIssues.map((i) => ({ ...i, photos: (i.photos as { url: string }[] | null) ?? [] }))}
+      />
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">Schedule</h2>
         {p.scheduleEvents.length === 0 ? (
@@ -267,6 +280,14 @@ export default async function Production({
         )}
         {canEdit && <TimeForm projectId={id} crews={crewOpts} />}
       </section>
+
+      <PunchPanel
+        projectId={id}
+        canEdit={canEdit}
+        crews={crewOpts.map((c) => ({ id: c.id, name: c.name }))}
+        items={p.punchItems.map((i) => ({ ...i, crewName: i.crewId ? crewName.get(i.crewId) : null }))}
+      />
+      <WalkthroughPanel projectId={id} items={walk.items} ready={walk.ready} stage={p.status} canEdit={canEdit} />
     </div>
   );
 }

@@ -7,8 +7,9 @@ import { topBarCounts } from "@/lib/notifications";
 import { recentJobs } from "@/lib/shell/recent";
 import { TopBar, type Tool } from "@/components/shell/top-bar";
 import { PagePanel } from "@/components/shell/page-panel";
+import { databasePersistence } from "@/lib/setup-check";
 
-function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: string }[] } {
+function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href: string; label: string }[] } {
   const staff = role !== "VIEWER";
   const admin = role === "ADMIN";
   const tools: Tool[] = [
@@ -73,6 +74,9 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
           ? [
               { href: "/crews/invoices", label: "Crew invoices" },
               { href: "/receipts", label: "Supplier receipts" },
+              { href: "/bills", label: "Supplier bills (pay ABC)" },
+              { href: "/desk/office", label: "Office desk" },
+              { href: "/desk/purchasing", label: "Purchasing desk" },
             ]
           : []),
       ],
@@ -84,10 +88,12 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
             label: "Reports",
             icon: "FileText" as const,
             items: [
+              ...(isOwner ? [{ href: "/audit", label: "Owner audit" }] : []),
               { href: "/reports/sales", label: "Sales & pipeline" },
+              { href: "/reports/win-loss", label: "Win / loss & win-back" },
               { href: "/reports/profit", label: "Profit" },
               { href: "/reports/commissions", label: "Commission calculator" },
-              ...(admin ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : []),
+              ...(admin || role === "OFFICE" ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : []),
             ],
           },
         ]
@@ -100,6 +106,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },
         { href: "/settings/templates", label: "Estimate templates" },
+        { href: "/estimating/ventilation", label: "Ventilation calculator" },
         ...(staff ? [{ href: "/settings/labor", label: "Labor standards" }] : []),
         { href: "/settings/rules", label: "Rules" },
       ],
@@ -113,6 +120,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
           { href: "/updates", label: "Company updates" },
           { href: "/settings/company", label: "Company settings" },
           { href: "/settings/integrations", label: "Integrations" },
+          { href: "/admin/setup", label: "Setup check" },
           { href: "/settings/import-jobs", label: "Import jobs (schedules)" },
           { href: "/settings/acculynx", label: "Import from AccuLynx (one-time)" },
         ]
@@ -132,11 +140,21 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  const db = user?.role === "ADMIN" ? databasePersistence() : null;
   return (
     <html lang="en">
       <body className="min-h-screen bg-[var(--canvas)] antialiased">
         {user && <Shell user={user} />}
         <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-4 sm:py-5">
+          {db && !db.persistent && (
+            <div className="mb-3 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950/50 dark:text-red-200">
+              <b>Data is not being kept.</b> The database is on the server&apos;s temporary disk, so every redeploy or Railway variable change erases jobs, leads and customers. Add a Railway volume
+              mounted at <code>/data</code> and remove the <code>DATABASE_URL</code> variable (or set it to <code>file:/data/btrpro.db</code>).{" "}
+              <a href="/admin/setup" className="underline">
+                Setup check
+              </a>
+            </div>
+          )}
           <PagePanel>{children}</PagePanel>
         </main>
       </body>
@@ -144,14 +162,14 @@ export default async function RootLayout({
   );
 }
 
-async function Shell({ user }: { user: { id: string; name: string; role: string } }) {
+async function Shell({ user }: { user: { id: string; name: string; role: string; isOwner?: boolean } }) {
   const [counts, recent, watching, view] = await Promise.all([
     topBarCounts(user.id),
     recentJobs(user.id),
     prisma.jobWatch.count({ where: { userId: user.id } }),
     getMarketView(),
   ]);
-  const { tools, admin } = toolsFor(user.role);
+  const { tools, admin } = toolsFor(user.role, user.isOwner);
   return (
     <TopBar
       user={{ name: user.name, role: user.role }}

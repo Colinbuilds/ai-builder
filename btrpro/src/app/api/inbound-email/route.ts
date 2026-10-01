@@ -5,6 +5,7 @@ import { ingestEmail, jobTokensFromAddresses, parseInboundPayload } from "@/lib/
 import { summarizeEmail } from "@/lib/comms/summaries";
 import { aiConfigured } from "@/lib/ai/claude";
 import { isReceiptsAddress, receiptsFromEmail } from "@/lib/receipts/inbox";
+import { billsFromEmail, isBillsAddress } from "@/lib/bills/inbox";
 
 // Inbound email webhook (Postmark JSON or generic JSON). Mail sent or CC'd to
 // job-<token>@<INBOUND_EMAIL_DOMAIN> lands on that job; receipts@<INBOUND_EMAIL_DOMAIN> goes to the receipt reader. Auth: ?secret= or x-webhook-secret header.
@@ -32,6 +33,12 @@ export async function POST(req: Request) {
     receipts = await receiptsFromEmail(email);
     if (receipts.ignored) console.warn("receipt email ignored:", receipts.ignored);
   }
+  // bills@… → supplier bills (accounts payable)
+  let bills: { ids: string[]; ignored?: string } | null = null;
+  if (isBillsAddress(recipients)) {
+    bills = await billsFromEmail(email);
+    if (bills.ignored) console.warn("bill email ignored:", bills.ignored);
+  }
   const tokens = jobTokensFromAddresses(recipients);
   const projects = tokens.length ? await prisma.project.findMany({ where: { emailToken: { in: tokens } } }) : [];
   const stored: string[] = [];
@@ -48,5 +55,5 @@ export async function POST(req: Request) {
       r.filter((x) => x.status === "rejected").forEach((x) => console.error("email summary failed", (x as PromiseRejectedResult).reason)),
     );
   // Always 200 for well-formed requests so the provider doesn't retry mail that matched no job.
-  return NextResponse.json({ matchedJobs: projects.length, stored: stored.length, ...(receipts ? { receipts: receipts.ids.length } : {}) });
+  return NextResponse.json({ matchedJobs: projects.length, stored: stored.length, ...(receipts ? { receipts: receipts.ids.length } : {}), ...(bills ? { bills: bills.ids.length } : {}) });
 }

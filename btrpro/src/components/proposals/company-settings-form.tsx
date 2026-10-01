@@ -80,6 +80,21 @@ export function CompanySettingsForm({ s }: { s: CompanySettings }) {
           "Billed on materials from receipts (change orders and invoices). Blank = 15%. Can be changed per receipt or line.",
         )}
         {field(
+          "billOwnerOver",
+          "Supplier bills: owner approval over $",
+          "Bills above this total wait for an owner before going to QuickBooks. Blank = no limit (the owner Audit still reviews them).",
+        )}
+        {field(
+          "billNetDays",
+          "Supplier terms (days) when not printed",
+          "Due date = invoice date + this, only when the invoice prints no due date. Blank = due date MISSING.",
+        )}
+        {field(
+          "takeoffAllowancePct",
+          "Plan takeoff allowance %",
+          "Added on top of traced plan measurements so they land slightly over, never under. Blank = 1%. Waste is separate.",
+        )}
+        {field(
           "cardSurchargePct",
           "Card surcharge %",
           "Added to card payments only, where permitted (up to 3%). Blank = none.",

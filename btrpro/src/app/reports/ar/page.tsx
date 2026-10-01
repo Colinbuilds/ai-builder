@@ -21,7 +21,7 @@ export default async function ArReport({
 }: {
   searchParams: Promise<{ market?: string }>;
 }) {
-  await requireUser(["ADMIN"]);
+  await requireUser(["ADMIN", "OFFICE"]);
   const { market } = await searchParams;
   const ar = await arAging();
   const rows = ar.rows.filter((r) => !market || r.project.market === market);

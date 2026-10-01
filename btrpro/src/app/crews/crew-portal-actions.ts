@@ -1,5 +1,6 @@
 "use server";
 
+import { BILLING_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -25,7 +26,7 @@ export async function crewLoginSetAction(_: OResult, f: FormData): Promise<OResu
 }
 
 export async function reviewCrewInvoiceAction(_: OResult, f: FormData): Promise<OResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(BILLING_ROLES);
   try {
     // same rule as job costing: Admins, or the job's own estimator/salesperson
     const inv = await prisma.crewInvoice.findUniqueOrThrow({ where: { id: str(f, "id") }, select: { project: { select: { estimatorId: true, salespersonId: true } } } });
@@ -45,7 +46,7 @@ export async function markPaidAction(f: FormData) {
 }
 
 export async function reviewPhotoAction(_: OResult, f: FormData): Promise<OResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(BILLING_ROLES);
   try {
     const p = await reviewPhoto(str(f, "id"), str(f, "review") === "ISSUE" ? "ISSUE" : "OK", str(f, "note") || null, u);
     revalidatePath(`/projects/${p.projectId}/photos`);
@@ -56,7 +57,7 @@ export async function reviewPhotoAction(_: OResult, f: FormData): Promise<OResul
 }
 
 export async function staffPhotosAction(_: OResult, f: FormData): Promise<OResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(BILLING_ROLES);
   const projectId = str(f, "projectId");
   try {
     const files = await Promise.all(

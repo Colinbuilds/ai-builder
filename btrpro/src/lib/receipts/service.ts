@@ -1,6 +1,7 @@
 // ABC (or any supplier) receipt photos: the AI transcribes what's printed, then the app matches the job,
 // checks the math, compares every line with the price sheets (the builder's own pricing on builder jobs),
 // and files the lines to the job's material costs.
+import type { Role } from "@/lib/session";
 import { z } from "zod";
 import type Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/db";
@@ -34,6 +35,8 @@ export const ReceiptSchema = z.object({
   shipToName: str.describe("Ship-to / deliver-to name as printed"),
   shipToAddress: str.describe("Ship-to / delivery / job-site street address as printed (not the branch or bill-to address)"),
   date: str.describe("Invoice/receipt date as YYYY-MM-DD, only if printed"),
+  dueDate: str.describe("Payment due date as YYYY-MM-DD, only if printed on an invoice").optional(),
+  terms: str.describe("Payment terms exactly as printed, e.g. 'NET 10TH PROX' or 'Net 30'").optional(),
   lines: z.array(
     z.object({
       itemNumber: str.describe("Supplier item/product number / SKU exactly as printed, keeping leading zeros; null if none"),
@@ -298,7 +301,7 @@ export async function setReceiptMarkup(id: string, markupPct: number | null, lin
 export async function approveReceipt(
   id: string,
   input: { projectId: string; outcome: Outcome; markupPct: number | null; lineMarkup: Record<string, number>; reason: string | null },
-  actor: { id: string; name: string; role: "ADMIN" | "ESTIMATOR" | "VIEWER" },
+  actor: { id: string; name: string; role: Role },
 ) {
   await guardCostEdit(input.projectId, actor);
   await setReceiptMarkup(id, input.markupPct, input.lineMarkup);
