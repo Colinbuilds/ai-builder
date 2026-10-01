@@ -2,13 +2,19 @@
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/crypto";
 
-export type OAuthProvider = "GOOGLE_DRIVE" | "QUICKBOOKS" | "PROCORE";
+export type OAuthProvider = "GOOGLE_DRIVE" | "QUICKBOOKS" | "PROCORE" | "ABC_SUPPLY" | "EAGLEVIEW";
+
+// ABC Supply's Okta authorization servers (apidocs.abcsupply.com → Authorization Methods). ABC_ENV=sandbox for testing.
+const abcSandbox = () => process.env.ABC_ENV === "sandbox";
+export const ABC_API = () => (abcSandbox() ? "https://partners-sb.abcsupply.com" : "https://partners.abcsupply.com");
+const ABC_AUTH = () =>
+  abcSandbox() ? "https://sandbox.auth.partners.abcsupply.com/oauth2/aus1vp07knpuqf6Xz0h8/v1" : "https://auth.partners.abcsupply.com/oauth2/ausvvp0xuwGKLenYy357/v1";
 
 type Cfg = {
   label: string;
-  auth: string;
-  token: string;
-  scope: string;
+  readonly auth: string;
+  readonly token: string;
+  readonly scope: string;
   clientId: () => string | undefined;
   clientSecret: () => string | undefined;
   /** true = each user connects their own account; false = one company-wide connection (Admin) */
@@ -47,10 +53,41 @@ export const OAUTH: Record<OAuthProvider, Cfg> = {
     clientSecret: () => process.env.PROCORE_CLIENT_SECRET,
     perUser: false,
   },
+  ABC_SUPPLY: {
+    label: "ABC Supply",
+    get auth() {
+      return `${ABC_AUTH()}/authorize`;
+    },
+    get token() {
+      return `${ABC_AUTH()}/token`;
+    },
+    // offline_access = a refresh token, so the connection stays signed in (refreshed well inside ABC's 30 days)
+    scope: "pricing.read order.read product.read account.read location.read invoice.history.read offline_access",
+    clientId: () => process.env.ABC_CLIENT_ID,
+    clientSecret: () => process.env.ABC_CLIENT_SECRET,
+    perUser: false,
+    basicAuth: true,
+  },
+  EAGLEVIEW: {
+    label: "EagleView",
+    // EagleView issues these with BTR's API access (developer.eagleview.com); they aren't published
+    get auth() {
+      return process.env.EAGLEVIEW_AUTH_URL ?? "";
+    },
+    get token() {
+      return process.env.EAGLEVIEW_TOKEN_URL ?? "";
+    },
+    get scope() {
+      return process.env.EAGLEVIEW_SCOPE ?? "";
+    },
+    clientId: () => process.env.EAGLEVIEW_CLIENT_ID,
+    clientSecret: () => process.env.EAGLEVIEW_CLIENT_SECRET,
+    perUser: false,
+  },
 };
 
 export const isOAuthProvider = (p: string): p is OAuthProvider => p in OAUTH;
-export const oauthConfigured = (p: OAuthProvider) => !!(OAUTH[p].clientId() && OAUTH[p].clientSecret() && process.env.APP_URL);
+export const oauthConfigured = (p: OAuthProvider) => !!(OAUTH[p].clientId() && OAUTH[p].clientSecret() && OAUTH[p].auth && OAUTH[p].token && process.env.APP_URL);
 export const redirectUri = (p: OAuthProvider) => `${process.env.APP_URL}/api/integrations/${p.toLowerCase()}/callback`;
 
 export function authorizeUrl(p: OAuthProvider, state: string) {
@@ -119,4 +156,8 @@ export async function accessToken(p: OAuthProvider, userId: string): Promise<{ t
     },
   });
   return { token: t.access_token, extra };
+}
+
+export async function disconnect(p: OAuthProvider, userId: string) {
+  await prisma.integrationConnection.deleteMany({ where: { provider: p, userId: OAUTH[p].perUser ? userId : null } });
 }

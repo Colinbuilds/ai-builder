@@ -34,8 +34,11 @@ export type CompanySettings = {
   prodCommSheet: string | null; // BTR Commercial Schedule_Live_ link; blank = the default
   prodSyncedAt: string | null;
   prodSheetOff: boolean | null; // true once BTRpro is the production schedule
+  abcBillTo: string | null; // ABC Supply bill-to account number (invoice history is read for it)
+  abcSyncedAt: string | null; // ISO time of the last ABC background sync
+  abcSyncError: string | null; // last ABC sync problem, cleared on success
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });
@@ -51,6 +54,7 @@ export async function saveSettings(patch: Partial<CompanySettings>, user: { id: 
     if (v == null || v === "") await prisma.companySetting.deleteMany({ where: { key: k } });
     else await prisma.companySetting.upsert({ where: { key: k }, update: { value: v, updatedBy: user.name }, create: { key: k, value: v, updatedBy: user.name } });
     if (JSON.stringify(before?.value ?? null) !== JSON.stringify(v ?? null))
-      await prisma.auditLog.create({ data: { userId: user.id, entity: "CompanySetting", entityId: k, action: "update", before: { value: before?.value ?? null }, after: { value: v ?? null } } });
+      // background syncs save as a system actor with no user id
+      await prisma.auditLog.create({ data: { userId: user.id || null, entity: "CompanySetting", entityId: k, action: "update", before: { value: before?.value ?? null }, after: { value: v ?? null } } });
   }
 }

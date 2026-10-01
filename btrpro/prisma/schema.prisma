@@ -1879,3 +1879,29 @@ model PayApp {
 
   @@unique([contractId, number])
 }
+
+// Data pulled in the background from connected supplier/report accounts (ABC Supply orders and invoices).
+// Matched to a job by PO number / job name when one fits; the raw record is kept for reference.
+model SupplierFeed {
+  id         String    @id @default(cuid())
+  // ABC_SUPPLY | EAGLEVIEW
+  provider   String
+  // ORDER | INVOICE | REPORT
+  kind       String
+  externalId String
+  number     String?
+  date       DateTime?
+  poNumber   String?
+  jobName    String?
+  status     String?
+  branch     String?
+  total      Float?
+  raw        Json?
+  projectId  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([provider, kind, externalId])
+  @@index([projectId])
+  @@index([date])
+}
