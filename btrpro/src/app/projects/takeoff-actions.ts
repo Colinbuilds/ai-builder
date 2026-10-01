@@ -33,7 +33,9 @@ export async function sendTakeoffAction(documentId: string, page: number): Promi
   }
 }
 
-export type AiMeasureResult = { ok: true; items: TakeoffItem[]; sheet: string; cannotTrace: string[]; dropped: number } | { ok: false; message: string };
+export type AiMeasureResult =
+  | { ok: true; items: TakeoffItem[]; sheet: string; detectedView: View | null; sheetType: string; printedScale: string | null; cannotTrace: string[]; dropped: number }
+  | { ok: false; message: string };
 
 /** AI draft of what's on screen. The image comes from the browser's own render of the sheet. */
 export async function aiMeasureAction(

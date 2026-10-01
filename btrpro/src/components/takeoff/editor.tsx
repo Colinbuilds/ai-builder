@@ -254,12 +254,36 @@ export function TakeoffEditor({
       const imageBase64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
       const r = await aiMeasureAction(documentId, { imageBase64, mediaType: "image/jpeg", region, view });
       if (!r.ok) return setAi({ busy: false, message: r.message });
-      if (!r.items.length) return setAi({ busy: false, message: "BTRbot couldn't trace anything it was sure of here. Zoom in on one roof or wall and try again, or trace by hand.", cannot: r.cannotTrace });
+      const notes: string[] = [];
+      // BTRbot read what the sheet really is: switch the setting rather than refusing
+      if (r.detectedView && r.detectedView !== view) {
+        setView(r.detectedView);
+        touch();
+        notes.push(`This is ${r.detectedView === "ELEVATION" ? "an elevation" : "a roof plan"}, so the sheet setting was switched to ${r.detectedView === "ELEVATION" ? "Elevation" : "Roof plan"}.`);
+      }
+      // no scale yet and the sheet prints one: start from it (PDF sizes are true), then ask for a check
+      if (!scale && r.printedScale && kind === "pdf") {
+        const p = PRESET_SCALES.find((x) => x.label === r.printedScale);
+        if (p) {
+          setScale({ upf: presetUpf(p.inPerFt), method: "PRESET", label: `Printed scale ${p.label}`, check: null });
+          touch();
+          notes.push(`Scale set from the printed ${p.label}. Check it on one known dimension before using the numbers.`);
+        }
+      } else if (!scale && r.printedScale) notes.push(`The sheet says ${r.printedScale}. Set the scale (Set scale → calibrate on a dimension).`);
+      if (!r.items.length) {
+        const why =
+          r.sheetType === "FLOOR_PLAN"
+            ? "This is a floor plan, so there's nothing to take off here. Open the roof plan or the elevations."
+            : r.detectedView
+              ? "BTRbot couldn't trace anything it was sure of here. Zoom in on one roof or one wall and try again."
+              : "This isn't a roof plan or an elevation. Open the roof plan or the elevations.";
+        return setAi({ busy: false, message: [...notes, why].join(" "), cannot: r.cannotTrace });
+      }
       commitItems([...items, ...r.items]);
       setMode("select");
       setAi({
         busy: false,
-        message: `BTRbot drew ${r.items.length} item${r.items.length === 1 ? "" : "s"} (dashed) on ${r.sheet}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`,
+        message: [...notes, `BTRbot drew ${r.items.length} item${r.items.length === 1 ? "" : "s"} (dashed) on ${r.sheet}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`].join(" "),
         cannot: r.cannotTrace,
       });
     } catch (e) {

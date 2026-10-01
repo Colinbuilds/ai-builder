@@ -2,7 +2,7 @@
 // and AI drafts are never counted or sent until accepted.
 import { afterAll, describe, expect, it } from "vitest";
 import { setAiClientForTests } from "@/lib/ai/claude";
-import { aiDraftTakeoff } from "@/lib/takeoff/ai";
+import { aiDraftTakeoff, matchPreset } from "@/lib/takeoff/ai";
 import { pageTotals, type PageTakeoff } from "@/lib/takeoff/geometry";
 
 afterAll(() => setAiClientForTests(null));
@@ -17,6 +17,8 @@ describe("AI draft takeoff", () => {
     fake(
       {
         sheet: "roof plan",
+        sheet_type: "ROOF_PLAN",
+        printed_scale: null,
         items: [
           { type: "eave", points: [{ x: 0, y: 1000 }, { x: 1000, y: 1000 }], note: "front eave" },
           { type: "roof_area", points: [{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1000, y: 1000 }, { x: 0, y: 1000 }], note: "main plane" },
@@ -41,7 +43,42 @@ describe("AI draft takeoff", () => {
     expect(body.messages[0].content[0].type).toBe("image");
     // a non-streaming request: the SDK refuses large max_tokens without streaming
     expect((seen[0] as { max_tokens: number }).max_tokens).toBeLessThanOrEqual(16000);
-    expect(body.system.map((s) => s.text).join("\n")).toMatch(/ROOF PLAN/);
+    expect(body.system.map((s) => s.text).join("\n")).toMatch(/ROOF_PLAN/);
+    expect(r.detectedView).toBe("ROOF_PLAN");
+  });
+
+  it("a sheet set as roof plan that is really an elevation gets its walls traced, not refused", async () => {
+    fake({
+      sheet: "south elevation",
+      sheet_type: "ELEVATION",
+      printed_scale: 'SCALE: 1/8" = 1\'-0"',
+      items: [
+        { type: "wall_area", points: [{ x: 0, y: 400 }, { x: 1000, y: 400 }, { x: 1000, y: 900 }, { x: 0, y: 900 }], note: "main wall" },
+        { type: "rough_opening", points: [{ x: 100, y: 500 }, { x: 200, y: 500 }, { x: 200, y: 700 }, { x: 100, y: 700 }], note: "window" },
+        { type: "roof_area", points: [{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 500, y: 300 }], note: "roof seen in elevation" },
+      ],
+      cannot_trace: ["1", "2", "3", "4", "5", "6", "7"],
+    });
+    const r = await aiDraftTakeoff({ imageBase64: "AAAA", mediaType: "image/jpeg", region: { x: 0, y: 0, w: 1000, h: 1000 }, view: "ROOF_PLAN" });
+    expect(r.detectedView).toBe("ELEVATION");
+    expect(r.items.map((i) => i.type)).toEqual(["wall_area", "rough_opening"]);
+    expect(r.printedScale).toBe('1/8" = 1\'-0"');
+    expect(r.cannotTrace).toHaveLength(5);
+  });
+
+  it("a floor plan traces nothing", async () => {
+    fake({ sheet: "first floor plan", sheet_type: "FLOOR_PLAN", printed_scale: null, items: [{ type: "wall_area", points: [{ x: 0, y: 0 }, { x: 9, y: 0 }, { x: 9, y: 9 }], note: "x" }], cannot_trace: [] });
+    const r = await aiDraftTakeoff({ imageBase64: "AAAA", mediaType: "image/jpeg", region: { x: 0, y: 0, w: 10, h: 10 }, view: "ELEVATION" });
+    expect(r.detectedView).toBeNull();
+    expect(r.items).toEqual([]);
+  });
+
+  it("reads printed scales", () => {
+    expect(matchPreset('1/4" = 1\'-0"')).toBe('1/4" = 1\'-0"');
+    expect(matchPreset("SCALE: 3/32\"=1'")).toBe('3/32" = 1\'-0"');
+    expect(matchPreset('1" = 1\'-0"')).toBe('1" = 1\'-0"');
+    expect(matchPreset("NTS")).toBeNull();
+    expect(matchPreset(null)).toBeNull();
   });
 
   it("AI drafts don't count toward totals until accepted", async () => {
