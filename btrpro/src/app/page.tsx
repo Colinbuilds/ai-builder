@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, Binoculars, CalendarClock, FileSignature, History, Ruler, ShoppingCart, Signature, DollarSign, ListChecks, Megaphone } from "lucide-react";
+import { AlertTriangle, Binoculars, Camera, Receipt, Wallet, CalendarClock, FileSignature, History, Ruler, ShoppingCart, Signature, DollarSign, ListChecks, Megaphone } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getMarketView } from "@/lib/market";
@@ -30,6 +30,9 @@ const ICON = {
   TK: ListChecks,
   W: Binoculars,
   P: CalendarClock,
+  CI: Wallet,
+  RC: Receipt,
+  PH: Camera,
 } as const;
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ lb?: string; denied?: string }> }) {

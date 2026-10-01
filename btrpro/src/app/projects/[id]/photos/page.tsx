@@ -5,14 +5,27 @@ import { prisma } from "@/lib/db";
 import { driveAvailable } from "@/lib/integrations/google-sa";
 import { jobPhotos, matchPhotoFolder, photoFolders, companyCamIdFromFile, type DrivePhoto, type PhotoFolder } from "@/lib/integrations/drive-photos";
 import { PhotoFolderPicker } from "@/components/portal/forms";
+import { CrewPhotos } from "./crew-photos";
 
 const when = (d: Date | null) => (d ? d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "");
 
-/** CompanyCam photos, read from the job's folder in Drive (CompanyCam syncs every project there). */
+/** Job photos: the crews' required before/finished/cleanup photos, then CompanyCam photos from Drive. */
 export default async function PhotosPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> }) {
   const user = await requireUser();
   const { id } = await params;
   const { page } = await searchParams;
+  return (
+    <div className="flex flex-col gap-8">
+      <CrewPhotos projectId={id} canEdit={user.role !== "VIEWER"} />
+      <section className="flex flex-col gap-4 border-t pt-6">
+        <CompanyCamPhotos id={id} user={user} page={page} />
+      </section>
+    </div>
+  );
+}
+
+/** CompanyCam photos, read from the job's folder in Drive (CompanyCam syncs every project there). */
+async function CompanyCamPhotos({ id, user, page }: { id: string; user: { id: string; role: string }; page?: string }) {
   const project = await prisma.project.findUnique({ where: { id }, select: { id: true, name: true, address: true, photoFolderId: true, companyCamId: true } });
   if (!project) notFound();
   const canEdit = user.role !== "VIEWER";

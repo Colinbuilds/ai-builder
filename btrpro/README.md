@@ -24,6 +24,7 @@ The system BTR Contracting (Omaha, NE) runs the company on: jobs and customers, 
 | 18 | AccuLynx migration (one-time jobs export import) and setup checklist | **Done** |
 | 19 | Playwright end-to-end test: job → PDF upload → confirm measurements → shingle estimate → PDF → costs → P&L | **Done** |
 | 20 | AccuLynx-style interface: icon toolbar with dropdowns, dashboard (pipeline, action items, activity feed, leaderboard, work schedule, AR), job header with milestones + Advance Job + Job Menu, notifications panel, company updates, watch list; job Photos tab from the CompanyCam folders in Drive | **Done** |
+| 21 | Receipt scanner (photo → job match → price check vs every sheet incl. builder pricing → job costs); crew portal login (invoices + required job photos only) with office review | **Done** |
 
 The full schema, including the job chat/email models, is already in `prisma/schema.prisma`. Later phases add features without reshaping the data model.
 
@@ -278,6 +279,19 @@ BTRpro replaces AccuLynx for everything. The importers are for the one-time move
 1. Admin → **Import jobs (schedules)**: bring in the Residential and Commercial Live schedules (Drive or .xlsx). Each Builder-column name is matched to a builder/customer account.
 2. Admin → **Import from AccuLynx (one-time)**: upload the AccuLynx jobs export. Columns and milestones are matched in a preview; jobs already here at the same address are linked, not duplicated; re-imports update by the old AccuLynx job number.
 3. Work the setup checklist on that page.
+
+## Receipts, crew portal and job photos (Phase 21)
+
+- **Scan a receipt** (New → Scan a receipt, or Production → Supplier receipts): photograph an ABC receipt (several photos if it's long, or a PDF). The AI only transcribes what's printed; it never totals or fills gaps. BTRpro then:
+  - finds the job from the PO / ABC order # (matched to the job's material orders), then the ship-to street address, then the job name. It only auto-picks a single clear match; otherwise it lists candidates and you pick.
+  - checks each line's math (qty × price vs the printed amount) and the subtotal/total.
+  - compares every item # with the active price sheets. On a builder's job it uses the builder's own price (and the builder's fallback setting for items they don't have); otherwise BTR standard. Units must match exactly — nothing is converted. Over-sheet lines are highlighted with the dollar difference.
+  - **File to job costs** adds each line as a material cost with its sheet price, the tax as one line, and the photos to the job's documents. A PO matching a material order bills that order. The same invoice # can't be filed twice.
+- **Crew portal** (`/crew`): an Admin turns on a crew's login on the crew's page (Crews & subs → crew → Crew portal login). A crew login can only:
+  - upload job photos for jobs it's scheduled on or has a work order for — **Before**, **During the job**, **Finished work**, **Site cleanup**. Finished work and site cleanup are **required** before the crew can invoice that job.
+  - send invoices (amount, invoice #, what it's for, PDF or photo).
+  It can't open anything else in BTRpro, and turning the login off or changing the password signs the crew out.
+- **Office review**: Production → **Crew invoices** (approve into job costs as labor for crews or subcontractor for subs, send back with a reason, mark paid) and **Crew photos to check**. On the job's **Photos** tab, mark each crew photo OK or flag a quality/cleanup issue; the crew sees flags in their portal. The dashboard counts crew invoices to review, crew photos to check, and receipts not filed.
 
 ## Interface (Phase 20)
 

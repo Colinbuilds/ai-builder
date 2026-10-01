@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 
 // The dashboard and job pages lay out their own panels on the gray canvas; every other page sits in one white panel.
-const OWN_LAYOUT = [/^\/$/, /^\/projects\/(?!new$)[^/]+/];
+const OWN_LAYOUT = [/^\/$/, /^\/projects\/(?!new$)[^/]+/, /^\/crew(\/|$)/];
 
 export function PagePanel({ children }: { children: React.ReactNode }) {
   const path = usePathname();

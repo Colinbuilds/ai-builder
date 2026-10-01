@@ -274,6 +274,9 @@ model Project {
   qboCustomerId    String?
   tasks            Task[]
   watchers         JobWatch[]
+  crewInvoices     CrewInvoice[]
+  photos           JobPhoto[]
+  receiptScans     ReceiptScan[]
 
   @@index([importKey])
   @@index([portalToken])
@@ -1132,8 +1135,17 @@ model Crew {
   timeEntries        TimeEntry[]
   // crew's phone link: their schedule, work orders, hours, delivery tickets
   portalToken        String?
+  // crew portal login (invoices + job photos only); separate from staff accounts
+  loginEmail         String?
+  passwordHash       String?
+  lastLoginAt        DateTime?
+  // set when the office sets/resets the password or turns the login off; older crew sessions stop working
+  loginChangedAt     DateTime?
+  invoices           CrewInvoice[]
+  photos             JobPhoto[]
 
   @@index([portalToken])
+  @@index([loginEmail])
 }
 
 enum EventKind {
@@ -1389,4 +1401,78 @@ model JobWatch {
   createdAt DateTime @default(now())
 
   @@unique([projectId, userId])
+}
+
+// A crew/sub's invoice sent from the crew portal. The office approves it into job costing.
+model CrewInvoice {
+  id            String    @id @default(cuid())
+  crewId        String
+  crew          Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invoiceNumber String?
+  invoiceDate   DateTime
+  amount        Float
+  description   String
+  fileUrl       String?
+  contentType   String?
+  // SUBMITTED | APPROVED | REJECTED | PAID
+  status        String    @default("SUBMITTED")
+  reviewNote    String?
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  paidAt        DateTime?
+  jobCostId     String?
+  createdAt     DateTime  @default(now())
+
+  @@index([status, createdAt])
+  @@index([projectId])
+}
+
+// Job photos taken by crews (and staff): before, progress, finished work, and site cleanup.
+// Finished + cleanup are required before a crew can invoice the job; the office reviews quality and cleanliness.
+model JobPhoto {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  crewId      String?
+  crew        Crew?     @relation(fields: [crewId], references: [id], onDelete: SetNull)
+  uploadedBy  String
+  // BEFORE | PROGRESS | FINISHED | CLEANUP
+  stage       String
+  note        String?
+  fileUrl     String
+  contentType String
+  // PENDING | OK | ISSUE
+  review      String    @default("PENDING")
+  reviewNote  String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  takenAt     DateTime  @default(now())
+
+  @@index([projectId, stage])
+  @@index([crewId])
+}
+
+// A photographed supplier receipt/invoice: what was read off it, the job it matched, and whether it was filed to costs.
+model ReceiptScan {
+  id          String    @id @default(cuid())
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  // uploaded photos/PDF pages, in order: [{ url, type }]
+  files       Json
+  // READ | FAILED | FILED
+  status      String    @default("READ")
+  error       String?
+  // what the AI transcribed (header + lines), never edited by code
+  extracted   Json?
+  matchedBy   String?
+  invoiceNo   String?
+  vendor      String?
+  costBatch   String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  filedAt     DateTime?
+
+  @@index([createdAt])
 }

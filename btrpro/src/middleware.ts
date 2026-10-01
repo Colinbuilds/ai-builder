@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
 
-// Everything except /login and static assets requires a signed-in user.
+// Everything except /login, the public token pages, the crew portal (its own login), and static assets requires a signed-in user.
 export async function middleware(req: NextRequest) {
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
   if (session) return NextResponse.next();
@@ -12,5 +12,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|p/|w/|i/|co/|c/|portal/|api/p/|api/i/|api/stripe/|api/inbound-email|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!login|crew(?:/|$)|api/crew/|p/|w/|i/|co/|c/|portal/|api/p/|api/i/|api/stripe/|api/inbound-email|_next/static|_next/image|favicon.ico).*)"],
 };

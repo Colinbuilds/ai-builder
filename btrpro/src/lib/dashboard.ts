@@ -16,7 +16,7 @@ export async function dashboardData(view: MarketView, userId: string) {
   const week = new Date(today.getTime() + 7 * DAY);
   const since30 = new Date(today.getTime() - 30 * DAY);
 
-  const [byStage, unassigned, bidsDue, watch, invoices, cosOut, ordersDraft, measuresPending, proposalsOut, overdueTasks] = await Promise.all([
+  const [byStage, unassigned, bidsDue, watch, invoices, cosOut, ordersDraft, measuresPending, proposalsOut, overdueTasks, crewInvoices, photosToCheck, receiptsOpen] = await Promise.all([
     prisma.project.groupBy({ by: ["status"], where: m, _count: true, _sum: { contractAmount: true } }),
     prisma.project.count({ where: { ...m, status: "LEAD", salespersonId: null } }),
     prisma.project.count({ where: { ...m, status: { in: ["LEAD", "ESTIMATING"] }, bidDueDate: { gte: today, lt: week } } }),
@@ -33,6 +33,9 @@ export async function dashboardData(view: MarketView, userId: string) {
         return ps.filter((x) => ok.has(x.projectId)).length;
       }),
     prisma.task.count({ where: { doneAt: null, dueDate: { lt: today }, OR: [{ projectId: null }, { project: m }] } }),
+    prisma.crewInvoice.count({ where: { status: "SUBMITTED", project: m } }),
+    prisma.jobPhoto.count({ where: { review: "PENDING", crewId: { not: null }, project: m } }),
+    prisma.receiptScan.count({ where: { status: "READ" } }),
   ]);
   const stageCount = (s: string) => byStage.find((b) => b.status === s)?._count ?? 0;
 
@@ -61,12 +64,15 @@ export async function dashboardData(view: MarketView, userId: string) {
       { key: "OI", label: "Overdue invoices", n: overdueInvoices, href: "/reports/ar" },
       { key: "LB", label: "Lost/closed jobs with balance due", n: deadWithBalance, href: "/reports/ar" },
       { key: "CO", label: "Change orders out for signature", n: cosOut, href: "/jobs?stage=all" },
+      { key: "CI", label: "Crew invoices to review", n: crewInvoices, href: "/crews/invoices" },
+      { key: "RC", label: "Receipts not filed", n: receiptsOpen, href: "/receipts" },
     ],
     management: [
       { key: "OR", label: "Material orders not sent", n: ordersDraft, href: "/deliveries" },
       { key: "MR", label: "Measurement orders waiting", n: measuresPending, href: "/jobs?stage=all" },
       { key: "PS", label: "Proposals awaiting signature", n: proposalsOut, href: "/jobs?stage=SUBMITTED" },
       { key: "TK", label: "Overdue tasks", n: overdueTasks, href: "/today" },
+      { key: "PH", label: "Crew photos to check", n: photosToCheck, href: "/crews/photos" },
     ],
   };
 

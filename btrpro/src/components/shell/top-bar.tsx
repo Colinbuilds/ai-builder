@@ -54,6 +54,7 @@ export function TopBar({
   const path = usePathname();
   const [drawer, setDrawer] = useState<null | "all" | "mentions" | "messages" | "updates">(null);
   const closeDrawer = useCallback(() => setDrawer(null), []);
+  const crewArea = path === "/crew" || path.startsWith("/crew/");
   const active = (t: Tool) =>
     t.href === "/" ? path === "/" : !!(t.href && path.startsWith(t.href)) || !!t.items?.some((i) => "href" in i && i.href !== "/" && path.startsWith(i.href.split("?")[0]));
   const itemCls = (t: Tool) =>
@@ -106,6 +107,8 @@ export function TopBar({
     );
   };
   const newTool = tools.find((t) => t.key === "new");
+  // the crew portal has its own header; staff menus never show there
+  if (crewArea) return null;
   return (
     <header className="sticky top-0 z-40 bg-btr-black text-white print:hidden">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-2 px-3 sm:px-4">

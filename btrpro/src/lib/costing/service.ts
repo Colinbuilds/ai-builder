@@ -48,6 +48,9 @@ async function guardEdit(projectId: string, actor: CostActor) {
   return { closed: !!p.costClosedAt };
 }
 
+/** For other modules (receipt filing) to check cost access before touching the job. */
+export const guardCostEdit = guardEdit;
+
 // ---------- baseline ----------
 
 export async function freezeBaseline(projectId: string, estimateId: string, actor: CostActor, reason?: string | null, addOns: string[] = []) {
@@ -272,18 +275,26 @@ export async function previewInvoiceImport(projectId: string, csv: string) {
 }
 
 export async function importInvoices(projectId: string, csv: string, opts: { pos: string[] | null; vendor: string; file?: { bytes: Uint8Array; name: string } | null }, actor: CostActor) {
-  const { closed } = await guardEdit(projectId, actor);
-  if (!opts.vendor.trim()) throw new CostError("Enter the supplier name.");
   const parsed = parseInvoiceCsv(csv);
   if (!parsed.rows.length) throw new CostError(parsed.problems[0] ?? "Nothing to import.");
   const keep = parsed.rows.filter((r) => !opts.pos?.length || (r.po != null && opts.pos.includes(r.po)));
-  const rows = (await classifyRows(projectId, keep)).filter((r) => r.status === "NEW");
-  if (!rows.length) throw new CostError("Every line in this file is already imported (or filtered out by PO).");
   let documentId: string | null = null;
   if (opts.file?.bytes.length) {
+    await guardEdit(projectId, actor);
     const { doc } = await addDocument({ projectId, bytes: opts.file.bytes, fileName: opts.file.name, contentType: "text/csv", userId: actor.id });
     documentId = doc.id;
   }
+  return importInvoiceRows(projectId, keep, { vendor: opts.vendor, documentId, source: "imported" }, actor);
+}
+
+/** Files invoice lines (from a CSV export or a scanned receipt) as material costs, with the price-sheet check on each line. */
+export async function importInvoiceRows(projectId: string, keep: InvoiceRow[], opts: { vendor: string; documentId: string | null; source: string }, actor: CostActor) {
+  const { closed } = await guardEdit(projectId, actor);
+  if (!opts.vendor.trim()) throw new CostError("Enter the supplier name.");
+  if (!keep.length) throw new CostError("Nothing to import.");
+  const rows = (await classifyRows(projectId, keep)).filter((r) => r.status === "NEW");
+  if (!rows.length) throw new CostError("Every line is already imported (or filtered out by PO).");
+  const documentId = opts.documentId;
   // an invoice carrying our PO (or ABC's order #) bills that material order's commitment
   const orders = await prisma.materialOrder.findMany({ where: { projectId }, select: { number: true, supplierOrderNumber: true, commitment: { select: { id: true } } } });
   const commitmentFor = (r: InvoiceRow) => {
@@ -338,7 +349,7 @@ export async function importInvoices(projectId: string, csv: string, opts: { pos
   });
   const total = round(created.reduce((a, c) => a + c.amount, 0), 2);
   const flagged = rows.filter((r) => r.priceFlag).length;
-  await activity(projectId, actor, `${actor.name} imported ${created.length} invoice line(s) from ${opts.vendor.trim()} totaling $${total.toFixed(2)}${flagged ? ` — ${flagged} billed off the price sheet` : ""}`);
+  await activity(projectId, actor, `${actor.name} ${opts.source} ${created.length} invoice line(s) from ${opts.vendor.trim()} totaling $${total.toFixed(2)}${flagged ? ` — ${flagged} billed off the price sheet` : ""}`);
   if (closed) await audit(actor, "JobCost", batch, "import-after-close", null, { lines: created.length, total });
   return { count: created.length, total, flagged, skipped: keep.length - rows.length };
 }

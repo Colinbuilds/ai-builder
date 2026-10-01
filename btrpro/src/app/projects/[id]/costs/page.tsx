@@ -463,7 +463,10 @@ export default async function CostsPage({
             />
             <div className="rounded-md border p-3">
               <p className="mb-2 text-sm font-medium">
-                Import supplier invoices (CSV from myABCsupply or any supplier)
+                Import supplier invoices (CSV from myABCsupply or any supplier) ·{" "}
+                <Link href={`/receipts`} className="font-normal text-btr-link underline">
+                  or scan a paper receipt
+                </Link>
               </p>
               <InvoiceImport projectId={id} />
             </div>

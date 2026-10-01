@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { compliance } from "@/lib/production/rules";
 import { CrewForm } from "@/components/production/forms";
 import { CrewLink } from "@/components/portal/forms";
+import { CrewLoginPanel } from "@/components/crew/office";
 import { crewUrl } from "@/lib/portal/crew";
 import { ComplianceBadge } from "@/components/production/compliance-badge";
 import { formatDate } from "@/lib/utils";
@@ -19,6 +20,7 @@ export default async function CrewPage({ params }: { params: Promise<{ cid: stri
     },
   });
   if (!crew) notFound();
+  const loginOn = (await prisma.crew.count({ where: { id: crew.id, passwordHash: { not: null } } })) > 0;
   return (
     <div className="flex flex-col gap-5">
       <Link href="/crews" className="text-sm text-muted-foreground">
@@ -29,6 +31,13 @@ export default async function CrewPage({ params }: { params: Promise<{ cid: stri
         <ComplianceBadge c={compliance(crew, new Date())} />
       </div>
       <CrewForm crew={crew} />
+      <CrewLoginPanel
+        crewId={crew.id}
+        email={crew.loginEmail}
+        on={loginOn}
+        admin={user.role === "ADMIN"}
+        lastLogin={crew.lastLoginAt ? crew.lastLoginAt.toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" }) : null}
+      />
       <CrewLink crewId={crew.id} url={crew.portalToken ? crewUrl(crew.portalToken) : null} />
       <section>
         <h2 className="font-semibold">Upcoming</h2>

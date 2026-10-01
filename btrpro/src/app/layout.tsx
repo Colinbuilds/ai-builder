@@ -21,6 +21,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
             orange: true,
             items: [
               { href: "/projects/new", label: "New job / lead" },
+              { href: "/receipts", label: "Scan a receipt" },
               { href: "/customers/new?kind=contact", label: "New contact" },
               { href: "/customers/new", label: "New customer account" },
               { href: "/today#add-task", label: "New task" },
@@ -68,6 +69,12 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
         { href: "/schedule", label: "Schedule" },
         { href: "/deliveries", label: "Deliveries" },
         { href: "/crews", label: "Crews & subs" },
+        ...(staff
+          ? [
+              { href: "/crews/invoices", label: "Crew invoices" },
+              { href: "/receipts", label: "Supplier receipts" },
+            ]
+          : []),
       ],
     },
     ...(staff
