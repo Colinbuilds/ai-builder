@@ -1329,6 +1329,7 @@ model Invoice {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   payments     Payment[]
+  calls        CollectionNote[]
 }
 
 model Payment {
@@ -1635,4 +1636,19 @@ model SupplierBill {
   @@index([status])
   @@index([vendor, invoiceNumber])
   @@index([projectId])
+}
+
+// Collections call log on an overdue invoice: what was said, and when to follow up.
+model CollectionNote {
+  id         String    @id @default(cuid())
+  invoiceId  String
+  invoice    Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  note       String
+  // CALLED | LEFT_VM | EMAILED | PROMISED | DISPUTE
+  outcome    String
+  followUpOn DateTime?
+  by         String
+  createdAt  DateTime  @default(now())
+
+  @@index([invoiceId])
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AlertTriangle, Binoculars, Camera, Receipt, Wallet, CalendarClock, FileSignature, History, Ruler, ShoppingCart, Signature, DollarSign, ListChecks, Megaphone } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -35,9 +36,11 @@ const ICON = {
   PH: Camera,
 } as const;
 
-export default async function Dashboard({ searchParams }: { searchParams: Promise<{ lb?: string; denied?: string }> }) {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ lb?: string; denied?: string; dash?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
+  // the office and purchasing start on their own to-do lists (the dashboard is one click away)
+  if (!sp.lb && !sp.denied && !sp.dash && (user.role === "OFFICE" || user.role === "PURCHASING")) redirect(user.role === "OFFICE" ? "/desk/office" : "/desk/purchasing");
   const view = await getMarketView();
   const staff = user.role !== "VIEWER";
   const admin = user.role === "ADMIN";

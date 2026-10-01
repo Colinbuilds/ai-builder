@@ -74,6 +74,8 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
               { href: "/crews/invoices", label: "Crew invoices" },
               { href: "/receipts", label: "Supplier receipts" },
               { href: "/bills", label: "Supplier bills (pay ABC)" },
+              { href: "/desk/office", label: "Office desk" },
+              { href: "/desk/purchasing", label: "Purchasing desk" },
             ]
           : []),
       ],
@@ -88,7 +90,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
               { href: "/reports/sales", label: "Sales & pipeline" },
               { href: "/reports/profit", label: "Profit" },
               { href: "/reports/commissions", label: "Commission calculator" },
-              ...(admin ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : []),
+              ...(admin || role === "OFFICE" ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : []),
             ],
           },
         ]
