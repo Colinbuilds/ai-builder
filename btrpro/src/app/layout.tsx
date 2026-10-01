@@ -8,7 +8,7 @@ import { recentJobs } from "@/lib/shell/recent";
 import { TopBar, type Tool } from "@/components/shell/top-bar";
 import { PagePanel } from "@/components/shell/page-panel";
 
-function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: string }[] } {
+function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href: string; label: string }[] } {
   const staff = role !== "VIEWER";
   const admin = role === "ADMIN";
   const tools: Tool[] = [
@@ -87,6 +87,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
             label: "Reports",
             icon: "FileText" as const,
             items: [
+              ...(isOwner ? [{ href: "/audit", label: "Owner audit" }] : []),
               { href: "/reports/sales", label: "Sales & pipeline" },
               { href: "/reports/profit", label: "Profit" },
               { href: "/reports/commissions", label: "Commission calculator" },
@@ -149,14 +150,14 @@ export default async function RootLayout({
   );
 }
 
-async function Shell({ user }: { user: { id: string; name: string; role: string } }) {
+async function Shell({ user }: { user: { id: string; name: string; role: string; isOwner?: boolean } }) {
   const [counts, recent, watching, view] = await Promise.all([
     topBarCounts(user.id),
     recentJobs(user.id),
     prisma.jobWatch.count({ where: { userId: user.id } }),
     getMarketView(),
   ]);
-  const { tools, admin } = toolsFor(user.role);
+  const { tools, admin } = toolsFor(user.role, user.isOwner);
   return (
     <TopBar
       user={{ name: user.name, role: user.role }}

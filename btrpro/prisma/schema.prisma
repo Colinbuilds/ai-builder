@@ -1652,3 +1652,20 @@ model CollectionNote {
 
   @@index([invoiceId])
 }
+
+// Owner audit: an owner's look at an approved item (supplier bill, crew invoice, voided invoice, change order).
+model AuditReview {
+  id        String   @id @default(cuid())
+  // SUPPLIER_BILL | CREW_INVOICE | INVOICE_VOID | CHANGE_ORDER
+  entity    String
+  entityId  String
+  // OK | FLAG
+  result    String
+  note      String?
+  by        String
+  byId      String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
