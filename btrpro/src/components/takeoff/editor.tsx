@@ -254,12 +254,12 @@ export function TakeoffEditor({
       const imageBase64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
       const r = await aiMeasureAction(documentId, { imageBase64, mediaType: "image/jpeg", region, view });
       if (!r.ok) return setAi({ busy: false, message: r.message });
-      if (!r.items.length) return setAi({ busy: false, message: "The AI couldn't trace anything it was sure of here. Zoom in on one roof or wall and try again, or trace by hand.", cannot: r.cannotTrace });
+      if (!r.items.length) return setAi({ busy: false, message: "BTRbot couldn't trace anything it was sure of here. Zoom in on one roof or wall and try again, or trace by hand.", cannot: r.cannotTrace });
       commitItems([...items, ...r.items]);
       setMode("select");
       setAi({
         busy: false,
-        message: `AI drew ${r.items.length} item${r.items.length === 1 ? "" : "s"} (dashed) on ${r.sheet}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`,
+        message: `BTRbot drew ${r.items.length} item${r.items.length === 1 ? "" : "s"} (dashed) on ${r.sheet}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`,
         cannot: r.cannotTrace,
       });
     } catch (e) {
@@ -267,7 +267,7 @@ export function TakeoffEditor({
     }
   };
   const aiCount = items.filter((i) => i.ai).length;
-  const acceptAi = (id?: string) => commitItems(items.map((i) => (i.ai && (!id || i.id === id) ? { ...i, ai: undefined, note: i.note?.replace(/^AI: /, "AI (checked): ") ?? null } : i)));
+  const acceptAi = (id?: string) => commitItems(items.map((i) => (i.ai && (!id || i.id === id) ? { ...i, ai: undefined, note: i.note?.replace(/^BTRbot: /, "BTRbot (checked): ") ?? null } : i)));
 
   // ---------- pointer → sheet coordinates ----------
   const toSheet = (e: { clientX: number; clientY: number }, constrain: boolean): Pt => {
@@ -552,9 +552,9 @@ export function TakeoffEditor({
                 onClick={aiMeasure}
                 disabled={ai.busy || !size}
                 className="rounded-md border border-violet-400 bg-violet-50 px-2.5 py-1 text-violet-900 hover:bg-violet-100 disabled:opacity-50 dark:bg-violet-950 dark:text-violet-200"
-                title="The AI traces what's on screen as dashed drafts. Zoom to one roof plan or elevation first for the best result."
+                title="BTRbot traces what's on screen as dashed drafts. Zoom to one roof plan or elevation first for the best result."
               >
-                {ai.busy ? "AI measuring…" : "AI measure on screen"}
+                {ai.busy ? "BTRbot measuring…" : "BTRbot measure on screen"}
               </button>
               <button type="button" onClick={() => zoomBy(1 / 1.25)} className="rounded-md border px-2.5 py-1 hover:bg-accent" aria-label="Zoom out">
                 −
@@ -776,7 +776,7 @@ export function TakeoffEditor({
                 <div className="mt-2 flex gap-3">
                   {sel.ai && (
                     <button type="button" onClick={() => acceptAi(sel.id)} className="text-violet-700 hover:underline dark:text-violet-300">
-                      Accept this AI line
+                      Accept this BTRbot line
                     </button>
                   )}
                   <button
@@ -796,7 +796,7 @@ export function TakeoffEditor({
 
           {(ai.message || aiCount > 0) && (
             <div className="rounded-md border border-violet-300 bg-violet-50/60 p-3 dark:border-violet-800 dark:bg-violet-950/40">
-              <div className="text-xs font-semibold tracking-wide text-violet-800 uppercase dark:text-violet-300">AI measure</div>
+              <div className="text-xs font-semibold tracking-wide text-violet-800 uppercase dark:text-violet-300">BTRbot measure</div>
               {ai.message && <p className="mt-1">{ai.message}</p>}
               {ai.cannot && ai.cannot.length > 0 && (
                 <div className="mt-1 text-xs">
@@ -814,11 +814,11 @@ export function TakeoffEditor({
                     Accept all {aiCount} after checking
                   </button>
                   <button type="button" onClick={() => commitItems(items.filter((i) => !i.ai))} className="rounded-md border px-2.5 py-1 hover:bg-accent">
-                    Remove AI drafts
+                    Remove BTRbot drafts
                   </button>
                 </div>
               )}
-              <p className="mt-2 text-xs text-muted-foreground">The AI only draws; lengths and areas come from this sheet&apos;s checked scale. Set and check the scale first.</p>
+              <p className="mt-2 text-xs text-muted-foreground">BTRbot only draws; lengths and areas come from this sheet&apos;s checked scale. Set and check the scale first.</p>
             </div>
           )}
 

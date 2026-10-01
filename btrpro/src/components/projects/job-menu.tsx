@@ -67,7 +67,7 @@ export function jobMenu(id: string, c: JobCounts, showCosts: boolean): Item[][] 
           ]
         : []),
       { href: `${b}#portal`, label: "Customer portal", icon: Users },
-      { href: `${b}/assistant`, label: "AI assistant", icon: Bot },
+      { href: `${b}/assistant`, label: "BTRbot", icon: Bot },
     ],
     [
       { href: `${b}#history`, label: "History", icon: History },
@@ -88,7 +88,7 @@ const LABEL: [RegExp, string][] = [
   [/\/photos/, "Photos"],
   [/\/billing/, "Invoices & payments"],
   [/\/costs/, "Profit analysis"],
-  [/\/assistant/, "AI assistant"],
+  [/\/assistant/, "BTRbot"],
 ];
 
 /** The bar under the job header: Overview, the section you're in, and the JOB MENU panel. */

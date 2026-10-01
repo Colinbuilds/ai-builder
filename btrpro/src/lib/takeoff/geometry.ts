@@ -186,7 +186,7 @@ export function pageTotals(page: PageTakeoff, allowancePct = 1): { totals: Total
     }
   }
   if (unsized) problems.push(!page.scale ? "Set the scale before anything can be measured." : `${unsized} item${unsized === 1 ? "" : "s"} need${unsized === 1 ? "s" : ""} a pitch (set the sheet pitch or the item's own).`);
-  if (drafts) problems.push(`${drafts} AI-drawn item${drafts === 1 ? " isn't" : "s aren't"} reviewed yet and ${drafts === 1 ? "isn't" : "aren't"} counted. Check each one against the plan, then accept or delete.`);
+  if (drafts) problems.push(`${drafts} BTRbot-drawn item${drafts === 1 ? " isn't" : "s aren't"} reviewed yet and ${drafts === 1 ? "isn't" : "aren't"} counted. Check each one against the plan, then accept or delete.`);
   const roof = sums.get("roof_total_sf");
   if (roof) add("roof_sq", "Roof squares", "SQ", roof.raw / 100);
   const wall = sums.get("wall_total_sf");

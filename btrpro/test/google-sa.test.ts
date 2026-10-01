@@ -62,6 +62,6 @@ describe("AI error messages", () => {
     const { aiErrorMessage } = await import("@/lib/ai/claude");
     const bad = (msg: string) => new Anthropic.BadRequestError(400, { type: "error", error: { type: "invalid_request_error", message: msg } }, msg, new Headers());
     expect(aiErrorMessage(bad("Your credit balance is too low to access the Anthropic API."))).toMatch(/out of credit/);
-    expect(aiErrorMessage(bad("image exceeds 5 MB maximum"))).toBe("AI request rejected (400): image exceeds 5 MB maximum.");
+    expect(aiErrorMessage(bad("image exceeds 5 MB maximum"))).toBe("BTRbot request rejected (400): image exceeds 5 MB maximum.");
   });
 });

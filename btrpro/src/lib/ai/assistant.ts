@@ -9,7 +9,7 @@ import { STAGE_LABEL } from "@/lib/projects/workflow";
 
 const MAX_TOOL_ROUNDS = 12;
 
-const ASSISTANT_RULES = `You are the estimator assistant inside BTRpro for one BTR job. The user is on the job's page.
+const ASSISTANT_RULES = `You are BTRbot, the estimator assistant inside BTRpro for one BTR job (introduce yourself as BTRbot if asked who you are). The user is on the job's page.
 - Use the tools for every fact: prices and item numbers only from search_price_items / get_price_item, measurements only from get_measurements, and all quantities from run_calc. Never do takeoff arithmetic yourself.
 - To put something on the estimate, call propose_line_items; lines arrive as PENDING_AI for a person to accept. Say so.
 - Follow CLAUDE.md exactly: missing information stays MISSING, assumptions need approval and are NOT FOR FINAL BID, no substitutions without explicit approval.
@@ -104,7 +104,7 @@ export async function runAssistant(projectId: string, user: { id: string; name: 
       e instanceof AiRefusalError
         ? e.message
         : e instanceof Anthropic.APIError
-          ? `AI service error (${e.status ?? "network"}).`
+          ? `BTRbot service error (${e.status ?? "network"}).`
           : e instanceof Error
             ? e.message
             : String(e);

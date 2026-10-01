@@ -432,10 +432,10 @@ export const scopesOf = (p: { scopes: unknown }) => parseScopes(p.scopes);
 export async function decideAiLine(lineId: string, accept: boolean, actor: Actor) {
   const l = await prisma.estimateLine.findUniqueOrThrow({ where: { id: lineId }, include: { estimate: true } });
   assertEditable(l.estimate);
-  if (l.sourceStatus !== "PENDING_AI") throw new EstimateError("That line isn't an AI suggestion.");
+  if (l.sourceStatus !== "PENDING_AI") throw new EstimateError("That line isn't a BTRbot suggestion.");
   if (!accept) {
     await prisma.estimateLine.delete({ where: { id: lineId } });
-    await log(l.estimate.projectId, actor, `${actor.name} rejected AI suggestion "${l.itemName}"`);
+    await log(l.estimate.projectId, actor, `${actor.name} rejected BTRbot suggestion "${l.itemName}"`);
   } else {
     const it = l.supplierItemNumber ? (await liveItems([l.supplierItemNumber], await priceScopeFor(l.estimate.projectId))).get(l.supplierItemNumber) : undefined;
     if (l.supplierItemNumber && !it) throw new EstimateError(`${l.supplierItemNumber} is no longer on a loaded sheet.`);
@@ -445,7 +445,7 @@ export async function decideAiLine(lineId: string, accept: boolean, actor: Actor
       where: { id: lineId },
       data: { sourceStatus: priced.sourceStatus, unitCost: priced.unitCost, total: priced.total, note: `${l.note ?? ""} · accepted by ${actor.name}`.trim() },
     });
-    await log(l.estimate.projectId, actor, `${actor.name} accepted AI suggestion "${l.itemName}"`);
+    await log(l.estimate.projectId, actor, `${actor.name} accepted BTRbot suggestion "${l.itemName}"`);
   }
   await refreshReadiness(l.estimate.projectId);
 }

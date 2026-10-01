@@ -97,7 +97,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
           <p className="rounded-lg border border-btr-line p-4 text-sm">
             {scan.status === "READING"
               ? "Reading the receipt… this page updates on its own."
-              : /Railway|isn't configured|AI service|AI request|out of credit|busy/.test(scan.error ?? "")
+              : /Railway|isn't configured|BTRbot service|BTRbot request|BTRbot isn|out of credit|busy/.test(scan.error ?? "")
                 ? `Couldn't read this receipt: ${scan.error}`
                 : `Couldn't read this receipt${scan.error ? `: ${scan.error}` : "."} Retake the photo flat and in good light, or enter it by hand on the job's costs.`}
           </p>

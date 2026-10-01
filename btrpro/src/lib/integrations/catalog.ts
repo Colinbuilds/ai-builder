@@ -34,10 +34,10 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
   return [
     {
       key: "anthropic",
-      name: "Claude (AI)",
+      name: "BTRbot (Claude AI)",
       does: "Reads EagleView reports and plans, summarizes job email, writes catch-ups, and powers the estimator assistant. It never does the math and never invents prices.",
       needs: ["ANTHROPIC_API_KEY", "ANTHROPIC_MODEL (default claude-opus-5-5)"],
-      fallback: "Enter measurements and notes by hand; AI buttons are disabled.",
+      fallback: "Enter measurements and notes by hand; BTRbot buttons are disabled.",
       status: aiConfigured() ? "connected" : "not_configured",
       statusText: aiConfigured() ? "Configured" : "ANTHROPIC_API_KEY not set",
     },
@@ -112,7 +112,7 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
     {
       key: "eagleview",
       name: "EagleView",
-      does: "Order roof and walls reports from the job and receive them automatically, then read them with AI.",
+      does: "Order roof and walls reports from the job and receive them automatically, then read them with BTRbot.",
       needs: ["EagleView API credentials for BTR's account (EAGLEVIEW_CLIENT_ID / EAGLEVIEW_CLIENT_SECRET)"],
       fallback: "Upload the EagleView PDF to the job's Documents tab; it's read and queued for confirmation.",
       status: env("EAGLEVIEW_CLIENT_ID", "EAGLEVIEW_CLIENT_SECRET") ? "ready" : "manual_only",

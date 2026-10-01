@@ -77,7 +77,7 @@ export async function sendToJob(documentId: string, page: number, actor: { id: s
   if (!pg.scale) throw new TakeoffError("Set the scale before sending measurements to the job.");
   if (pg.scale.check && Math.abs(pg.scale.check.diffPct) > 1) throw new TakeoffError("The scale check is off by more than 1%. Re-calibrate first.");
   const drafts = pg.items.filter((i) => i.ai).length;
-  if (drafts) throw new TakeoffError(`${drafts} AI-drawn item${drafts === 1 ? " is" : "s are"} still unreviewed. Accept or delete ${drafts === 1 ? "it" : "them"} before sending.`);
+  if (drafts) throw new TakeoffError(`${drafts} BTRbot-drawn item${drafts === 1 ? " is" : "s are"} still unreviewed. Accept or delete ${drafts === 1 ? "it" : "them"} before sending.`);
   const allowance = (await getSettings()).takeoffAllowancePct ?? 1;
   const { totals } = pageTotals(pg, allowance);
   if (!totals.length) throw new TakeoffError("Nothing on this sheet is measured yet.");

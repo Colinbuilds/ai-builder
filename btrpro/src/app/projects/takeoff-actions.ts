@@ -41,7 +41,7 @@ export async function aiMeasureAction(
   input: { imageBase64: string; mediaType: "image/jpeg" | "image/png"; region: AiRegion; view: View },
 ): Promise<AiMeasureResult> {
   await requireUser([...EDIT]);
-  if (!aiConfigured()) return { ok: false, message: "AI isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now." };
+  if (!aiConfigured()) return { ok: false, message: "BTRbot isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now." };
   const doc = await prisma.document.findUnique({ where: { id: documentId }, select: { id: true } });
   if (!doc) return { ok: false, message: "That plan file is gone." };
   try {

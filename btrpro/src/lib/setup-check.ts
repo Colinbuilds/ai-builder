@@ -70,13 +70,13 @@ export function setupChecks(): Check[] {
   out.push(
     key
       ? key.startsWith("sk-ant-api")
-        ? { name: "AI (ANTHROPIC_API_KEY)", status: "ok", what: "API key set." }
-        : { name: "AI (ANTHROPIC_API_KEY)", status: "problem", what: "Doesn't look like an API key (they start sk-ant-api).", fix: "Paste the key from console.anthropic.com → API Keys." }
+        ? { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "ok", what: "API key set." }
+        : { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "problem", what: "Doesn't look like an API key (they start sk-ant-api).", fix: "Paste the key from console.anthropic.com → API Keys." }
       : tok?.startsWith("sk-ant-api")
-        ? { name: "AI (ANTHROPIC_API_KEY)", status: "problem", what: "An API key is in ANTHROPIC_AUTH_TOKEN, which sends it the wrong way and gets rejected.", fix: "Rename the variable to ANTHROPIC_API_KEY." }
+        ? { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "problem", what: "An API key is in ANTHROPIC_AUTH_TOKEN, which sends it the wrong way and gets rejected.", fix: "Rename the variable to ANTHROPIC_API_KEY." }
         : tok
-          ? { name: "AI (ANTHROPIC_API_KEY)", status: "problem", what: "Only ANTHROPIC_AUTH_TOKEN is set. Use an API key instead.", fix: "console.anthropic.com → API Keys → Create Key; set ANTHROPIC_API_KEY; remove ANTHROPIC_AUTH_TOKEN." }
-          : { name: "AI (ANTHROPIC_API_KEY)", status: "missing", what: "Not set — receipt reading, directory import, plan review and the assistant are off.", fix: "console.anthropic.com → API Keys → Create Key; set ANTHROPIC_API_KEY." },
+          ? { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "problem", what: "Only ANTHROPIC_AUTH_TOKEN is set. Use an API key instead.", fix: "console.anthropic.com → API Keys → Create Key; set ANTHROPIC_API_KEY; remove ANTHROPIC_AUTH_TOKEN." }
+          : { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "missing", what: "Not set — receipt reading, directory import, plan review and the assistant are off.", fix: "console.anthropic.com → API Keys → Create Key; set ANTHROPIC_API_KEY." },
   );
   const drv = process.env.STORAGE_DRIVER ?? "local";
   if (drv === "s3") {

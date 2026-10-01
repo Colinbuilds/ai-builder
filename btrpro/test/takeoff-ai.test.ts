@@ -53,7 +53,7 @@ describe("AI draft takeoff", () => {
     };
     let t = pageTotals(page);
     expect(t.totals).toEqual([]);
-    expect(t.problems.join(" ")).toMatch(/AI-drawn item isn't reviewed/);
+    expect(t.problems.join(" ")).toMatch(/BTRbot-drawn item isn't reviewed/);
     t = pageTotals({ ...page, items: [{ ...page.items[0], ai: undefined }] });
     expect(t.totals.find((x) => x.key === "siding_starter_lf")?.raw).toBe(10);
   });
