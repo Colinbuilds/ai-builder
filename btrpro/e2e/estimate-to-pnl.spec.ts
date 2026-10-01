@@ -24,6 +24,10 @@ test("estimate to job P&L", async ({ page }) => {
   await page.click("button[type=submit]");
   await expect(page.locator("h1")).toContainText("Dashboard");
 
+  // Blueprint measurer lives under Production
+  await page.goto("/takeoff");
+  await expect(page.locator("h1")).toContainText("Blueprint measurer");
+
   // 1. New residential reroof
   // (lead form order: name → phone/email → address → job type → assigned to)
   await page.goto("/projects/new");

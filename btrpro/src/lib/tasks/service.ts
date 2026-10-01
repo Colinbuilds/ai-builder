@@ -17,7 +17,8 @@ type Rule = {
   key: string;
   title: string;
   days: number;
-  who: "sales" | "estimator" | "none";
+  // "office" tasks stay unassigned and show on the Office desk
+  who: "sales" | "estimator" | "office" | "none";
   when?: (p: StageProject) => boolean;
 };
 
@@ -35,9 +36,9 @@ export const STAGE_TASKS: Record<string, Rule[]> = {
   SOLD: [
     {
       key: "form17",
-      title: "Get Form 17 executed with the owner (before ordering materials)",
+      title: "Office: get Form 17 executed with the owner (before ordering materials)",
       days: 1,
-      who: "sales",
+      who: "office",
       when: (p) => p.isPublic && p.isTaxExempt && p.form17Status !== "EXECUTED",
     },
     {
@@ -79,6 +80,12 @@ export const STAGE_TASKS: Record<string, Rule[]> = {
       key: "final-invoice",
       title: "Send the final invoice",
       days: 1,
+      who: "sales",
+    },
+    {
+      key: "warranty",
+      title: "Register the manufacturer warranty",
+      days: 3,
       who: "sales",
     },
     {

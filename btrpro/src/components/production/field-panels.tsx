@@ -1,6 +1,5 @@
 import { addPunchAction, punchDoneAction, readyCheckAction, resolveIssueAction } from "@/app/projects/field-actions";
 import type { ReadyItem } from "@/lib/production/field";
-import { CompleteJob } from "./complete-job";
 
 const mark = (ok: boolean | null) => (ok ? "✓" : "!");
 const tone = (ok: boolean | null) => (ok ? "text-green-700" : "text-amber-700");
@@ -146,31 +145,6 @@ export function IssuesPanel({ projectId, issues, canEdit, canPrice }: { projectI
           )}
         </div>
       ))}
-    </section>
-  );
-}
-
-export function WalkthroughPanel({ projectId, items, ready, stage, canEdit }: { projectId: string; items: { key: string; label: string; ok: boolean; detail?: string }[]; ready: boolean; stage: string; canEdit: boolean }) {
-  const done = ["COMPLETE", "INVOICED", "CLOSED"].includes(stage);
-  return (
-    <section id="walkthrough" className="flex flex-col gap-2">
-      <h2 className="font-semibold">Final walkthrough</h2>
-      <ul className="grid gap-1 text-sm sm:grid-cols-2">
-        {items.map((i) => (
-          <li key={i.key} className="flex items-start gap-2">
-            <span className={`w-5 text-center font-bold ${tone(i.ok)}`}>{mark(i.ok)}</span>
-            <span>
-              {i.label}
-              {i.detail && <span className="block text-xs text-muted-foreground">{i.detail}</span>}
-            </span>
-          </li>
-        ))}
-      </ul>
-      {done ? (
-        <p className="text-sm text-green-700">Job is marked complete.</p>
-      ) : (
-        canEdit && <CompleteJob projectId={projectId} ready={ready} />
-      )}
     </section>
   );
 }

@@ -2,7 +2,7 @@
 // Finished-work and site-cleanup photos from the crew are required before the crew can invoice the job.
 import type { Role } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { alertPMs } from "@/lib/sms";
+import { crewNotice } from "./notice";
 import { readUpload, saveUpload } from "@/lib/storage";
 import { addCost } from "@/lib/costing/service";
 import { sniff } from "@/lib/portal/crew";
@@ -85,7 +85,7 @@ export async function addJobPhotos(
   if (who.crewId && (stage === "BEFORE" || stage === "FINISHED")) {
     const today = new Date(new Date().toISOString().slice(0, 10));
     const earlier = await prisma.jobPhoto.count({ where: { projectId, crewId: who.crewId, stage, takenAt: { gte: today }, id: { notIn: saved.map((x) => x.id) } } });
-    if (!earlier) await alertPMs(projectId, stage === "BEFORE" ? `${who.name} started on site` : `${who.name} finished — photos are in for review`);
+    if (!earlier) await crewNotice(projectId, stage === "BEFORE" ? `${who.name} started on site` : `${who.name} finished — photos are in for review`);
   }
   return saved;
 }

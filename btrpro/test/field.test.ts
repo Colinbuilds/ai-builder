@@ -1,8 +1,8 @@
-// TEST_ONLY production follow-through: ready checklist, punch list, crew-reported issues, final walkthrough.
+// TEST_ONLY production follow-through: ready checklist, crew-reported issues.
 import { afterAll, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { createProject } from "@/lib/projects/service";
-import { addPunch, completeJob, readyChecklist, reportIssue, resolveIssue, setPunchDone, setReadyCheck, walkthrough } from "@/lib/production/field";
+import { readyChecklist, reportIssue, resolveIssue, setReadyCheck } from "@/lib/production/field";
 
 afterAll(() => prisma.$disconnect());
 
@@ -46,27 +46,13 @@ describe("field issues", () => {
   });
 });
 
-describe("final walkthrough", () => {
-  it("open punch items and unapproved photos hold it; a note completes anyway", async () => {
-    const { a, crew, job } = await setup();
-    await prisma.project.update({ where: { id: job.id }, data: { status: "IN_PRODUCTION", contractAmount: 10000, contractSignedAt: new Date() } });
-    const punch = await addPunch(job.id, "TEST_ONLY reseal pipe boot", crew.id, a);
-    let w = await walkthrough(job.id);
-    expect(w.ready).toBe(false);
-    await expect(completeJob(job.id, null, a)).rejects.toThrow(/punch list cleared/);
-    await setPunchDone(punch.id, true, a);
-    for (const stage of ["FINISHED", "CLEANUP"]) await prisma.jobPhoto.create({ data: { projectId: job.id, crewId: crew.id, uploadedBy: "t", stage, fileUrl: "local:x", contentType: "image/png", review: "OK" } });
-    w = await walkthrough(job.id);
-    expect(w.ready).toBe(true);
-    await completeJob(job.id, null, a);
-    expect((await prisma.project.findUniqueOrThrow({ where: { id: job.id } })).status).toBe("COMPLETE");
-    expect(await prisma.task.count({ where: { projectId: job.id, auto: "COMPLETE:warranty" } })).toBe(1);
-  });
-
-  it("completes with open items when a note says why", async () => {
-    const { a, job } = await setup();
-    await prisma.project.update({ where: { id: job.id }, data: { status: "IN_PRODUCTION", contractAmount: 10000, contractSignedAt: new Date() } });
-    await completeJob(job.id, "TEST_ONLY homeowner walked it with us", a);
-    expect((await prisma.project.findUniqueOrThrow({ where: { id: job.id } })).status).toBe("COMPLETE");
+describe("office desk", () => {
+  it("lists sold tax-exempt public jobs still missing Form 17", async () => {
+    const { officeDesk } = await import("@/lib/desks");
+    const { job } = await setup();
+    await prisma.project.update({ where: { id: job.id }, data: { status: "SOLD", isPublic: true, isTaxExempt: true, form17Status: "PENDING" } });
+    expect((await officeDesk()).form17.some((p) => p.id === job.id)).toBe(true);
+    await prisma.project.update({ where: { id: job.id }, data: { form17Status: "EXECUTED" } });
+    expect((await officeDesk()).form17.some((p) => p.id === job.id)).toBe(false);
   });
 });

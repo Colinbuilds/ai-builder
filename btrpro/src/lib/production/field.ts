@@ -1,10 +1,8 @@
-// Production follow-through: ready-to-schedule checklist (warnings, never a block), punch list, crew-reported
-// field issues, and the final walkthrough before the job is marked complete and invoiced.
+// Production follow-through: ready-to-schedule checklist (warnings, never a block), punch list, and
+// crew-reported field issues.
 import { prisma } from "@/lib/db";
 import { saveUpload } from "@/lib/storage";
-import { alertPMs } from "@/lib/sms";
-import { changeStage } from "@/lib/projects/service";
-import { REQUIRED_STAGES, STAGE_LABEL } from "@/lib/crew/service";
+import { crewNotice } from "@/lib/crew/notice";
 import type { Role } from "@/lib/session";
 
 export class FieldError extends Error {}
@@ -37,7 +35,7 @@ export async function readyChecklist(projectId: string): Promise<ReadyItem[]> {
     const paid = p.invoices.reduce((a, i) => a + i.payments.reduce((b, x) => b + x.amount, 0), 0);
     items.push({ key: "deposit", label: "Deposit paid", ok: p.invoices.length ? paid > 0 : false, detail: !p.invoices.length ? "No deposit invoice." : paid > 0 ? undefined : "Deposit invoice not paid yet." });
   }
-  if (p.isPublic && p.isTaxExempt) items.push({ key: "form17", label: "Form 17 executed", ok: p.form17Status === "EXECUTED" });
+  if (p.isPublic && p.isTaxExempt) items.push({ key: "form17", label: "Form 17 executed (office)", ok: p.form17Status === "EXECUTED", detail: p.form17Status === "EXECUTED" ? undefined : "Tax-exempt public job — the office gets it signed with the owner." });
   const delivered = p.materialOrders.some((o) => o.status === "DELIVERED");
   const confirmed = p.materialOrders.filter((o) => o.confirmedDate);
   const beforeInstall = install ? confirmed.some((o) => o.confirmedDate! <= install.startDate) : confirmed.length > 0;
@@ -93,7 +91,7 @@ export async function reportIssue(crew: { crewId: string; name: string }, projec
   await prisma.task.create({
     data: { projectId, title: `Crew found an issue: ${note.trim().slice(0, 140)} — price it or mark no charge`, assigneeId: p.salespersonId ?? p.estimatorId, dueDate: new Date(), auto: `ISSUE:${issue.id}`, createdBy: crew.name },
   });
-  await alertPMs(projectId, `${crew.name} reported an issue: ${note.trim().slice(0, 200)}`);
+  await crewNotice(projectId, `${crew.name} reported an issue: ${note.trim().slice(0, 200)}`);
   return issue;
 }
 
@@ -102,33 +100,4 @@ export async function resolveIssue(id: string, status: "PRICED" | "NO_CHARGE", r
   await prisma.task.updateMany({ where: { auto: `ISSUE:${id}`, doneAt: null }, data: { doneAt: new Date(), doneBy: actor.name } });
   await prisma.projectActivity.create({ data: { projectId: i.projectId, userId: actor.id, kind: "production", text: `${actor.name} ${status === "PRICED" ? "priced" : "marked no charge"} the crew's issue: ${i.note}${resolution ? ` — ${resolution}` : ""}` } });
   return i;
-}
-
-// ---------- final walkthrough ----------
-
-export async function walkthrough(projectId: string) {
-  const [openPunch, photos] = await Promise.all([
-    prisma.punchItem.count({ where: { projectId, doneAt: null } }),
-    prisma.jobPhoto.groupBy({ by: ["stage", "review"], where: { projectId, stage: { in: REQUIRED_STAGES } }, _count: true }),
-  ]);
-  const items = [
-    { key: "punch", label: "Punch list cleared", ok: openPunch === 0, detail: openPunch ? `${openPunch} open` : undefined },
-    ...REQUIRED_STAGES.map((s) => {
-      const any = photos.some((p) => p.stage === s);
-      const ok = photos.some((p) => p.stage === s && p.review === "OK");
-      return { key: s, label: `${STAGE_LABEL[s]} photos approved`, ok, detail: ok ? undefined : any ? "Photos in, not approved yet" : "No photos yet" };
-    }),
-  ];
-  return { items, ready: items.every((i) => i.ok) };
-}
-
-/** Marks the job complete (the office then sees it under "Invoices to send") and adds the warranty registration task. */
-export async function completeJob(projectId: string, note: string | null, actor: Actor) {
-  const w = await walkthrough(projectId);
-  if (!w.ready && !note?.trim()) throw new FieldError(`Not everything is done (${w.items.filter((i) => !i.ok).map((i) => i.label.toLowerCase()).join(", ")}). Add a note to complete it anyway.`);
-  await changeStage(projectId, "COMPLETE", { reason: note?.trim() || undefined }, actor);
-  const p = await prisma.project.findUniqueOrThrow({ where: { id: projectId }, select: { salespersonId: true, estimatorId: true } });
-  await prisma.task.create({
-    data: { projectId, title: "Register the manufacturer warranty (deadline is on the warranty paperwork)", assigneeId: p.salespersonId ?? p.estimatorId, dueDate: new Date(Date.now() + 3 * 86_400_000), auto: "COMPLETE:warranty", createdBy: actor.name },
-  });
 }

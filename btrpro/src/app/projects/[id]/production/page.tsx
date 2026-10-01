@@ -17,8 +17,8 @@ import { CopyButton } from "@/components/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
-import { readyChecklist, walkthrough } from "@/lib/production/field";
-import { IssuesPanel, PunchPanel, ReadyPanel, WalkthroughPanel } from "@/components/production/field-panels";
+import { readyChecklist } from "@/lib/production/field";
+import { IssuesPanel, PunchPanel, ReadyPanel } from "@/components/production/field-panels";
 
 const usd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -53,7 +53,7 @@ export default async function Production({
     }),
     crewsWithCompliance(),
   ]);
-  const [ready, walk] = await Promise.all([readyChecklist(id), walkthrough(id)]);
+  const ready = await readyChecklist(id);
   const crewName = new Map(crews.map((c) => [c.id, c.name]));
   const canEdit = user.role !== "VIEWER";
   const money = canSeeCosts(user, p);
@@ -287,7 +287,6 @@ export default async function Production({
         crews={crewOpts.map((c) => ({ id: c.id, name: c.name }))}
         items={p.punchItems.map((i) => ({ ...i, crewName: i.crewId ? crewName.get(i.crewId) : null }))}
       />
-      <WalkthroughPanel projectId={id} items={walk.items} ready={walk.ready} stage={p.status} canEdit={canEdit} />
     </div>
   );
 }

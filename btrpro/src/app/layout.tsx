@@ -68,6 +68,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       icon: "CalendarDays",
       items: [
         { href: "/schedule", label: "Schedule" },
+        { href: "/takeoff", label: "Blueprint measurer" },
         { href: "/deliveries", label: "Deliveries" },
         { href: "/crews", label: "Crews & subs" },
         ...(staff
