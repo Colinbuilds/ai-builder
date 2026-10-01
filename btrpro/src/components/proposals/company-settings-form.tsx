@@ -80,6 +80,11 @@ export function CompanySettingsForm({ s }: { s: CompanySettings }) {
           "Billed on materials from receipts (change orders and invoices). Blank = 15%. Can be changed per receipt or line.",
         )}
         {field(
+          "takeoffAllowancePct",
+          "Plan takeoff allowance %",
+          "Added on top of traced plan measurements so they land slightly over, never under. Blank = 1%. Waste is separate.",
+        )}
+        {field(
           "cardSurchargePct",
           "Card surcharge %",
           "Added to card payments only, where permitted (up to 3%). Blank = none.",

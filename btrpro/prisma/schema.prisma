@@ -472,6 +472,7 @@ model Document {
   runs         ExtractionRun[]
   costs        JobCost[]
   planReviews  PlanReview[]
+  takeoffs     PlanTakeoff[]
 }
 
 enum MeasurementStatus {
@@ -1547,4 +1548,28 @@ model DirectoryImport {
   createdById String
   createdAt   DateTime  @default(now())
   importedAt  DateTime?
+}
+
+// One sheet's traced takeoff: scale, view, pitch and the drawn lines/areas/counts (points in sheet units).
+model PlanTakeoff {
+  id         String   @id @default(cuid())
+  projectId  String
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  page       Int      @default(1)
+  // ROOF_PLAN | ELEVATION | OTHER
+  view       String   @default("ROOF_PLAN")
+  pitch      Float?
+  scale      Json?
+  items      Json
+  // sheet size in its own units, so totals can be re-computed without opening the file
+  width      Float?
+  height     Float?
+  savedToJob DateTime?
+  updatedBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([documentId, page])
+  @@index([projectId])
 }

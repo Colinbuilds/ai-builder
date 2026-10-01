@@ -20,6 +20,7 @@ import {
   Receipt,
   Settings,
   ShoppingCart,
+  Ruler,
   Users,
 } from "lucide-react";
 import { Dropdown } from "@/components/shell/dropdown";
@@ -49,6 +50,7 @@ export function jobMenu(id: string, c: JobCounts, showCosts: boolean): Item[][] 
     [
       { href: `${b}/production`, label: "Schedule & crews", icon: CalendarDays, n: c.events },
       { href: `${b}/estimates`, label: "Estimates", icon: Calculator, n: c.estimates },
+      { href: `${b}/takeoff`, label: "Plan takeoff (measure)", icon: Ruler },
       { href: `${b}/plans`, label: "Plan review", icon: ClipboardList },
       { href: `${b}/proposals`, label: "Proposals", icon: FileSignature, n: c.proposals },
       { href: `${b}/orders`, label: "Orders", icon: ShoppingCart, n: c.orders },

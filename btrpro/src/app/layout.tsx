@@ -100,6 +100,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },
         { href: "/settings/templates", label: "Estimate templates" },
+        { href: "/estimating/ventilation", label: "Ventilation calculator" },
         ...(staff ? [{ href: "/settings/labor", label: "Labor standards" }] : []),
         { href: "/settings/rules", label: "Rules" },
       ],
