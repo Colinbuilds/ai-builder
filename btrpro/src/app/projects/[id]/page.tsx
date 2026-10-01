@@ -26,6 +26,7 @@ import { MILESTONES, milestoneOf, prettyStages } from "@/lib/projects/milestones
 import { totalsFor } from "@/lib/estimates/service";
 import { STAGE_LABEL, type Stage } from "@/lib/projects/workflow";
 import { Collapsible } from "@/components/collapsible";
+import { MEASUREMENT_BY_KEY } from "@/lib/docs/measurements";
 import { updateDetailsAction, removeProjectContactAction } from "../actions";
 
 const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
@@ -110,6 +111,13 @@ export default async function ProjectPage({
     prisma.projectActivity.findMany({ where: { projectId: id, kind: { in: ["stage", "import"] } }, select: { data: true, text: true, createdAt: true }, orderBy: { createdAt: "asc" } }),
     prisma.project.findUniqueOrThrow({ where: { id }, select: { _count: { select: { emails: true, documents: true, messages: true } } } }),
   ]);
+  const [measures, measureDocs] = await Promise.all([
+    prisma.measurement.findMany({ where: { projectId: id, status: { in: ["CONFIRMED", "USER_ENTERED", "EXTRACTED_PENDING"] } }, select: { key: true, value: true, unit: true, facet: true, status: true }, orderBy: { createdAt: "asc" } }),
+    prisma.document.findMany({ where: { projectId: id, type: "EAGLEVIEW" }, select: { id: true, fileName: true, uploadedAt: true }, orderBy: { uploadedAt: "desc" } }),
+  ]);
+  const firstAppt = await prisma.scheduleEvent.findFirst({ where: { projectId: id, kind: "APPOINTMENT", status: { not: "CANCELLED" } }, orderBy: { startDate: "asc" }, select: { startDate: true, title: true } });
+  const confirmed = measures.filter((m) => m.status !== "EXTRACTED_PENDING");
+  const pendingMeasures = measures.length - confirmed.length;
   const estimateCount = estimates.length;
   const totals = canEdit ? await Promise.all(estimates.map((e) => totalsFor(e.id))) : [];
   const intakeByKey = new Map(project.intake.map((f) => [f.key, f]));
@@ -261,6 +269,7 @@ export default async function ProjectPage({
           <Field k="Work type">{project.constructionType === "NEW" ? "New construction" : project.constructionType === "REROOF" ? "Reroof / replacement" : (project.constructionType ?? "").toString().toLowerCase()}{project.isInsuranceClaim ? " · insurance" : ""}</Field>
           <Field k="Trade">{scopes.map((s) => SCOPE_LABEL[s]).join(", ")}</Field>
           <Field k="Lead source">{project.leadSource ?? ""}</Field>
+          <Field k="First appt">{firstAppt ? `${firstAppt.startDate.toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" })} · ${firstAppt.title.replace(/^Initial appointment ?/, "")}` : ""}</Field>
           <Field k="Sales / est.">
             {project.salesperson?.name ?? "—"} / {project.estimator?.name ?? "—"}
           </Field>
@@ -278,6 +287,41 @@ export default async function ProjectPage({
           </div>
         </Panel>
       </div>
+
+      <Panel id="measurements" title="Measurements" right={<Link className={axLink} href={`${base}/documents`}>{canEdit ? "Add / confirm" : "Documents"}</Link>}>
+        {measureDocs.length === 0 && confirmed.length === 0 ? (
+          <Empty n={0} text={project.eagleViewOrderedAt ? `EagleView ordered ${formatDate(project.eagleViewOrderedAt)} — upload the report when it arrives.` : "No measurements yet. Upload the EagleView report (or plans) on Documents, or enter measurements by hand."} />
+        ) : (
+          <div className="flex flex-col gap-3 text-sm">
+            {measureDocs.map((d) => (
+              <a key={d.id} href={`/api/documents/${d.id}`} target="_blank" className="flex items-center justify-between gap-2 rounded-md border border-btr-line px-3 py-2 hover:bg-muted/50">
+                <span className={`font-medium ${axLink}`}>{d.fileName}</span>
+                <span className="text-xs text-muted-foreground">{formatDate(d.uploadedAt)}</span>
+              </a>
+            ))}
+            {confirmed.length > 0 && (
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
+                {confirmed.slice(0, 12).map((m, i) => (
+                  <div key={i} className="flex justify-between gap-2 border-b border-dashed border-btr-line py-0.5">
+                    <dt className="text-muted-foreground">
+                      {MEASUREMENT_BY_KEY.get(m.key)?.label ?? m.key}
+                      {m.facet ? ` (${m.facet})` : ""}
+                    </dt>
+                    <dd className="tabular-nums">
+                      {m.value ?? "—"} {m.unit ?? ""}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {pendingMeasures > 0 && (
+              <Link href={`${base}/documents`} className="text-btr-link underline">
+                {pendingMeasures} read from documents, waiting to be confirmed
+              </Link>
+            )}
+          </div>
+        )}
+      </Panel>
 
       <CatchUp
         projectId={project.id}

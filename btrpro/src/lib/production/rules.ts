@@ -2,7 +2,7 @@ import { round } from "@/lib/calc/core";
 
 // Pure scheduling / compliance / pay math (no database).
 
-export const EVENT_KINDS: Record<string, string> = { INSTALL: "Install", TEAR_OFF: "Tear-off", INSPECTION: "Inspection", DUMPSTER: "Dumpster drop/swap", REPAIR: "Repair / service", OTHER: "Other" };
+export const EVENT_KINDS: Record<string, string> = { APPOINTMENT: "Appointment", INSTALL: "Install", TEAR_OFF: "Tear-off", INSPECTION: "Inspection", DUMPSTER: "Dumpster drop/swap", REPAIR: "Repair / service", OTHER: "Other" };
 
 export const day = (d: Date) => d.toISOString().slice(0, 10);
 export const atNoon = (ymd: string) => new Date(`${ymd}T12:00:00Z`);

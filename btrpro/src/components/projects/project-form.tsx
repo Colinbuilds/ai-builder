@@ -382,6 +382,30 @@ export function ProjectForm({
           </Field>
         </>
       )}
+      {isNew && (
+        <fieldset className="grid gap-3 rounded-lg border border-btr-line p-3 sm:col-span-2 sm:grid-cols-2">
+          <legend className="px-1 text-sm font-medium">Lead details</legend>
+          <Field label="Priority">
+            <Select name="priority" defaultValue="NORMAL">
+              <option value="NORMAL">Normal</option>
+              <option value="HIGH">High</option>
+            </Select>
+          </Field>
+          <Field label="First appointment (optional)">
+            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+              <Input name="apptDate" type="date" aria-label="Appointment date" />
+              <Input name="apptStart" type="time" aria-label="Start time" className="w-28" />
+              <Input name="apptEnd" type="time" aria-label="End time" className="w-28" />
+            </div>
+          </Field>
+          <Field label="Notes" className="sm:col-span-2">
+            <textarea name="notes" rows={3} maxLength={1000} placeholder="What the customer asked for, gate code, best time to call…" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          </Field>
+          <p className="text-xs text-muted-foreground sm:col-span-2">
+            The appointment goes on the schedule and on the salesperson&apos;s My day; notes go in the job&apos;s team chat.
+          </p>
+        </fieldset>
+      )}
       <div className="flex items-center gap-3 sm:col-span-2">
         <Button disabled={pending}>{pending ? "Saving…" : submitLabel}</Button>
         {state?.ok && (

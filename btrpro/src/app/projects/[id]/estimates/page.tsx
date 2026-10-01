@@ -21,7 +21,8 @@ async function templateOpts(projectId: string) {
   }));
 }
 import { Badge } from "@/components/ui/badge";
-import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
+import { getSettings } from "@/lib/settings";
+import { estimatePricing } from "@/lib/proposals/price";
 import { formatUsd } from "@/lib/utils";
 
 export default async function EstimatesPage({
@@ -40,7 +41,11 @@ export default async function EstimatesPage({
     orderBy: { revision: "desc" },
     include: { createdBy: { select: { name: true } } },
   });
-  const totals = await Promise.all(estimates.map((e) => totalsFor(e.id)));
+  const [totals, proposals, settings] = await Promise.all([
+    Promise.all(estimates.map((e) => totalsFor(e.id))),
+    prisma.proposal.findMany({ where: { projectId: id, status: { not: "VOID" } }, orderBy: { createdAt: "desc" }, select: { estimateId: true, number: true, basePrice: true, taxAmount: true, costTotal: true, status: true } }),
+    getSettings(),
+  ]);
   const scopes = parseScopes(project.scopes);
   const canEdit = user.role !== "VIEWER";
   return (
@@ -69,63 +74,72 @@ export default async function EstimatesPage({
           )}
         </div>
       )}
-      <Table>
-        <THead>
-          <TR>
-            <TH>Revision</TH>
-            <TH>Scope</TH>
-            <TH>Started</TH>
-            {canEdit && <TH className="text-right">Total</TH>}
-            <TH>State</TH>
-          </TR>
-        </THead>
-        <TBody>
-          {estimates.map((e, i) => (
-            <TR key={e.id}>
-              <TD>
-                <Link
-                  href={`/projects/${id}/estimates/${e.id}`}
-                  className="font-medium hover:underline"
-                >
+      {estimates.length === 0 && <p className="rounded-lg border border-btr-line p-6 text-center text-sm text-muted-foreground">No estimates yet.</p>}
+      <div className="flex flex-col gap-3">
+        {estimates.map((e, i) => {
+          const t = totals[i];
+          const prop = proposals.find((p) => p.estimateId === e.id) ?? null;
+          const pr = canEdit ? estimatePricing(t, { taxExempt: project.isTaxExempt, taxPct: settings.salesTaxPct, markupPct: settings.markupPct }, prop) : null;
+          const sections: [string, number][] = [
+            ["Materials", t.materials],
+            ["General conditions", t.generalConditions],
+            ["Labor", t.labor],
+            ...(t.contingency ? ([["Contingency", t.contingency]] as [string, number][]) : []),
+          ];
+          return (
+            <section key={e.id} className="overflow-hidden rounded-lg border border-btr-line bg-background">
+              <div className="flex flex-wrap items-center gap-2 border-b border-btr-line px-4 py-2.5">
+                <Badge variant={e.locked ? "outline" : "blue"}>{e.locked ? "Locked" : "Current"}</Badge>
+                <Link href={`/projects/${id}/estimates/${e.id}`} className="font-semibold text-btr-link hover:underline">
                   {e.name}
                 </Link>
-              </TD>
-              <TD>{e.scopeType.replace("_", " ").toLowerCase()}</TD>
-              <TD className="text-sm text-muted-foreground">
-                {e.createdAt.toLocaleDateString("en-US", {
-                  timeZone: "America/Chicago",
-                })}{" "}
-                · {e.createdBy?.name ?? "—"}
-              </TD>
+                <span className="text-sm text-muted-foreground">
+                  {e.scopeType.replace("_", " ").toLowerCase()} · {e.createdAt.toLocaleDateString("en-US", { timeZone: "America/Chicago" })} · {e.createdBy?.name ?? "—"}
+                </span>
+                {canEdit && t.incomplete && <Badge variant="red">INCOMPLETE</Badge>}
+              </div>
               {canEdit && (
-                <TD className="text-right tabular-nums">
-                  {formatUsd(totals[i].grandTotal)}{" "}
-                  {totals[i].incomplete && (
-                    <Badge variant="red">INCOMPLETE</Badge>
+                <div className="grid gap-4 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm">
+                    {sections.map(([k, v]) => (
+                      <div key={k} className="contents">
+                        <dt className="text-muted-foreground">{k}</dt>
+                        <dd className="text-right tabular-nums">{formatUsd(v)}</dd>
+                      </div>
+                    ))}
+                    <dt className="border-t pt-1 font-semibold">Cost</dt>
+                    <dd className="border-t pt-1 text-right font-semibold tabular-nums">{formatUsd(t.grandTotal)}</dd>
+                  </dl>
+                  {pr ? (
+                    <div className={`flex flex-col gap-1 rounded-md p-3 text-sm ${pr.preview ? "border border-dashed border-btr-line" : "bg-btr-black text-white"}`}>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className={pr.preview ? "text-muted-foreground" : "text-white/70"}>Price</span>
+                        <span className="text-xl font-semibold tabular-nums">{formatUsd(pr.price)}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className={pr.preview ? "text-muted-foreground" : "text-white/70"}>Sales tax</span>
+                        <span className="tabular-nums">{formatUsd(pr.tax)}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className={pr.preview ? "text-muted-foreground" : "text-white/70"}>Gross profit · margin</span>
+                        <span className="tabular-nums">
+                          {formatUsd(pr.profit)} · {pr.marginPct}%
+                        </span>
+                      </div>
+                      <span className={`text-xs ${pr.preview ? "text-muted-foreground" : "text-white/60"}`}>
+                        {pr.source}
+                        {t.incomplete ? " — cost is INCOMPLETE, so this isn't final" : ""}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Price shows once a proposal is made, or set a company markup under Settings → Company to preview it.</p>
                   )}
-                </TD>
+                </div>
               )}
-              <TD>
-                {e.locked ? (
-                  <Badge variant="outline">Locked</Badge>
-                ) : (
-                  <Badge variant="blue">Current</Badge>
-                )}
-              </TD>
-            </TR>
-          ))}
-          {estimates.length === 0 && (
-            <TR>
-              <TD
-                colSpan={5}
-                className="py-6 text-center text-muted-foreground"
-              >
-                No estimates yet.
-              </TD>
-            </TR>
-          )}
-        </TBody>
-      </Table>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }

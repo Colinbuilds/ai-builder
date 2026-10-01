@@ -110,7 +110,10 @@ export async function createProjectAction(
           "Enter the homeowner's first and last name, or pick the builder.",
         ],
       };
+    const appt = leadAppointment(f);
+    if (appt && "problem" in appt) return { problems: [appt.problem] };
     ({ id } = await createProject(input, user, homeowner));
+    await leadExtras(id, f, appt, input.salespersonId ?? null, user);
   } catch (e) {
     return fail(e);
   }
@@ -284,4 +287,39 @@ export async function removeProjectContactAction(f: FormData) {
     },
   });
   revalidatePath(`/projects/${pc.projectId}`);
+}
+
+// ---------- new-lead extras: priority, notes, first appointment ----------
+
+const t12 = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+};
+
+function leadAppointment(f: FormData): { date: Date; when: string } | { problem: string } | null {
+  const d = str(f, "apptDate");
+  const a = str(f, "apptStart");
+  const b = str(f, "apptEnd");
+  if (!d) return a || b ? { problem: "Pick the appointment date, or clear the times." } : null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return { problem: "Pick the appointment date." };
+  if (a && b && b <= a) return { problem: "The appointment ends before it starts." };
+  return { date: new Date(`${d}T12:00:00Z`), when: a ? `${t12(a)}${b ? `–${t12(b)}` : ""}` : "" };
+}
+
+async function leadExtras(
+  projectId: string,
+  f: FormData,
+  appt: { date: Date; when: string } | null,
+  assigneeId: string | null,
+  user: { id: string; name: string },
+) {
+  if (str(f, "priority") === "HIGH") await prisma.project.update({ where: { id: projectId }, data: { priority: "HIGH" } });
+  const notes = str(f, "notes")?.slice(0, 1000);
+  if (notes) await prisma.jobMessage.create({ data: { projectId, authorId: user.id, body: `Lead notes: ${notes}`, mentions: [] } });
+  if (appt) {
+    const who = assigneeId ? await prisma.user.findUnique({ where: { id: assigneeId }, select: { name: true } }) : null;
+    const title = `Initial appointment${appt.when ? ` ${appt.when}` : ""}${who ? ` — ${who.name}` : ""}`;
+    await prisma.scheduleEvent.create({ data: { projectId, kind: "APPOINTMENT", title, startDate: appt.date, endDate: appt.date, status: "CONFIRMED", createdBy: user.name } });
+    await prisma.task.create({ data: { projectId, title, dueDate: appt.date, assigneeId: assigneeId ?? user.id, auto: `APPT:${projectId}`, createdBy: user.name } });
+  }
 }

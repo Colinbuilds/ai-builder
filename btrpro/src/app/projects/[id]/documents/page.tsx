@@ -9,9 +9,7 @@ import { driveAvailable } from "@/lib/integrations/google-sa";
 import { CompanyCamLink, EagleViewOrder } from "@/components/portal/forms";
 import { companyCamConfigured, companyCamPhotos, companyCamProjectUrl } from "@/lib/integrations/companycam";
 import { UploadDocs, DriveImport } from "@/components/docs/upload";
-import { DocTypeSelect } from "@/components/docs/doc-type-select";
-import { ExtractButton } from "@/components/docs/extract-button";
-import { PlanReviewButton } from "@/components/docs/plan-review-button";
+import { DocList } from "./doc-list";
 import { ConfirmationQueue, type QueueItem } from "@/components/docs/queue";
 import { ManualMeasurement } from "@/components/docs/manual-measurement";
 import { Badge } from "@/components/ui/badge";
@@ -26,11 +24,12 @@ export default async function DocumentsPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ connected?: string }>;
+  searchParams: Promise<{ connected?: string; view?: string; q?: string; folder?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
-  const { connected } = await searchParams;
+  const { connected, q, folder, view: v } = await searchParams;
+  const view = v === "list" ? "list" : "folders";
   const project = await prisma.project.findUnique({ where: { id } });
   if (!project) notFound();
   const canEdit = user.role !== "VIEWER";
@@ -53,6 +52,7 @@ export default async function DocumentsPage({
       include: { document: { select: { fileName: true } } },
     }),
   ]);
+  const users = new Map((await prisma.user.findMany({ select: { id: true, name: true } })).map((u) => [u.id, u.name]));
   const ai = aiConfigured();
   const driveConn = await driveAvailable(user.id);
   const driveReady = driveConn || oauthConfigured("GOOGLE_DRIVE");
@@ -197,100 +197,13 @@ export default async function DocumentsPage({
         </div>
       </section>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">Documents</h2>
-        <Table>
-          <THead>
-            <TR>
-              <TH>File</TH>
-              <TH>Type</TH>
-              <TH>Pages</TH>
-              <TH>Came from</TH>
-              <TH>Read with AI</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {docs.map((d) => {
-              const extractable =
-                d.type === "EAGLEVIEW" ||
-                d.type === "PLANS" ||
-                d.type === "SPECS";
-              const run = d.runs[0];
-              return (
-                <TR key={d.id}>
-                  <TD className="max-w-xs">
-                    <a
-                      href={`/api/documents/${d.id}`}
-                      target="_blank"
-                      className="font-medium break-words hover:underline"
-                    >
-                      {d.fileName}
-                    </a>
-                  </TD>
-                  <TD>
-                    <DocTypeSelect
-                      id={d.id}
-                      type={d.type}
-                      disabled={!canEdit}
-                    />
-                  </TD>
-                  <TD className="tabular-nums">{d.pages ?? "—"}</TD>
-                  <TD className="text-xs">
-                    {d.source === "EMAIL" || d.jobEmail
-                      ? `Email: ${d.jobEmail?.subject ?? ""}`
-                      : d.source.toLowerCase()}
-                  </TD>
-                  <TD className="max-w-sm">
-                    {extractable && canEdit ? (
-                      d.type === "EAGLEVIEW" ? (
-                        <ExtractButton
-                          id={d.id}
-                          label="Read measurements"
-                          disabled={!ai}
-                        />
-                      ) : (
-                        <PlanReviewButton
-                          id={d.id}
-                          projectId={id}
-                          pages={d.pages}
-                          disabled={!ai}
-                        />
-                      )
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        {extractable ? "" : "—"}
-                      </span>
-                    )}
-                    {run && (
-                      <p
-                        className={`mt-1 text-xs ${run.status === "FAILED" ? "text-destructive" : "text-muted-foreground"}`}
-                      >
-                        {run.message}
-                      </p>
-                    )}
-                  </TD>
-                </TR>
-              );
-            })}
-            {docs.length === 0 && (
-              <TR>
-                <TD
-                  colSpan={5}
-                  className="py-6 text-center text-muted-foreground"
-                >
-                  No documents yet.
-                </TD>
-              </TR>
-            )}
-          </TBody>
-        </Table>
-        {!ai && (
+      <DocList docs={docs} users={users} projectId={id} canEdit={canEdit} ai={ai} view={view} q={q ?? ""} folder={folder ?? ""} />
+      {!ai && (
           <p className="text-xs text-muted-foreground">
             AI reading is off: ANTHROPIC_API_KEY isn&apos;t set. Enter
             measurements by hand below.
           </p>
         )}
-      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">

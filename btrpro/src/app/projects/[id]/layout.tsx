@@ -40,16 +40,24 @@ export default async function ProjectLayout({ children, params }: { children: Re
   if (!project) notFound();
   const canEdit = user.role !== "VIEWER";
   // Recomputed on every view so sheet expirations are picked up the day they happen.
-  const [{ readiness }, unreadAll, proposals, watching] = await Promise.all([
+  const [{ readiness }, unreadAll, proposals, lastProposal, watching] = await Promise.all([
     refreshReadiness(id),
     unreadCounts(user.id, [id]),
     prisma.proposal.count({ where: { projectId: id } }),
+    prisma.proposal.findFirst({ where: { projectId: id, status: { in: ["SIGNED", "SENT", "VIEWED"] } }, orderBy: [{ signedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }], select: { number: true, status: true, basePrice: true, acceptedTotal: true } }),
     prisma.jobWatch.findUnique({ where: { projectId_userId: { projectId: id, userId: user.id } } }),
     touchJob(id, user.id),
   ]);
   const unread = unreadAll[id];
   const scopes = parseScopes(project.scopes);
   const showCosts = canSeeCosts(user, project);
+  // what the job is worth: the contract, else the signed proposal, else the latest one out for signature
+  const jobValue =
+    project.contractAmount != null
+      ? { amount: project.contractAmount, note: project.contractSignedAt ? "contract" : "contract (not signed yet)" }
+      : lastProposal
+        ? { amount: lastProposal.acceptedTotal ?? lastProposal.basePrice, note: `${lastProposal.number} ${lastProposal.status.toLowerCase()}` }
+        : null;
   const maps = project.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}` : null;
 
   return (
@@ -78,6 +86,12 @@ export default async function ProjectLayout({ children, params }: { children: Re
           </div>
           <div className="flex w-full items-stretch divide-x border-t py-1.5 sm:w-auto sm:border-t-0 sm:border-l">
             <PriorityPicker projectId={id} priority={project.priority} canEdit={canEdit} />
+            {canEdit && (
+              <div className="flex flex-col justify-center px-3 text-xs" title={jobValue?.note}>
+                <span className="text-muted-foreground">Job value</span>
+                <span className="text-sm font-semibold text-btr-blue tabular-nums">{jobValue ? formatUsd(jobValue.amount) : "—"}</span>
+              </div>
+            )}
             <WatchButton projectId={id} watching={!!watching} />
             <div className="flex items-center gap-2 px-3 text-xs">
               <span className="flex size-8 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">

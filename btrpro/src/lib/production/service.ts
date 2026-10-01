@@ -113,7 +113,7 @@ export async function crewsWithCompliance(today = new Date()) {
 
 export type EventInput = {
   projectId: string | null;
-  kind: "INSTALL" | "TEAR_OFF" | "INSPECTION" | "DUMPSTER" | "REPAIR" | "OTHER";
+  kind: "APPOINTMENT" | "INSTALL" | "TEAR_OFF" | "INSPECTION" | "DUMPSTER" | "REPAIR" | "OTHER";
   title: string;
   startDate: Date;
   endDate: Date;
