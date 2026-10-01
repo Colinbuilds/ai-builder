@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { setUserOwner, setUserRole } from "@/app/actions";
+import { setUserOwner, setUserPhone, setUserRole } from "@/app/actions";
 import { ROLE_LABEL, ROLES } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
@@ -22,6 +22,7 @@ export default async function UsersPage() {
             <TH>Email</TH>
             <TH>Role</TH>
             <TH>Owner</TH>
+            <TH>Phone (on proposals)</TH>
           </TR>
         </THead>
         <TBody>
@@ -64,6 +65,15 @@ export default async function UsersPage() {
                 ) : (
                   ""
                 )}
+              </TD>
+              <TD>
+                <form action={setUserPhone} className="flex items-center gap-2">
+                  <input type="hidden" name="id" value={u.id} />
+                  <input name="phone" type="tel" defaultValue={u.phone ?? ""} placeholder="(402) 555-0123" aria-label={`Phone: ${u.name}`} className="h-8 w-36 rounded-md border border-input bg-background px-2 text-sm" />
+                  <Button variant="outline" size="sm">
+                    Save
+                  </Button>
+                </form>
               </TD>
             </TR>
           ))}

@@ -30,7 +30,7 @@ model User {
   role                Role      @default(ESTIMATOR)
   // owners get the Audit tools and owner approvals
   isOwner             Boolean   @default(false)
-  // mobile for texts; crewTexts = gets crew alerts (started, finished, issue reported) as a project manager
+  // phone shown on proposals as the company representative's number (crewTexts is unused — no texts)
   phone               String?
   crewTexts           Boolean   @default(false)
   createdAt           DateTime  @default(now())

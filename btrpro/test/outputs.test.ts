@@ -6,6 +6,7 @@ import { addLine, createEstimate, runTakeoff, saveTakeoff } from "@/lib/estimate
 import { addLaborLine } from "@/lib/estimates/labor";
 import { materialListText, estimatePdf, loadBundle, orderCsv, takeoffPdf } from "@/lib/outputs/estimate";
 import { proposalPrice, acceptedTotal } from "@/lib/proposals/price";
+import { proposalPdf } from "@/lib/proposals/pdf";
 import { createProposal, declineProposal, getByToken, sendProposal, signProposal } from "@/lib/proposals/service";
 import { saveSettings } from "@/lib/settings";
 import { safe } from "@/lib/pdf/writer";
@@ -109,6 +110,12 @@ describe("proposals and e-signature", () => {
     await expect(createProposal(e.id, { markupPct: 25, alternates: [] }, a)).rejects.toThrow(/NOT READY/);
     const prop = await createProposal(e.id, { markupPct: 25, alternates: [{ name: "Gutters", description: "5\" seamless", price: 900 }], acknowledgeNotReady: true }, a);
     expect(prop.recipientEmail).toBe("pat@test.local");
+    // customer PDF in BTR's estimate-form layout: sections of items (no unit costs), tax, TOTAL, signature lines
+    await prisma.estimateLine.updateMany({ where: { estimateId: e.id, section: "GENERAL_CONDITIONS" }, data: { note: "- TEST_ONLY roller\n- rags\ninternal: not shown" } });
+    const pdfBytes = await proposalPdf(prop);
+    if (process.env.PROPOSAL_PDF_OUT) (await import("node:fs")).writeFileSync(process.env.PROPOSAL_PDF_OUT, pdfBytes);
+    const { PDFDocument } = await import("pdf-lib");
+    expect((await PDFDocument.load(pdfBytes)).getPageCount()).toBeGreaterThanOrEqual(1);
     expect(await getByToken(prop.token)).toBeNull(); // drafts aren't visible to the customer
     await sendProposal(prop.id, { name: "Pat Homeowner", email: "pat@test.local" }, a);
     await expect(signProposal(prop.token, { name: "Pat Homeowner", email: "pat@test.local", consent: false, selected: [], signatureImage: null, ip: null, agent: null })).rejects.toThrow(/electronically/);
