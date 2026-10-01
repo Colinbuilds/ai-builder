@@ -178,3 +178,30 @@ export async function qboBillBalance(billId: string) {
   const r = await qbo<{ Bill: { Balance: number } }>("GET", `bill/${encodeURIComponent(billId)}`);
   return r.Bill.Balance;
 }
+
+/**
+ * The job's QuickBooks number: makes the customer and an opening estimate in QuickBooks and keeps its number
+ * on the job ("est 6024" on the schedule). Numbers follow the highest estimate number already in QuickBooks.
+ * Does nothing (returns null) when QuickBooks isn't connected; never makes a second estimate for a job.
+ */
+export async function ensureJobNumber(projectId: string): Promise<string | null> {
+  const p = await prisma.project.findUniqueOrThrow({ where: { id: projectId }, select: { qboJobNo: true, name: true, address: true } });
+  if (p.qboJobNo) return p.qboJobNo;
+  if (!(await qboConnected())) return null;
+  const s = await getSettings();
+  if (!s.qboItemId) throw new QboError("Pick the QuickBooks item for lines under Admin → Company settings.");
+  const customer = await ensureCustomer(projectId);
+  const recent = await qbo<{ QueryResponse: { Estimate?: { DocNumber?: string }[] } }>("GET", `query?query=${encodeURIComponent("select DocNumber from Estimate orderby MetaData.CreateTime desc maxresults 100")}`);
+  const top = Math.max(0, ...(recent.QueryResponse.Estimate ?? []).map((e) => Number((e.DocNumber ?? "").replace(/\D/g, "")) || 0));
+  const doc = String(top + 1);
+  const r = await qbo<{ Estimate: { Id: string; DocNumber?: string } }>("POST", "estimate", {
+    CustomerRef: { value: customer },
+    DocNumber: doc,
+    PrivateNote: `Opened in BTRpro: ${p.name}${p.address ? ` — ${p.address}` : ""}`.slice(0, 4000),
+    Line: [{ Amount: 0, DetailType: "SalesItemLineDetail", Description: "Job opened — pricing to follow", SalesItemLineDetail: { ItemRef: { value: s.qboItemId }, Qty: 1, UnitPrice: 0 } }],
+  });
+  const no = r.Estimate.DocNumber ?? doc;
+  await prisma.project.update({ where: { id: projectId }, data: { qboEstimateId: r.Estimate.Id, qboJobNo: no } });
+  await prisma.projectActivity.create({ data: { projectId, kind: "billing", text: `QuickBooks estimate #${no} created for this job` } });
+  return no;
+}

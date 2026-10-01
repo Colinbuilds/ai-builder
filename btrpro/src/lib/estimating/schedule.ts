@@ -34,7 +34,7 @@ type Actor = { id: string; name: string; role?: Role };
 const API = "https://www.googleapis.com/drive/v3/files";
 const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-async function downloadSheet(link: string, userId: string | null): Promise<Uint8Array> {
+export async function downloadSheet(link: string, userId: string | null): Promise<Uint8Array> {
   const id = parseDriveLink(link);
   if (!id) throw new ScheduleError("That doesn't look like a Google Sheets link.");
   const token = await driveToken(userId);

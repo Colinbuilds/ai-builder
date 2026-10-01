@@ -51,7 +51,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
         { href: "/jobs?stage=LOST", label: "Lost" },
       ],
     },
-    { key: "schedule", label: "Schedule", icon: "CalendarDays", href: "/schedule" },
+    { key: "schedule", label: "Schedule", icon: "CalendarDays", href: "/production" },
     { key: "estsched", label: "Estimating schedule", icon: "FileText", href: "/estimating/schedule" },
     {
       key: "contacts",
@@ -70,7 +70,9 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       label: "Production",
       icon: "CalendarDays",
       items: [
+        { href: "/schedule", label: "Calendar" },
         { href: "/takeoff", label: "Blueprint measurer" },
+        { href: "/billing/pay-apps", label: "Pay applications (AIA)" },
         { href: "/deliveries", label: "Deliveries" },
         { href: "/crews", label: "Crews & subs" },
         ...(staff

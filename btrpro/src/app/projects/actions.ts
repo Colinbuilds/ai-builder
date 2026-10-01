@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
@@ -136,6 +137,13 @@ export async function createProjectAction(
       first && last ? { firstName: first, lastName: last, phone: str(f, "hoPhone"), email, role: res ? "HOMEOWNER" : "OWNER_REP" } : null,
     ));
     await leadExtras(id, f, appt, assignee, user);
+    // QuickBooks job number (estimate #) right away when QuickBooks is connected; a failure never blocks the lead
+    try {
+      const { ensureJobNumber } = await import("@/lib/integrations/quickbooks");
+      await ensureJobNumber(id);
+    } catch (e) {
+      await prisma.projectActivity.create({ data: { projectId: id, kind: "billing", text: `QuickBooks number not made yet: ${e instanceof Error ? e.message : String(e)}` } });
+    }
     await linkProperty(id, str(f, "propertyId"), clientCompanyId, true);
     // the assigned rep gets "call this lead" right away (My day + bell); done = contacted
     if (assignee)
@@ -376,4 +384,16 @@ async function leadExtras(
     await prisma.scheduleEvent.create({ data: { projectId, kind: "APPOINTMENT", title, startDate: appt.date, endDate: appt.date, status: "CONFIRMED", createdBy: user.name } });
     await prisma.task.create({ data: { projectId, title, dueDate: appt.date, assigneeId: assigneeId ?? user.id, auto: `APPT:${projectId}`, createdBy: user.name } });
   }
+}
+
+export async function qboJobNumberAction(f: FormData) {
+  await requireUser(STAFF_ROLES);
+  const id = String(f.get("projectId"));
+  const { ensureJobNumber } = await import("@/lib/integrations/quickbooks");
+  try {
+    await ensureJobNumber(id);
+  } catch (e) {
+    await prisma.projectActivity.create({ data: { projectId: id, kind: "billing", text: `QuickBooks number failed: ${e instanceof Error ? e.message : String(e)}` } });
+  }
+  revalidatePath(`/projects/${id}`, "layout");
 }

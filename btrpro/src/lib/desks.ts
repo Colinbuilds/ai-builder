@@ -47,7 +47,7 @@ export async function officeDesk(now = new Date()) {
   // a promise or follow-up date in the future parks it until then
   const callList = overdue.filter((r) => !r.lastCall?.followUpOn || r.lastCall.followUpOn <= now).sort((a, b) => b.daysLate - a.daysLate);
   const parked = overdue.length - callList.length;
-  const [drafts, completeNoFinal, crewWaiting, qboInvoices, qboBills, bills, form17] = await Promise.all([
+  const [drafts, completeNoFinal, crewWaiting, qboInvoices, qboBills, bills, form17, prodToPay, prodToBill] = await Promise.all([
     prisma.invoice.findMany({ where: { status: "DRAFT" }, select: { id: true, number: true, amountDue: true, kind: true, project: { select: { id: true, name: true } } }, orderBy: { createdAt: "asc" } }),
     prisma.project.findMany({
       where: { status: "COMPLETE", invoices: { none: { kind: "FINAL", status: { not: "VOID" } } } },
@@ -64,6 +64,9 @@ export async function officeDesk(now = new Date()) {
       select: { id: true, name: true, status: true, form17Status: true },
       orderBy: { statusChangedAt: "asc" },
     }),
+    // schedule lines a PM marked Completed: pay the crew, then bill the builder
+    prisma.prodLine.count({ where: { completed: { not: null }, approved: null, board: { not: "COMPLETED" } } }),
+    prisma.prodLine.count({ where: { market: "RESIDENTIAL", completed: { not: null }, billed: null, board: { not: "COMPLETED" } } }),
   ]);
   const comingIn = r2(rows.filter((r) => r.dueDate <= week).reduce((a, r) => a + r.balance, 0));
   return {
@@ -73,6 +76,8 @@ export async function officeDesk(now = new Date()) {
     drafts,
     completeNoFinal,
     form17,
+    prodToPay,
+    prodToBill,
     crewToApprove: crewWaiting.filter((c) => c.status === "SUBMITTED"),
     crewToPay: crewWaiting.filter((c) => c.status === "APPROVED"),
     qboProblems: [

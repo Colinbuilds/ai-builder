@@ -222,6 +222,8 @@ model Project {
   punchItems         PunchItem[]
   fieldIssues        FieldIssue[]
   estimateLogs       EstimateLog[]
+  prodLines          ProdLine[]
+  payContracts       PayContract[]
   // ready-to-schedule items ticked by hand: { color, permit, dumpster, notified }
   readyChecks        Json?
   // the customer's property this job is at (multi-family / commercial portfolios)
@@ -295,6 +297,9 @@ model Project {
   timeEntries      TimeEntry[]
   invoices         Invoice[]
   qboCustomerId    String?
+  // QuickBooks estimate made when the job is opened; its number is the job number everyone uses ("est 6024")
+  qboEstimateId    String?
+  qboJobNo         String?
   tasks            Task[]
   watchers         JobWatch[]
   crewInvoices     CrewInvoice[]
@@ -1769,4 +1774,101 @@ model Idea {
   doneAt      DateTime?
 
   @@index([status])
+}
+
+// Production board: one work line (a building, a lot, a trade, a change order) from the Residential and
+// Commercial live schedules, with payout and sell. Synced from the sheets until BTRpro is the schedule;
+// a row edited here (source APP) is never overwritten by a sync.
+model ProdLine {
+  id           String    @id @default(cuid())
+  source       String    @default("APP")
+  sourceKey    String?   @unique
+  sourceTab    String?
+  sourceRow    Int?
+  // RESIDENTIAL | COMMERCIAL
+  market       String
+  // UPCOMING | CURRENT | ADD (new, waiting to be placed) | WARRANTY | COMPLETED
+  board        String
+  // tab / super / builder group, and the section label inside it ("Hildy Upcoming", "DR Horton Warranty")
+  grp          String?
+  section      String?
+  // commercial project this line belongs to ("Lund Ross - Thriving Communities")
+  project      String?
+  dateAdded    DateTime?
+  estimateNo   String?
+  vpo          String?
+  builder      String?
+  location     String?
+  model        String?
+  type         String?
+  crew         String?
+  superName    String?
+  salesRep     String?
+  notes        String?
+  completed    String?
+  completedAt  DateTime?
+  payout       Float?
+  paidToDate   Float?
+  payoutWeek   Float?
+  sell         Float?
+  approved     String?
+  billed       String?
+  billedAt     DateTime?
+  btrPaid      String?
+  paidAt       DateTime?
+  billingNotes String?
+  // when the crew is on it (crew and PM schedules)
+  startDate    DateTime?
+  endDate      DateTime?
+  crewId       String?
+  projectId    String?
+  job          Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  updatedBy    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([market, board])
+  @@index([builder])
+}
+
+// Commercial pay applications (AIA G702/G703). A contract holds the schedule of values; each monthly
+// application snapshots the lines with work completed this period and stored materials.
+model PayContract {
+  id           String   @id @default(cuid())
+  source       String   @default("APP")
+  sourceKey    String?  @unique
+  gc           String?
+  project      String
+  superName    String?
+  // [{ item, description, scheduled, previous, thisPeriod, stored }]
+  lines        Json
+  retainagePct Float?
+  submitVia    String?
+  dueNote      String?
+  pendingCOs   Float?
+  projectId    String?
+  job          Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  updatedBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  apps         PayApp[]
+}
+
+model PayApp {
+  id           String      @id @default(cuid())
+  contractId   String
+  contract     PayContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  number       Int
+  periodTo     DateTime
+  // same shape as PayContract.lines, as billed on this application
+  lines        Json
+  retainagePct Float
+  // DRAFT | SUBMITTED | PAID
+  status       String      @default("DRAFT")
+  submittedAt  DateTime?
+  paidAt       DateTime?
+  createdBy    String
+  createdAt    DateTime    @default(now())
+
+  @@unique([contractId, number])
 }
