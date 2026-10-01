@@ -23,6 +23,7 @@ export function ReceiptReview(props: {
   invoiceNumber: string | null;
   employee: string | null;
   lines: Line[];
+  ticket?: boolean;
   tax: number | null;
   defaultMarkup: number;
   lineMarkup: Record<string, number>;
@@ -36,7 +37,7 @@ export function ReceiptReview(props: {
   const p = props;
   const [markup, setMarkup] = useState(String(p.defaultMarkup));
   const [lineM, setLineM] = useState<Record<string, string>>(Object.fromEntries(Object.entries(p.lineMarkup).map(([k, v]) => [k, String(v)])));
-  const [outcome, setOutcome] = useState<Outcome>((p.filed?.outcome as Outcome) ?? (p.project?.sold ? "CHANGE_ORDER" : "COST_ONLY"));
+  const [outcome, setOutcome] = useState<Outcome>((p.filed?.outcome as Outcome) ?? (p.ticket || !p.project?.sold ? "COST_ONLY" : "CHANGE_ORDER"));
   const [reason, setReason] = useState(p.reason ?? "");
   const [state, action, pending] = useFormAction(approveReceiptAction, null);
   const base = num(markup);
@@ -79,7 +80,7 @@ export function ReceiptReview(props: {
                       </span>
                     )}
                   </td>
-                  <td className="py-1.5 pr-2 text-right tabular-nums">{usd(pr.lines[i].cost)}</td>
+                  <td className="py-1.5 pr-2 text-right tabular-nums">{l.amount == null ? <span className="font-semibold">MISSING</span> : usd(pr.lines[i].cost)}</td>
                   <td className="py-1.5 pr-2 text-right">
                     <input
                       aria-label={`Markup for ${l.description}`}
@@ -110,7 +111,7 @@ export function ReceiptReview(props: {
           <Tile label={`Profit · ${pr.marginPct ?? 0}% margin`} value={usd(pr.profit)} strong />
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          {p.tax ? `The ${usd(p.tax)} sales tax you paid is counted in cost and spread across the lines. ` : "No sales tax printed. "}Markup is {p.defaultMarkup}% by default (Company settings); change it for this receipt or per line.
+          {p.ticket ? "Delivery ticket: cost is our sheet price (or the price you entered), before tax. " : p.tax ? `The ${usd(p.tax)} sales tax you paid is counted in cost and spread across the lines. ` : "No sales tax printed. "}Markup is {p.defaultMarkup}% by default (Company settings); change it for this receipt or per line.
         </p>
       </section>
 
@@ -119,7 +120,7 @@ export function ReceiptReview(props: {
         <div className="grid gap-2 sm:grid-cols-3">
           {(
             [
-              ["COST_ONLY", "Job cost only", "Materials for the contracted work — nothing billed."],
+              p.ticket ? (["COST_ONLY", "Record delivery", "No cost filed — ABC's invoice brings it. Nothing billed."] as const) : (["COST_ONLY", "Job cost only", "Materials for the contracted work — nothing billed."] as const),
               ["CHANGE_ORDER", "Change order", "Extra work: the customer signs it, then it adds to the contract."],
               ["INVOICE", "Invoice", "Bill the materials now."],
             ] as const
@@ -219,7 +220,7 @@ export function ReceiptReview(props: {
           <ul className="flex flex-col gap-2">
             {outcome === "CHANGE_ORDER" && <QboRow title="Change order as an Estimate" amount={usd(pr.billed)} note={`Customer: ${p.project?.name ?? "the job"} · ${p.lines.length} lines`} ok={p.qbo.itemSet} />}
             {outcome === "INVOICE" && <QboRow title="Invoice" amount={usd(pr.billed)} note={`Customer: ${p.project?.name ?? "the job"} · ${p.lines.length} lines`} ok={p.qbo.itemSet} />}
-            <QboRow title="Expense (job cost)" amount={usd(pr.cost)} note={`Vendor: ${p.vendor} · Customer: ${p.project?.name ?? "the job"}`} ok={p.qbo.expenseSet} />
+            {!p.ticket && <QboRow title="Expense (job cost)" amount={usd(pr.cost)} note={`Vendor: ${p.vendor} · Customer: ${p.project?.name ?? "the job"}`} ok={p.qbo.expenseSet} />}
           </ul>
         )}
         {p.filed?.qboStatus && <p className="mt-2 text-xs">{p.filed.qboStatus}</p>}
@@ -234,7 +235,7 @@ export function ReceiptReview(props: {
           <input type="hidden" name="lineMarkup" value={JSON.stringify(overrides)} />
           <input type="hidden" name="reason" value={reason} />
           <Button disabled={pending || !p.project || !!state?.ok || (outcome === "INVOICE" && !p.project?.sold)}>
-            {pending ? "Approving…" : !p.project ? "Pick the job first" : outcome === "COST_ONLY" ? "Approve — file to job costs" : outcome === "CHANGE_ORDER" ? "Approve — draft change order + file costs" : "Approve — draft invoice + file costs"}
+            {pending ? "Approving…" : !p.project ? "Pick the job first" : outcome === "COST_ONLY" ? (p.ticket ? "Approve — record the delivery" : "Approve — file to job costs") : `Approve — draft ${outcome === "CHANGE_ORDER" ? "change order" : "invoice"}${p.ticket ? " (no cost filed)" : " + file costs"}`}
           </Button>
           {state?.ok && <p className="text-sm text-btr-blue">{state.note}</p>}
           <Problems state={state} />

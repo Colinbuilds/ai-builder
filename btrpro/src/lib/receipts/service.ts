@@ -8,12 +8,15 @@ import { readUpload, saveUpload } from "@/lib/storage";
 import { aiParse } from "@/lib/ai/claude";
 import { sniff } from "@/lib/portal/crew";
 import { MAX_PHOTO_BYTES, resized } from "@/lib/photos/images";
+import sharp from "sharp";
+import { cleanPage, detectPaper, zoomSections, type Crop, type Rotate } from "@/lib/photos/document";
 import { priceScopeFor, STANDARD_SCOPE } from "@/lib/pricing-scope";
 import { addDocument } from "@/lib/docs/documents";
 import { guardCostEdit, importInvoiceRows, type CostActor } from "@/lib/costing/service";
 import type { InvoiceRow } from "@/lib/costing/invoice-csv";
 import { DEFAULT_RECEIPT_MARKUP, lineAmount, matchReceiptJob, priceCheckLine, receiptPricing, totalsCheck, type Receipt, type SheetPrice } from "./check";
 import { getSettings } from "@/lib/settings";
+import { BTR } from "@/lib/company";
 
 export class ReceiptError extends Error {}
 export const MAX_RECEIPT_FILES = 6;
@@ -21,6 +24,7 @@ export const MAX_RECEIPT_FILES = 6;
 const num = z.number().nullable();
 const str = z.string().nullable();
 export const ReceiptSchema = z.object({
+  documentType: z.enum(["RECEIPT", "INVOICE", "DELIVERY_TICKET", "OTHER"]).describe("RECEIPT = store/cash receipt; INVOICE = supplier invoice; DELIVERY_TICKET = pick/delivery ticket (usually no prices)"),
   vendor: str.describe("Supplier name as printed, e.g. ABC Supply Co."),
   branch: str.describe("Branch name/number as printed"),
   invoiceNumber: str.describe("Invoice or receipt number as printed"),
@@ -32,7 +36,9 @@ export const ReceiptSchema = z.object({
   date: str.describe("Invoice/receipt date as YYYY-MM-DD, only if printed"),
   lines: z.array(
     z.object({
-      itemNumber: str.describe("Supplier item/product number exactly as printed, keeping leading zeros; null if none"),
+      itemNumber: str.describe("Supplier item/product number / SKU exactly as printed, keeping leading zeros; null if none"),
+      orderedQuantity: num.describe("Ordered quantity when the document has separate ordered and shipped columns; else null"),
+      handwritten: z.boolean().describe("true when the line was written in by hand"),
       description: z.string().describe("Item description as printed"),
       quantity: num.describe("Shipped/delivered quantity as printed (use the shipped column when ordered and shipped both appear)"),
       uom: str.describe("Unit of measure exactly as printed (EA, BD, SQ, RL, BX, PC…)"),
@@ -46,12 +52,32 @@ export const ReceiptSchema = z.object({
   notes: z.array(z.string()).describe("Anything unreadable, cut off, handwritten, or ambiguous — one short note each"),
 });
 
-const TASK = `Transcribe a photographed supplier receipt/invoice (usually ABC Supply) into the schema.
-Copy only what is printed. Never calculate, total, infer, or fill in a value that isn't printed — use null when a field isn't printed or isn't legible, and add a note.
-Item numbers, units of measure and prices must be exactly as printed (keep leading zeros, no unit conversions). Money as plain numbers without $ or commas.
-If several photos are pages of the same receipt, combine them in order without repeating lines. List every line item, including returns, freight, delivery and fees.`;
+const TASK = `Transcribe a photographed supplier receipt, invoice or delivery ticket (ABC Supply, Menards, Home Depot, Lowe's…) into the schema.
+Copy only what is printed or handwritten. Never calculate, total, infer, or fill in a value that isn't there — use null when a field isn't printed or isn't legible, and add a note.
+Item numbers, units of measure and prices exactly as printed (keep leading zeros, no unit conversions). Money as plain numbers without $ or commas.
+You get the whole page first (cropped and contrast-enhanced), then zoomed sections of it from top to bottom that overlap a little — use the zoomed sections to read small print, and list each line once.
 
-type Saved = { url: string; type: string };
+Layouts you will see:
+- Store receipts (Menards, Home Depot): each item is a description line, then a line with the SKU/item number, sometimes "2 @62.99" (quantity 2, unit price 62.99) and the line total. A line with only one price means quantity 1 at that price.
+  "TOTAL" printed before the tax line is the subtotal; "TOTAL SALE" / "BALANCE" after tax is the total. Card/payment lines (VISA, CAPITAL ONE ####, auth codes, ARQC, rebate numbers, "total number of items") are NOT line items.
+  The "PO #" line is usually the job name (e.g. a customer name) — put it in poNumber.
+- ABC Supply delivery tickets: ORDERED / SHIPPED / UNIT columns, then item number and description, usually NO prices (prices null). Use the SHIPPED quantity as quantity and ORDERED as orderedQuantity.
+  Handwritten additions are real line items: transcribe them with handwritten true (e.g. "1  #1179 Trim Nail" → quantity 1, description "#1179 Trim Nail", itemNumber null unless a supplier item number is written).
+  "Ship To" BTR's shop or office is not the job site — still put it in shipToAddress; the PO is how the job is known.
+- ABC invoices: same columns plus unit price and extension.
+If several photos are pages of the same document, combine them in order without repeating lines.`;
+
+// crop: the office's crop ("none" = whole photo), else the auto-detected paper; rotate: quarter turns the office applied
+export type Saved = { url: string; type: string; auto?: Crop | null; crop?: Crop | "none" | null; rotate?: Rotate };
+export const cropOf = (f: Saved): Crop | null => (f.crop === "none" ? null : (f.crop ?? f.auto ?? null));
+
+/** The page as the AI sees it: rotated, cropped to the paper, cleaned up — plus zoomed sections for tall pages. */
+export async function pageImages(f: Saved) {
+  const original = new Uint8Array(await readUpload(f.url));
+  const page = await cleanPage(original, { crop: cropOf(f), rotate: f.rotate ?? 0 });
+  const whole = await sharp(page.data).resize({ width: 1568, height: 1568, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 90 }).toBuffer();
+  return { whole, sections: await zoomSections(page.data, page.info.width, page.info.height) };
+}
 
 /** Saves the photos/PDF and asks the AI to transcribe them. */
 export type ScanFrom = {
@@ -75,10 +101,11 @@ export async function saveReceiptFiles(files: { bytes: Uint8Array; name: string 
     if (!kind) throw new ReceiptError(`${f.name} isn't a photo or PDF.`);
     if (kind === "pdf") saved.push({ url: await saveUpload(f.bytes, "receipt.pdf", "receipts"), type: "application/pdf" });
     else {
-      // a sharp, upright JPEG the AI can read (phone photos are too big and often sideways)
-      const jpg = await resized(f.bytes, 2400, 88);
+      // keep a good upright copy as the original; find the paper in it for the auto-crop
+      const jpg = await resized(f.bytes, 3000, 92);
       if (!jpg) throw new ReceiptError(`Couldn't open ${f.name}. On iPhone, set Camera → Formats → Most Compatible, or take a screenshot of the photo.`);
-      saved.push({ url: await saveUpload(jpg, "receipt.jpg", "receipts"), type: "image/jpeg" });
+      const auto = await detectPaper(jpg).catch(() => null);
+      saved.push({ url: await saveUpload(jpg, "receipt.jpg", "receipts"), type: "image/jpeg", auto, crop: null, rotate: 0 });
     }
   }
   const scan = await prisma.receiptScan.create({
@@ -102,9 +129,16 @@ export async function readReceipt(id: string) {
   const scan = await prisma.receiptScan.findUniqueOrThrow({ where: { id } });
   const files = scan.files as Saved[];
   const content: Anthropic.Beta.BetaContentBlockParam[] = [];
-  for (const f of files) {
-    const data = (await readUpload(f.url)).toString("base64");
-    content.push(f.type === "application/pdf" ? { type: "document", source: { type: "base64", media_type: "application/pdf", data } } : { type: "image", source: { type: "base64", media_type: "image/jpeg", data } });
+  for (const [i, f] of files.entries()) {
+    if (f.type === "application/pdf") {
+      content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: (await readUpload(f.url)).toString("base64") } });
+      continue;
+    }
+    const { whole, sections } = await pageImages(f);
+    content.push({ type: "text", text: `Page ${i + 1} — whole page:` }, { type: "image", source: { type: "base64", media_type: "image/jpeg", data: whole.toString("base64") } });
+    sections.forEach((sct, k) =>
+      content.push({ type: "text", text: `Page ${i + 1} — zoomed section ${k + 1} of ${sections.length} (top to bottom):` }, { type: "image", source: { type: "base64", media_type: "image/jpeg", data: sct.toString("base64") } }),
+    );
   }
   const ctx =
     scan.subject || scan.message
@@ -113,7 +147,7 @@ export async function readReceipt(id: string) {
   content.push({ type: "text", text: `${files.length} page${files.length === 1 ? "" : "s"} of one receipt. Transcribe it.${ctx}` });
   try {
     const { data } = await aiParse({ task: TASK, schema: ReceiptSchema, effort: "medium", messages: [{ role: "user", content }] });
-    await prisma.receiptScan.update({ where: { id }, data: { status: "READ", extracted: data, invoiceNo: data.invoiceNumber, vendor: data.vendor, error: null } });
+    await prisma.receiptScan.update({ where: { id }, data: { status: "READ", extracted: data, invoiceNo: data.invoiceNumber, vendor: data.vendor, docType: data.documentType, error: null } });
   } catch (e) {
     await prisma.receiptScan.update({ where: { id }, data: { status: "FAILED", error: e instanceof Error ? e.message : String(e) } });
   }
@@ -153,7 +187,7 @@ export async function loadReceipt(id: string, chosenProjectId?: string | null) {
     r,
     jobs.map((j) => ({ ...j, clientName: j.clientCompany?.name ?? null })),
     orders,
-    { subject: scan.subject, message: scan.message },
+    { subject: scan.subject, message: scan.message, ownAddresses: BTR.ownAddresses },
   );
   const projectId = chosenProjectId ?? scan.projectId ?? match?.projectId ?? null;
   const scope = projectId ? await priceScopeFor(projectId) : STANDARD_SCOPE;
@@ -161,7 +195,21 @@ export async function loadReceipt(id: string, chosenProjectId?: string | null) {
     r.lines.map((l) => l.itemNumber ?? ""),
     scope.builderId,
   );
-  const lines = r.lines.map((l) => ({ ...l, ...lineAmount(l), check: priceCheckLine(l, l.itemNumber ? (sheets.get(l.itemNumber.trim()) ?? []) : [], scope) }));
+  // no printed price (delivery tickets): a price the office typed in, else our sheet price when the unit matches
+  const typed = (scan.linePrice as Record<string, number> | null) ?? {};
+  const lines = r.lines.map((l, i) => {
+    const check = priceCheckLine(l, l.itemNumber ? (sheets.get(l.itemNumber.trim()) ?? []) : [], scope);
+    const printed = lineAmount(l);
+    let amt = { ...printed, priced: (printed.amount != null ? "PRINTED" : null) as "PRINTED" | "SHEET" | "ENTERED" | null };
+    if (printed.amount == null && l.quantity != null) {
+      const t = typed[String(i)];
+      const sheet = check.compared;
+      if (t != null) amt = { amount: Math.round(l.quantity * t * 100) / 100, formula: `${l.quantity} × $${t.toFixed(2)} (entered in the office)`, mathFlag: null, priced: "ENTERED" };
+      else if (sheet?.unitPrice != null && l.uom && l.uom.trim().toUpperCase() === sheet.uom.trim().toUpperCase())
+        amt = { amount: Math.round(l.quantity * sheet.unitPrice * 100) / 100, formula: `${l.quantity} × $${sheet.unitPrice.toFixed(2)} (${sheet.builder ? "builder " : ""}sheet ${sheet.code})`, mathFlag: null, priced: "SHEET" };
+    }
+    return { ...l, ...amt, check };
+  });
   const overbilled = Math.round(lines.reduce((a, l) => a + (l.check.status === "OVER" && l.check.diffTotal ? l.check.diffTotal : 0), 0) * 100) / 100;
   const jobName = (id: string) => jobs.find((j) => j.id === id);
   // customer pricing: tax spread over the lines, then the markup (receipt-wide, or per line)
@@ -211,18 +259,7 @@ export async function fileReceipt(id: string, projectId: string, actor: CostActo
     const dup = await prisma.receiptScan.findFirst({ where: { id: { not: id }, status: "FILED", invoiceNo: r.invoiceNumber, vendor: r.vendor } });
     if (dup) throw new ReceiptError(`Invoice ${r.invoiceNumber} was already filed from another scan.`);
   }
-  let documentId: string | null = null;
-  const files = data.scan.files as Saved[];
-  for (const [i, f] of files.entries()) {
-    const { doc } = await addDocument({
-      projectId,
-      bytes: new Uint8Array(await readUpload(f.url)),
-      fileName: `${r.vendor ?? "Supplier"} receipt ${r.invoiceNumber ?? r.date ?? ""}${files.length > 1 ? ` p${i + 1}` : ""}.${f.type === "application/pdf" ? "pdf" : "jpg"}`.replace(/\s+/g, " "),
-      contentType: f.type,
-      userId: actor.id,
-    });
-    documentId ??= doc.id;
-  }
+  const documentId = await attachReceiptDocs(data.scan.files as Saved[], r, projectId, actor.id);
   const rows: InvoiceRow[] = data.lines.map((l, i) => ({
     line: i + 1,
     invoice: r.invoiceNumber,
@@ -281,6 +318,9 @@ export async function approveReceipt(
   const summary = `Additional materials: ${names.slice(0, 3).join(", ")}${names.length > 3 ? " and more" : ""}`;
   const reason = input.reason?.trim() || d.scan.message?.trim() || null;
 
+  const unpriced = d.lines.map((l, i) => (l.amount == null ? i + 1 : null)).filter(Boolean);
+  if (unpriced.length && (input.outcome !== "COST_ONLY" || r.documentType !== "DELIVERY_TICKET"))
+    throw new ReceiptError(`Line${unpriced.length > 1 ? "s" : ""} ${unpriced.join(", ")} ha${unpriced.length > 1 ? "ve" : "s"} no price (not printed, not on our sheets). Enter the unit price first.`);
   let coId: string | null = null;
   let invoiceId: string | null = null;
   if (input.outcome === "CHANGE_ORDER") {
@@ -304,9 +344,20 @@ export async function approveReceipt(
     );
     invoiceId = inv.id;
   }
-  let filed;
+  let filed: { count: number; total: number; flagged: number; skipped: number };
   try {
-    filed = await fileReceipt(id, input.projectId, actor);
+    if (r.documentType === "DELIVERY_TICKET") {
+      // a delivery ticket isn't a bill: ABC's invoice brings the cost later, so nothing is filed to costs here
+      const documentId = await attachReceiptDocs(d.scan.files as Saved[], r, input.projectId, actor.id);
+      const refs = [r.poNumber, r.orderNumber, r.invoiceNumber].filter(Boolean).map((x) => x!.toUpperCase().replace(/[\s-]+/g, ""));
+      const orders = await prisma.materialOrder.findMany({ where: { projectId: input.projectId }, select: { id: true, number: true, supplierOrderNumber: true } });
+      const order = orders.find((o) => refs.includes(o.number.toUpperCase().replace(/[\s-]+/g, "")) || (o.supplierOrderNumber && refs.includes(o.supplierOrderNumber.toUpperCase().replace(/[\s-]+/g, ""))));
+      if (order)
+        await prisma.deliveryTicket.create({ data: { orderId: order.id, date: r.date && /^\d{4}-\d{2}-\d{2}$/.test(r.date) ? new Date(`${r.date}T12:00:00Z`) : new Date(), ticketNumber: r.invoiceNumber ?? r.orderNumber, documentId, note: `From a scanned ticket (${d.lines.length} lines)`, receivedBy: d.scan.employee ?? actor.name } });
+      await prisma.projectActivity.create({ data: { projectId: input.projectId, userId: actor.id, kind: "order", text: `${actor.name} recorded ${vendor} delivery ticket${r.poNumber ? ` (PO ${r.poNumber})` : ""}${order ? ` against ${order.number}` : ""} — ${d.lines.length} line(s); cost comes with ABC's invoice` } });
+      await prisma.receiptScan.update({ where: { id }, data: { status: "FILED", projectId: input.projectId, filedAt: new Date(), matchedBy: input.projectId === d.match?.projectId ? d.match.by : "picked by hand" } });
+      filed = { count: 0, total: 0, flagged: 0, skipped: 0 };
+    } else filed = await fileReceipt(id, input.projectId, actor);
   } catch (e) {
     // don't leave a customer document behind for costs that didn't file
     if (coId) await prisma.changeOrder.delete({ where: { id: coId } });
@@ -323,7 +374,7 @@ export async function approveReceipt(
     try {
       if (coId) done.push(`Estimate ${await pushChangeOrderEstimate(coId, items.map((x) => ({ description: `${x.vendor} — ${x.item}`, amount: x.amount })))}`);
       if (invoiceId) done.push(`Invoice ${await syncInvoice(invoiceId)}`);
-      done.push(
+      if (r.documentType !== "DELIVERY_TICKET") done.push(
         `Expense ${await pushReceiptExpense({
           projectId: input.projectId,
           vendor,
@@ -339,4 +390,53 @@ export async function approveReceipt(
   } else qboStatus = "QuickBooks isn't connected — nothing was sent.";
   await prisma.receiptScan.update({ where: { id }, data: { qboStatus } });
   return { ...filed, changeOrderId: coId, invoiceId, qboStatus };
+}
+
+/** Puts the receipt/ticket photos on the job's Documents; returns the first document's id. */
+async function attachReceiptDocs(files: Saved[], r: Receipt, projectId: string, userId: string) {
+  let documentId: string | null = null;
+  const label = r.documentType === "DELIVERY_TICKET" ? "Delivery ticket" : `${r.vendor ?? "Supplier"} receipt`;
+  for (const [i, f] of files.entries()) {
+    const { doc } = await addDocument({
+      projectId,
+      bytes: new Uint8Array(await readUpload(f.url)),
+      fileName: `${label} ${r.invoiceNumber ?? r.poNumber ?? ""} ${r.date ?? ""}${files.length > 1 ? ` p${i + 1}` : ""}.${f.type === "application/pdf" ? "pdf" : "jpg"}`.replace(/\s+/g, " ").trim(),
+      contentType: f.type,
+      userId,
+    });
+    documentId ??= doc.id;
+  }
+  return documentId;
+}
+
+/** Office-entered unit prices for lines with no printed price and none on our sheets. */
+export async function setLinePrices(id: string, prices: Record<string, number | null>, actor: { name: string; role: string }) {
+  if (actor.role === "VIEWER") throw new ReceiptError("Viewers can't enter prices.");
+  const scan = await prisma.receiptScan.findUniqueOrThrow({ where: { id } });
+  if (scan.status === "FILED") throw new ReceiptError("This receipt is already approved.");
+  const cur = { ...((scan.linePrice as Record<string, number> | null) ?? {}) };
+  for (const [k, v] of Object.entries(prices)) {
+    if (v == null) delete cur[k];
+    else if (!Number.isFinite(v) || v < 0) throw new ReceiptError("Prices must be numbers, zero or more.");
+    else cur[k] = Math.round(v * 100) / 100;
+  }
+  await prisma.receiptScan.update({ where: { id }, data: { linePrice: cur } });
+}
+
+/** The office's crop/rotation for one page ("auto" = find the paper again, "none" = whole photo), then read again. */
+export async function recropAndReread(id: string, page: number, input: { crop: Crop | "auto" | "none"; rotate: Rotate }, actor: { role: string }) {
+  if (actor.role === "VIEWER") throw new ReceiptError("Viewers can't change receipts.");
+  const scan = await prisma.receiptScan.findUniqueOrThrow({ where: { id } });
+  if (scan.status === "FILED") throw new ReceiptError("This receipt is already approved.");
+  const files = [...(scan.files as Saved[])];
+  const f = files[page];
+  if (!f || f.type === "application/pdf") throw new ReceiptError("That page can't be cropped.");
+  const ok = (c: Crop) => [c.x, c.y, c.w, c.h].every((v) => Number.isFinite(v) && v >= 0 && v <= 1) && c.w > 0.05 && c.h > 0.05 && c.x + c.w <= 1.001 && c.y + c.h <= 1.001;
+  if (typeof input.crop === "object" && !ok(input.crop)) throw new ReceiptError("Draw a bigger box around the receipt.");
+  const rotate = ([0, 90, 180, 270].includes(input.rotate) ? input.rotate : 0) as Rotate;
+  const auto = input.crop === "auto" || rotate !== (f.rotate ?? 0) ? await detectPaper(new Uint8Array(await readUpload(f.url)), rotate).catch(() => null) : f.auto;
+  files[page] = { ...f, rotate, auto, crop: input.crop === "auto" ? null : input.crop };
+  // lines may come back different, so typed prices and per-line markups start over
+  await prisma.receiptScan.update({ where: { id }, data: { files, status: "READING", linePrice: {}, lineMarkup: {} } });
+  await readReceipt(id);
 }

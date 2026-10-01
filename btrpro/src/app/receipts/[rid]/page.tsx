@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { loadReceipt } from "@/lib/receipts/service";
+import { cropOf, loadReceipt, type Saved } from "@/lib/receipts/service";
+import { ReceiptPhotos } from "@/components/receipts/photo-tools";
+import { LinePrices } from "@/components/receipts/line-prices";
 import { getSettings } from "@/lib/settings";
 import { qboConnected } from "@/lib/integrations/quickbooks";
 import { canSeeCosts } from "@/lib/costing/service";
@@ -34,21 +36,12 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   const { job } = await searchParams;
   const scan = await prisma.receiptScan.findUnique({ where: { id: rid } });
   if (!scan) notFound();
-  const files = scan.files as { url: string; type: string }[];
+  const files = scan.files as Saved[];
+  const pagesInfo = files.map((f, i) => ({ index: i, pdf: f.type === "application/pdf", crop: cropOf(f), manual: f.crop != null, rotate: f.rotate ?? 0 }));
+  const version = encodeURIComponent(JSON.stringify(files.map((f) => [f.crop ?? null, f.rotate ?? 0, f.auto ? 1 : 0])).slice(0, 300));
   const photos = (
-    <section className="flex flex-col gap-2">
-      {files.map((f, i) =>
-        f.type === "application/pdf" ? (
-          <a key={i} href={`/api/receipts/${rid}/${i}`} target="_blank" className="text-sm text-btr-link underline">
-            Open PDF page {i + 1}
-          </a>
-        ) : (
-          <a key={i} href={`/api/receipts/${rid}/${i}`} target="_blank">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/api/receipts/${rid}/${i}`} alt={`Receipt page ${i + 1}`} className="w-full rounded-md border border-btr-line" />
-          </a>
-        ),
-      )}
+    <div className="flex flex-col gap-2">
+      <ReceiptPhotos rid={rid} pages={pagesInfo} version={version} canEdit={scan.status !== "FILED"} />
       {(scan.subject || scan.message) && (
         <div className="rounded-md bg-muted/60 p-2 text-xs">
           {scan.subject && (
@@ -63,7 +56,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
           )}
         </div>
       )}
-    </section>
+    </div>
   );
   const head = (
     <div className="flex flex-col gap-1">
@@ -113,9 +106,17 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   const confident = !!d.match && d.projectId === d.match.projectId;
   const counts = d.lines.reduce<Record<string, number>>((a, l) => ((a[l.check.status] = (a[l.check.status] ?? 0) + 1), a), {});
 
+  const ticket = r.documentType === "DELIVERY_TICKET";
+  const unpriced = d.lines.map((l, i) => ({ i, l })).filter(({ l }) => l.amount == null || l.priced === "ENTERED");
   return (
     <div className="flex flex-col gap-5">
       {head}
+      {ticket && (
+        <p className="rounded-lg border border-btr-line bg-btr-blue-soft p-3 text-sm">
+          <span className="font-semibold">Delivery ticket — no prices printed.</span> Lines are priced from our sheets{d.scope.builderName ? ` (${d.scope.builderName}'s pricing)` : ""} where the item # and unit match; type a price for the rest. Approving records the delivery
+          on the job (and its material order, when the PO matches) but files no cost — ABC&apos;s invoice brings the real cost.
+        </p>
+      )}
       <div className="grid items-start gap-4 lg:grid-cols-[280px_minmax(0,1fr)_minmax(0,1.3fr)]">
         {photos}
 
@@ -194,6 +195,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
           invoiceNumber={r.invoiceNumber}
           employee={scan.employee}
           lines={d.lines.map((l) => ({ itemNumber: l.itemNumber, description: l.description, quantity: l.quantity, uom: l.uom, amount: l.amount }))}
+          ticket={ticket}
           tax={r.tax}
           defaultMarkup={d.defaultMarkup}
           lineMarkup={(scan.lineMarkup as Record<string, number> | null) ?? {}}
@@ -240,6 +242,8 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
                   <td className="px-3 py-2 font-mono text-xs">{l.itemNumber ?? "—"}</td>
                   <td className="px-3 py-2">
                     {l.description}
+                    {l.handwritten && <Badge variant="amber">handwritten</Badge>}
+                    {l.orderedQuantity != null && l.quantity != null && l.orderedQuantity !== l.quantity && <span className="block text-xs font-medium">Ordered {l.orderedQuantity}, shipped {l.quantity}</span>}
                     {l.check.compared && l.check.compared.description.toLowerCase() !== l.description.toLowerCase() && <span className="block text-xs text-muted-foreground">Sheet: {l.check.compared.description}</span>}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">{l.quantity ?? "—"}</td>
@@ -260,7 +264,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
                     {d.scope.builderName && l.check.standard && l.check.compared !== l.check.standard && l.check.standard.unitPrice != null && <span className="block text-[10px] text-muted-foreground">std {usd(l.check.standard.unitPrice)}</span>}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
-                    {usd(l.amount)}
+                    {l.amount == null ? <span className="font-semibold">MISSING</span> : usd(l.amount)}
                     {l.formula && <span className="block text-[10px] text-muted-foreground">{l.formula}</span>}
                   </td>
                   <td className="px-3 py-2 text-xs">
@@ -273,6 +277,12 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
             </tbody>
           </table>
         </div>
+        {!filed && unpriced.length > 0 && (
+          <LinePrices
+            id={rid}
+            lines={unpriced.map(({ i, l }) => ({ index: i, label: `${l.itemNumber ? `${l.itemNumber} · ` : ""}${l.description}`, qty: l.quantity, uom: l.uom, price: l.priced === "ENTERED" && l.amount != null && l.quantity ? Math.round((l.amount / l.quantity) * 100) / 100 : null }))}
+          />
+        )}
         <dl className="ml-auto grid grid-cols-[auto_auto] gap-x-6 gap-y-1 text-sm">
           <dt>Lines add up to</dt>
           <dd className="text-right tabular-nums">{usd(d.totals?.sum)}</dd>
@@ -289,7 +299,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
             </>
           )}
         </dl>
-        {d.totals?.flags.map((f) => (
+        {(ticket ? (d.totals?.flags ?? []).map((f) => (f.startsWith("Some lines have no amount") ? "Enter prices for the MISSING lines to bill the customer. Recording the delivery doesn't need them." : f)) : (d.totals?.flags ?? [])).map((f) => (
           <p key={f} className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm dark:border-amber-800 dark:bg-amber-950">
             {f}
           </p>

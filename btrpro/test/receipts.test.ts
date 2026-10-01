@@ -52,8 +52,10 @@ describe("job matching", () => {
     expect(matchReceiptJob(receipt({ poNumber: "PO-2026-0042", shipToAddress: "1234 Maple St" }), jobs, orders).match?.projectId).toBe("j3");
     expect(matchReceiptJob(receipt({ orderNumber: "88123" }), jobs, orders).match?.projectId).toBe("j3");
     expect(matchReceiptJob(receipt({ shipToAddress: "1234 MAPLE STREET OMAHA" }), jobs, orders).match).toMatchObject({ projectId: "j1" });
-    // a job name alone is never enough to file automatically: it waits for review with the closest match
-    const byName = matchReceiptJob(receipt({ poNumber: "PRAIRIE RIDGE LOT 7" }), jobs, orders);
+    // BTR writes the job name in the PO: a PO that spells out one job's name is a 95% match
+    expect(matchReceiptJob(receipt({ poNumber: "PRAIRIE RIDGE LOT 7" }), jobs, orders).match).toMatchObject({ projectId: "j2", score: 95 });
+    // a name in the job-name field alone is never enough to file automatically: it waits for review
+    const byName = matchReceiptJob(receipt({ jobName: "prairie" }), jobs, orders);
     expect(byName.match).toBeNull();
     expect(byName.candidates[0]).toMatchObject({ projectId: "j2", score: 85 });
     expect(matchReceiptJob(receipt({ poNumber: "4410" }), jobs, orders).match?.projectId).toBe("j2");
@@ -151,6 +153,15 @@ describe("pricing for the customer (Colin's JobReceipts numbers)", () => {
     expect(hd).toMatchObject({ cost: 313.17, billed: 360.15, profit: 46.98, marginPct: 13.04 });
     // a line can carry its own markup
     expect(receiptPricing([100], null, [25]).lines[0]).toMatchObject({ cost: 100, billed: 125, profit: 25 });
+  });
+
+  it("ABC delivery ticket to the shop: the shop address is ignored, the PO (customer name) finds the job", () => {
+    const jobs = [
+      { id: "wc", name: "TEST_ONLY Wylie Clang", address: "1500 Test Oak Dr, Elkhorn NE", status: "SOLD", acculynxJobNumber: null, clientName: null },
+      { id: "shopjob", name: "TEST_ONLY Shop stock", address: "2755 River Rd, Waterloo NE", status: "SOLD", acculynxJobNumber: null, clientName: null },
+    ];
+    const t = matchReceiptJob(receipt({ documentType: "DELIVERY_TICKET", poNumber: "Wylie Clang", shipToName: "BTR Contracting-Shop", shipToAddress: "2755 River Rd Waterloo, NE 68127-6812" }), jobs, [], { ownAddresses: ["10852 Hanover St", "9350 G Ct", "2755 River Rd"] });
+    expect(t.match).toMatchObject({ projectId: "wc", score: 95 });
   });
 
   it("matches from the email note, and holds a name-only match for review", () => {

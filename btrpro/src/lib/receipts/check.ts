@@ -3,8 +3,9 @@
 import { round } from "@/lib/calc/core";
 import { streetKey } from "@/lib/integrations/drive-photos";
 
-export type ReceiptLine = { itemNumber: string | null; description: string; quantity: number | null; uom: string | null; unitPrice: number | null; extendedPrice: number | null };
+export type ReceiptLine = { itemNumber: string | null; description: string; quantity: number | null; uom: string | null; unitPrice: number | null; extendedPrice: number | null; orderedQuantity?: number | null; handwritten?: boolean };
 export type Receipt = {
+  documentType?: "RECEIPT" | "INVOICE" | "DELIVERY_TICKET" | "OTHER";
   vendor: string | null;
   branch: string | null;
   invoiceNumber: string | null;
@@ -53,7 +54,7 @@ export type JobRow = { id: string; name: string; address: string | null; status:
 export type OrderRow = { projectId: string; number: string; supplierOrderNumber: string | null };
 export type JobMatch = { projectId: string; by: string; score: number };
 /** Extra text that came with the receipt (email subject and message, or the uploader's note). */
-export type ReceiptContext = { subject?: string | null; message?: string | null };
+export type ReceiptContext = { subject?: string | null; message?: string | null; ownAddresses?: readonly string[] };
 
 const STOP = new Set(["the", "job", "po", "lot", "llc", "inc", "co", "and", "of", "roof", "reroof", "roofing", "siding", "gutters", "gutter", "repair", "test_only", "st", "ave", "rd", "dr", "ln", "ct", "omaha", "ne"]);
 const words = (s: string) =>
@@ -80,7 +81,10 @@ export function matchReceiptJob(r: Receipt, jobs: JobRow[], orders: OrderRow[], 
   const refs = [r.poNumber, r.orderNumber, r.invoiceNumber].map(key).filter((k) => k.length >= 3);
   const texts = [r.jobName, r.poNumber, r.shipToName, ctx.subject, ctx.message].filter((t): t is string => !!t && t.trim().length >= 3);
   const pool = new Set(texts.flatMap(words));
-  const addrKeys = new Set([r.shipToAddress, r.jobName, r.poNumber, ctx.subject, ctx.message].flatMap(streetKeys));
+  // BTR's own office/shop addresses say nothing about the job
+  const own = new Set((ctx.ownAddresses ?? []).flatMap(streetKeys));
+  const addrKeys = new Set([r.shipToAddress, r.jobName, r.poNumber, ctx.subject, ctx.message].flatMap(streetKeys).filter((k) => !own.has(k)));
+  const poWords = [...new Set(words(r.poNumber ?? "").filter((w) => w.length >= 3 && !/^\d+$/.test(w)))];
   const open = (j: JobRow) => !["LOST", "CLOSED"].includes(j.status);
   // how many job names use each word: a word only a few jobs share (a surname, a subdivision) is a strong hint
   const df = new Map<string, number>();
@@ -97,6 +101,10 @@ export function matchReceiptJob(r: Receipt, jobs: JobRow[], orders: OrderRow[], 
     const nameHit = hits.length ? (hits.some((w) => (df.get(w) ?? 0) <= 3 && w.length >= 4) || hits.length >= 2 ? 1 : 0.6) : 0;
     const addr = streetKeys(j.address).some((k) => addrKeys.has(k));
     if (score < 100 && addr) [score, by] = nameHit > 0 ? [100, "address and job name"] : [95, "ship-to address"];
+    // BTR writes the job (customer) name in the PO: every PO word in this job's name, and the name is rare enough
+    const jobWords = new Set(words(j.name));
+    if (score < 95 && poWords.length && poWords.every((w) => jobWords.has(w)) && (poWords.length >= 2 || (df.get(poWords[0]) ?? 0) <= 1))
+      [score, by] = [95, `PO "${r.poNumber}" = job name`];
     if (score < 85 && nameHit > 0) [score, by] = [Math.round(85 * nameHit), "job name"];
     if (!score) continue;
     if (!open(j)) score = Math.max(0, score - 15); // closed/lost jobs only if nothing else fits

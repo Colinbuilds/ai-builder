@@ -1477,6 +1477,10 @@ model ReceiptScan {
   // markup for billing the customer: receipt-wide %, plus per-line overrides { "<line index>": pct }
   markupPct     Float?
   lineMarkup    Json?
+  // unit prices typed in by the office for lines with no printed price and none on our sheets: { "<line index>": price }
+  linePrice     Json?
+  // RECEIPT | INVOICE | DELIVERY_TICKET | OTHER (as read)
+  docType       String?
   // COST_ONLY | CHANGE_ORDER | INVOICE
   outcome       String?
   changeOrderId String?
