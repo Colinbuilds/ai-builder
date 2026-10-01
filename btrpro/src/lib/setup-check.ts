@@ -100,11 +100,6 @@ export function setupChecks(): Check[] {
   out.push(pair("ABC_CLIENT_ID", "ABC_CLIENT_SECRET", "ABC Supply", "From ABC Supply's API program."));
   out.push(has("GOOGLE_MAPS_API_KEY") ? { name: "Exact address lookup", status: "ok", what: "Google Places key set." } : { name: "Exact address lookup", status: "optional", what: "Using free OpenStreetMap suggestions (check ZIPs).", fix: "Enable Places API (New) in Google Cloud, create an API key, set GOOGLE_MAPS_API_KEY." });
   out.push(has("POSTMARK_SERVER_TOKEN") ? { name: "Sending email", status: "ok", what: "Postmark token set." } : { name: "Sending email", status: "optional", what: "Not set — proposal and invoice links are copied by hand.", fix: "postmarkapp.com → server → API token; set POSTMARK_SERVER_TOKEN and EMAIL_FROM." });
-  out.push(
-    has("TWILIO_ACCOUNT_SID") && has("TWILIO_AUTH_TOKEN") && has("TWILIO_FROM_NUMBER")
-      ? { name: "Texts to project managers", status: "ok", what: "Twilio set." }
-      : { name: "Texts to project managers", status: "optional", what: "Not set — PM crew alerts show in the app only.", fix: "Twilio: buy a number, register it for US business texting (A2P 10DLC), set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER." },
-  );
   out.push(has("STRIPE_SECRET_KEY") ? { name: "Card payments", status: "ok", what: "Stripe set." } : { name: "Card payments", status: "optional", what: "Not set — invoices take check/ACH only.", fix: "Stripe → Developers → API keys; set STRIPE_SECRET_KEY and the webhook secret." });
   return out;
 }

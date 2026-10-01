@@ -80,7 +80,7 @@ describe("tasks", () => {
       "SOLD:order",
       "SOLD:schedule",
     ]);
-    expect(made.find((t) => t.auto === "SOLD:form17")!.assigneeId).toBe(a.id); // no salesperson → estimator
+    expect(made.find((t) => t.auto === "SOLD:form17")!.assigneeId).toBeNull(); // the office handles Form 17
     expect(made.find((t) => t.auto === "SOLD:schedule")!.assigneeId).toBeNull();
     const p2 = await createProject(
       {

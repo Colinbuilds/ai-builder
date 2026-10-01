@@ -47,7 +47,7 @@ export async function officeDesk(now = new Date()) {
   // a promise or follow-up date in the future parks it until then
   const callList = overdue.filter((r) => !r.lastCall?.followUpOn || r.lastCall.followUpOn <= now).sort((a, b) => b.daysLate - a.daysLate);
   const parked = overdue.length - callList.length;
-  const [drafts, completeNoFinal, crewWaiting, qboInvoices, qboBills, bills] = await Promise.all([
+  const [drafts, completeNoFinal, crewWaiting, qboInvoices, qboBills, bills, form17] = await Promise.all([
     prisma.invoice.findMany({ where: { status: "DRAFT" }, select: { id: true, number: true, amountDue: true, kind: true, project: { select: { id: true, name: true } } }, orderBy: { createdAt: "asc" } }),
     prisma.project.findMany({
       where: { status: "COMPLETE", invoices: { none: { kind: "FINAL", status: { not: "VOID" } } } },
@@ -58,6 +58,12 @@ export async function officeDesk(now = new Date()) {
     prisma.invoice.findMany({ where: { qboError: { not: null }, status: { not: "VOID" } }, select: { id: true, number: true, qboError: true, project: { select: { id: true, name: true } } } }),
     prisma.supplierBill.findMany({ where: { qboStatus: { startsWith: "QuickBooks:" }, status: { in: ["APPROVED", "PAID"] } }, select: { id: true, vendor: true, invoiceNumber: true, qboStatus: true } }),
     billSummary(now),
+    // tax-exempt public jobs that are sold (or past) without an executed Form 17 — the office gets it signed
+    prisma.project.findMany({
+      where: { isPublic: true, isTaxExempt: true, form17Status: { not: "EXECUTED" }, status: { in: ["SOLD", "SCHEDULED", "IN_PRODUCTION"] } },
+      select: { id: true, name: true, status: true, form17Status: true },
+      orderBy: { statusChangedAt: "asc" },
+    }),
   ]);
   const comingIn = r2(rows.filter((r) => r.dueDate <= week).reduce((a, r) => a + r.balance, 0));
   return {
@@ -66,6 +72,7 @@ export async function officeDesk(now = new Date()) {
     parked,
     drafts,
     completeNoFinal,
+    form17,
     crewToApprove: crewWaiting.filter((c) => c.status === "SUBMITTED"),
     crewToPay: crewWaiting.filter((c) => c.status === "APPROVED"),
     qboProblems: [

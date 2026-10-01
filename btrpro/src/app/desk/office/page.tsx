@@ -17,7 +17,7 @@ function Count({ n, tone = "default" }: { n: number; tone?: "default" | "warn" |
 export default async function OfficeDesk() {
   const user = await requireUser(BILLING_ROLES);
   const d = await officeDesk();
-  const allClear = !d.callList.length && !d.drafts.length && !d.completeNoFinal.length && !d.crewToApprove.length && !d.bills.ready && !d.bills.needsLook && !d.qboProblems.length;
+  const allClear = !d.callList.length && !d.drafts.length && !d.completeNoFinal.length && !d.form17.length && !d.crewToApprove.length && !d.bills.ready && !d.bills.needsLook && !d.qboProblems.length;
   return (
     <div className="flex max-w-6xl flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -109,6 +109,23 @@ export default async function OfficeDesk() {
               {!d.drafts.length && !d.completeNoFinal.length && <li className="px-4 py-3 text-muted-foreground">Nothing waiting to go out.</li>}
             </ul>
           </Panel>
+
+          {d.form17.length > 0 && (
+            <Panel title={<span className="flex items-center gap-2">Form 17 to get signed <Count n={d.form17.length} /></span>} bodyClass="p-0">
+              <ul className="divide-y text-sm">
+                {d.form17.map((p) => (
+                  <li key={p.id} className="flex justify-between gap-2 px-4 py-2">
+                    <Link href={`/projects/${p.id}`} className={axLink}>
+                      {p.name}
+                    </Link>
+                    <span className="text-xs text-muted-foreground">
+                      {p.status.toLowerCase().replace("_", " ")} · tax-exempt public job, before materials are bought
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          )}
 
           <Panel title={<span className="flex items-center gap-2">Crew invoices <Count n={d.crewToApprove.length} /></span>} right={<Link href="/crews/invoices" className={axLink}>Open</Link>} bodyClass="p-0">
             <ul className="divide-y text-sm">
