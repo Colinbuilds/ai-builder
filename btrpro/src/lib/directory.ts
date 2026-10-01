@@ -22,7 +22,7 @@ export const DirectorySchema = z.object({
   offices: z.array(
     z.object({
       kind: z.enum(["CORPORATE", "PROPERTY", "DEPARTMENT"]).describe("CORPORATE = main office staff list; PROPERTY = a site/community/building; DEPARTMENT = a team with no address (construction, commercial maintenance…)"),
-      names: z.array(z.string()).describe("Property names in this block, as printed. Several when properties share one office and staff list (e.g. 'Glen Oaks', 'Barrington Park')"),
+      names: z.array(z.string()).describe("Property names in this block, as printed. Several when properties share one office and staff list (e.g. 'Maple Ridge', 'Maple Ridge South')"),
       addresses: z.array(str).describe("Street address for each name, same order; null if none printed"),
       phone: str.describe("Office phone for the block"),
       email: str.describe("Office email for the block"),
