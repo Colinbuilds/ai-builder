@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useRef, useState } from "react";
 import { shrinkPhoto as shrink } from "@/components/shrink-photo";
-import { crewInvoiceAction, crewLoginAction, crewPhotosAction, type CrewResult } from "@/app/crew/actions";
+import { crewInvoiceAction, crewLoginAction, crewPhotosAction, crewIssueAction, type CrewResult } from "@/app/crew/actions";
 
 const field = "w-full rounded-lg border border-btr-line bg-background px-3 py-3 text-base";
 const primary = "w-full rounded-lg bg-btr-blue px-4 py-3 text-base font-semibold text-white disabled:opacity-60";
@@ -120,6 +120,43 @@ export function CrewInvoiceForm({ projectId, blocked }: { projectId: string; blo
       </label>
       <button disabled={pending} className={primary}>
         {pending ? "Sending…" : "Send invoice to BTR"}
+      </button>
+      <Result state={state} />
+    </form>
+  );
+}
+
+/** Found something extra (rotted decking, hidden damage): photos + a note go to the office to price before the work is done. */
+export function IssueForm({ projectId }: { projectId: string }) {
+  const [state, dispatch, pending] = useActionState(crewIssueAction, null);
+  const [busy, setBusy] = useState(false);
+  const [picked, setPicked] = useState(0);
+  const form = useRef<HTMLFormElement>(null);
+  return (
+    <form
+      ref={form}
+      className="flex flex-col gap-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const files = f.getAll("photos").filter((x): x is File => x instanceof File && x.size > 0);
+        f.delete("photos");
+        setBusy(true);
+        for (const file of files) f.append("photos", await shrink(file), file.name.replace(/\.\w+$/, "") + ".jpg");
+        setBusy(false);
+        startTransition(() => dispatch(f));
+        form.current?.reset();
+        setPicked(0);
+      }}
+    >
+      <input type="hidden" name="projectId" value={projectId} />
+      <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-btr-line px-3 py-4 text-base font-medium text-btr-link">
+        <input name="photos" type="file" accept="image/*" capture="environment" multiple className="sr-only" onChange={(e) => setPicked(e.currentTarget.files?.length ?? 0)} />
+        {picked ? `${picked} photo${picked === 1 ? "" : "s"} ready` : "Photos of the problem"}
+      </label>
+      <textarea name="note" rows={2} required placeholder="What you found and about how much — e.g. rotted decking, about 6 sheets, back slope" className={field} />
+      <button disabled={pending || busy || !picked} className={primary}>
+        {busy ? "Preparing…" : pending ? "Sending…" : "Report to the office"}
       </button>
       <Result state={state} />
     </form>

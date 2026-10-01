@@ -1,5 +1,6 @@
 "use server";
 
+import { reportIssue } from "@/lib/production/field";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -82,6 +83,18 @@ export async function crewInvoiceAction(_: CrewResult, f: FormData): Promise<Cre
     revalidatePath(`/crew/jobs/${projectId}`);
     revalidatePath("/crew");
     return { problems: [], ok: true, note: "Invoice sent to the office. You'll see it marked approved or sent back here." };
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+}
+
+export async function crewIssueAction(_: CrewResult, f: FormData): Promise<CrewResult> {
+  const crew = await requireCrew();
+  const projectId = str(f, "projectId");
+  try {
+    await reportIssue({ crewId: crew.id, name: crew.name }, projectId, str(f, "note"), await filesOf(f, "photos"));
+    revalidatePath(`/crew/jobs/${projectId}`);
+    return { problems: [], ok: true, note: "Sent to the office. Don't do the extra work until BTR says it's approved." };
   } catch (e) {
     return { problems: [msg(e)] };
   }

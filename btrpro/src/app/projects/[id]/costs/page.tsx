@@ -75,11 +75,14 @@ function Stat({
 
 export default async function CostsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ co?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
+  const { co } = await searchParams;
   const access = await prisma.project.findUnique({
     where: { id },
     select: { estimatorId: true, salespersonId: true },
@@ -400,7 +403,7 @@ export default async function CostsPage({
             </TBody>
           </Table>
         )}
-        {canEdit && <ChangeOrderForm projectId={id} market={p.market} />}
+        {canEdit && <ChangeOrderForm projectId={id} market={p.market} description={co?.slice(0, 300)} />}
       </section>
 
       <section className="flex flex-col gap-2">

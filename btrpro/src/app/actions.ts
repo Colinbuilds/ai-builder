@@ -77,3 +77,15 @@ export async function setUserOwner(form: FormData) {
   await prisma.auditLog.create({ data: { userId: me.id, entity: "User", entityId: id, action: "set_owner", after: { isOwner } } });
   revalidatePath("/admin/users");
 }
+
+/** Cell number and whether this person gets crew texts (started on site, finished, found an issue). */
+export async function setUserTexts(form: FormData) {
+  const me = await requireUser(["ADMIN"]);
+  const id = String(form.get("id"));
+  const digits = String(form.get("phone") ?? "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+  const phone = digits.length === 10 ? `+1${digits}` : null;
+  const crewTexts = form.get("crewTexts") === "on" && !!phone;
+  await prisma.user.update({ where: { id }, data: { phone, crewTexts } });
+  await prisma.auditLog.create({ data: { userId: me.id, entity: "User", entityId: id, action: "set_texts", after: { phone, crewTexts } } });
+  revalidatePath("/admin/users");
+}
