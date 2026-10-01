@@ -27,8 +27,11 @@ export type CompanySettings = {
   takeoffAllowancePct: number | null; // added on top of plan-takeoff totals so they land slightly over; blank = 1%
   billOwnerOver: number | null; // supplier bills over this total need an owner's approval; blank = none
   billNetDays: number | null; // supplier terms when the invoice prints no due date: due = invoice date + days; blank = MISSING
+  estimatingSheet: string | null; // the team's Google estimating schedule; blank = the BTR Estimating Schedule
+  estimatingSyncedAt: string | null; // ISO time of the last sheet sync
+  estimatingSheetOff: boolean | null; // true once BTRpro is the estimating schedule (stops the sheet sync)
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });

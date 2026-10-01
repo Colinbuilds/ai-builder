@@ -221,6 +221,7 @@ model Project {
   priority           String            @default("NORMAL")
   punchItems         PunchItem[]
   fieldIssues        FieldIssue[]
+  estimateLogs       EstimateLog[]
   // ready-to-schedule items ticked by hand: { color, permit, dumpster, notified }
   readyChecks        Json?
   // the customer's property this job is at (multi-family / commercial portfolios)
@@ -925,7 +926,7 @@ model Proposal {
   recipientEmail     String?
   sentAt             DateTime?
   viewedAt           DateTime?
-  viewCount          Int               @default(0)
+  viewCount          Int       @default(0)
   lastViewedAt       DateTime?
   signedAt           DateTime?
   declinedAt         DateTime?
@@ -1310,17 +1311,17 @@ enum InvoiceStatus {
 }
 
 model Invoice {
-  id           String        @id @default(cuid())
+  id           String           @id @default(cuid())
   projectId    String
-  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  number       String        @unique
+  project      Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number       String           @unique
   kind         InvoiceKind
-  status       InvoiceStatus @default(DRAFT)
+  status       InvoiceStatus    @default(DRAFT)
   // [{ description, amount }]
   lines        Json
   subtotal     Float
   retainagePct Float?
-  retainage    Float         @default(0)
+  retainage    Float            @default(0)
   // subtotal − retainage
   amountDue    Float
   issueDate    DateTime
@@ -1328,7 +1329,7 @@ model Invoice {
   notes        String?
   // why it bills past the contract, when it does
   override     String?
-  token        String        @unique
+  token        String           @unique
   billTo       String?
   billToEmail  String?
   sentAt       DateTime?
@@ -1338,8 +1339,8 @@ model Invoice {
   qboSyncedAt  DateTime?
   qboError     String?
   createdBy    String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   payments     Payment[]
   calls        CollectionNote[]
 }
@@ -1512,15 +1513,15 @@ model JobPhoto {
 
 // A photographed supplier receipt/invoice: what was read off it, the job it matched, and whether it was filed to costs.
 model ReceiptScan {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   projectId     String?
-  project       Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
   // uploaded photos/PDF pages, in order: [{ url, type }]
   files         Json
   // READING | READ | FAILED | FILED
-  status        String    @default("READ")
+  status        String        @default("READ")
   // UPLOAD | EMAIL
-  source        String    @default("UPLOAD")
+  source        String        @default("UPLOAD")
   // who sent it: a staff user, or the email sender's name
   employeeId    String?
   employee      String?
@@ -1547,7 +1548,7 @@ model ReceiptScan {
   vendor        String?
   costBatch     String?
   createdById   String
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime      @default(now())
   filedAt       DateTime?
   bill          SupplierBill?
 
@@ -1573,13 +1574,13 @@ model DirectoryImport {
 
 // One sheet's traced takeoff: scale, view, pitch and the drawn lines/areas/counts (points in sheet units).
 model PlanTakeoff {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   projectId  String
   documentId String
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  page       Int      @default(1)
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  page       Int       @default(1)
   // ROOF_PLAN | ELEVATION | OTHER
-  view       String   @default("ROOF_PLAN")
+  view       String    @default("ROOF_PLAN")
   pitch      Float?
   scale      Json?
   items      Json
@@ -1588,8 +1589,8 @@ model PlanTakeoff {
   height     Float?
   savedToJob DateTime?
   updatedBy  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@unique([documentId, page])
   @@index([projectId])
@@ -1700,4 +1701,49 @@ model FieldIssue {
   createdAt  DateTime  @default(now())
 
   @@index([projectId, status])
+}
+
+// Estimating schedule (replaces the "BTR Estimating Schedule" Google Sheet). Rows from the sheet carry
+// source = SHEET and are refreshed by each sync while the team still works in the sheet; rows added in
+// BTRpro are source = APP and never touched by a sync.
+model EstimateLog {
+  id         String    @id @default(cuid())
+  // SHEET | APP
+  source     String    @default("APP")
+  // stable key for a sheet row: tab + customer + project + first date (+ repeat count)
+  sourceKey  String?   @unique
+  sourceTab  String?
+  sourceRow  Int?
+  // CURRENT | MISC | PASSING | SENT | REDRAW | LOST | SOLD | ARCHIVE | TRACT
+  board      String
+  // COMMERCIAL | RESIDENTIAL
+  market     String
+  // NEW_BUILD | REMODEL (residential), or a builder group like "Hildy Homes"
+  kind       String?
+  // STANDARD | ASAP | SOLD_RFQ | REVIEW
+  priority   String    @default("STANDARD")
+  customer   String?
+  project    String
+  scope      String?
+  estimator  String?
+  receivedAt DateTime?
+  dueAt      DateTime?
+  sentAt     DateTime?
+  bidDate    DateTime?
+  status     String?
+  waitingOn  String?
+  sentTo     String?
+  results    String?
+  notes      String?
+  folderLink String?
+  // other columns kept as label → text (Hardie exp., reason, winning sub, PM, super, sell, profit…)
+  extra      Json?
+  projectId  String?
+  job        Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  updatedBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([board, market])
+  @@index([dueAt])
 }

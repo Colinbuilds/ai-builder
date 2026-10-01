@@ -27,6 +27,8 @@ test("estimate to job P&L", async ({ page }) => {
   // Blueprint measurer lives under Production
   await page.goto("/takeoff");
   await expect(page.locator("h1")).toContainText("Blueprint measurer");
+  await page.goto("/estimating/schedule?m=residential");
+  await expect(page.locator("h1")).toContainText("Estimating schedule");
 
   // 1. New residential reroof
   // (lead form order: name → phone/email → address → job type → assigned to)

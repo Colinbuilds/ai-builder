@@ -2,7 +2,8 @@
 // Numbers come back as their stored value ("4869.12"); the schedule parser handles money and dates.
 import JSZip from "jszip";
 
-export type Tab = { name: string; rows: string[][] };
+// links: cell hyperlinks keyed "row,col" (0-based), e.g. a "Folder" cell that links to a Drive folder
+export type Tab = { name: string; rows: string[][]; links?: Record<string, string> };
 
 const decode = (s: string) =>
   s
@@ -71,7 +72,21 @@ export async function readXlsx(bytes: Uint8Array): Promise<Tab[]> {
       }
       rows[rn] = Array.from(row, (x) => x ?? "");
     }
-    tabs.push({ name, rows: Array.from(rows, (x) => x ?? []) });
+    const links: Record<string, string> = {};
+    const hl = [...xml.matchAll(/<hyperlink\b[^>]*>/g)];
+    if (hl.length) {
+      const relPath = t.replace(/([^/]+)$/, "_rels/$1.rels");
+      const sheetRels = (await file(relPath)) ?? "";
+      const relTarget = new Map(
+        [...sheetRels.matchAll(/<Relationship\b[^>]*>/g)].map((m) => [m[0].match(/Id="([^"]+)"/)?.[1], decode(m[0].match(/Target="([^"]+)"/)?.[1] ?? "")]),
+      );
+      for (const h of hl) {
+        const ref = h[0].match(/\bref="([A-Z]+)(\d+)"/);
+        const url = relTarget.get(h[0].match(/r:id="([^"]+)"/)?.[1]);
+        if (ref && url && /^https?:/i.test(url)) links[`${Number(ref[2]) - 1},${colIndex(ref[1])}`] = url;
+      }
+    }
+    tabs.push({ name, rows: Array.from(rows, (x) => x ?? []), links });
   }
   return tabs;
 }
