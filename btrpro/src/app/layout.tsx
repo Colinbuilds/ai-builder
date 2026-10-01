@@ -119,6 +119,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
     tools,
     admin: admin
       ? [
+          { href: "/connections", label: "Connections (ABC, EagleView, QuickBooks)" },
           ...(staff ? [{ href: "/ideas", label: "Ideas board (office requests)" }] : []),
           { href: "/admin/users", label: "Users" },
           { href: "/updates", label: "Company updates" },
@@ -129,7 +130,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
           { href: "/settings/acculynx", label: "Import from AccuLynx (one-time)" },
         ]
       : staff
-        ? [{ href: "/ideas", label: "Ideas board (office requests)" }]
+        ? [...(role === "OFFICE" || role === "PURCHASING" ? [{ href: "/connections", label: "Connections (ABC, EagleView, QuickBooks)" }] : []), { href: "/ideas", label: "Ideas board (office requests)" }]
         : [],
   };
 }
