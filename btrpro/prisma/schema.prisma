@@ -33,6 +33,11 @@ model User {
   // phone shown on proposals as the company representative's number (crewTexts is unused — no texts)
   phone               String?
   crewTexts           Boolean   @default(false)
+  // project managers: their name as written in the schedule's Super column, and the builders and crews they run
+  // (set by the office on Schedule → Who does what). PMs see these first on the dashboard and schedule.
+  scheduleName        String?
+  pmBuilders          Json?
+  pmCrews             Json?
   createdAt           DateTime  @default(now())
   // when the user last opened the notifications panel (bell count = newer than this)
   notificationsSeenAt DateTime?
@@ -1173,6 +1178,8 @@ model Crew {
   name               String
   kind               CrewKind        @default(CREW)
   trade              String? // roofing, siding, gutters, metal…
+  // work the crew does, picked from CREW_SCOPES on Schedule → Who does what
+  scopes             Json?
   leadName           String?
   phone              String?
   email              String?

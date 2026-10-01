@@ -5,11 +5,13 @@ import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { BILLING_ROLES } from "@/lib/roles";
 import { DEFAULT_COMM_SHEET, DEFAULT_RES_SHEET } from "@/lib/production/board";
+import { mineWhere, pmScope } from "@/lib/production/assign";
 import { ProdSheetSettings, ProdSyncButton } from "@/components/production/prod-forms";
 import { stepAction } from "./actions";
 
 type Search = { v?: string; m?: string; who?: string; q?: string; all?: string };
 const VIEWS = [
+  ["mine", "My schedule"],
   ["full", "Full schedule"],
   ["crew", "Crew schedules"],
   ["pm", "Project managers"],
@@ -142,7 +144,9 @@ function grouped(rows: ProdLine[], key: (l: ProdLine) => string) {
 export default async function ProductionBoard({ searchParams }: { searchParams: Promise<Search> }) {
   const user = await requireUser();
   const sp = await searchParams;
-  const view = VIEWS.some(([k]) => k === sp.v) ? sp.v! : "full";
+  const scope = await pmScope(user.id);
+  const views = VIEWS.filter(([k]) => k !== "mine" || scope);
+  const view = views.some(([k]) => k === sp.v) ? sp.v! : scope ? "mine" : "full";
   const market = sp.m === "res" ? "RESIDENTIAL" : sp.m === "comm" ? "COMMERCIAL" : null;
   const q = sp.q?.trim() ?? "";
   const billing = (BILLING_ROLES as readonly string[]).includes(user.role);
@@ -162,8 +166,8 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
   const supers = superNames.sort((a, b) => b._count - a._count).map((c) => c.superName!);
 
   let body: React.ReactNode = null;
-  if (view === "full") {
-    const rows = await prisma.prodLine.findMany({ where: { AND: [OPEN, ...base] }, orderBy: order, take: q ? 400 : 3000 });
+  if (view === "full" || view === "mine") {
+    const rows = await prisma.prodLine.findMany({ where: { AND: [OPEN, ...base, ...(view === "mine" && scope ? [mineWhere(scope)] : [])] }, orderBy: order, take: q ? 400 : 3000 });
     const newOnes = rows.filter((r) => r.board === "ADD");
     const sections = (["UPCOMING", "CURRENT", "WARRANTY"] as const).map((b) => [b, rows.filter((r) => r.board === b)] as const);
     body = (
@@ -194,7 +198,10 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
   } else if (view === "crew" || view === "pm") {
     const list = view === "crew" ? crews : supers;
     const who = sp.who && list.includes(sp.who) ? sp.who : list[0];
-    const rows = who ? await prisma.prodLine.findMany({ where: { AND: [OPEN, ...base, view === "crew" ? { crew: who } : { superName: who }] }, orderBy: order }) : [];
+    const [rows, crewRec] = await Promise.all([
+      who ? prisma.prodLine.findMany({ where: { AND: [OPEN, ...base, view === "crew" ? { crew: who } : { superName: who }] }, orderBy: order }) : [],
+      view === "crew" && who ? prisma.crew.findFirst({ where: { name: who }, select: { trade: true } }) : null,
+    ]);
     body = (
       <div className="flex flex-col gap-3 lg:flex-row">
         <nav className="flex shrink-0 flex-row flex-wrap gap-1 lg:w-56 lg:flex-col">
@@ -206,7 +213,14 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
         </nav>
         <section className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-semibold">{who ? `${who}'s schedule` : "No one on the schedule yet"}</h2>
+            <h2 className="font-semibold">
+              {who ? `${who}'s schedule` : "No one on the schedule yet"}
+              {view === "crew" && who && (
+                <Link href="/production/who" className="ml-2 text-xs font-normal text-muted-foreground hover:underline">
+                  {crewRec?.trade ? `Does: ${crewRec.trade}` : "Work scope not set — add it"}
+                </Link>
+              )}
+            </h2>
             {who && canEdit && (
               <Link href={`/production/new?${view === "crew" ? "crew" : "superName"}=${encodeURIComponent(who)}`} className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
                 Add to {view === "crew" ? "this crew's" : "this PM's"} schedule
@@ -267,6 +281,10 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
             ·{" "}
             <Link href="/billing/pay-apps" className="text-btr-link hover:underline">
               Pay applications (AIA)
+            </Link>{" "}
+            ·{" "}
+            <Link href="/production/who" className="text-btr-link hover:underline">
+              Who does what (PMs, builders, crew scopes)
             </Link>
           </p>
         </div>
@@ -277,7 +295,7 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2 border-b">
-        {VIEWS.map(([k, l]) => (
+        {views.map(([k, l]) => (
           <Link key={k} href={tabLink(k)} className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${view === k ? "border-btr-blue" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
             {l}
           </Link>

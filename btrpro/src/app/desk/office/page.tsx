@@ -4,6 +4,7 @@ import { BILLING_ROLES } from "@/lib/roles";
 import { officeDesk } from "@/lib/desks";
 import { Panel, axLink } from "@/components/shell/panel";
 import { CallLog } from "@/components/desk/call-log";
+import { assignGaps } from "@/lib/production/assign";
 
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 const day = (d: Date) => d.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric" });
@@ -16,7 +17,7 @@ function Count({ n, tone = "default" }: { n: number; tone?: "default" | "warn" |
 
 export default async function OfficeDesk() {
   const user = await requireUser(BILLING_ROLES);
-  const d = await officeDesk();
+  const [d, gaps] = await Promise.all([officeDesk(), assignGaps()]);
   const allClear = !d.callList.length && !d.drafts.length && !d.completeNoFinal.length && !d.form17.length && !d.prodToPay && !d.prodToBill && !d.crewToApprove.length && !d.bills.ready && !d.bills.needsLook && !d.qboProblems.length;
   return (
     <div className="flex max-w-6xl flex-col gap-4">
@@ -34,6 +35,11 @@ export default async function OfficeDesk() {
           </span>
         </div>
       </div>
+      {(gaps.pmsBlank > 0 || gaps.crewsBlank > 0) && (
+        <Link href="/production/who" className="block rounded-md border-l-4 border-l-amber-500 bg-amber-50 p-3 text-sm text-amber-950 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200">
+          <b>Help set up the schedule:</b> tell BTRpro which builders and crews each PM runs{gaps.pmsBlank ? ` (${gaps.pmsBlank} people not set)` : ""} and what work each crew does{gaps.crewsBlank ? ` (${gaps.crewsBlank} crews not set)` : ""}. Most boxes are pre-filled from the schedule — check them and press Save. →
+        </Link>
+      )}
       {allClear && <p className="rounded-md bg-green-50 p-3 text-sm text-green-800 dark:bg-green-950/40 dark:text-green-300">All caught up for today.</p>}
 
       <div className="grid gap-4 lg:grid-cols-2">
