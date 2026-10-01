@@ -73,6 +73,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
           ? [
               { href: "/crews/invoices", label: "Crew invoices" },
               { href: "/receipts", label: "Supplier receipts" },
+              { href: "/bills", label: "Supplier bills (pay ABC)" },
             ]
           : []),
       ],

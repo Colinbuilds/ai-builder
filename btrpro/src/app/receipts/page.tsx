@@ -10,7 +10,7 @@ import { AutoRefresh } from "@/components/receipts/auto-refresh";
 
 export default async function Receipts() {
   await requireUser(STAFF_ROLES);
-  const scans = await prisma.receiptScan.findMany({ include: { project: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 50 });
+  const scans = await prisma.receiptScan.findMany({ where: { bill: null }, include: { project: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 50 });
   const inbox = receiptsAddress();
   const label = (s: (typeof scans)[number]): [string, "green" | "red" | "amber" | "outline" | "blue"] =>
     s.status === "READING"

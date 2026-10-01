@@ -1,10 +1,11 @@
 import { STAFF_ROLES } from "@/lib/roles";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { cropOf, loadReceipt, type Saved } from "@/lib/receipts/service";
 import { ReceiptPhotos } from "@/components/receipts/photo-tools";
+import { receiptToBillAction } from "@/app/bills/actions";
 import { LinePrices } from "@/components/receipts/line-prices";
 import { getSettings } from "@/lib/settings";
 import { qboConnected } from "@/lib/integrations/quickbooks";
@@ -35,8 +36,9 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   const user = await requireUser(STAFF_ROLES);
   const { rid } = await params;
   const { job } = await searchParams;
-  const scan = await prisma.receiptScan.findUnique({ where: { id: rid } });
+  const scan = await prisma.receiptScan.findUnique({ where: { id: rid }, include: { bill: { select: { id: true } } } });
   if (!scan) notFound();
+  if (scan.bill) redirect(`/bills/${scan.bill.id}`);
   const files = scan.files as Saved[];
   const pagesInfo = files.map((f, i) => ({ index: i, pdf: f.type === "application/pdf", crop: cropOf(f), manual: f.crop != null, rotate: f.rotate ?? 0 }));
   const version = encodeURIComponent(JSON.stringify(files.map((f) => [f.crop ?? null, f.rotate ?? 0, f.auto ? 1 : 0])).slice(0, 300));
@@ -75,6 +77,12 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         {scan.source === "EMAIL" ? "Emailed" : "Uploaded"} by {scan.employee ?? "staff"} ·{" "}
         {scan.createdAt.toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" })}
       </p>
+      {scan.status === "READ" && (
+        <form action={receiptToBillAction}>
+          <input type="hidden" name="scanId" value={scan.id} />
+          <button className="text-sm text-btr-link hover:underline">On-account invoice we pay later? Move it to Supplier bills →</button>
+        </form>
+      )}
     </div>
   );
 

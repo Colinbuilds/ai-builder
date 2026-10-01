@@ -1536,6 +1536,7 @@ model ReceiptScan {
   createdById   String
   createdAt     DateTime  @default(now())
   filedAt       DateTime?
+  bill          SupplierBill?
 
   @@index([createdAt])
   @@index([emailId])
@@ -1594,5 +1595,44 @@ model PunchItem {
   doneAt    DateTime?
   doneBy    String?
 
+  @@index([projectId])
+}
+
+// An on-account supplier invoice (accounts payable), read by the receipt reader and checked against our PO,
+// delivery tickets and price sheets before the office approves it into job costs and a QuickBooks bill.
+model SupplierBill {
+  id              String      @id @default(cuid())
+  scanId          String      @unique
+  scan            ReceiptScan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  vendor          String
+  invoiceNumber   String?
+  invoiceDate     DateTime?
+  dueDate         DateTime?
+  terms           String?
+  total           Float?
+  projectId       String?
+  orderId         String?
+  // NEEDS_LOOK | READY | APPROVED | PAID | DISPUTED | VOID
+  status          String      @default("NEEDS_LOOK")
+  // the three-way match result shown to the office
+  match           Json?
+  // set when an owner must approve (over the limit, or approved despite flags)
+  needsOwner      Boolean     @default(false)
+  approvedBy      String?
+  approvedAt      DateTime?
+  approveNote     String?
+  ownerApprovedBy String?
+  ownerApprovedAt DateTime?
+  qboBillId       String?
+  qboStatus       String?
+  paidAt          DateTime?
+  paidRef         String?
+  disputeNote     String?
+  disputedAt      DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([status])
+  @@index([vendor, invoiceNumber])
   @@index([projectId])
 }

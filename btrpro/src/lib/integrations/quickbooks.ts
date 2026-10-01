@@ -145,3 +145,36 @@ export async function pushReceiptExpense(input: { projectId: string; vendor: str
   });
   return r.Purchase.Id;
 }
+
+/** An on-account supplier invoice as a QuickBooks Bill (accounts payable), job-costed to the job's customer. */
+export async function pushSupplierBill(input: {
+  projectId: string;
+  vendor: string;
+  invoiceNumber: string | null;
+  date: string | null;
+  dueDate: string | null;
+  lines: { description: string; amount: number }[];
+}) {
+  const s = await getSettings();
+  if (!s.qboExpenseAccountId) throw new QboError("Set the QuickBooks expense account under Admin → Company settings.");
+  const [customer, vendor] = await Promise.all([ensureCustomer(input.projectId), ensureVendor(input.vendor)]);
+  const r = await qbo<{ Bill: { Id: string } }>("POST", "bill", {
+    VendorRef: { value: vendor },
+    ...(input.date ? { TxnDate: input.date } : {}),
+    ...(input.dueDate ? { DueDate: input.dueDate } : {}),
+    ...(input.invoiceNumber ? { DocNumber: input.invoiceNumber.slice(0, 21) } : {}),
+    Line: input.lines.map((l) => ({
+      Amount: l.amount,
+      DetailType: "AccountBasedExpenseLineDetail",
+      Description: l.description.slice(0, 4000),
+      AccountBasedExpenseLineDetail: { AccountRef: { value: s.qboExpenseAccountId }, CustomerRef: { value: customer }, BillableStatus: "NotBillable" },
+    })),
+  });
+  return r.Bill.Id;
+}
+
+/** What's still owed on a bill in QuickBooks (0 = paid there). */
+export async function qboBillBalance(billId: string) {
+  const r = await qbo<{ Bill: { Balance: number } }>("GET", `bill/${encodeURIComponent(billId)}`);
+  return r.Bill.Balance;
+}

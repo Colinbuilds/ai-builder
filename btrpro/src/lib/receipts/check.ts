@@ -15,6 +15,8 @@ export type Receipt = {
   shipToName: string | null;
   shipToAddress: string | null;
   date: string | null;
+  dueDate?: string | null;
+  terms?: string | null;
   lines: ReceiptLine[];
   subtotal: number | null;
   tax: number | null;

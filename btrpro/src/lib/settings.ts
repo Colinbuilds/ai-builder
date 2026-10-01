@@ -25,8 +25,10 @@ export type CompanySettings = {
   iceWaterValleysFt: number | null; // company standard: ice & water width in valleys, in feet
   priceSheetLastCheck: string | null; // ISO time of the last check
   takeoffAllowancePct: number | null; // added on top of plan-takeoff totals so they land slightly over; blank = 1%
+  billOwnerOver: number | null; // supplier bills over this total need an owner's approval; blank = none
+  billNetDays: number | null; // supplier terms when the invoice prints no due date: due = invoice date + days; blank = MISSING
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });

@@ -35,6 +35,8 @@ export const ReceiptSchema = z.object({
   shipToName: str.describe("Ship-to / deliver-to name as printed"),
   shipToAddress: str.describe("Ship-to / delivery / job-site street address as printed (not the branch or bill-to address)"),
   date: str.describe("Invoice/receipt date as YYYY-MM-DD, only if printed"),
+  dueDate: str.describe("Payment due date as YYYY-MM-DD, only if printed on an invoice").optional(),
+  terms: str.describe("Payment terms exactly as printed, e.g. 'NET 10TH PROX' or 'Net 30'").optional(),
   lines: z.array(
     z.object({
       itemNumber: str.describe("Supplier item/product number / SKU exactly as printed, keeping leading zeros; null if none"),
