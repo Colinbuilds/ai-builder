@@ -6,7 +6,7 @@ import { z } from "zod";
 import type Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/db";
 import { readUpload, saveUpload } from "@/lib/storage";
-import { aiParse } from "@/lib/ai/claude";
+import { aiErrorMessage, aiParse } from "@/lib/ai/claude";
 import { sniff } from "@/lib/portal/crew";
 import { MAX_PHOTO_BYTES, resized } from "@/lib/photos/images";
 import sharp from "sharp";
@@ -152,7 +152,7 @@ export async function readReceipt(id: string) {
     const { data } = await aiParse({ task: TASK, schema: ReceiptSchema, effort: "medium", messages: [{ role: "user", content }] });
     await prisma.receiptScan.update({ where: { id }, data: { status: "READ", extracted: data, invoiceNo: data.invoiceNumber, vendor: data.vendor, docType: data.documentType, error: null } });
   } catch (e) {
-    await prisma.receiptScan.update({ where: { id }, data: { status: "FAILED", error: e instanceof Error ? e.message : String(e) } });
+    await prisma.receiptScan.update({ where: { id }, data: { status: "FAILED", error: aiErrorMessage(e) } });
   }
 }
 

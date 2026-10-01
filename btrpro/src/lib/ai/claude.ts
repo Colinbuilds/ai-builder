@@ -32,10 +32,12 @@ export function aiClient(): AiClient {
 }
 function client(): AiClient {
   if (override) return override;
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) throw new AiUnavailableError();
-  return (real ??= new Anthropic());
+  const key = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!key) throw new AiUnavailableError();
+  // API key only: a leftover ANTHROPIC_AUTH_TOKEN would otherwise go along as a bearer token and get the call rejected
+  return (real ??= new Anthropic({ apiKey: key, authToken: null }));
 }
-export const aiConfigured = () => !!(override || process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
+export const aiConfigured = () => !!(override || process.env.ANTHROPIC_API_KEY?.trim());
 
 let claudeMd: string | null = null;
 /** The estimator knowledge base — loaded verbatim, never paraphrased. */
@@ -104,7 +106,8 @@ export async function aiParse<S extends z.ZodType>(opts: {
 export function aiErrorMessage(e: unknown): string {
   if (e instanceof AiUnavailableError || e instanceof AiRefusalError) return e.message;
   if (e instanceof Anthropic.RateLimitError) return "The AI service is busy. Try again in a minute.";
-  if (e instanceof Anthropic.AuthenticationError) return "The AI API key was rejected. Check ANTHROPIC_API_KEY.";
+  if (e instanceof Anthropic.AuthenticationError)
+    return "The AI key was rejected. In Railway, ANTHROPIC_API_KEY must be a key from console.anthropic.com → API Keys (starts sk-ant-api03-), and ANTHROPIC_AUTH_TOKEN should be deleted.";
   if (e instanceof Anthropic.APIError) return `AI service error (${e.status ?? "network"}). Try again.`;
   return e instanceof Error ? e.message : String(e);
 }
