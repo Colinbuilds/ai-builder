@@ -114,6 +114,7 @@ function toolsFor(role: string): { tools: Tool[]; admin: { href: string; label: 
           { href: "/updates", label: "Company updates" },
           { href: "/settings/company", label: "Company settings" },
           { href: "/settings/integrations", label: "Integrations" },
+          { href: "/admin/setup", label: "Setup check" },
           { href: "/settings/import-jobs", label: "Import jobs (schedules)" },
           { href: "/settings/acculynx", label: "Import from AccuLynx (one-time)" },
         ]

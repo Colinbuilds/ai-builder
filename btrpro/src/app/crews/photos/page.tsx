@@ -1,10 +1,11 @@
+import { BILLING_ROLES } from "@/lib/roles";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 /** Jobs with crew photos the office hasn't checked yet (quality of work and cleanup). */
 export default async function CrewPhotosToCheck() {
-  await requireUser(["ADMIN", "ESTIMATOR"]);
+  await requireUser(BILLING_ROLES);
   const groups = await prisma.jobPhoto.groupBy({ by: ["projectId", "crewId"], where: { review: "PENDING", crewId: { not: null } }, _count: true, _max: { takenAt: true } });
   const [projects, crews] = await Promise.all([
     prisma.project.findMany({ where: { id: { in: groups.map((g) => g.projectId) } }, select: { id: true, name: true, address: true } }),

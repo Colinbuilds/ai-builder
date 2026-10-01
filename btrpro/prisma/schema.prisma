@@ -15,6 +15,10 @@ datasource db {
 enum Role {
   ADMIN
   ESTIMATOR
+  // office staff: billing, payments, supplier bills, crew pay, customers
+  OFFICE
+  // purchasing: orders, deliveries, supplier bills, price sheets
+  PURCHASING
   VIEWER
 }
 
@@ -24,6 +28,8 @@ model User {
   email               String    @unique
   passwordHash        String
   role                Role      @default(ESTIMATOR)
+  // owners get the Audit tools and owner approvals
+  isOwner             Boolean   @default(false)
   createdAt           DateTime  @default(now())
   // when the user last opened the notifications panel (bell count = newer than this)
   notificationsSeenAt DateTime?
@@ -210,6 +216,7 @@ model Project {
   leadSource         String?
   // NORMAL | HIGH (job header priority dropdown)
   priority           String            @default("NORMAL")
+  punchItems         PunchItem[]
   // the customer's property this job is at (multi-family / commercial portfolios)
   propertyId         String?
   property           Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
@@ -1571,5 +1578,21 @@ model PlanTakeoff {
   updatedAt  DateTime @updatedAt
 
   @@unique([documentId, page])
+  @@index([projectId])
+}
+
+// Final walkthrough punch list: open items block crew pay approval and completion.
+model PunchItem {
+  id        String    @id @default(cuid())
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  text      String
+  photoUrl  String?
+  crewId    String?
+  createdBy String
+  createdAt DateTime  @default(now())
+  doneAt    DateTime?
+  doneBy    String?
+
   @@index([projectId])
 }

@@ -71,7 +71,7 @@ describe("crew photos and invoices", () => {
     const inv = { projectId: job.id, invoiceNumber: "TEST-101", invoiceDate: noon(2), amount: 4200, description: "TEST_ONLY tear-off and install", file: null };
     await expect(submitCrewInvoice(crew.id, inv)).rejects.toThrow(/finished work and site cleanup photos/);
     const img = await jpg();
-    await addJobPhotos({ crewId: crew.id, name: crew.name }, job.id, "FINISHED", [{ bytes: img, name: "f.jpg" }], null);
+    const [finished] = await addJobPhotos({ crewId: crew.id, name: crew.name }, job.id, "FINISHED", [{ bytes: img, name: "f.jpg" }], null);
     await expect(submitCrewInvoice(crew.id, inv)).rejects.toThrow(/site cleanup photos/);
     const [cleanup] = await addJobPhotos({ crewId: crew.id, name: crew.name }, job.id, "CLEANUP", [{ bytes: img, name: "c.jpg" }], null);
     const sent = await submitCrewInvoice(crew.id, inv);
@@ -82,7 +82,15 @@ describe("crew photos and invoices", () => {
     expect((await reviewPhoto(cleanup.id, "ISSUE", "TEST_ONLY nails left in the driveway", a)).review).toBe("ISSUE");
 
     await expect(reviewCrewInvoice(sent.id, "REJECTED", null, a)).rejects.toThrow(/reason/);
-    const cost = await reviewCrewInvoice(sent.id, "APPROVED", null, a);
+    // crew pay waits for approved finished + cleanup photos and a clear punch list
+    await expect(reviewCrewInvoice(sent.id, "APPROVED", null, a)).rejects.toThrow(/finished work and site cleanup photos/);
+    await reviewPhoto(finished.id, "OK", null, a);
+    const [cleanup2] = await addJobPhotos({ crewId: crew.id, name: crew.name }, job.id, "CLEANUP", [{ bytes: img, name: "c2.jpg" }], "TEST_ONLY swept again");
+    await reviewPhoto(cleanup2.id, "OK", null, a);
+    const punch = await prisma.punchItem.create({ data: { projectId: job.id, text: "TEST_ONLY reseal pipe boot", createdBy: "test" } });
+    await expect(reviewCrewInvoice(sent.id, "APPROVED", null, a)).rejects.toThrow(/open punch-list item/);
+    await prisma.punchItem.update({ where: { id: punch.id }, data: { doneAt: new Date(), doneBy: "test" } });
+    const cost = await reviewCrewInvoice(sent.id, "APPROVED", null, { ...a, role: "OFFICE" });
     expect(cost).toMatchObject({ category: "SUBCONTRACTOR", amount: 4200, vendor: crew.name, reference: "TEST-101", kind: "SUB_BILL" });
     await expect(reviewCrewInvoice(sent.id, "APPROVED", null, a)).rejects.toThrow(/already approved/);
   });

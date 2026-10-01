@@ -91,7 +91,8 @@ export async function createProjectAction(
   _: ActionResult,
   f: FormData,
 ): Promise<ActionResult> {
-  const user = await requireUser([...EDITORS]);
+  // the office answers the phone too, so they can enter leads
+  const user = await requireUser(["ADMIN", "ESTIMATOR", "OFFICE"]);
   const market = str(f, "market") === "COMMERCIAL" ? "COMMERCIAL" : "RESIDENTIAL";
   const res = market === "RESIDENTIAL";
   const first = str(f, "hoFirstName") ?? "";

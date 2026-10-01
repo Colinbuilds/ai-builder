@@ -1,6 +1,7 @@
 // ABC (or any supplier) receipt photos: the AI transcribes what's printed, then the app matches the job,
 // checks the math, compares every line with the price sheets (the builder's own pricing on builder jobs),
 // and files the lines to the job's material costs.
+import type { Role } from "@/lib/session";
 import { z } from "zod";
 import type Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/db";
@@ -298,7 +299,7 @@ export async function setReceiptMarkup(id: string, markupPct: number | null, lin
 export async function approveReceipt(
   id: string,
   input: { projectId: string; outcome: Outcome; markupPct: number | null; lineMarkup: Record<string, number>; reason: string | null },
-  actor: { id: string; name: string; role: "ADMIN" | "ESTIMATOR" | "VIEWER" },
+  actor: { id: string; name: string; role: Role },
 ) {
   await guardCostEdit(input.projectId, actor);
   await setReceiptMarkup(id, input.markupPct, input.lineMarkup);

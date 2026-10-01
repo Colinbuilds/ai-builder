@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -23,7 +24,7 @@ export async function toggleWatchAction(f: FormData) {
 }
 
 export async function setPriorityAction(f: FormData) {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(STAFF_ROLES);
   const projectId = str(f, "projectId");
   const priority = str(f, "priority") === "HIGH" ? "HIGH" : "NORMAL";
   const p = await prisma.project.findUniqueOrThrow({ where: { id: projectId }, select: { priority: true } });

@@ -1,5 +1,6 @@
 // Crew portal: job photos (before, progress, finished, cleanup) and crew invoices, plus the office's review of both.
 // Finished-work and site-cleanup photos from the crew are required before the crew can invoice the job.
+import type { Role } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { readUpload, saveUpload } from "@/lib/storage";
 import { addCost } from "@/lib/costing/service";
@@ -127,7 +128,7 @@ export async function submitCrewInvoice(
 }
 
 /** Office approval: the invoice becomes a labor/sub cost on the job (with the invoice file on the job's documents). */
-export async function reviewCrewInvoice(id: string, decision: "APPROVED" | "REJECTED", note: string | null, actor: { id: string; name: string; role: "ADMIN" | "ESTIMATOR" | "VIEWER" }) {
+export async function reviewCrewInvoice(id: string, decision: "APPROVED" | "REJECTED", note: string | null, actor: { id: string; name: string; role: Role }) {
   if (actor.role === "VIEWER") throw new CrewError("Viewers can't approve invoices.");
   const inv = await prisma.crewInvoice.findUniqueOrThrow({ where: { id }, include: { crew: true } });
   if (inv.status !== "SUBMITTED") throw new CrewError(`This invoice was already ${inv.status.toLowerCase()}.`);
@@ -137,6 +138,13 @@ export async function reviewCrewInvoice(id: string, decision: "APPROVED" | "REJE
     await prisma.projectActivity.create({ data: { projectId: inv.projectId, userId: actor.id, kind: "crew_invoice", text: `${actor.name} sent back ${inv.crew.name}'s invoice${inv.invoiceNumber ? ` ${inv.invoiceNumber}` : ""}: ${note.trim()}` } });
     return null;
   }
+  // BTR rule: the office approves crew pay only after the required finished and cleanup photos are approved
+  const okStages = await prisma.jobPhoto.groupBy({ by: ["stage"], where: { projectId: inv.projectId, crewId: inv.crewId, review: "OK" }, _count: true });
+  const notOk = REQUIRED_STAGES.filter((s) => !okStages.some((h) => h.stage === s));
+  if (notOk.length)
+    throw new CrewError(`Approve ${inv.crew.name}'s ${notOk.map((s) => STAGE_LABEL[s].toLowerCase()).join(" and ")} photos for this job first (Production → Crew photos).`);
+  const openPunch = await prisma.punchItem.count({ where: { projectId: inv.projectId, doneAt: null } });
+  if (openPunch) throw new CrewError(`This job has ${openPunch} open punch-list item${openPunch === 1 ? "" : "s"}. Clear them before approving crew pay.`);
   const file = inv.fileUrl ? { bytes: new Uint8Array(await readUpload(inv.fileUrl)), name: `${inv.crew.name} invoice ${inv.invoiceNumber ?? inv.invoiceDate.toISOString().slice(0, 10)}.${inv.contentType === "application/pdf" ? "pdf" : "jpg"}`, type: inv.contentType } : null;
   const cost = await addCost(
     inv.projectId,
@@ -158,7 +166,7 @@ export async function reviewCrewInvoice(id: string, decision: "APPROVED" | "REJE
 }
 
 export async function markCrewInvoicePaid(id: string, actor: { name: string; role: string }) {
-  if (actor.role !== "ADMIN") throw new CrewError("Only an Admin marks crew invoices paid.");
+  if (actor.role !== "ADMIN" && actor.role !== "OFFICE") throw new CrewError("Only the office or an Admin marks crew invoices paid.");
   const inv = await prisma.crewInvoice.findUniqueOrThrow({ where: { id } });
   if (inv.status !== "APPROVED") throw new CrewError("Approve the invoice before marking it paid.");
   return prisma.crewInvoice.update({ where: { id }, data: { status: "PAID", paidAt: new Date() } });

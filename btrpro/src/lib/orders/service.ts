@@ -1,3 +1,4 @@
+import type { Role } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { nextInSequence } from "@/lib/numbering";
 import { round } from "@/lib/calc/core";
@@ -14,7 +15,7 @@ import { deliveryStatus, orderLinePrice, toOrderUnit } from "./price";
 export type OrderActor = {
   id: string;
   name: string;
-  role: "ADMIN" | "ESTIMATOR" | "VIEWER";
+  role: Role;
 };
 export class OrderError extends Error {}
 

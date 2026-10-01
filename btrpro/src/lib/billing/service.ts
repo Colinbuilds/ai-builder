@@ -1,3 +1,4 @@
+import type { Role } from "@/lib/session";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { nextInSequence } from "@/lib/numbering";
@@ -28,7 +29,7 @@ import {
 export type BillActor = {
   id: string | null;
   name: string;
-  role: "ADMIN" | "ESTIMATOR" | "VIEWER" | "SYSTEM";
+  role: Role | "SYSTEM";
 };
 export class BillingError extends Error {
   constructor(

@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import {
@@ -42,7 +43,7 @@ const cat = (f: FormData) => {
 };
 
 async function actor(): Promise<CostActor> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(STAFF_ROLES);
   return { id: u.id, name: u.name, role: u.role };
 }
 const done = (projectId: string, note?: string): CResult => {

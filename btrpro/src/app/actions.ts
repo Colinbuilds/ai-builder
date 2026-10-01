@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, type Role } from "@/lib/session";
+import { ROLES } from "@/lib/roles";
 
 export type LoginState = { error: string; email: string } | null;
 
@@ -31,7 +32,6 @@ export async function logout() {
   redirect("/login");
 }
 
-const ROLES: Role[] = ["ADMIN", "ESTIMATOR", "VIEWER"];
 
 export async function createUser(_prev: string | null, form: FormData): Promise<string | null> {
   const admin = await requireUser(["ADMIN"]);
@@ -62,5 +62,18 @@ export async function setUserRole(form: FormData) {
   await prisma.auditLog.create({
     data: { userId: admin.id, entity: "User", entityId: id, action: "set_role", before, after: { role } },
   });
+  revalidatePath("/admin/users");
+}
+
+/** Owners get the Audit tools. Only an owner can grant it — or any admin while nobody holds it yet. */
+export async function setUserOwner(form: FormData) {
+  const me = await requireUser(["ADMIN"]);
+  const owners = await prisma.user.count({ where: { isOwner: true } });
+  if (owners > 0 && !me.isOwner) return;
+  const id = String(form.get("id"));
+  const isOwner = form.get("isOwner") === "on";
+  if (id === me.id && !isOwner) return; // an owner can't remove themselves
+  await prisma.user.update({ where: { id }, data: { isOwner } });
+  await prisma.auditLog.create({ data: { userId: me.id, entity: "User", entityId: id, action: "set_owner", after: { isOwner } } });
   revalidatePath("/admin/users");
 }

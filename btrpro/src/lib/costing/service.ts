@@ -1,3 +1,4 @@
+import type { Role } from "@/lib/session";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { round } from "@/lib/calc/core";
@@ -9,14 +10,14 @@ import { addDocument } from "@/lib/docs/documents";
 import { COST_CATEGORIES, computePnl, crewCost, type Baseline, type CostCategory } from "./pnl";
 import { parseInvoiceCsv, type InvoiceRow } from "./invoice-csv";
 
-export type CostActor = { id: string | null; name: string; role: "ADMIN" | "ESTIMATOR" | "VIEWER" | "SYSTEM" };
+export type CostActor = { id: string | null; name: string; role: Role | "SYSTEM" };
 export class CostError extends Error {}
 
 type ProjectAccess = { estimatorId: string | null; salespersonId: string | null };
 
-/** Viewers never see cost or margin. Estimators see their own jobs (or unassigned ones). Admins see everything. */
+/** Viewers never see cost or margin. Estimators see their own jobs (or unassigned ones). Admins, the office and purchasing see everything. */
 export function canSeeCosts(user: { id: string; role: string }, p: ProjectAccess) {
-  if (user.role === "ADMIN") return true;
+  if (user.role === "ADMIN" || user.role === "OFFICE" || user.role === "PURCHASING") return true;
   if (user.role !== "ESTIMATOR") return false;
   if (!p.estimatorId && !p.salespersonId) return true;
   return p.estimatorId === user.id || p.salespersonId === user.id;

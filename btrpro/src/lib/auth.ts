@@ -10,13 +10,20 @@ export async function getCurrentUser() {
   if (!session) return null;
   return prisma.user.findUnique({
     where: { id: session.sub },
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, role: true, isOwner: true },
   });
 }
 
-export async function requireUser(roles?: Role[]) {
+export async function requireUser(roles?: readonly Role[]) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (roles && !roles.includes(user.role)) redirect("/?denied=1");
+  return user;
+}
+
+/** Owner-only tools (Audit, owner approvals). */
+export async function requireOwner() {
+  const user = await requireUser();
+  if (!user.isOwner) redirect("/?denied=1");
   return user;
 }

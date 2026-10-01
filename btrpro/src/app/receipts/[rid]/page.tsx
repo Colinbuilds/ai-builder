@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
@@ -31,7 +32,7 @@ const STATUS: Record<string, [string, "green" | "red" | "amber" | "outline" | "b
 const OUTCOME: Record<string, string> = { COST_ONLY: "Filed to job costs", CHANGE_ORDER: "Change order drafted", INVOICE: "Invoice drafted" };
 
 export default async function ReceiptPage({ params, searchParams }: { params: Promise<{ rid: string }>; searchParams: Promise<{ job?: string }> }) {
-  const user = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const user = await requireUser(STAFF_ROLES);
   const { rid } = await params;
   const { job } = await searchParams;
   const scan = await prisma.receiptScan.findUnique({ where: { id: rid } });

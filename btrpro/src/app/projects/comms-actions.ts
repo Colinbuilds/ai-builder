@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -62,7 +63,7 @@ export async function pasteEmailAction(
   _: CommsResult,
   f: FormData,
 ): Promise<CommsResult> {
-  const user = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const user = await requireUser(STAFF_ROLES);
   const projectId = String(f.get("projectId"));
   const sent = str(f, "sentAt")
     ? new Date(String(f.get("sentAt")))
@@ -95,7 +96,7 @@ export async function pullMailboxAction(
   _: CommsResult,
   f: FormData,
 ): Promise<CommsResult> {
-  const user = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const user = await requireUser(STAFF_ROLES);
   const projectId = String(f.get("projectId"));
   const provider = String(f.get("provider")) as Provider;
   const query = str(f, "query");
@@ -128,7 +129,7 @@ export async function pullMailboxAction(
 }
 
 export async function summarizeEmailAction(f: FormData) {
-  await requireUser(["ADMIN", "ESTIMATOR"]);
+  await requireUser(STAFF_ROLES);
   const id = String(f.get("id"));
   const e = await prisma.jobEmail.findUniqueOrThrow({ where: { id } });
   try {

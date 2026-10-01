@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
@@ -12,7 +13,7 @@ export type RResult = { problems: string[]; ok?: boolean; note?: string } | null
 const msg = (e: unknown) => (e instanceof ReceiptError || e instanceof CostError || e instanceof BillingError ? e.message : aiErrorMessage(e));
 
 export async function scanReceiptAction(_: RResult, f: FormData): Promise<RResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(STAFF_ROLES);
   let id: string;
   try {
     const files = await Promise.all(
@@ -29,7 +30,7 @@ export async function scanReceiptAction(_: RResult, f: FormData): Promise<RResul
 }
 
 export async function approveReceiptAction(_: RResult, f: FormData): Promise<RResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(STAFF_ROLES);
   const id = String(f.get("id") ?? "");
   const projectId = String(f.get("projectId") ?? "");
   const outcome = String(f.get("outcome") ?? "") as Outcome;
@@ -58,7 +59,7 @@ export async function approveReceiptAction(_: RResult, f: FormData): Promise<RRe
 }
 
 export async function recropAction(_: RResult, f: FormData): Promise<RResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(STAFF_ROLES);
   const id = String(f.get("id") ?? "");
   const mode = String(f.get("mode") ?? "box");
   let crop: { x: number; y: number; w: number; h: number } | "auto" | "none" = mode === "auto" ? "auto" : "none";
@@ -79,7 +80,7 @@ export async function recropAction(_: RResult, f: FormData): Promise<RResult> {
 }
 
 export async function linePricesAction(_: RResult, f: FormData): Promise<RResult> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(STAFF_ROLES);
   const id = String(f.get("id") ?? "");
   const prices: Record<string, number | null> = {};
   for (const [k, v] of f.entries())

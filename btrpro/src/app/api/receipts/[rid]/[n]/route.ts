@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import { NextResponse, type NextRequest } from "next/server";
 import sharp from "sharp";
 import { requireUser } from "@/lib/auth";
@@ -13,7 +14,7 @@ import { cropOf, type Saved } from "@/lib/receipts/service";
  *   ?v=upright&r=90 the original turned by r degrees (for the crop tool)
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ rid: string; n: string }> }) {
-  await requireUser(["ADMIN", "ESTIMATOR"]);
+  await requireUser(STAFF_ROLES);
   const { rid, n } = await params;
   const scan = await prisma.receiptScan.findUnique({ where: { id: rid }, select: { files: true } });
   const f = (scan?.files as Saved[] | undefined)?.[Number(n)];

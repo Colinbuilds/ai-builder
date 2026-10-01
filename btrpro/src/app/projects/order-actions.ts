@@ -1,5 +1,6 @@
 "use server";
 
+import { PURCHASING_ROLES } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
@@ -32,7 +33,7 @@ const date = (f: FormData, k: string) =>
   str(f, k) ? new Date(`${str(f, k)}T12:00:00Z`) : null;
 
 async function actor(): Promise<OrderActor> {
-  const u = await requireUser(["ADMIN", "ESTIMATOR"]);
+  const u = await requireUser(PURCHASING_ROLES);
   return { id: u.id, name: u.name, role: u.role };
 }
 async function run(
