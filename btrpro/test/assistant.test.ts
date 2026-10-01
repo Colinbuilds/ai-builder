@@ -110,6 +110,6 @@ describe("assistant loop", () => {
     } as never);
     const events: StreamEvent[] = [];
     await runAssistant(p.id, a, "hi", (e) => events.push(e));
-    expect(events).toContainEqual({ type: "error", message: "The AI declined this request. Nothing was saved." });
+    expect(events).toContainEqual({ type: "error", message: "BTRbot declined this request. Nothing was saved." });
   });
 });

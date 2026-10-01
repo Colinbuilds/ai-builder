@@ -4,6 +4,9 @@ export const BTR = {
   address: "10852 Hanover St., Omaha, NE 68142",
   phone: "402-739-9811",
   email: "trevin@btrcontracting.com",
+  // letterhead on proposals, as on BTR's own estimate form
+  proposalAddress: ["9350 G Court", "Omaha, NE 68127"],
+  officePhone: "(402) 739-9811",
   abcAccount: "2057372-2",
   // BTR's own addresses (office, bill-to, shop — from CLAUDE.md and ABC's delivery tickets). Material shipped to
   // one of these says nothing about which job it's for, so receipt matching ignores them.

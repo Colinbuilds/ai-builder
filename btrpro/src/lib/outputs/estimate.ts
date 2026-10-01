@@ -41,7 +41,7 @@ const STATUS: Record<string, string> = {
   MISSING_PRICE: "MISSING price",
   PLACEHOLDER: "PLACEHOLDER - not for final bid",
   ASSUMPTION_APPROVED: "Approved assumption",
-  PENDING_AI: "AI suggestion - not accepted",
+  PENDING_AI: "BTRbot suggestion - not accepted",
   MISSING: "MISSING",
 };
 

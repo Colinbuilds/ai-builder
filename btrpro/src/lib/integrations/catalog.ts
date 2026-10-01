@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/claude";
 import { providerConfigured } from "@/lib/comms/mailbox";
 import { oauthConfigured, type OAuthProvider } from "./oauth";
-import { serviceAccountEmail } from "./google-sa";
+import { serviceAccountEmail, serviceAccountProblem } from "./google-sa";
 
 export type IntegrationStatus = "connected" | "ready" | "not_configured" | "manual_only";
 export type Integration = {
@@ -34,10 +34,10 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
   return [
     {
       key: "anthropic",
-      name: "Claude (AI)",
+      name: "BTRbot (Claude AI)",
       does: "Reads EagleView reports and plans, summarizes job email, writes catch-ups, and powers the estimator assistant. It never does the math and never invents prices.",
       needs: ["ANTHROPIC_API_KEY", "ANTHROPIC_MODEL (default claude-opus-5-5)"],
-      fallback: "Enter measurements and notes by hand; AI buttons are disabled.",
+      fallback: "Enter measurements and notes by hand; BTRbot buttons are disabled.",
       status: aiConfigured() ? "connected" : "not_configured",
       statusText: aiConfigured() ? "Configured" : "ANTHROPIC_API_KEY not set",
     },
@@ -70,10 +70,16 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
       fallback: "Upload files directly.",
       ...(serviceAccountEmail()
         ? { status: "connected" as const, statusText: "Company service account" }
-        : oauth("GOOGLE_DRIVE", "you")),
+        : serviceAccountProblem()
+          ? { status: "not_configured" as const, statusText: "Service account key can't be read" }
+          : oauth("GOOGLE_DRIVE", "you")),
       note: serviceAccountEmail()
         ? `BTRpro reads Drive as ${serviceAccountEmail()}. Share each folder or shared drive it should read with that address (Viewer).`
-        : "Without a service account, each user connects their own Drive and the price-sheet sync runs as the Admin who saved the folder.",
+        : serviceAccountProblem()
+          ? `GOOGLE_SERVICE_ACCOUNT_JSON is set, but: ${serviceAccountProblem()}`
+          : process.env.GOOGLE_SERVICE_ACCOUNT_JSON === undefined
+            ? "GOOGLE_SERVICE_ACCOUNT_JSON isn't reaching the app — check the variable is on the BTRpro service (not the project's shared variables only) and spelled exactly, then redeploy."
+            : "Without a service account, each user connects their own Drive and the price-sheet sync runs as the Admin who saved the folder.",
     },
     {
       key: "quickbooks",
@@ -106,7 +112,7 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
     {
       key: "eagleview",
       name: "EagleView",
-      does: "Order roof and walls reports from the job and receive them automatically, then read them with AI.",
+      does: "Order roof and walls reports from the job and receive them automatically, then read them with BTRbot.",
       needs: ["EagleView API credentials for BTR's account (EAGLEVIEW_CLIENT_ID / EAGLEVIEW_CLIENT_SECRET)"],
       fallback: "Upload the EagleView PDF to the job's Documents tab; it's read and queued for confirmation.",
       status: env("EAGLEVIEW_CLIENT_ID", "EAGLEVIEW_CLIENT_SECRET") ? "ready" : "manual_only",

@@ -59,7 +59,7 @@ export function CatchUp({
               ? `Covers since ${latest.coversFrom}`
               : "Covers the whole job"}{" "}
             · written {latest.createdAt}
-            {latest.by && ` for ${latest.by}`}. AI summary of the job record;
+            {latest.by && ` for ${latest.by}`}. BTRbot summary of the job record;
             check anything you act on.
           </p>
           <Markdown text={latest.content} />

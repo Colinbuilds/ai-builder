@@ -10,8 +10,8 @@ export const maxDuration = 300;
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Sign in" }, { status: 401 });
-  if (user.role === "VIEWER") return NextResponse.json({ error: "Viewers can't use the assistant." }, { status: 403 });
-  if (!aiConfigured()) return NextResponse.json({ error: "AI isn't configured (ANTHROPIC_API_KEY)." }, { status: 400 });
+  if (user.role === "VIEWER") return NextResponse.json({ error: "Viewers can't use BTRbot." }, { status: 403 });
+  if (!aiConfigured()) return NextResponse.json({ error: "BTRbot isn't turned on (ANTHROPIC_API_KEY)." }, { status: 400 });
   const { id } = await params;
   if (!(await prisma.project.findUnique({ where: { id }, select: { id: true } }))) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const { message } = (await req.json().catch(() => ({}))) as { message?: string };

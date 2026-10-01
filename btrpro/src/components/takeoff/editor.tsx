@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { saveTakeoffAction, sendTakeoffAction } from "@/app/projects/takeoff-actions";
+import { aiMeasureAction, saveTakeoffAction, sendTakeoffAction } from "@/app/projects/takeoff-actions";
 import {
   fmtFeet,
   measureItem,
@@ -78,12 +78,14 @@ export function TakeoffEditor({
   const [history, setHistory] = useState<TakeoffItem[][]>([]);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [pages, setPages] = useState(pageCount);
+  const [ai, setAi] = useState<{ busy: boolean; message?: string; cannot?: string[] }>({ busy: false });
 
   const scroller = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const baseCanvas = useRef<HTMLCanvasElement>(null);
   const detailCanvas = useRef<HTMLCanvasElement>(null);
   const pdfPage = useRef<PdfPage | null>(null);
+  const imgEl = useRef<HTMLImageElement | null>(null);
   const renderTask = useRef<{ cancel(): void } | null>(null);
   const panStart = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
   const spaceDown = useRef(false);
@@ -98,7 +100,11 @@ export function TakeoffEditor({
     let dead = false;
     if (kind === "image") {
       const img = new Image();
-      img.onload = () => !dead && setSize({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onload = () => {
+        if (dead) return;
+        imgEl.current = img;
+        setSize({ w: img.naturalWidth, h: img.naturalHeight });
+      };
       img.onerror = () => !dead && setLoadErr("Couldn't open this image.");
       img.src = fileUrl;
       return () => void (dead = true);
@@ -219,6 +225,49 @@ export function TakeoffEditor({
       return h.slice(0, -1);
     });
   };
+
+  // ---------- AI draft of what's on screen ----------
+  const AI_MAX = 2000; // longest side of the image sent, in pixels
+  const aiMeasure = async () => {
+    const sc = scroller.current;
+    if (!sc || !size) return;
+    // the visible part of the sheet, in sheet units
+    const x = Math.max(0, sc.scrollLeft / zoom);
+    const y = Math.max(0, sc.scrollTop / zoom);
+    const region = { x, y, w: Math.min(size.w - x, sc.clientWidth / zoom), h: Math.min(size.h - y, sc.clientHeight / zoom) };
+    if (region.w <= 0 || region.h <= 0) return;
+    setAi({ busy: true, message: "Reading the plan on screen… this takes up to a minute." });
+    try {
+      const s = Math.min(AI_MAX / Math.max(region.w, region.h), 8);
+      const c = document.createElement("canvas");
+      c.width = Math.round(region.w * s);
+      c.height = Math.round(region.h * s);
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, c.width, c.height);
+      if (kind === "pdf" && pdfPage.current) {
+        const vp = pdfPage.current.getViewport({ scale: s });
+        await pdfPage.current.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, -region.x * s, -region.y * s] }).promise;
+      } else if (imgEl.current) {
+        ctx.drawImage(imgEl.current, region.x, region.y, region.w, region.h, 0, 0, c.width, c.height);
+      } else throw new Error("The sheet isn't loaded yet.");
+      const imageBase64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
+      const r = await aiMeasureAction(documentId, { imageBase64, mediaType: "image/jpeg", region, view });
+      if (!r.ok) return setAi({ busy: false, message: r.message });
+      if (!r.items.length) return setAi({ busy: false, message: "BTRbot couldn't trace anything it was sure of here. Zoom in on one roof or wall and try again, or trace by hand.", cannot: r.cannotTrace });
+      commitItems([...items, ...r.items]);
+      setMode("select");
+      setAi({
+        busy: false,
+        message: `BTRbot drew ${r.items.length} item${r.items.length === 1 ? "" : "s"} (dashed) on ${r.sheet}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`,
+        cannot: r.cannotTrace,
+      });
+    } catch (e) {
+      setAi({ busy: false, message: e instanceof Error ? e.message : "Couldn't capture the sheet." });
+    }
+  };
+  const aiCount = items.filter((i) => i.ai).length;
+  const acceptAi = (id?: string) => commitItems(items.map((i) => (i.ai && (!id || i.id === id) ? { ...i, ai: undefined, note: i.note?.replace(/^BTRbot: /, "BTRbot (checked): ") ?? null } : i)));
 
   // ---------- pointer → sheet coordinates ----------
   const toSheet = (e: { clientX: number; clientY: number }, constrain: boolean): Pt => {
@@ -498,6 +547,15 @@ export function TakeoffEditor({
               <button type="button" onClick={undo} className="rounded-md border px-2.5 py-1 hover:bg-accent" title="Undo (Ctrl+Z)">
                 Undo
               </button>
+              <button
+                type="button"
+                onClick={aiMeasure}
+                disabled={ai.busy || !size}
+                className="rounded-md border border-violet-400 bg-violet-50 px-2.5 py-1 text-violet-900 hover:bg-violet-100 disabled:opacity-50 dark:bg-violet-950 dark:text-violet-200"
+                title="BTRbot traces what's on screen as dashed drafts. Zoom to one roof plan or elevation first for the best result."
+              >
+                {ai.busy ? "BTRbot measuring…" : "BTRbot measure on screen"}
+              </button>
               <button type="button" onClick={() => zoomBy(1 / 1.25)} className="rounded-md border px-2.5 py-1 hover:bg-accent" aria-label="Zoom out">
                 −
               </button>
@@ -603,6 +661,7 @@ export function TakeoffEditor({
                     const on = it.id === selected;
                     const common = {
                       stroke: t.color,
+                      strokeDasharray: it.ai ? "7 5" : undefined,
                       vectorEffect: "non-scaling-stroke" as const,
                       onClick: (e: React.MouseEvent) => {
                         if (mode !== "select") return;
@@ -712,18 +771,54 @@ export function TakeoffEditor({
                   /12
                 </label>
               )}
+              {sel.note && <div className="mt-1 text-xs text-muted-foreground">{sel.note}</div>}
               {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    commitItems(items.filter((i) => i.id !== sel.id));
-                    setSelected(null);
-                  }}
-                  className="mt-2 text-red-600 hover:underline"
-                >
-                  Delete
-                </button>
+                <div className="mt-2 flex gap-3">
+                  {sel.ai && (
+                    <button type="button" onClick={() => acceptAi(sel.id)} className="text-violet-700 hover:underline dark:text-violet-300">
+                      Accept this BTRbot line
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      commitItems(items.filter((i) => i.id !== sel.id));
+                      setSelected(null);
+                    }}
+                    className="text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
               )}
+            </div>
+          )}
+
+          {(ai.message || aiCount > 0) && (
+            <div className="rounded-md border border-violet-300 bg-violet-50/60 p-3 dark:border-violet-800 dark:bg-violet-950/40">
+              <div className="text-xs font-semibold tracking-wide text-violet-800 uppercase dark:text-violet-300">BTRbot measure</div>
+              {ai.message && <p className="mt-1">{ai.message}</p>}
+              {ai.cannot && ai.cannot.length > 0 && (
+                <div className="mt-1 text-xs">
+                  Trace by hand:
+                  <ul className="list-disc pl-4">
+                    {ai.cannot.map((c) => (
+                      <li key={c}>{c}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {aiCount > 0 && canEdit && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => acceptAi()} className="rounded-md bg-violet-700 px-2.5 py-1 text-white hover:bg-violet-800">
+                    Accept all {aiCount} after checking
+                  </button>
+                  <button type="button" onClick={() => commitItems(items.filter((i) => !i.ai))} className="rounded-md border px-2.5 py-1 hover:bg-accent">
+                    Remove BTRbot drafts
+                  </button>
+                </div>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">BTRbot only draws; lengths and areas come from this sheet&apos;s checked scale. Set and check the scale first.</p>
             </div>
           )}
 

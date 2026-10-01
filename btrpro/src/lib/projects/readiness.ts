@@ -26,7 +26,7 @@ const LABEL: Record<string, string> = {
   MISSING_ITEM: "item not on any loaded sheet",
   MISSING_PRICE: "no price",
   CALL_FOR_PRICE: "CALL for price — get a quote",
-  PENDING_AI: "AI suggestion not yet accepted",
+  PENDING_AI: "BTRbot suggestion not yet accepted",
   SHEET_EXPIRED: "priced from an expired sheet",
   PLACEHOLDER: "placeholder value",
   ASSUMPTION_APPROVED: "approved assumption",

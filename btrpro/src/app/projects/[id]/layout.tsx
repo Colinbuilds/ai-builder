@@ -14,6 +14,7 @@ import { JobMenuBar } from "@/components/projects/job-menu";
 import { PriorityPicker, WatchButton } from "@/components/projects/job-controls";
 import { JobBody } from "@/components/projects/job-body";
 import { MilestoneDot } from "@/components/shell/milestone-dot";
+import { qboJobNumberAction } from "@/app/projects/actions";
 import { canSeeCosts } from "@/lib/costing/service";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatUsd } from "@/lib/utils";
@@ -90,6 +91,20 @@ export default async function ProjectLayout({ children, params }: { children: Re
             <div className="ml-2 hidden flex-wrap items-center gap-1.5 lg:flex">
               <StageBadge stage={project.status} />
               <ReadinessBadge readiness={readiness} />
+              {project.qboJobNo ? (
+                <span className="rounded-full border px-2 py-0.5 text-xs" title="QuickBooks estimate number for this job">
+                  QB est #{project.qboJobNo}
+                </span>
+              ) : (
+                user.role !== "VIEWER" && (
+                  <form action={qboJobNumberAction}>
+                    <input type="hidden" name="projectId" value={project.id} />
+                    <button className="rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted" title="Make the QuickBooks customer and estimate for this job and keep its number">
+                      Get QuickBooks #
+                    </button>
+                  </form>
+                )
+              )}
             </div>
             {project.status === "LEAD" && !project.firstContactAt && (
               <span

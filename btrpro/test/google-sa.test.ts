@@ -34,3 +34,34 @@ describe("Google service account for Drive", () => {
     expect(driveNotFound()).toContain(KEY.client_email);
   });
 });
+
+describe("reading a pasted service account key", () => {
+  const key = { type: "service_account", client_email: "TEST_ONLY@test.iam.gserviceaccount.com", private_key: "-----BEGIN PRIVATE KEY-----\nTESTONLYKEY\n-----END PRIVATE KEY-----\n" };
+  const json = JSON.stringify(key, null, 2);
+  it("reads the file as-is, base64, quoted, or with real line breaks inside the key", async () => {
+    const { readServiceAccount } = await import("@/lib/integrations/google-sa");
+    for (const raw of [json, Buffer.from(json).toString("base64"), `'${json}'`, json.replace(/\\n/g, "\n")]) {
+      const r = readServiceAccount(raw);
+      expect(r.problem).toBeNull();
+      expect(r.key?.client_email).toBe(key.client_email);
+      expect(r.key?.private_key).toBe(key.private_key);
+    }
+  });
+  it("says what's wrong with a bad paste", async () => {
+    const { readServiceAccount } = await import("@/lib/integrations/google-sa");
+    expect(readServiceAccount("abc123").problem).toMatch(/isn't the JSON key/);
+    expect(readServiceAccount('{"client_email": "x@y"}').problem).toMatch(/private_key/);
+    expect(readServiceAccount('{"type": "service_account"}').problem).toMatch(/client_email/);
+    expect(readServiceAccount("").problem).toBeNull();
+  });
+});
+
+describe("AI error messages", () => {
+  it("shows Anthropic's reason for a rejected request, and a billing hint for no credit", async () => {
+    const Anthropic = (await import("@anthropic-ai/sdk")).default;
+    const { aiErrorMessage } = await import("@/lib/ai/claude");
+    const bad = (msg: string) => new Anthropic.BadRequestError(400, { type: "error", error: { type: "invalid_request_error", message: msg } }, msg, new Headers());
+    expect(aiErrorMessage(bad("Your credit balance is too low to access the Anthropic API."))).toMatch(/out of credit/);
+    expect(aiErrorMessage(bad("image exceeds 5 MB maximum"))).toBe("BTRbot request rejected (400): image exceeds 5 MB maximum.");
+  });
+});

@@ -9,7 +9,7 @@ const LABEL: Record<string, string> = {
   MISSING_PRICE: "Missing price",
   PLACEHOLDER: "Placeholder",
   ASSUMPTION_APPROVED: "Approved assumption",
-  PENDING_AI: "AI suggestion",
+  PENDING_AI: "BTRbot suggestion",
   MISSING: "Missing",
 };
 // green verified · amber stale/placeholder/assumption · red missing/expired/call · blue pending AI (BUILD_PROMPT §5)

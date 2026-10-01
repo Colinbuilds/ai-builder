@@ -171,13 +171,13 @@ export function AssistantPanel({
           disabled={!enabled}
           placeholder={
             enabled
-              ? "e.g. What's the coverage on the Omniridge? · Price the EPDM system per the spec · (Ctrl+Enter sends)"
-              : "AI isn't configured on this server."
+              ? "Ask BTRbot — e.g. What's the coverage on the Omniridge? · Price the EPDM system per the spec · (Ctrl+Enter sends)"
+              : "BTRbot isn't turned on yet (needs ANTHROPIC_API_KEY on the server)."
           }
           className="flex-1 rounded-md border border-input bg-background p-2 text-sm"
         />
         <Button disabled={busy || !enabled || !draft.trim()}>
-          {busy ? "Working…" : "Send"}
+          {busy ? "BTRbot is working…" : "Ask BTRbot"}
         </Button>
       </form>
     </div>

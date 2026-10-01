@@ -67,7 +67,7 @@ export default async function BillsPage({ searchParams }: { searchParams: Promis
       </div>
       {summary.noDueDate > 0 && <p className="text-xs text-muted-foreground">{summary.noDueDate} open bill{summary.noDueDate === 1 ? " has" : "s have"} no due date (none printed and no supplier terms set under Company settings).</p>}
 
-      {aiConfigured() ? <ScanBillForm /> : <p className="rounded-lg border p-3 text-sm">Reading invoices needs AI turned on (ANTHROPIC_API_KEY on the server).</p>}
+      {aiConfigured() ? <ScanBillForm /> : <p className="rounded-lg border p-3 text-sm">Reading invoices needs BTRbot turned on (ANTHROPIC_API_KEY on the server).</p>}
       {reading > 0 && <p className="text-sm text-muted-foreground">Reading {reading} emailed invoice{reading === 1 ? "" : "s"}…</p>}
 
       <nav className="flex flex-wrap gap-1 text-sm">

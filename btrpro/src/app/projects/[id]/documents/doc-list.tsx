@@ -69,7 +69,7 @@ export function DocList({
           <TH className="hidden md:table-cell">File</TH>
           <TH className="hidden md:table-cell">Uploaded by</TH>
           <TH className="hidden lg:table-cell">Updated</TH>
-          <TH>Read with AI</TH>
+          <TH>Read with BTRbot</TH>
         </TR>
       </THead>
       <TBody>

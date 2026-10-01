@@ -5,5 +5,7 @@ export async function register() {
     startSheetWatcher();
     const { startEstimatingWatcher } = await import("@/lib/estimating/schedule");
     startEstimatingWatcher();
+    const { startProductionWatcher } = await import("@/lib/production/board");
+    startProductionWatcher();
   }
 }

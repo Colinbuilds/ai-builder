@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, Binoculars, Camera, Receipt, Wallet, CalendarClock, FileSignature, History, Ruler, ShoppingCart, Signature, DollarSign, ListChecks, Megaphone } from "lucide-react";
+import { AlertTriangle, Camera, Receipt, Wallet, FileSignature, History, Ruler, ShoppingCart, Signature, DollarSign, ListChecks, Megaphone, HardHat, FileText, Send, Search, CheckCircle2 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getMarketView } from "@/lib/market";
@@ -9,6 +9,8 @@ import { SheetDateBanner } from "@/components/sheet-banner";
 import { MilestoneDot } from "@/components/shell/milestone-dot";
 import { Panel, axLink } from "@/components/shell/panel";
 import { Markdown } from "@/components/markdown";
+import { NavSelect } from "@/components/dashboard/tab-select";
+import { dashboardSchedules } from "@/lib/dashboard-schedules";
 
 const usd0 = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const usd2 = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -29,14 +31,17 @@ const ICON = {
   MR: Ruler,
   PS: Signature,
   TK: ListChecks,
-  W: Binoculars,
-  P: CalendarClock,
   CI: Wallet,
   RC: Receipt,
   PH: Camera,
+  PP: HardHat,
+  PB: FileText,
+  DI: Send,
+  SL: Search,
+  SA: CheckCircle2,
 } as const;
 
-export default async function Dashboard({ searchParams }: { searchParams: Promise<{ lb?: string; denied?: string; dash?: string }> }) {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ lb?: string; denied?: string; dash?: string; es?: string; pc?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
   // the office and purchasing start on their own to-do lists (the dashboard is one click away)
@@ -45,14 +50,21 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const staff = user.role !== "VIEWER";
   const admin = user.role === "ADMIN";
   const period: Period = sp.lb === "week" || sp.lb === "ytd" ? sp.lb : "month";
-  const [data, feed, board, sched, counts, updates] = await Promise.all([
-    dashboardData(view, user.id),
+  const [data, feed, board, sched, counts, updates, sq] = await Promise.all([
+    dashboardData(view),
     activityFeed(view),
     staff ? leaderboard(view, period) : Promise.resolve([]),
     workSchedule(view),
     activityCounts(view),
     prisma.companyUpdate.findMany({ include: { author: { select: { name: true } } }, orderBy: [{ pinned: "desc" }, { createdAt: "desc" }], take: 3 }),
+    dashboardSchedules({ userId: user.id, userName: user.name, view, es: sp.es, pc: sp.pc }),
   ]);
+  // tab links keep the other square's tab (and the leaderboard period); dash=1 keeps the office on the dashboard
+  const tabHref = (k: "es" | "pc", v: string) => {
+    const q = new URLSearchParams({ dash: "1", es: sq.es, pc: sq.pc ?? "all", ...(sp.lb ? { lb: sp.lb } : {}) });
+    q.set(k, v);
+    return `/?${q.toString()}`;
+  };
   const top = Math.max(1, ...board.map((b) => b.amount));
   const lt30 = data.aging["Current"] + data.aging["1–30"];
   const bars = [
@@ -75,20 +87,91 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       {sp.denied && <p className="border-l-4 border-l-btr-blue bg-background p-3 text-sm">Your role can&apos;t open that page.</p>}
       <SheetDateBanner />
 
+      <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)_minmax(0,1fr)]">
+        <Panel title="Pipeline" right={<span>{data.active} active</span>} className="flex flex-col lg:h-[440px]" bodyClass="min-h-0 flex-1 overflow-y-auto">
+          <ol className="divide-y">
+            {data.pipeline.map((p) => (
+              <li key={p.key}>
+                <Link href={`/jobs?m=${p.key}`} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/60">
+                  <MilestoneDot stage={p.stage} size={26} />
+                  <span className="min-w-0 flex-1 text-xs leading-tight">
+                    {p.label}
+                    <span className="block text-muted-foreground tabular-nums">{p.value ? short(p.value) : "--"}</span>
+                  </span>
+                  <span className="text-lg text-btr-blue tabular-nums">{p.count}</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </Panel>
+
+        <Panel title="Estimating schedule" right={<Link className={axLink} href="/estimating/schedule">Open ({sq.esCount})</Link>} className="flex h-[440px] flex-col" bodyClass="flex min-h-0 flex-1 flex-col">
+          <Tabs>
+            {sq.esTabs.map(([k, l]) => (
+              <TabLink key={k} href={tabHref("es", k)} on={sq.es === k}>
+                {l}
+              </TabLink>
+            ))}
+          </Tabs>
+          <ol className="min-h-0 flex-1 divide-y overflow-y-auto">
+            {sq.estimates.length === 0 && <li className="p-3 text-sm text-muted-foreground">Nothing being bid here right now.</li>}
+            {sq.estimates.map((e) => {
+              const late = e.dueAt && e.dueAt.getTime() < Date.now() - 86_400_000;
+              return (
+                <li key={e.id}>
+                  <Link href={`/estimating/schedule/${e.id}`} className="flex gap-3 px-3 py-2 hover:bg-muted/60">
+                    <span className={`w-12 shrink-0 text-xs tabular-nums ${late ? "font-semibold text-red-700" : "text-muted-foreground"}`}>{e.dueAt ? `${e.dueAt.getUTCMonth() + 1}/${e.dueAt.getUTCDate()}` : "no due"}</span>
+                    <span className="min-w-0 flex-1 text-[13px]">
+                      <span className="block truncate font-medium text-btr-link">
+                        {e.priority === "ASAP" && <span className="mr-1 text-red-700">ASAP</span>}
+                        {e.project}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">{[e.customer, e.scope, e.estimator].filter(Boolean).join(" · ")}</span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        </Panel>
+
+        <Panel title="Production schedule" right={<Link className={axLink} href="/production">Open ({sq.prodCount})</Link>} className="flex h-[440px] flex-col" bodyClass="flex min-h-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center gap-2 border-b px-3 py-1.5 text-xs text-muted-foreground">
+            Showing
+            <NavSelect
+              label="Crew"
+              value={tabHref("pc", sq.pc ?? "all")}
+              className="h-7 min-w-0 flex-1 text-xs"
+              options={[
+                ...(sq.pm ? [{ label: "My crews & builders", href: tabHref("pc", "mine") }] : []),
+                { label: "All crews", href: tabHref("pc", "all") },
+                ...sq.crewTabs.map((c) => ({ label: c, href: tabHref("pc", c), group: sq.pm ? "My crews" : "Busiest crews" })),
+                ...sq.moreCrews.map((c) => ({ label: c, href: tabHref("pc", c), group: "All other crews" })),
+              ]}
+            />
+          </div>
+          <ol className="min-h-0 flex-1 divide-y overflow-y-auto">
+            {sq.lines.length === 0 && <li className="p-3 text-sm text-muted-foreground">Nothing on this schedule right now.</li>}
+            {sq.lines.map((l) => (
+              <li key={l.id}>
+                <Link href={`/production/${l.id}`} className="flex gap-3 px-3 py-2 hover:bg-muted/60">
+                  <span className="w-12 shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {l.startDate ? `${l.startDate.getUTCMonth() + 1}/${l.startDate.getUTCDate()}` : l.board === "ADD" ? <span className="text-amber-700">new</span> : l.board === "UPCOMING" ? "next" : "now"}
+                  </span>
+                  <span className="min-w-0 flex-1 text-[13px]">
+                    <span className="block truncate font-medium text-btr-link">{l.location ?? l.project ?? l.builder}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{[l.market === "COMMERCIAL" ? l.project : l.builder, l.type, sq.pc === "all" || sq.pc === "mine" ? l.crew : null, l.superName].filter(Boolean).join(" · ")}</span>
+                  </span>
+                  {l.completed && <span className="shrink-0 text-xs text-green-700">done</span>}
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </Panel>
+      </div>
+
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-4">
-          <Panel title="Current pipeline" right={<span className="text-sm">Active jobs: {data.active}</span>}>
-            <div className="grid grid-cols-3 gap-y-4 sm:grid-cols-5">
-              {data.pipeline.map((p) => (
-                <Link key={p.key} href={`/jobs?m=${p.key}`} className="flex flex-col items-center gap-1 rounded py-2 hover:bg-muted/60">
-                  <MilestoneDot stage={p.stage} size={48} />
-                  <span className="text-2xl text-btr-blue tabular-nums">{p.count}</span>
-                  <span className="text-xs text-muted-foreground tabular-nums">{p.value ? usd0(p.value) : "--"}</span>
-                </Link>
-              ))}
-            </div>
-          </Panel>
-
           {updates.length > 0 && (
             <Panel title="Company updates" right={<Link className={axLink} href="/updates">All updates</Link>} bodyClass="divide-y">
               {updates.map((u) => (
@@ -111,41 +194,28 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             </Panel>
           )}
 
-          <Panel title={`Job action items (${[...data.actions.progress, ...data.actions.financial, ...data.actions.management].filter((a) => a.n > 0 && a.key !== "W").length})`} bodyClass="flex flex-col gap-3 p-3">
-            <Group label="Progress">
-              {data.actions.progress.map((a) => (
-                <Tile key={a.key} n={a.n} label={a.label} href={a.href} icon={a.stage ? <MilestoneDot stage={a.stage} size={24} className={a.n ? "" : "opacity-40"} /> : undefined} k={a.key} />
-              ))}
-            </Group>
+          <Panel title={`Action items (${[...(staff ? data.actions.office : []), ...data.actions.ordering].filter((a) => a.n > 0).length})`} bodyClass="grid gap-4 p-3 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             {staff && (
-              <Group label="Financial">
-                {data.actions.financial.map((a) => (
+              <Group label="Office" cols="sm:grid-cols-2">
+                {data.actions.office.map((a) => (
                   <Tile key={a.key} n={a.n} label={a.label} href={a.href} k={a.key} />
                 ))}
               </Group>
             )}
-            <Group label="Management">
-              {data.actions.management.map((a) => (
-                <Tile key={a.key} n={a.n} label={a.label} href={a.href} k={a.key} />
-              ))}
-            </Group>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <h3 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">Order measurements</h3>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Outbound href="https://www.eagleview.com/" name="EagleView" note="Roof & wall reports" />
-                  <Outbound href="https://www.gaf.com/en-us/for-professionals/tools/quickmeasure" name="GAF QuickMeasure" note="Roof reports" />
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">Order materials</h3>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Outbound href="https://www.abcsupply.com/" name="ABC Supply" note="Branch #112 · 402-734-1414" />
-                  <Link href="/deliveries" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
-                    <span className="font-medium text-btr-link">BTR material orders</span>
-                    <span className="text-xs text-muted-foreground">Orders from estimates, deliveries</span>
-                  </Link>
-                </div>
+            <div className="flex flex-col gap-3">
+              <Group label="Ordering" cols="sm:grid-cols-2 xl:grid-cols-1">
+                {data.actions.ordering.map((a) => (
+                  <Tile key={a.key} n={a.n} label={a.label} href={a.href} k={a.key} />
+                ))}
+              </Group>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Link href="/deliveries" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
+                  <span className="font-medium text-btr-link">BTR material orders</span>
+                  <span className="text-xs text-muted-foreground">Orders from estimates, deliveries</span>
+                </Link>
+                <Outbound href="https://www.abcsupply.com/" name="ABC Supply" note="Branch #112 · 402-734-1414" />
+                <Outbound href="https://www.eagleview.com/" name="EagleView" note="Roof & wall reports" />
+                <Outbound href="https://www.gaf.com/en-us/for-professionals/tools/quickmeasure" name="GAF QuickMeasure" note="Roof reports" />
               </div>
             </div>
           </Panel>
@@ -268,22 +338,34 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   );
 }
 
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
+function Tabs({ children }: { children: React.ReactNode }) {
+  return <div className="flex shrink-0 items-center gap-1 overflow-x-auto border-b px-2 py-1.5">{children}</div>;
+}
+
+function TabLink({ href, on, children }: { href: string; on: boolean; children: React.ReactNode }) {
+  return (
+    <Link href={href} scroll={false} className={`shrink-0 rounded-md px-2 py-1 text-xs whitespace-nowrap ${on ? "bg-btr-blue text-white" : "text-muted-foreground hover:bg-muted"}`}>
+      {children}
+    </Link>
+  );
+}
+
+function Group({ label, cols, children }: { label: string; cols: string; children: React.ReactNode }) {
   return (
     <div>
       <h3 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</h3>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">{children}</div>
+      <div className={`grid grid-cols-1 gap-2 ${cols}`}>{children}</div>
     </div>
   );
 }
 
-function Tile({ n, label, href, icon, k }: { n: number; label: string; href: string; icon?: React.ReactNode; k: string }) {
+function Tile({ n, label, href, k }: { n: number; label: string; href: string; k: string }) {
   const Icon = ICON[k as keyof typeof ICON] ?? AlertTriangle;
   return (
     <Link href={href} className={`flex items-center gap-3 border bg-background px-3 py-2.5 hover:bg-muted/60 ${n ? "" : "text-muted-foreground"}`}>
       <span className={`w-8 text-lg tabular-nums ${n ? "text-btr-blue" : ""}`}>{n}</span>
       <span className={`flex-1 text-center text-xs leading-tight ${n ? "text-foreground" : "opacity-60"}`}>{label}</span>
-      {icon ?? <Icon size={22} className={n ? "text-btr-blue" : "opacity-40"} />}
+      <Icon size={22} className={n ? "text-btr-blue" : "opacity-40"} />
     </Link>
   );
 }

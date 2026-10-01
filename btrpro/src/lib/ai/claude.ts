@@ -11,12 +11,12 @@ const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
 export class AiUnavailableError extends Error {
   constructor() {
-    super("AI isn't configured. Set ANTHROPIC_API_KEY on the server to turn on AI features.");
+    super("BTRbot isn't turned on yet. Set ANTHROPIC_API_KEY on the server.");
   }
 }
 export class AiRefusalError extends Error {
   constructor(public category: string | null) {
-    super("The AI declined this request. Nothing was saved.");
+    super("BTRbot declined this request. Nothing was saved.");
   }
 }
 
@@ -32,10 +32,12 @@ export function aiClient(): AiClient {
 }
 function client(): AiClient {
   if (override) return override;
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) throw new AiUnavailableError();
-  return (real ??= new Anthropic());
+  const key = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!key) throw new AiUnavailableError();
+  // API key only: a leftover ANTHROPIC_AUTH_TOKEN would otherwise go along as a bearer token and get the call rejected
+  return (real ??= new Anthropic({ apiKey: key, authToken: null }));
 }
-export const aiConfigured = () => !!(override || process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
+export const aiConfigured = () => !!(override || process.env.ANTHROPIC_API_KEY?.trim());
 
 let claudeMd: string | null = null;
 /** The estimator knowledge base — loaded verbatim, never paraphrased. */
@@ -97,14 +99,22 @@ export async function aiParse<S extends z.ZodType>(opts: {
     messages: opts.messages,
   });
   checkStop(res);
-  if (res.parsed_output == null) throw new Error("The AI response didn't match the expected format.");
+  if (res.parsed_output == null) throw new Error("BTRbot's answer didn't come back in the expected format. Try again.");
   return { data: res.parsed_output as z.infer<S>, model: res.model };
 }
 
 export function aiErrorMessage(e: unknown): string {
   if (e instanceof AiUnavailableError || e instanceof AiRefusalError) return e.message;
-  if (e instanceof Anthropic.RateLimitError) return "The AI service is busy. Try again in a minute.";
-  if (e instanceof Anthropic.AuthenticationError) return "The AI API key was rejected. Check ANTHROPIC_API_KEY.";
-  if (e instanceof Anthropic.APIError) return `AI service error (${e.status ?? "network"}). Try again.`;
+  if (e instanceof Anthropic.RateLimitError) return "BTRbot is busy. Try again in a minute.";
+  if (e instanceof Anthropic.AuthenticationError)
+    return "BTRbot's key was rejected. In Railway, ANTHROPIC_API_KEY must be a key from console.anthropic.com → API Keys (starts sk-ant-api03-), and ANTHROPIC_AUTH_TOKEN should be deleted.";
+  if (e instanceof Anthropic.APIError) {
+    // Anthropic's own reason (no secrets in it) — e.g. low credit balance, image too large
+    const reason = ((e.error as { error?: { message?: string } } | undefined)?.error?.message ?? "").slice(0, 300);
+    if (/credit balance/i.test(reason))
+      return "The Anthropic account is out of credit. console.anthropic.com → Settings → Billing → add credit (and turn on auto-reload), then try again.";
+    if (e.status === 400 || e.status === 403 || e.status === 404) return `BTRbot request rejected (${e.status})${reason ? `: ${reason}` : ""}.`;
+    return `BTRbot service error (${e.status ?? "network"}). Try again.`;
+  }
   return e instanceof Error ? e.message : String(e);
 }

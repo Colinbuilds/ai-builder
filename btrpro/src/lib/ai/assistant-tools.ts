@@ -196,7 +196,7 @@ const TOOLS: Impl = {
           total: null, // counted only once a person accepts it
           formula: l.formula,
           sourceStatus: "PENDING_AI",
-          note: `AI suggestion: ${l.reason}`,
+          note: `BTRbot suggestion: ${l.reason}`,
           sortOrder: 9000,
         },
       });
@@ -204,7 +204,7 @@ const TOOLS: Impl = {
       results.push(`ADDED as PENDING_AI: ${it?.itemNumber ?? l.item_name} × ${l.quantity} ${it?.uom ?? l.unit}`);
     }
     if (accepted) {
-      await prisma.projectActivity.create({ data: { projectId: ctx.projectId, userId: null, kind: "estimate", text: `AI assistant proposed ${accepted} line(s) on ${e.name} for review` } });
+      await prisma.projectActivity.create({ data: { projectId: ctx.projectId, userId: null, kind: "estimate", text: `BTRbot proposed ${accepted} line(s) on ${e.name} for review` } });
       await refreshReadiness(ctx.projectId);
     }
     return results.join("\n");

@@ -2,6 +2,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { MILESTONES, prettyStages, stageMoveTitle } from "@/lib/projects/milestones";
+import { billSummary } from "@/lib/bills/service";
 import { AGING_BUCKETS, agingBucket, balanceDue } from "@/lib/billing/math";
 import type { MarketView } from "@/lib/market";
 
@@ -9,18 +10,15 @@ const DAY = 86_400_000;
 const startOfDay = (d = new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const round = (n: number) => Math.round(n * 100) / 100;
 
-export async function dashboardData(view: MarketView, userId: string) {
+export async function dashboardData(view: MarketView) {
   const m: Prisma.ProjectWhereInput = view !== "ALL" ? { market: view } : {};
   const today = startOfDay();
   const now = new Date();
-  const week = new Date(today.getTime() + 7 * DAY);
   const since30 = new Date(today.getTime() - 30 * DAY);
 
-  const [byStage, unassigned, bidsDue, watch, invoices, cosOut, ordersDraft, measuresPending, proposalsOut, overdueTasks, crewInvoices, photosToCheck, receiptsOpen] = await Promise.all([
+  const prodM: Prisma.ProdLineWhereInput = view !== "ALL" ? { market: view } : {};
+  const [byStage, invoices, cosOut, ordersDraft, measuresPending, proposalsOut, overdueTasks, crewInvoices, photosToCheck, receiptsOpen, draftInvoices, prodToPay, prodToBill, bills] = await Promise.all([
     prisma.project.groupBy({ by: ["status"], where: m, _count: true, _sum: { contractAmount: true } }),
-    prisma.project.count({ where: { ...m, status: "LEAD", salespersonId: null } }),
-    prisma.project.count({ where: { ...m, status: { in: ["LEAD", "ESTIMATING"] }, bidDueDate: { gte: today, lt: week } } }),
-    prisma.jobWatch.count({ where: { userId, project: m } }),
     prisma.invoice.findMany({ where: { status: { in: ["SENT", "PARTIAL"] }, project: m }, include: { payments: { select: { amount: true } }, project: { select: { status: true } } } }),
     prisma.changeOrder.count({ where: { status: "PENDING", sentAt: { not: null }, project: m } }),
     prisma.materialOrder.count({ where: { status: "DRAFT", project: m } }),
@@ -36,6 +34,11 @@ export async function dashboardData(view: MarketView, userId: string) {
     prisma.crewInvoice.count({ where: { status: "SUBMITTED", project: m } }),
     prisma.jobPhoto.count({ where: { review: "PENDING", crewId: { not: null }, project: m } }),
     prisma.receiptScan.count({ where: { status: "READ" } }),
+    prisma.invoice.count({ where: { status: "DRAFT", project: m } }),
+    // schedule lines marked Completed: pay the crew, then bill the builder (residential; commercial bills by pay app)
+    prisma.prodLine.count({ where: { ...prodM, completed: { not: null }, approved: null, board: { not: "COMPLETED" } } }),
+    view === "COMMERCIAL" ? Promise.resolve(0) : prisma.prodLine.count({ where: { market: "RESIDENTIAL", completed: { not: null }, billed: null, board: { not: "COMPLETED" } } }),
+    billSummary(now),
   ]);
   const stageCount = (s: string) => byStage.find((b) => b.status === s)?._count ?? 0;
 
@@ -50,31 +53,29 @@ export async function dashboardData(view: MarketView, userId: string) {
   const aging = Object.fromEntries(AGING_BUCKETS.map((b) => [b, 0])) as Record<(typeof AGING_BUCKETS)[number], number>;
   for (const i of open) aging[agingBucket(i.dueDate, now)] = round(aging[agingBucket(i.dueDate, now)] + i.balance);
 
+  // the office's queue first, then ordering / purchasing
   const actions = {
-    progress: [
-      { key: "U", label: "Unassigned leads", n: unassigned, href: "/jobs?stage=LEAD&unassigned=1", stage: "LEAD" },
-      { key: "P", label: "Bids due this week", n: bidsDue, href: "/jobs?due=week", stage: "ESTIMATING" },
-      { key: "A", label: "Submitted, awaiting decision", n: stageCount("SUBMITTED"), href: "/jobs?stage=SUBMITTED", stage: "SUBMITTED" },
-      { key: "C", label: "Sold, not scheduled", n: stageCount("SOLD"), href: "/jobs?stage=SOLD", stage: "SOLD" },
-      { key: "I", label: "Complete, not invoiced", n: stageCount("COMPLETE"), href: "/jobs?stage=COMPLETE", stage: "COMPLETE" },
-      { key: "X", label: "Paid, ready to close", n: stageCount("PAID"), href: "/jobs?stage=PAID", stage: "CLOSED" },
-      { key: "W", label: "Watch list", n: watch, href: "/jobs?watch=1", stage: null },
-    ],
-    financial: [
+    office: [
+      { key: "PP", label: "Crews to pay (marked completed)", n: prodToPay, href: "/production?v=billing" },
+      { key: "PB", label: "Completed work to bill", n: prodToBill, href: "/production?v=billing" },
+      { key: "DI", label: "Invoices not sent yet", n: draftInvoices, href: "/desk/office?dash=1" },
       { key: "OI", label: "Overdue invoices", n: overdueInvoices, href: "/reports/ar" },
-      { key: "LB", label: "Lost/closed jobs with balance due", n: deadWithBalance, href: "/reports/ar" },
-      { key: "CO", label: "Change orders out for signature", n: cosOut, href: "/jobs?stage=all" },
       { key: "CI", label: "Crew invoices to review", n: crewInvoices, href: "/crews/invoices" },
-      { key: "RC", label: "Receipts not filed", n: receiptsOpen, href: "/receipts" },
+      { key: "CO", label: "Change orders out for signature", n: cosOut, href: "/jobs?stage=all" },
+      { key: "PS", label: "Proposals awaiting signature", n: proposalsOut, href: "/jobs?stage=SUBMITTED" },
+      { key: "LB", label: "Lost/closed jobs with balance due", n: deadWithBalance, href: "/reports/ar" },
+      { key: "PH", label: "Crew photos to check", n: photosToCheck, href: "/crews/photos" },
+      { key: "TK", label: "Overdue tasks", n: overdueTasks, href: "/today" },
     ],
-    management: [
+    ordering: [
       { key: "OR", label: "Material orders not sent", n: ordersDraft, href: "/deliveries" },
       { key: "MR", label: "Measurement orders waiting", n: measuresPending, href: "/jobs?stage=all" },
-      { key: "PS", label: "Proposals awaiting signature", n: proposalsOut, href: "/jobs?stage=SUBMITTED" },
-      { key: "TK", label: "Overdue tasks", n: overdueTasks, href: "/today" },
-      { key: "PH", label: "Crew photos to check", n: photosToCheck, href: "/crews/photos" },
+      { key: "SL", label: "Supplier bills to look at", n: bills.needsLook, href: "/bills?tab=look" },
+      { key: "SA", label: "Supplier bills ready to approve", n: bills.ready, href: "/bills?tab=ready" },
+      { key: "RC", label: "Receipts not filed", n: receiptsOpen, href: "/receipts" },
     ],
   };
+
 
   return { pipeline, active: pipeline.reduce((a, p) => a + p.count, 0), actions, aging, arTotal: round(open.reduce((a, i) => a + i.balance, 0)) };
 }

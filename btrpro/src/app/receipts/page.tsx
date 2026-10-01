@@ -39,7 +39,7 @@ export default async function Receipts() {
           sheets — the builder&apos;s own pricing on builder jobs. Then file it to the job&apos;s material costs.
         </p>
       </div>
-      {aiConfigured() ? <ScanReceiptForm /> : <p className="rounded-lg border border-btr-line p-4 text-sm">Reading receipts needs AI turned on (ANTHROPIC_API_KEY on the server).</p>}
+      {aiConfigured() ? <ScanReceiptForm /> : <p className="rounded-lg border border-btr-line p-4 text-sm">Reading receipts needs BTRbot turned on (ANTHROPIC_API_KEY on the server).</p>}
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">Recent receipts</h2>
         {scans.length === 0 && <p className="text-sm text-muted-foreground">None yet.</p>}

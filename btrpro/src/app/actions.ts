@@ -78,3 +78,13 @@ export async function setUserOwner(form: FormData) {
   revalidatePath("/admin/users");
 }
 
+
+/** The phone number printed on proposals when this person is the company representative. */
+export async function setUserPhone(form: FormData) {
+  const me = await requireUser(["ADMIN"]);
+  const id = String(form.get("id"));
+  const phone = String(form.get("phone") ?? "").trim() || null;
+  await prisma.user.update({ where: { id }, data: { phone } });
+  await prisma.auditLog.create({ data: { userId: me.id, entity: "User", entityId: id, action: "set_phone", after: { phone } } });
+  revalidatePath("/admin/users");
+}

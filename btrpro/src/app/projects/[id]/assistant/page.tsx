@@ -19,9 +19,9 @@ export default async function AssistantPage({
   return (
     <div className="flex max-w-4xl flex-col gap-2">
       <p className="text-sm text-muted-foreground">
-        Estimator assistant for this job. Prices and item numbers come only from
+        <strong>BTRbot</strong>, the estimating assistant for this job. Prices and item numbers come only from
         the loaded sheets; lines it proposes wait on the Estimates tab as{" "}
-        <strong>AI suggestion</strong> until someone accepts them.
+        <strong>BTRbot suggestion</strong> until someone accepts them.
       </p>
       <AssistantPanel
         projectId={id}

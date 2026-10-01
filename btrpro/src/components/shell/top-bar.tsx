@@ -62,33 +62,15 @@ export function TopBar({
       active(t) ? "border-btr-blue text-white" : "border-transparent text-white/65 hover:text-white"
     }`;
   const renderTool = (t: Tool) => {
-    const Icon = ICONS[t.icon];
     const body = (
       <>
-        <Icon size={15} className="xl:hidden 2xl:block" />
         {t.label}
         {t.items && <ChevronDown size={13} className="opacity-60" />}
       </>
     );
-    if (t.key === "recent")
-      return (
-        <Dropdown key={t.key} label="Recent jobs" className={itemCls(t)} button={body} width={320}>
-          <MenuHeading>Recently viewed jobs</MenuHeading>
-          {recent.length === 0 && <p className="px-3 py-2 text-muted-foreground">Jobs you open show up here.</p>}
-          {recent.map((j) => (
-            <Link key={j.id} href={`/projects/${j.id}`} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted">
-              <MilestoneDot stage={j.status} size={18} />
-              <span className="min-w-0">
-                <span className="block truncate text-btr-link">{j.name}</span>
-                {j.address && <span className="block truncate text-xs text-muted-foreground">{j.address}</span>}
-              </span>
-            </Link>
-          ))}
-        </Dropdown>
-      );
     if (t.items)
       return (
-        <Dropdown key={t.key} label={t.label} className={itemCls(t)} button={body}>
+        <Dropdown key={t.key} label={t.label} className={itemCls(t)} button={body} width={t.key === "jobs" ? 300 : 240}>
           {t.items.map((i, n) =>
             "heading" in i ? (
               <MenuHeading key={`h${n}`}>{i.heading}</MenuHeading>
@@ -97,6 +79,17 @@ export function TopBar({
                 {i.label}
               </MenuLink>
             ),
+          )}
+          {t.key === "jobs" && recent.length > 0 && (
+            <>
+              <MenuHeading>Recently viewed</MenuHeading>
+              {recent.slice(0, 6).map((j) => (
+                <Link key={j.id} href={`/projects/${j.id}`} className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted">
+                  <MilestoneDot stage={j.status} size={16} />
+                  <span className="min-w-0 truncate text-btr-link">{j.name}</span>
+                </Link>
+              ))}
+            </>
           )}
         </Dropdown>
       );
@@ -135,29 +128,30 @@ export function TopBar({
             )}
           </Dropdown>
         )}
-        <nav className="order-last -mx-3 flex w-[calc(100%+1.5rem)] items-stretch overflow-x-auto border-t border-white/10 px-1 sm:-mx-4 sm:w-[calc(100%+2rem)] xl:order-none xl:mx-0 xl:w-auto xl:flex-1 xl:border-0 xl:px-0">
+        <nav className="order-last -mx-3 flex w-[calc(100%+1.5rem)] items-stretch overflow-x-auto border-t xl:overflow-visible border-white/10 px-1 sm:-mx-4 sm:w-[calc(100%+2rem)] xl:order-none xl:mx-0 xl:w-auto xl:flex-1 xl:border-0 xl:px-0">
           {tools.filter((t) => t.key !== "new").map(renderTool)}
         </nav>
         <div className="ml-auto flex items-center sm:gap-1">
           <JobSearch />
-          <Link href="/jobs?stage=all" title="Search jobs" aria-label="Search jobs" className="hidden rounded-md p-2 text-white/75 hover:bg-white/10 hover:text-white xl:block 2xl:hidden">
-            <Search size={17} />
-          </Link>
-          <Link href="/updates" title="Company updates" aria-label="Company updates" className="hidden rounded-md p-2 sm:block text-white/75 hover:bg-white/10 hover:text-white">
-            <Megaphone size={17} />
-          </Link>
-          <Counter href="/jobs?watch=1" label="Watch list" n={counts.watching} className="hidden sm:block">
-            <Pin size={17} />
-          </Counter>
-          <Counter href="/today" label="Tasks due today" n={counts.tasks}>
-            <Calendar size={17} />
-          </Counter>
-          <IconButton label="Notifications" onClick={() => setDrawer("all")} n={counts.bell}>
-            <Bell size={17} />
-          </IconButton>
-          <IconButton label="Mentions of me" onClick={() => setDrawer("mentions")} n={counts.mentions}>
-            <AtSign size={17} />
-          </IconButton>
+          <Dropdown
+            label="Notifications"
+            align="right"
+            width={280}
+            hover={false}
+            className="relative rounded-md p-2 text-white/75 hover:bg-white/10 hover:text-white"
+            button={
+              <>
+                <Bell size={18} />
+                <Dot n={counts.bell + counts.mentions + counts.tasks} />
+              </>
+            }
+          >
+            <NoteRow label="Notifications" n={counts.bell} onClick={() => setDrawer("all")} icon={<Bell size={15} />} />
+            <NoteRow label="Mentions of me" n={counts.mentions} onClick={() => setDrawer("mentions")} icon={<AtSign size={15} />} />
+            <NoteRow label="My day — tasks due" n={counts.tasks} href="/today" icon={<Calendar size={15} />} />
+            <NoteRow label="Watch list" n={counts.watching} href="/jobs?watch=1" icon={<Pin size={15} />} />
+            <NoteRow label="Company updates" href="/updates" icon={<Megaphone size={15} />} />
+          </Dropdown>
           <Dropdown
             label="Account menu"
             align="right"
@@ -165,6 +159,7 @@ export function TopBar({
             className="ml-1 flex items-center gap-2 rounded-md py-1 pr-1 pl-1 text-[13px] hover:bg-white/10"
             button={
               <>
+                <Settings size={17} className="text-white/75" />
                 <span className="flex size-7 items-center justify-center rounded-full bg-white/15 text-[11px] font-semibold">
                   {user.name
                     .split(/\s+/)
@@ -192,7 +187,7 @@ export function TopBar({
                 </button>
               ))}
             </form>
-            {adminLinks.length > 0 && <MenuHeading>Admin</MenuHeading>}
+            {adminLinks.length > 0 && <MenuHeading>Settings</MenuHeading>}
             {adminLinks.map((l) => (
               <MenuLink key={l.href} href={l.href}>
                 {l.label}
@@ -217,7 +212,7 @@ function JobSearch() {
   return (
     <form
       role="search"
-      className="mr-1 hidden h-8 w-56 items-center rounded-md bg-white/10 focus-within:bg-white/15 md:flex xl:hidden 2xl:flex 2xl:w-72"
+      className="mr-1 hidden h-8 w-56 items-center rounded-md bg-white/10 focus-within:bg-white/15 md:flex 2xl:w-72"
       onSubmit={(e) => {
         e.preventDefault();
         router.push(`/jobs?stage=all&q=${encodeURIComponent(q.trim())}`);
@@ -254,20 +249,22 @@ function Dot({ n }: { n: number }) {
   );
 }
 
-function Counter({ href, label, n, children, className = "" }: { href: string; label: string; n: number; children: React.ReactNode; className?: string }) {
-  return (
-    <Link href={href} title={label} aria-label={label} className={`relative rounded-md p-2 text-white/75 hover:bg-white/10 hover:text-white ${className}`}>
-      {children}
-      <Dot n={n} />
-    </Link>
+function NoteRow({ label, n = 0, href, onClick, icon }: { label: string; n?: number; href?: string; onClick?: () => void; icon: React.ReactNode }) {
+  const body = (
+    <>
+      <span className="text-muted-foreground">{icon}</span>
+      <span className="flex-1">{label}</span>
+      {n > 0 && <span className="rounded-full bg-btr-blue px-1.5 text-[11px] leading-4 font-semibold text-white tabular-nums">{n > 99 ? "99+" : n}</span>}
+    </>
   );
-}
-
-function IconButton({ label, n, onClick, children }: { label: string; n: number; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} title={label} aria-label={label} className="relative rounded-md p-2 text-white/75 hover:bg-white/10 hover:text-white">
-      {children}
-      <Dot n={n} />
+  const cls = "flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted";
+  return href ? (
+    <Link href={href} role="menuitem" className={cls}>
+      {body}
+    </Link>
+  ) : (
+    <button type="button" role="menuitem" onClick={onClick} className={cls}>
+      {body}
     </button>
   );
 }

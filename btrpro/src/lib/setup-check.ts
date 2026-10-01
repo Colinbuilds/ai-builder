@@ -1,6 +1,7 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { serviceAccountEmail, serviceAccountProblem } from "@/lib/integrations/google-sa";
 
 // Reads which server settings (Railway variables) are present and sane — never their values.
 export type Check = { name: string; status: "ok" | "missing" | "problem" | "optional"; what: string; fix?: string };
@@ -69,13 +70,13 @@ export function setupChecks(): Check[] {
   out.push(
     key
       ? key.startsWith("sk-ant-api")
-        ? { name: "AI (ANTHROPIC_API_KEY)", status: "ok", what: "API key set." }
-        : { name: "AI (ANTHROPIC_API_KEY)", status: "problem", what: "Doesn't look like an API key (they start sk-ant-api).", fix: "Paste the key from console.anthropic.com → API Keys." }
+        ? { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "ok", what: "API key set." }
+        : { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "problem", what: "Doesn't look like an API key (they start sk-ant-api).", fix: "Paste the key from console.anthropic.com → API Keys." }
       : tok?.startsWith("sk-ant-api")
-        ? { name: "AI (ANTHROPIC_API_KEY)", status: "problem", what: "An API key is in ANTHROPIC_AUTH_TOKEN, which sends it the wrong way and gets rejected.", fix: "Rename the variable to ANTHROPIC_API_KEY." }
+        ? { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "problem", what: "An API key is in ANTHROPIC_AUTH_TOKEN, which sends it the wrong way and gets rejected.", fix: "Rename the variable to ANTHROPIC_API_KEY." }
         : tok
-          ? { name: "AI (ANTHROPIC_API_KEY)", status: "problem", what: "Only ANTHROPIC_AUTH_TOKEN is set. Use an API key instead.", fix: "console.anthropic.com → API Keys → Create Key; set ANTHROPIC_API_KEY; remove ANTHROPIC_AUTH_TOKEN." }
-          : { name: "AI (ANTHROPIC_API_KEY)", status: "missing", what: "Not set — receipt reading, directory import, plan review and the assistant are off.", fix: "console.anthropic.com → API Keys → Create Key; set ANTHROPIC_API_KEY." },
+          ? { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "problem", what: "Only ANTHROPIC_AUTH_TOKEN is set. Use an API key instead.", fix: "console.anthropic.com → API Keys → Create Key; set ANTHROPIC_API_KEY; remove ANTHROPIC_AUTH_TOKEN." }
+          : { name: "BTRbot AI (ANTHROPIC_API_KEY)", status: "missing", what: "Not set — receipt reading, directory import, plan review and the assistant are off.", fix: "console.anthropic.com → API Keys → Create Key; set ANTHROPIC_API_KEY." },
   );
   const drv = process.env.STORAGE_DRIVER ?? "local";
   if (drv === "s3") {
@@ -96,6 +97,13 @@ export function setupChecks(): Check[] {
     );
   }
   out.push(pair("QBO_CLIENT_ID", "QBO_CLIENT_SECRET", "QuickBooks Online", `developer.intuit.com → your app → Keys & credentials (Production). Redirect URI: ${app || "APP_URL"}/api/integrations/quickbooks/callback`));
+  out.push(
+    serviceAccountEmail()
+      ? { name: "Google Drive (service account)", status: "ok", what: `Reads Drive as ${serviceAccountEmail()}. Share folders and sheets with that address.` }
+      : serviceAccountProblem()
+        ? { name: "Google Drive (service account)", status: "problem", what: `GOOGLE_SERVICE_ACCOUNT_JSON is set but can't be used: ${serviceAccountProblem()}`, fix: "Google Cloud → IAM & Admin → Service Accounts → your account → Keys → Add key → JSON, then paste that whole file as the value." }
+        : { name: "Google Drive (service account)", status: "missing", what: "GOOGLE_SERVICE_ACCOUNT_JSON isn't set on this service.", fix: "Add it on the BTRpro service's Variables (spelled exactly), paste the whole key .json file, and let it redeploy." },
+  );
   if (has("GOOGLE_SERVICE_ACCOUNT_JSON") && !(has("GOOGLE_CLIENT_ID") && has("GOOGLE_CLIENT_SECRET")))
     // Drive already works through the service account; per-person sign-in is only for Gmail capture
     out.push({
