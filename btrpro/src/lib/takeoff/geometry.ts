@@ -50,7 +50,8 @@ export const TAKEOFF_TYPES: TakeoffType[] = [
 export const TYPE_BY_ID = new Map(TAKEOFF_TYPES.map((t) => [t.id, t]));
 
 export type Pt = [number, number];
-export type TakeoffItem = { id: string; type: string; points: Pt[]; pitch?: number | null; note?: string | null };
+// ai: drawn by the AI measurer and not yet reviewed — never counted until a person accepts it
+export type TakeoffItem = { id: string; type: string; points: Pt[]; pitch?: number | null; note?: string | null; ai?: boolean };
 export type Scale = {
   /** sheet units per foot */
   upf: number;
@@ -165,9 +166,14 @@ export function pageTotals(page: PageTakeoff, allowancePct = 1): { totals: Total
     sums.set(key, cur);
   };
   let unsized = 0;
+  let drafts = 0;
   for (const it of page.items) {
     const t = TYPE_BY_ID.get(it.type);
     if (!t) continue;
+    if (it.ai) {
+      drafts++;
+      continue;
+    }
     const r = measureItem(it, page);
     if (!r) {
       unsized++;
@@ -180,6 +186,7 @@ export function pageTotals(page: PageTakeoff, allowancePct = 1): { totals: Total
     }
   }
   if (unsized) problems.push(!page.scale ? "Set the scale before anything can be measured." : `${unsized} item${unsized === 1 ? "" : "s"} need${unsized === 1 ? "s" : ""} a pitch (set the sheet pitch or the item's own).`);
+  if (drafts) problems.push(`${drafts} AI-drawn item${drafts === 1 ? " isn't" : "s aren't"} reviewed yet and ${drafts === 1 ? "isn't" : "aren't"} counted. Check each one against the plan, then accept or delete.`);
   const roof = sums.get("roof_total_sf");
   if (roof) add("roof_sq", "Roof squares", "SQ", roof.raw / 100);
   const wall = sums.get("wall_total_sf");
