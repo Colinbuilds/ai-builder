@@ -187,6 +187,8 @@ model Project {
   constructionType   ConstructionType?
   // STEEP | LOW_SLOPE | DECK | SIDING | PANELS — drives which intake fields apply
   scopes             Json?
+  // what kind of job: REROOF | NEW_ROOF | SIDING | GUTTERS | INSULATION | WINDOWS | REPAIR | WARRANTY
+  workTypes          Json?
   isPublic           Boolean           @default(false)
   isTaxExempt        Boolean           @default(false)
   form17Status       Form17Status      @default(NOT_REQUIRED)

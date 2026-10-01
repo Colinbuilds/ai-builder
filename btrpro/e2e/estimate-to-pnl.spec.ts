@@ -25,15 +25,14 @@ test("estimate to job P&L", async ({ page }) => {
   await expect(page.locator("h1")).toContainText("Dashboard");
 
   // 1. New residential reroof
+  // (lead form order: name → phone/email → address → job type → assigned to)
   await page.goto("/projects/new");
-  await page
-    .locator("label:has(input[name=market][value=RESIDENTIAL])")
-    .click();
-  await page.fill("input[name=name]", "TEST_ONLY E2E Reroof");
-  await page.fill("input[name=address]", "1 TEST_ONLY E2E St, Omaha NE");
   await page.fill("input[name=hoFirstName]", "Erin");
-  await page.fill("input[name=hoLastName]", "TestE2E");
-  await page.locator("input[name=scopes][value=STEEP]").check();
+  await page.fill("input[name=hoLastName]", "TEST_ONLY-E2E");
+  await page.fill("input[name=hoPhone]", "402-555-0199");
+  await page.fill("input[name=address]", "1 TEST_ONLY E2E St, Omaha NE");
+  await page.keyboard.press("Escape");
+  await page.locator("label:has(input[name=workTypes][value=REROOF])").click();
   await page.locator("button:has-text('Create job')").click();
   await page.waitForURL((u) => /\/projects\/[a-z0-9]{20,}$/.test(u.pathname));
   const projectId = page.url().split("/projects/")[1];

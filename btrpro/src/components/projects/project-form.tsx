@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useFormAction } from "@/components/use-form-action";
 import type { ActionResult } from "@/app/projects/actions";
 import { SCOPES, SCOPE_LABEL } from "@/lib/projects/intake";
+import { WORK_TYPES, WORK_TYPE_LABEL, parseWorkTypes } from "@/lib/projects/work-types";
 import { MARKET_DEFAULTS, type Market } from "@/lib/market-shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
 import { Problems } from "./problems";
+import { AddressInput } from "@/components/address-input";
 
 type Opt = { id: string; name: string };
 export type ProjectFormValues = {
@@ -18,6 +20,7 @@ export type ProjectFormValues = {
   buildingUse?: string | null;
   constructionType?: string | null;
   scopes?: string[];
+  workTypes?: unknown;
   isPublic?: boolean;
   isTaxExempt?: boolean;
   bidDueDate?: string | null;
@@ -121,7 +124,7 @@ export function ProjectForm({
         />
       </Field>
       <Field label={res ? "Property address" : "Job site address"}>
-        <Input name="address" value={address} onChange={(e) => setAddress(e.target.value)} />
+        <AddressInput value={address} onChange={setAddress} />
       </Field>
 
       {res && isNew ? (
@@ -225,6 +228,18 @@ export function ProjectForm({
           <option value="REROOF">Reroof / re-side</option>
         </Select>
       </Field>
+
+      <fieldset className="sm:col-span-2">
+        <legend className="mb-1 text-sm font-medium">Job type</legend>
+        <div className="flex flex-wrap gap-4">
+          {WORK_TYPES.map((t) => (
+            <label key={t} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="workTypes" value={t} defaultChecked={parseWorkTypes(v.workTypes).includes(t)} />
+              {WORK_TYPE_LABEL[t]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       <fieldset className="sm:col-span-2">
         <legend className="mb-1 text-sm font-medium">

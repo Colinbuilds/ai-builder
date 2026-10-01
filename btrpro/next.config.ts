@@ -8,7 +8,7 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   {
     key: "Permissions-Policy",
-    value: "camera=(self), microphone=(), geolocation=()",
+    value: "camera=(self), microphone=(), geolocation=(self)",
   },
   {
     key: "Strict-Transport-Security",

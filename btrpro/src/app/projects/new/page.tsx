@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ProjectForm } from "@/components/projects/project-form";
+import { NewLeadForm } from "@/components/projects/new-lead-form";
 import { getMarketView } from "@/lib/market";
 import { createProjectAction } from "../actions";
 
@@ -27,31 +27,15 @@ export default async function NewProjectPage({
   const prop = properties.find((p) => p.id === property);
   return (
     <div className="flex max-w-3xl flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold">New job</h1>
-        <p className="text-sm text-muted-foreground">
-          Creating the job builds its missing-information checklist from the
-          scopes you pick. Fill in what you know; the rest stays MISSING until a
-          source is provided.
-        </p>
-      </div>
-      <ProjectForm
+      <h1 className="text-2xl font-semibold">New job / lead</h1>
+      <NewLeadForm
         action={createProjectAction}
-        values={{
-          estimatorId: me.id,
-          salespersonId: me.id,
-          market: prop
-            ? "COMMERCIAL"
-            : view === "RESIDENTIAL" || client
-              ? "RESIDENTIAL"
-              : "COMMERCIAL",
-          clientCompanyId: prop?.companyId ?? client ?? null,
-        }}
-        isNew
         companies={companies}
         users={users}
-        submitLabel="Create job"
         properties={properties}
+        me={me.id}
+        market={prop ? "COMMERCIAL" : client ? "RESIDENTIAL" : view === "COMMERCIAL" ? "COMMERCIAL" : "RESIDENTIAL"}
+        clientCompanyId={prop?.companyId ?? client ?? null}
         propertyId={prop?.id ?? null}
       />
     </div>

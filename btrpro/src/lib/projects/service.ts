@@ -34,6 +34,7 @@ export type ProjectInput = {
   buildingUse?: string | null;
   constructionType?: ConstructionType | null;
   scopes: Scope[];
+  workTypes?: string[];
   isPublic: boolean;
   isTaxExempt: boolean;
   bidDueDate?: Date | null;
@@ -58,7 +59,7 @@ export type ProjectInput = {
   retainagePct?: number | null;
 };
 
-export type HomeownerInput = { firstName: string; lastName: string; phone?: string | null; email?: string | null };
+export type HomeownerInput = { firstName: string; lastName: string; phone?: string | null; email?: string | null; role?: "HOMEOWNER" | "OWNER_REP" };
 
 export async function createProject(input: ProjectInput, actor: Actor, homeowner?: HomeownerInput | null) {
   if (!input.name.trim()) throw new ProjectError(["Project name is required."]);
@@ -112,12 +113,12 @@ export async function createProject(input: ProjectInput, actor: Actor, homeowner
           address: input.address ?? null,
         },
       }));
-    await prisma.projectContact.create({ data: { projectId: project.id, contactId: contact.id, role: "HOMEOWNER", isPrimary: true } });
+    await prisma.projectContact.create({ data: { projectId: project.id, contactId: contact.id, role: homeowner.role ?? "HOMEOWNER", isPrimary: true } });
     await activity(
       project.id,
       actor.id,
       "contact",
-      `${existing ? "Linked existing" : "Added"} homeowner ${contact.firstName} ${contact.lastName}`,
+      `${existing ? "Linked existing" : "Added"} ${homeowner.role === "OWNER_REP" ? "contact" : "homeowner"} ${contact.firstName} ${contact.lastName}`,
     );
   }
   if (project.form17Status === "PENDING")

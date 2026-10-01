@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { parseScopes } from "@/lib/projects/intake";
+import { leadName, parseWorkTypes, scopesForWork } from "@/lib/projects/work-types";
 import { STAGES, type Stage } from "@/lib/projects/workflow";
 import {
   changeStage,
@@ -55,6 +56,7 @@ function detailsFromForm(f: FormData): ProjectInput {
     buildingUse: str(f, "buildingUse"),
     constructionType: ct === "NEW" || ct === "REROOF" ? ct : null,
     scopes: parseScopes(f.getAll("scopes")),
+    workTypes: parseWorkTypes(f.getAll("workTypes")),
     isPublic: f.get("isPublic") === "on",
     isTaxExempt: !res && f.get("isTaxExempt") === "on",
     bidDueDate: date(f, "bidDueDate"),
@@ -84,37 +86,56 @@ const fail = (e: unknown): ActionResult => {
   throw e;
 };
 
+/** New job / lead form: name → phone/email → address → job type → assigned to (+ optional details). */
 export async function createProjectAction(
   _: ActionResult,
   f: FormData,
 ): Promise<ActionResult> {
   const user = await requireUser([...EDITORS]);
-  const input = detailsFromForm(f);
-  if (!input.scopes.length) return { problems: ["Pick at least one scope."] };
+  const market = str(f, "market") === "COMMERCIAL" ? "COMMERCIAL" : "RESIDENTIAL";
+  const res = market === "RESIDENTIAL";
+  const first = str(f, "hoFirstName") ?? "";
+  const last = str(f, "hoLastName") ?? "";
+  const workTypes = parseWorkTypes(f.getAll("workTypes"));
+  const clientCompanyId = str(f, "clientCompanyId");
+  const company = clientCompanyId ? await prisma.company.findUnique({ where: { id: clientCompanyId }, select: { name: true } }) : null;
+  const problems: string[] = [];
+  if ((!first || !last) && !company) problems.push("Enter the customer's first and last name.");
+  if (!workTypes.length) problems.push("Pick what kind of job it is.");
+  const email = str(f, "hoEmail");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problems.push("That email doesn't look right.");
+  if (problems.length) return { problems };
+  const { scopes, constructionType } = scopesForWork(workTypes, market);
+  const assignee = str(f, "salespersonId");
+  const insurance = res && f.get("isInsuranceClaim") === "on";
   let id: string;
   try {
-    const homeowner =
-      input.market === "RESIDENTIAL" &&
-      str(f, "hoFirstName") &&
-      str(f, "hoLastName")
-        ? {
-            firstName: str(f, "hoFirstName")!,
-            lastName: str(f, "hoLastName")!,
-            phone: str(f, "hoPhone"),
-            email: str(f, "hoEmail"),
-          }
-        : null;
-    if (input.market === "RESIDENTIAL" && !homeowner && !input.clientCompanyId)
-      return {
-        problems: [
-          "Enter the homeowner's first and last name, or pick the builder.",
-        ],
-      };
     const appt = leadAppointment(f);
     if (appt && "problem" in appt) return { problems: [appt.problem] };
-    ({ id } = await createProject(input, user, homeowner));
-    await leadExtras(id, f, appt, input.salespersonId ?? null, user);
-    await linkProperty(id, str(f, "propertyId"), input.clientCompanyId ?? null, true);
+    ({ id } = await createProject(
+      {
+        name: leadName(first, last, company?.name ?? null, workTypes),
+        market,
+        address: str(f, "address"),
+        constructionType,
+        scopes,
+        workTypes,
+        isPublic: false,
+        isTaxExempt: false,
+        leadSource: str(f, "leadSource"),
+        clientCompanyId,
+        salespersonId: assignee,
+        estimatorId: assignee,
+        isInsuranceClaim: insurance,
+        insuranceCarrier: insurance ? str(f, "insuranceCarrier") : null,
+        claimNumber: insurance ? str(f, "claimNumber") : null,
+        dateOfLoss: insurance ? date(f, "dateOfLoss") : null,
+      },
+      user,
+      first && last ? { firstName: first, lastName: last, phone: str(f, "hoPhone"), email, role: res ? "HOMEOWNER" : "OWNER_REP" } : null,
+    ));
+    await leadExtras(id, f, appt, assignee, user);
+    await linkProperty(id, str(f, "propertyId"), clientCompanyId, true);
   } catch (e) {
     return fail(e);
   }
@@ -128,7 +149,7 @@ export async function updateDetailsAction(
   const user = await requireUser([...EDITORS]);
   const id = String(f.get("id"));
   const input = detailsFromForm(f);
-  if (!input.scopes.length) return { problems: ["Pick at least one scope."] };
+  if (!input.scopes.length && !input.workTypes?.length) return { problems: ["Pick at least one job type or scope."] };
   const contractAmount = money(f, "contractAmount");
   if (Number.isNaN(contractAmount))
     return { problems: ["Contract amount must be a number."] };
