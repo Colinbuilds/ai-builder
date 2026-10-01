@@ -55,6 +55,8 @@ export function setupChecks(): Check[] {
   out.push(
     !app
       ? { name: "Site address (APP_URL)", status: "missing", what: "Not set. Links in emails, QuickBooks and Google sign-in need it.", fix: "Set APP_URL to the site's address, e.g. https://btrpro.up.railway.app (no slash at the end)." }
+      : /localhost|127\.0\.0\.1/.test(app)
+        ? { name: "Site address (APP_URL)", status: "problem", what: `Set to ${app}, which only works on a developer's computer — links in emails, invoices and sign-ins would point there.`, fix: "Railway → this service → Settings → Networking: copy the public domain, then set APP_URL to https:// plus that domain (no slash at the end)." }
       : !app.startsWith("https://") || app.endsWith("/")
         ? { name: "Site address (APP_URL)", status: "problem", what: "Should start with https:// and have no slash at the end.", fix: `Change it to ${app.replace(/\/+$/, "").replace(/^http:\/\//, "https://")}` }
         : { name: "Site address (APP_URL)", status: "ok", what: app },
@@ -94,7 +96,15 @@ export function setupChecks(): Check[] {
     );
   }
   out.push(pair("QBO_CLIENT_ID", "QBO_CLIENT_SECRET", "QuickBooks Online", `developer.intuit.com → your app → Keys & credentials (Production). Redirect URI: ${app || "APP_URL"}/api/integrations/quickbooks/callback`));
-  out.push(pair("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "Google Drive sign-in", `console.cloud.google.com → Credentials → OAuth client. Redirect URI: ${app || "APP_URL"}/api/integrations/google_drive/callback`));
+  if (has("GOOGLE_SERVICE_ACCOUNT_JSON") && !(has("GOOGLE_CLIENT_ID") && has("GOOGLE_CLIENT_SECRET")))
+    // Drive already works through the service account; per-person sign-in is only for Gmail capture
+    out.push({
+      name: "Google sign-in (per person)",
+      status: "optional",
+      what: "Not needed for Drive — the app reads Drive with the service account. Only used to capture job emails from Gmail.",
+      fix: has("GOOGLE_CLIENT_ID") || has("GOOGLE_CLIENT_SECRET") ? "Not using Gmail capture? Delete the leftover GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET variable." : undefined,
+    });
+  else out.push(pair("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "Google Drive sign-in", `console.cloud.google.com → Credentials → OAuth client. Redirect URI: ${app || "APP_URL"}/api/integrations/google_drive/callback`));
   out.push(pair("MS_CLIENT_ID", "MS_CLIENT_SECRET", "Microsoft 365 mailbox", "Azure portal → App registrations → your app (Application ID + a client secret)."));
   out.push(pair("EAGLEVIEW_CLIENT_ID", "EAGLEVIEW_CLIENT_SECRET", "EagleView", "From EagleView's developer program."));
   out.push(pair("ABC_CLIENT_ID", "ABC_CLIENT_SECRET", "ABC Supply", "From ABC Supply's API program."));
