@@ -1005,6 +1005,8 @@ model ChangeOrder {
   signerIp         String?
   signatureImage   String?
   signedDocumentId String?
+  // materials billed on the change order (from a receipt): [{ vendor, item, qty, amount }]
+  lines            Json?
   declineReason    String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -1457,23 +1459,40 @@ model JobPhoto {
 
 // A photographed supplier receipt/invoice: what was read off it, the job it matched, and whether it was filed to costs.
 model ReceiptScan {
-  id          String    @id @default(cuid())
-  projectId   String?
-  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  id            String    @id @default(cuid())
+  projectId     String?
+  project       Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   // uploaded photos/PDF pages, in order: [{ url, type }]
-  files       Json
-  // READ | FAILED | FILED
-  status      String    @default("READ")
-  error       String?
+  files         Json
+  // READING | READ | FAILED | FILED
+  status        String    @default("READ")
+  // UPLOAD | EMAIL
+  source        String    @default("UPLOAD")
+  // who sent it: a staff user, or the email sender's name
+  employeeId    String?
+  employee      String?
+  subject       String?
+  message       String?
+  emailId       String?
+  // markup for billing the customer: receipt-wide %, plus per-line overrides { "<line index>": pct }
+  markupPct     Float?
+  lineMarkup    Json?
+  // COST_ONLY | CHANGE_ORDER | INVOICE
+  outcome       String?
+  changeOrderId String?
+  invoiceId     String?
+  qboStatus     String?
+  error         String?
   // what the AI transcribed (header + lines), never edited by code
-  extracted   Json?
-  matchedBy   String?
-  invoiceNo   String?
-  vendor      String?
-  costBatch   String?
-  createdById String
-  createdAt   DateTime  @default(now())
-  filedAt     DateTime?
+  extracted     Json?
+  matchedBy     String?
+  invoiceNo     String?
+  vendor        String?
+  costBatch     String?
+  createdById   String
+  createdAt     DateTime  @default(now())
+  filedAt       DateTime?
 
   @@index([createdAt])
+  @@index([emailId])
 }

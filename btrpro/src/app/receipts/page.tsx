@@ -4,15 +4,36 @@ import { prisma } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/claude";
 import { ScanReceiptForm } from "@/components/receipts/scan-form";
 import { Badge } from "@/components/ui/badge";
+import { receiptsAddress } from "@/lib/receipts/inbox";
+import { AutoRefresh } from "@/components/receipts/auto-refresh";
 
 export default async function Receipts() {
   await requireUser(["ADMIN", "ESTIMATOR"]);
   const scans = await prisma.receiptScan.findMany({ include: { project: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 50 });
+  const inbox = receiptsAddress();
+  const label = (s: (typeof scans)[number]): [string, "green" | "red" | "amber" | "outline" | "blue"] =>
+    s.status === "READING"
+      ? ["reading…", "outline"]
+      : s.status === "FAILED"
+        ? ["couldn't read", "red"]
+        : s.status === "FILED"
+          ? s.outcome === "CHANGE_ORDER"
+            ? ["change order", "blue"]
+            : s.outcome === "INVOICE"
+              ? ["invoice", "green"]
+              : ["job cost", "outline"]
+          : ["needs review", "amber"];
   return (
     <div className="flex max-w-3xl flex-col gap-5">
+      {scans.some((s) => s.status === "READING") && <AutoRefresh every={5000} />}
       <div>
-        <h1 className="text-2xl font-semibold">Scan a receipt</h1>
+        <h1 className="text-2xl font-semibold">Receipts</h1>
         <p className="text-sm text-muted-foreground">
+          {inbox ? (
+            <>
+              Email receipts to <span className="font-mono font-medium text-foreground">{inbox}</span> from your BTR email (or a crew login email), or photograph one here.{" "}
+            </>
+          ) : null}
           Photograph an ABC (or any supplier) receipt. BTRpro reads it, finds the job from the PO, ship-to address or job name, lists every item, and checks each price against our price
           sheets — the builder&apos;s own pricing on builder jobs. Then file it to the job&apos;s material costs.
         </p>
@@ -30,8 +51,12 @@ export default async function Receipts() {
                   {s.vendor ?? "Receipt"}
                   {s.invoiceNo ? ` · ${s.invoiceNo}` : ""}
                   {s.project && <span className="text-muted-foreground"> · {s.project.name}</span>}
+                  <span className="block text-xs text-muted-foreground">
+                    {s.source === "EMAIL" ? "Emailed" : "Uploaded"} by {s.employee ?? "staff"}
+                    {s.subject ? ` · ${s.subject}` : ""}
+                  </span>
                 </span>
-                <Badge variant={s.status === "FILED" ? "green" : s.status === "FAILED" ? "red" : "outline"}>{s.status === "READ" ? "not filed" : s.status.toLowerCase()}</Badge>
+                <Badge variant={label(s)[1]}>{label(s)[0]}</Badge>
               </Link>
             </li>
           ))}

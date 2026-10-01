@@ -14,7 +14,10 @@ export type CompanySettings = {
   invoiceNetDays: number | null; // due date = issue date + this many days
   remitTo: string | null; // payment instructions printed on invoices (check address, ACH)
   cardSurchargePct: number | null; // card surcharge on customer card payments, only where permitted; null = none
-  qboItemId: string | null; // QuickBooks item used for invoice lines
+  qboItemId: string | null; // QuickBooks item used for invoice and estimate lines
+  qboExpenseAccountId: string | null; // QuickBooks expense account receipts are booked to (job materials / COGS)
+  qboPaymentAccountId: string | null; // QuickBooks account receipts were paid from (credit card, bank, or A/P)
+  receiptMarkupPct: number | null; // markup billed on receipt materials (change orders / invoices); blank = 15%
   priceSheetFolder: string | null; // Google Drive folder the current ABC price sheets are dropped into
   priceSheetSyncUserId: string | null; // whose Drive connection reads that folder (the Admin who set it)
   companyCamDriveFolder: string | null; // Drive folder CompanyCam syncs project photo folders into
@@ -22,7 +25,7 @@ export type CompanySettings = {
   iceWaterValleysFt: number | null; // company standard: ice & water width in valleys, in feet
   priceSheetLastCheck: string | null; // ISO time of the last check
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });

@@ -51,51 +51,67 @@ export function totalsCheck(r: Receipt) {
 
 export type JobRow = { id: string; name: string; address: string | null; status: string; acculynxJobNumber: string | null; clientName: string | null };
 export type OrderRow = { projectId: string; number: string; supplierOrderNumber: string | null };
-export type JobMatch = { projectId: string; by: string };
+export type JobMatch = { projectId: string; by: string; score: number };
+/** Extra text that came with the receipt (email subject and message, or the uploader's note). */
+export type ReceiptContext = { subject?: string | null; message?: string | null };
 
+const STOP = new Set(["the", "job", "po", "lot", "llc", "inc", "co", "and", "of", "roof", "reroof", "roofing", "siding", "gutters", "gutter", "repair", "test_only", "st", "ave", "rd", "dr", "ln", "ct", "omaha", "ne"]);
 const words = (s: string) =>
   s
     .toLowerCase()
     .replace(/[^a-z0-9 ]+/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 1 && !["the", "job", "po", "lot", "llc", "inc", "co", "and", "of"].includes(w));
+    .filter((w) => w.length > 1 && !STOP.has(w));
 const key = (s: string | null | undefined) => (s ?? "").toUpperCase().replace(/[\s-]+/g, "");
 
-/** Which job a receipt is for: our PO / ABC order # first, then the ship-to street address, then the job name. Only a single clear match is picked. */
-export function matchReceiptJob(r: Receipt, jobs: JobRow[], orders: OrderRow[]): { match: JobMatch | null; candidates: JobMatch[] } {
-  const found: JobMatch[] = [];
-  const add = (projectId: string, by: string) => !found.some((f) => f.projectId === projectId) && found.push({ projectId, by });
-  const refs = [r.poNumber, r.orderNumber, r.invoiceNumber].map(key).filter(Boolean);
-  const byOrder = orders.filter((o) => refs.includes(key(o.number)) || (o.supplierOrderNumber && refs.includes(key(o.supplierOrderNumber))));
-  const orderJobs = [...new Set(byOrder.map((o) => o.projectId))];
-  if (orderJobs.length === 1) return { match: { projectId: orderJobs[0], by: `PO / order # ${byOrder[0].number}` }, candidates: [{ projectId: orderJobs[0], by: "PO / order #" }] };
-  orderJobs.forEach((id) => add(id, "PO / order #"));
-  const oldNo = jobs.filter((j) => j.acculynxJobNumber && refs.includes(key(j.acculynxJobNumber)));
-  if (oldNo.length === 1 && !found.length) return { match: { projectId: oldNo[0].id, by: `job # ${oldNo[0].acculynxJobNumber}` }, candidates: [{ projectId: oldNo[0].id, by: "job #" }] };
-  const sk = streetKey(r.shipToAddress) ?? streetKey(r.jobName) ?? streetKey(r.poNumber);
-  const byAddr = sk ? jobs.filter((j) => streetKey(j.address) === sk) : [];
-  const open = (js: JobRow[]) => (js.length > 1 ? js.filter((j) => !["LOST", "CLOSED", "PAID"].includes(j.status)) : js);
-  const addrHits = open(byAddr);
-  if (addrHits.length === 1 && !found.length) return { match: { projectId: addrHits[0].id, by: `ship-to address (${sk})` }, candidates: [{ projectId: addrHits[0].id, by: "address" }] };
-  addrHits.forEach((j) => add(j.id, "address"));
-  const texts = [r.jobName, r.poNumber, r.shipToName].filter((t): t is string => !!t && t.trim().length >= 3);
-  const nameHits = open(
-    jobs.filter((j) => {
-      const jw = words(j.name);
-      if (!jw.length) return false;
-      return texts.some((t) => {
-        const tw = words(t);
-        if (!tw.length) return false;
-        // every word of the shorter name appears in the other
-        const [a, b] = tw.length <= jw.length ? [tw, jw] : [jw, tw];
-        return a.length >= 1 && a.every((w) => b.includes(w)) && a.join("").length >= 4;
-      });
-    }),
-  );
-  if (nameHits.length === 1 && !found.length) return { match: { projectId: nameHits[0].id, by: `job name ("${texts[0]}")` }, candidates: [{ projectId: nameHits[0].id, by: "job name" }] };
-  nameHits.forEach((j) => add(j.id, "job name"));
-  return { match: null, candidates: found.slice(0, 10) };
+/** Every "house number + street word" in a piece of text (an email can mention quantities before the address). */
+export function streetKeys(text: string | null | undefined): string[] {
+  const out = new Set<string>();
+  for (const m of (text ?? "").toLowerCase().matchAll(/\b(\d{2,6})\s+(?:[nsew]\.?\s+)?([a-z][a-z0-9]*)/g)) out.add(`${m[1]} ${m[2]}`);
+  return [...out];
 }
+
+/**
+ * Scores every job against the receipt: our PO / ABC order # or old job # = 100, the ship-to street address = 95
+ * (100 with the name too), the job name alone at most 85. A job is picked only when one clearly wins at 95+;
+ * otherwise the receipt waits for someone to choose from the closest matches.
+ */
+export function matchReceiptJob(r: Receipt, jobs: JobRow[], orders: OrderRow[], ctx: ReceiptContext = {}): { match: JobMatch | null; candidates: JobMatch[] } {
+  const refs = [r.poNumber, r.orderNumber, r.invoiceNumber].map(key).filter((k) => k.length >= 3);
+  const texts = [r.jobName, r.poNumber, r.shipToName, ctx.subject, ctx.message].filter((t): t is string => !!t && t.trim().length >= 3);
+  const pool = new Set(texts.flatMap(words));
+  const addrKeys = new Set([r.shipToAddress, r.jobName, r.poNumber, ctx.subject, ctx.message].flatMap(streetKeys));
+  const open = (j: JobRow) => !["LOST", "CLOSED"].includes(j.status);
+  // how many job names use each word: a word only a few jobs share (a surname, a subdivision) is a strong hint
+  const df = new Map<string, number>();
+  for (const j of jobs) for (const w of new Set(words(j.name))) df.set(w, (df.get(w) ?? 0) + 1);
+  const scored: JobMatch[] = [];
+  for (const j of jobs) {
+    let score = 0;
+    let by = "";
+    const ord = orders.find((o) => o.projectId === j.id && (refs.includes(key(o.number)) || (o.supplierOrderNumber && refs.includes(key(o.supplierOrderNumber)))));
+    if (ord) [score, by] = [100, `PO / order # ${ord.number}`];
+    else if (j.acculynxJobNumber && refs.includes(key(j.acculynxJobNumber))) [score, by] = [100, `job # ${j.acculynxJobNumber}`];
+    const jw = [...new Set(words(j.name).filter((w) => w.length >= 3 && !/^\d+$/.test(w)))];
+    const hits = jw.filter((w) => pool.has(w));
+    const nameHit = hits.length ? (hits.some((w) => (df.get(w) ?? 0) <= 3 && w.length >= 4) || hits.length >= 2 ? 1 : 0.6) : 0;
+    const addr = streetKeys(j.address).some((k) => addrKeys.has(k));
+    if (score < 100 && addr) [score, by] = nameHit > 0 ? [100, "address and job name"] : [95, "ship-to address"];
+    if (score < 85 && nameHit > 0) [score, by] = [Math.round(85 * nameHit), "job name"];
+    if (!score) continue;
+    if (!open(j)) score = Math.max(0, score - 15); // closed/lost jobs only if nothing else fits
+    scored.push({ projectId: j.id, by, score });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  const [top, next] = scored;
+  // our PO / ABC order # / old job # is decisive when exactly one job carries it
+  const byRef = scored.filter((c) => /^(PO|job #)/.test(c.by));
+  if (byRef.length === 1) return { match: byRef[0], candidates: scored.slice(0, 5) };
+  const clear = top && top.score >= 95 && (!next || next.score <= top.score - 10);
+  return { match: clear ? top : null, candidates: scored.filter((c) => c.score >= 30).slice(0, 5) };
+}
+
+export { DEFAULT_RECEIPT_MARKUP, receiptPricing, type PricedLine } from "./pricing";
 
 // ---------- price check ----------
 

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BTR } from "@/lib/company";
 import { getChangeOrderByToken } from "@/lib/billing/change-orders";
+import { prisma } from "@/lib/db";
 import { CoSignForm } from "@/components/billing/change-order-forms";
 
 export const metadata: Metadata = {
@@ -19,6 +20,10 @@ export default async function PublicChangeOrder({
   const { token } = await params;
   const co = await getChangeOrderByToken(token);
   if (!co) notFound();
+  const lines = (co.lines as { vendor: string; item: string; qty: string; amount: number }[] | null) ?? [];
+  // contract before this change: original contract + change orders already approved (not this one)
+  const earlier = await prisma.changeOrder.findMany({ where: { projectId: co.projectId, status: "APPROVED", id: { not: co.id } }, select: { kind: true, amount: true } });
+  const before = co.project.contractAmount == null ? null : Math.round((co.project.contractAmount + earlier.reduce((a, c) => a + (c.kind === "CREDIT" ? -c.amount : c.amount), 0)) * 100) / 100;
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 py-4">
       <header className="border-b pb-3">
@@ -38,7 +43,37 @@ export default async function PublicChangeOrder({
       </div>
       <section className="flex flex-col gap-2">
         <p className="whitespace-pre-wrap">{co.description}</p>
+        {lines.length > 0 && (
+          <table className="w-full text-sm">
+            <thead className="text-left text-muted-foreground">
+              <tr className="border-b">
+                <th className="py-1 font-medium">Vendor</th>
+                <th className="py-1 font-medium">Item</th>
+                <th className="py-1 text-right font-medium">Qty</th>
+                <th className="py-1 text-right font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lines.map((l, i) => (
+                <tr key={i} className="border-b">
+                  <td className="py-1 pr-2">{l.vendor}</td>
+                  <td className="py-1 pr-2">{l.item}</td>
+                  <td className="py-1 pr-2 text-right">{l.qty}</td>
+                  <td className="py-1 text-right tabular-nums">{usd(l.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
         <p className="text-2xl font-semibold">{usd(co.amount)}</p>
+        {before != null && co.status === "PENDING" && (
+          <dl className="grid max-w-sm grid-cols-[1fr_auto] gap-x-4 text-sm">
+            <dt>Previous contract price</dt>
+            <dd className="text-right tabular-nums">{usd(before)}</dd>
+            <dt className="font-semibold">Contract price with this change</dt>
+            <dd className="text-right font-semibold tabular-nums">{usd(before + co.amount)}</dd>
+          </dl>
+        )}
         <p className="text-sm text-muted-foreground">
           Added to your contract when you sign.
         </p>

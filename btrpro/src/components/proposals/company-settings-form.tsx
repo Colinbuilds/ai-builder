@@ -75,11 +75,32 @@ export function CompanySettingsForm({ s }: { s: CompanySettings }) {
           "Company standard for valleys, with the job's confirmed valleys LF. Blank = enter per job.",
         )}
         {field(
+          "receiptMarkupPct",
+          "Receipt markup %",
+          "Billed on materials from receipts (change orders and invoices). Blank = 15%. Can be changed per receipt or line.",
+        )}
+        {field(
           "cardSurchargePct",
           "Card surcharge %",
           "Added to card payments only, where permitted (up to 3%). Blank = none.",
         )}
       </div>
+      <fieldset className="grid gap-4 rounded-md border p-3 sm:grid-cols-3">
+        <legend className="px-1 text-sm font-medium">QuickBooks Online (only used once QuickBooks is connected)</legend>
+        {(
+          [
+            ["qboItemId", "Item for invoice & estimate lines", "The QuickBooks product/service id lines are booked to (e.g. Roofing Services)."],
+            ["qboExpenseAccountId", "Expense account for receipts", "Account id for job materials (cost of goods sold)."],
+            ["qboPaymentAccountId", "Receipts paid from", "Account id of the credit card, bank, or A/P account the receipts were paid with."],
+          ] as const
+        ).map(([name, label, hint]) => (
+          <div key={name} className="flex flex-col gap-1">
+            <Label>{label}</Label>
+            <Input name={name} defaultValue={(s[name] as string | null) ?? ""} placeholder="QuickBooks id, e.g. 42" />
+            <span className="text-xs text-muted-foreground">{hint}</span>
+          </div>
+        ))}
+      </fieldset>
       <div className="flex flex-col gap-1">
         <Label>How to pay (printed on invoices)</Label>
         <textarea

@@ -18,10 +18,10 @@ const num = (v: FormDataEntryValue | null) => {
 export async function saveCompanySettingsAction(_: PResult, f: FormData): Promise<PResult> {
   const u = await requireUser(["ADMIN"]);
   const n = (k: string) => num(f.get(k));
-  const vals = { markupPct: n("markupPct"), salesTaxPct: n("salesTaxPct"), depositPct: n("depositPct"), proposalValidDays: n("proposalValidDays"), overheadPct: n("overheadPct"), costVarianceThresholdPct: n("costVarianceThresholdPct"), invoiceNetDays: n("invoiceNetDays"), cardSurchargePct: n("cardSurchargePct"), iceWaterEavesFt: n("iceWaterEavesFt"), iceWaterValleysFt: n("iceWaterValleysFt") };
+  const vals = { markupPct: n("markupPct"), salesTaxPct: n("salesTaxPct"), depositPct: n("depositPct"), proposalValidDays: n("proposalValidDays"), overheadPct: n("overheadPct"), costVarianceThresholdPct: n("costVarianceThresholdPct"), invoiceNetDays: n("invoiceNetDays"), cardSurchargePct: n("cardSurchargePct"), iceWaterEavesFt: n("iceWaterEavesFt"), iceWaterValleysFt: n("iceWaterValleysFt"), receiptMarkupPct: n("receiptMarkupPct") };
   if (Object.values(vals).some((v) => v != null && (!Number.isFinite(v) || v < 0))) return { problems: ["Numbers only, zero or more."] };
   if (vals.cardSurchargePct != null && vals.cardSurchargePct > 3) return { problems: ["Card surcharge can be at most 3%."] };
-  await saveSettings({ ...vals, proposalTerms: String(f.get("proposalTerms") ?? "").trim() || null, warrantyText: String(f.get("warrantyText") ?? "").trim() || null, supplierOrderEmail: String(f.get("supplierOrderEmail") ?? "").trim() || null, remitTo: String(f.get("remitTo") ?? "").trim() || null }, u);
+  await saveSettings({ ...vals, proposalTerms: String(f.get("proposalTerms") ?? "").trim() || null, warrantyText: String(f.get("warrantyText") ?? "").trim() || null, supplierOrderEmail: String(f.get("supplierOrderEmail") ?? "").trim() || null, remitTo: String(f.get("remitTo") ?? "").trim() || null, qboItemId: String(f.get("qboItemId") ?? "").trim() || null, qboExpenseAccountId: String(f.get("qboExpenseAccountId") ?? "").trim() || null, qboPaymentAccountId: String(f.get("qboPaymentAccountId") ?? "").trim() || null }, u);
   revalidatePath("/settings/company");
   return { problems: [], ok: true };
 }

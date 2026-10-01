@@ -102,3 +102,46 @@ export async function syncPayment(paymentId: string) {
     throw e;
   }
 }
+
+async function ensureVendor(name: string) {
+  const display = name.slice(0, 100);
+  const found = await qbo<{ QueryResponse: { Vendor?: { Id: string }[] } }>("GET", `query?query=${encodeURIComponent(`select Id from Vendor where DisplayName = '${q(display)}'`)}`);
+  return found.QueryResponse.Vendor?.[0]?.Id ?? (await qbo<{ Vendor: { Id: string } }>("POST", "vendor", { DisplayName: display })).Vendor.Id;
+}
+
+/** A change order goes to QuickBooks as an Estimate for the job's customer, one line per material. */
+export async function pushChangeOrderEstimate(coId: string, lines: { description: string; amount: number }[]) {
+  const s = await getSettings();
+  if (!s.qboItemId) throw new QboError("Pick the QuickBooks item for lines under Admin → Company settings.");
+  const co = await prisma.changeOrder.findUniqueOrThrow({ where: { id: coId } });
+  const customer = await ensureCustomer(co.projectId);
+  const r = await qbo<{ Estimate: { Id: string } }>("POST", "estimate", {
+    CustomerRef: { value: customer },
+    DocNumber: co.number.slice(0, 21),
+    TxnDate: co.createdAt.toISOString().slice(0, 10),
+    PrivateNote: co.description.slice(0, 4000),
+    Line: lines.map((l) => ({ Amount: l.amount, DetailType: "SalesItemLineDetail", Description: l.description.slice(0, 4000), SalesItemLineDetail: { ItemRef: { value: s.qboItemId } } })),
+  });
+  return r.Estimate.Id;
+}
+
+/** The receipt as an expense (Purchase) against the job's customer, so QuickBooks job-profit reports have the real cost. */
+export async function pushReceiptExpense(input: { projectId: string; vendor: string; date: string | null; reference: string | null; lines: { description: string; amount: number }[] }) {
+  const s = await getSettings();
+  if (!s.qboExpenseAccountId || !s.qboPaymentAccountId) throw new QboError("Set the QuickBooks expense account and paid-from account under Admin → Company settings.");
+  const [customer, vendor] = await Promise.all([ensureCustomer(input.projectId), ensureVendor(input.vendor)]);
+  const r = await qbo<{ Purchase: { Id: string } }>("POST", "purchase", {
+    PaymentType: "Cash",
+    AccountRef: { value: s.qboPaymentAccountId },
+    EntityRef: { value: vendor, type: "Vendor" },
+    ...(input.date ? { TxnDate: input.date } : {}),
+    ...(input.reference ? { DocNumber: input.reference.slice(0, 21) } : {}),
+    Line: input.lines.map((l) => ({
+      Amount: l.amount,
+      DetailType: "AccountBasedExpenseLineDetail",
+      Description: l.description.slice(0, 4000),
+      AccountBasedExpenseLineDetail: { AccountRef: { value: s.qboExpenseAccountId }, CustomerRef: { value: customer }, BillableStatus: "NotBillable" },
+    })),
+  });
+  return r.Purchase.Id;
+}

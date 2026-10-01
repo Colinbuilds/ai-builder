@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
-import { fileReceiptAction, scanReceiptAction } from "@/app/receipts/actions";
+import { scanReceiptAction } from "@/app/receipts/actions";
 import { shrinkPhoto } from "@/components/shrink-photo";
 import { Problems } from "@/components/projects/problems";
 import { Button } from "@/components/ui/button";
@@ -29,22 +29,12 @@ export function ScanReceiptForm() {
         <span className="text-base font-medium text-btr-link">{picked ? `${picked} photo${picked === 1 ? "" : "s"} ready` : "Take a photo of the receipt"}</span>
         <span className="text-xs text-muted-foreground">Flat, in good light, the whole receipt in frame. Several photos if it&apos;s long. A PDF works too.</span>
       </label>
+      {picked > 0 && (
+        <input name="note" placeholder="Job and what it was for (optional) — e.g. Whitfield, extra OSB for rotted decking" className="h-10 rounded-md border border-input bg-background px-3 text-sm" />
+      )}
       <Button disabled={!picked || pending || busy}>{busy ? "Preparing…" : pending ? "Reading the receipt…" : "Read receipt"}</Button>
       <Problems state={state} />
     </form>
   );
 }
 
-export function FileReceiptForm({ id, projectId, disabled }: { id: string; projectId: string | null; disabled: string | null }) {
-  const [state, dispatch, pending] = useActionState(fileReceiptAction, null);
-  return (
-    <form action={dispatch} className="flex flex-col gap-2">
-      <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="projectId" value={projectId ?? ""} />
-      {disabled ? <p className="text-sm text-muted-foreground">{disabled}</p> : null}
-      <Button disabled={!!disabled || pending || !projectId || !!state?.ok}>{pending ? "Filing…" : "File to job costs"}</Button>
-      {state?.ok && <p className="text-sm text-btr-blue">{state.note}</p>}
-      <Problems state={state} />
-    </form>
-  );
-}
