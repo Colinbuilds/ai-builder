@@ -184,24 +184,29 @@ export async function getByToken(token: string) {
   return p;
 }
 
+/** Every open is counted; the rep hears about the first one, and again when they come back an hour or more later — the best time to call. */
 export async function markViewed(token: string) {
   const p = await getByToken(token);
-  if (p && !p.viewedAt) {
-    await prisma.proposal.update({
-      where: { id: p.id },
-      data: {
-        viewedAt: new Date(),
-        status: p.status === "SENT" ? "VIEWED" : p.status,
-      },
-    });
+  if (!p) return;
+  const now = new Date();
+  const back = !!p.lastViewedAt && now.getTime() - p.lastViewedAt.getTime() >= 3_600_000;
+  await prisma.proposal.update({
+    where: { id: p.id },
+    data: {
+      viewedAt: p.viewedAt ?? now,
+      lastViewedAt: now,
+      viewCount: { increment: 1 },
+      status: p.status === "SENT" ? "VIEWED" : p.status,
+    },
+  });
+  if (!p.viewedAt || back)
     await prisma.projectActivity.create({
       data: {
         projectId: p.projectId,
         kind: "proposal",
-        text: `Customer opened proposal ${p.number}`,
+        text: !p.viewedAt ? `Customer opened proposal ${p.number} — good time to call` : `Customer is looking at proposal ${p.number} again (${p.viewCount + 1} opens) — good time to call`,
       },
     });
-  }
 }
 
 const open = (p: { status: string; validUntil: Date | null }) => {

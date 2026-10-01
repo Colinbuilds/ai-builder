@@ -25,13 +25,12 @@ const DAY = 86_400_000;
 
 // What has to happen next when a job enters each stage.
 export const STAGE_TASKS: Record<string, Rule[]> = {
+  // follow-up schedule after the proposal goes out; stops automatically when the job is signed or lost
   SUBMITTED: [
-    {
-      key: "follow-up-bid",
-      title: "Follow up on the bid / proposal",
-      days: 3,
-      who: "sales",
-    },
+    { key: "fu-2", title: "Call: follow up on the proposal", days: 2, who: "sales" },
+    { key: "fu-5", title: "Text: any questions on the proposal?", days: 5, who: "sales" },
+    { key: "fu-10", title: "Call again: second follow-up on the proposal", days: 10, who: "sales" },
+    { key: "fu-21", title: "Email: checking in on the proposal", days: 21, who: "sales" },
   ],
   SOLD: [
     {
@@ -185,6 +184,9 @@ export async function setTaskDone(id: string, done: boolean, actor: Actor) {
       ? { doneAt: new Date(), doneBy: actor.name }
       : { doneAt: null, doneBy: null },
   });
+  // finishing the "call new lead" task means the customer was reached
+  if (t.projectId && done && t.auto === "LEAD:call")
+    await prisma.project.updateMany({ where: { id: t.projectId, firstContactAt: null }, data: { firstContactAt: new Date() } });
   if (t.projectId && done)
     await prisma.projectActivity.create({
       data: {

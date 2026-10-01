@@ -26,6 +26,14 @@ const initials = (n: string) =>
     .slice(0, 2)
     .toUpperCase();
 
+function sinceText(d: Date) {
+  const m = Math.max(1, Math.round((Date.now() - d.getTime()) / 60000));
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 48) return `${h}h ${m % 60}m`;
+  return `${Math.floor(h / 24)} days`;
+}
+
 export default async function ProjectLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
@@ -83,6 +91,14 @@ export default async function ProjectLayout({ children, params }: { children: Re
               <StageBadge stage={project.status} />
               <ReadinessBadge readiness={readiness} />
             </div>
+            {project.status === "LEAD" && !project.firstContactAt && (
+              <span
+                className={`ml-1 rounded-full px-2 py-0.5 text-xs font-medium ${Date.now() - project.createdAt.getTime() > 3_600_000 ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300" : "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300"}`}
+                title="Finish the 'Call new lead' task (or advance the job) once you've reached them"
+              >
+                Not contacted · {sinceText(project.createdAt)}
+              </span>
+            )}
           </div>
           <div className="flex w-full items-stretch divide-x border-t py-1.5 sm:w-auto sm:border-t-0 sm:border-l">
             <PriorityPicker projectId={id} priority={project.priority} canEdit={canEdit} />

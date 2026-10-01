@@ -1,4 +1,6 @@
 import "server-only";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 // Reads which server settings (Railway variables) are present and sane — never their values.
 export type Check = { name: string; status: "ok" | "missing" | "problem" | "optional"; what: string; fix?: string };
@@ -12,9 +14,44 @@ const pair = (id: string, secret: string, label: string, how: string): Check => 
   return { name: label, status: "problem", what: `${a ? secret : id} is missing — one without the other does nothing.`, fix: how };
 };
 
+/** Mount points on this server (Linux), to tell whether data sits on a persistent volume. */
+function mounts(): string[] {
+  try {
+    return readFileSync("/proc/mounts", "utf8").split("\n").map((l) => l.split(" ")[1]).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+const onVolume = (file: string, ms: string[]) => ms.some((m) => m !== "/" && (file === m || file.startsWith(m.endsWith("/") ? m : `${m}/`)));
+
+/**
+ * Where the database file lives, and whether it survives a redeploy. Null on Postgres or when it can't tell
+ * (not a Linux server, e.g. local dev).
+ */
+export function databasePersistence(): { file: string; persistent: boolean } | null {
+  const url = process.env.DATABASE_URL ?? "";
+  if (!url.startsWith("file:") || process.env.NODE_ENV !== "production") return null;
+  const ms = mounts();
+  if (!ms.length) return null;
+  const file = path.resolve(process.cwd(), "prisma", url.slice(5));
+  return { file, persistent: onVolume(url.slice(5).startsWith("/") ? url.slice(5) : file, ms) };
+}
+
 export function setupChecks(): Check[] {
   const app = process.env.APP_URL?.trim() ?? "";
   const out: Check[] = [];
+  const db = databasePersistence();
+  if (db)
+    out.push(
+      db.persistent
+        ? { name: "Database storage", status: "ok", what: `On a persistent volume (${db.file}).` }
+        : {
+            name: "Database storage",
+            status: "missing",
+            what: `The database (${db.file}) is on the server's temporary disk — every redeploy or variable change wipes all jobs, leads and customers.`,
+            fix: "Railway → this service → add a Volume mounted at /data. Then delete the DATABASE_URL variable (the app defaults to /data/btrpro.db) or set it to file:/data/btrpro.db.",
+          },
+    );
   out.push(
     !app
       ? { name: "Site address (APP_URL)", status: "missing", what: "Not set. Links in emails, QuickBooks and Google sign-in need it.", fix: "Set APP_URL to the site's address, e.g. https://btrpro.up.railway.app (no slash at the end)." }
@@ -46,7 +83,16 @@ export function setupChecks(): Check[] {
         ? { name: "File storage (S3)", status: "problem", what: `Missing ${miss.join(", ")} — uploads will fail.`, fix: "Cloudflare R2: S3_ENDPOINT = https://<account id>.r2.cloudflarestorage.com, S3_BUCKET = bucket name, S3_REGION = auto, plus the R2 access key pair." }
         : { name: "File storage (S3)", status: has("S3_ENDPOINT") || has("S3_REGION") ? "ok" : "problem", what: has("S3_ENDPOINT") ? `Bucket ${process.env.S3_BUCKET} at a custom endpoint.` : `Bucket ${process.env.S3_BUCKET} on AWS (${process.env.S3_REGION ?? "no region"}).`, fix: has("S3_ENDPOINT") || has("S3_REGION") ? undefined : "Set S3_REGION (or S3_ENDPOINT for R2)." },
     );
-  } else out.push({ name: "File storage", status: "problem", what: `STORAGE_DRIVER is "${drv}" — files are kept on the server's disk and are lost on redeploy unless a Railway volume is mounted.`, fix: "Use an S3-compatible bucket (Cloudflare R2 is cheapest) and set STORAGE_DRIVER=s3, or mount a Railway volume." });
+  } else {
+    const dir = path.resolve(process.env.UPLOAD_DIR ?? "uploads");
+    const ms = mounts();
+    const ok = process.env.NODE_ENV !== "production" || onVolume(dir, ms);
+    out.push(
+      ok
+        ? { name: "File storage", status: "ok", what: `Uploads saved to ${dir}${ms.length ? " (persistent)" : ""}.` }
+        : { name: "File storage", status: "missing", what: `Uploads go to ${dir} on the temporary disk and are lost on every redeploy.`, fix: "Mount a Railway volume at /data (uploads then go to /data/uploads), or use an S3-compatible bucket with STORAGE_DRIVER=s3." },
+    );
+  }
   out.push(pair("QBO_CLIENT_ID", "QBO_CLIENT_SECRET", "QuickBooks Online", `developer.intuit.com → your app → Keys & credentials (Production). Redirect URI: ${app || "APP_URL"}/api/integrations/quickbooks/callback`));
   out.push(pair("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "Google Drive sign-in", `console.cloud.google.com → Credentials → OAuth client. Redirect URI: ${app || "APP_URL"}/api/integrations/google_drive/callback`));
   out.push(pair("MS_CLIENT_ID", "MS_CLIENT_SECRET", "Microsoft 365 mailbox", "Azure portal → App registrations → your app (Application ID + a client secret)."));

@@ -223,6 +223,10 @@ model Project {
   status             ProjectStatus     @default(LEAD)
   statusChangedAt    DateTime          @default(now())
   lostReason         String?
+  // standard lost reason (LOST_REASONS) for the win/loss report
+  lostCategory       String?
+  // when someone first reached a new lead (call, text, booked)
+  firstContactAt     DateTime?
   readiness          Readiness         @default(NOT_READY)
   contractAmount     Float?
   contractSignedAt   DateTime?
@@ -915,6 +919,8 @@ model Proposal {
   recipientEmail     String?
   sentAt             DateTime?
   viewedAt           DateTime?
+  viewCount          Int               @default(0)
+  lastViewedAt       DateTime?
   signedAt           DateTime?
   declinedAt         DateTime?
   declineReason      String?

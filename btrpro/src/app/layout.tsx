@@ -7,6 +7,7 @@ import { topBarCounts } from "@/lib/notifications";
 import { recentJobs } from "@/lib/shell/recent";
 import { TopBar, type Tool } from "@/components/shell/top-bar";
 import { PagePanel } from "@/components/shell/page-panel";
+import { databasePersistence } from "@/lib/setup-check";
 
 function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href: string; label: string }[] } {
   const staff = role !== "VIEWER";
@@ -89,6 +90,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
             items: [
               ...(isOwner ? [{ href: "/audit", label: "Owner audit" }] : []),
               { href: "/reports/sales", label: "Sales & pipeline" },
+              { href: "/reports/win-loss", label: "Win / loss & win-back" },
               { href: "/reports/profit", label: "Profit" },
               { href: "/reports/commissions", label: "Commission calculator" },
               ...(admin || role === "OFFICE" ? [{ href: "/reports/ar", label: "Receivables (AR)" }] : []),
@@ -138,11 +140,21 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  const db = user?.role === "ADMIN" ? databasePersistence() : null;
   return (
     <html lang="en">
       <body className="min-h-screen bg-[var(--canvas)] antialiased">
         {user && <Shell user={user} />}
         <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-4 sm:py-5">
+          {db && !db.persistent && (
+            <div className="mb-3 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950/50 dark:text-red-200">
+              <b>Data is not being kept.</b> The database is on the server&apos;s temporary disk, so every redeploy or Railway variable change erases jobs, leads and customers. Add a Railway volume
+              mounted at <code>/data</code> and remove the <code>DATABASE_URL</code> variable (or set it to <code>file:/data/btrpro.db</code>).{" "}
+              <a href="/admin/setup" className="underline">
+                Setup check
+              </a>
+            </div>
+          )}
           <PagePanel>{children}</PagePanel>
         </main>
       </body>

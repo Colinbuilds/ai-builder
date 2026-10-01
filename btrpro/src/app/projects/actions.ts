@@ -137,6 +137,18 @@ export async function createProjectAction(
     ));
     await leadExtras(id, f, appt, assignee, user);
     await linkProperty(id, str(f, "propertyId"), clientCompanyId, true);
+    // the assigned rep gets "call this lead" right away (My day + bell); done = contacted
+    if (assignee)
+      await prisma.task.create({
+        data: {
+          projectId: id,
+          title: `Call new lead: ${[first, last].filter(Boolean).join(" ") || company?.name || "customer"}${str(f, "hoPhone") ? ` · ${str(f, "hoPhone")}` : ""}`,
+          dueDate: new Date(),
+          assigneeId: assignee,
+          auto: "LEAD:call",
+          createdBy: user.name,
+        },
+      });
   } catch (e) {
     return fail(e);
   }
@@ -215,8 +227,12 @@ export async function changeStageAction(
       id,
       to,
       {
-        reason: str(f, "reason") ?? undefined,
+        reason:
+          to === "LOST" && str(f, "lostWhy")
+            ? `${str(f, "lostWhy")}${str(f, "reason") ? `: ${str(f, "reason")}` : ""}`
+            : (str(f, "reason") ?? undefined),
         override: f.get("override") === "on",
+        lostCategory: to === "LOST" ? str(f, "lostWhy") : null,
       },
       user,
     );

@@ -16,6 +16,11 @@ export const STAGES = [
 ] as const;
 export type Stage = (typeof STAGES)[number];
 
+/** Why a job was lost — a fixed list so the win/loss report can count them. */
+export const LOST_REASONS = ["Price", "Went with another contractor", "Insurance / adjuster", "Timing — not now", "No response", "Did it themselves", "Other"] as const;
+/** Lost for these reasons are worth another call later (spring, or after the next storm). */
+export const WIN_BACK = ["Price", "Timing — not now", "No response"];
+
 export const STAGE_LABEL: Record<Stage, string> = {
   LEAD: "Lead",
   ESTIMATING: "Estimating",
