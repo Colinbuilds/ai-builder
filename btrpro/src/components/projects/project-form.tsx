@@ -50,6 +50,8 @@ export function ProjectForm({
   showContract = false,
   isNew = false,
   submitLabel,
+  properties = [],
+  propertyId,
 }: {
   action: (s: ActionResult, f: FormData) => Promise<ActionResult>;
   values?: ProjectFormValues;
@@ -58,6 +60,9 @@ export function ProjectForm({
   showContract?: boolean;
   isNew?: boolean;
   submitLabel: string;
+  /** a customer's sites (apartment communities etc.) — picking one fills the address and adds its staff to the job */
+  properties?: { id: string; name: string; address: string | null; companyId: string }[];
+  propertyId?: string | null;
 }) {
   const [state, formAction, pending] = useFormAction(action, null);
   const v = values;
@@ -67,6 +72,10 @@ export function ProjectForm({
   );
   const [insurance, setInsurance] = useState(!!v.isInsuranceClaim);
   const res = market === "RESIDENTIAL";
+  const [clientId, setClientId] = useState(v.clientCompanyId ?? "");
+  const [propId, setPropId] = useState(propertyId ?? "");
+  const [address, setAddress] = useState(v.address ?? properties.find((p) => p.id === propertyId)?.address ?? "");
+  const sites = properties.filter((p) => p.companyId === clientId);
 
   const pickMarket = (m: Market) => {
     setMarket(m);
@@ -112,7 +121,7 @@ export function ProjectForm({
         />
       </Field>
       <Field label={res ? "Property address" : "Job site address"}>
-        <Input name="address" defaultValue={v.address ?? ""} />
+        <Input name="address" value={address} onChange={(e) => setAddress(e.target.value)} />
       </Field>
 
       {res && isNew ? (
@@ -153,7 +162,14 @@ export function ProjectForm({
               : "Client (GC / owner / property manager)"
           }
         >
-          <Select name="clientCompanyId" defaultValue={v.clientCompanyId ?? ""}>
+          <Select
+            name="clientCompanyId"
+            value={clientId}
+            onChange={(e) => {
+              setClientId(e.target.value);
+              setPropId("");
+            }}
+          >
             <option value="">— none —</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
@@ -162,6 +178,27 @@ export function ProjectForm({
               </option>
             ))}
           </Select>
+        </Field>
+      )}
+      {sites.length > 0 && (
+        <Field label="Property">
+          <Select
+            name="propertyId"
+            value={propId}
+            onChange={(e) => {
+              setPropId(e.target.value);
+              const a = sites.find((p) => p.id === e.target.value)?.address;
+              if (a) setAddress(a);
+            }}
+          >
+            <option value="">— pick the community / site —</option>
+            {sites.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </Select>
+          {isNew && <span className="text-xs text-muted-foreground">Fills the address and adds the site&apos;s staff to the job&apos;s contacts.</span>}
         </Field>
       )}
 

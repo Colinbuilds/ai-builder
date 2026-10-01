@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
+import { DirectoryUpload } from "@/components/customers/directory-forms";
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const user = await requireUser();
@@ -44,6 +45,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         <Input name="q" defaultValue={q} placeholder="Name, email, or phone" className="w-72" />
         <Button variant="outline">Search</Button>
       </form>
+      {user.role !== "VIEWER" && <DirectoryUpload compact />}
 
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">Companies</h2>

@@ -7,12 +7,12 @@ import { createProjectAction } from "../actions";
 export default async function NewProjectPage({
   searchParams,
 }: {
-  searchParams: Promise<{ client?: string }>;
+  searchParams: Promise<{ client?: string; property?: string }>;
 }) {
-  const { client } = await searchParams;
+  const { client, property } = await searchParams;
   const me = await requireUser(["ADMIN", "ESTIMATOR"]);
   const view = await getMarketView();
-  const [companies, users] = await Promise.all([
+  const [companies, users, properties] = await Promise.all([
     prisma.company.findMany({
       select: { id: true, name: true, type: true },
       orderBy: { name: "asc" },
@@ -22,7 +22,9 @@ export default async function NewProjectPage({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    prisma.property.findMany({ select: { id: true, name: true, address: true, companyId: true }, orderBy: { name: "asc" } }),
   ]);
+  const prop = properties.find((p) => p.id === property);
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <div>
@@ -38,14 +40,19 @@ export default async function NewProjectPage({
         values={{
           estimatorId: me.id,
           salespersonId: me.id,
-          market:
-            view === "RESIDENTIAL" || client ? "RESIDENTIAL" : "COMMERCIAL",
-          clientCompanyId: client ?? null,
+          market: prop
+            ? "COMMERCIAL"
+            : view === "RESIDENTIAL" || client
+              ? "RESIDENTIAL"
+              : "COMMERCIAL",
+          clientCompanyId: prop?.companyId ?? client ?? null,
         }}
         isNew
         companies={companies}
         users={users}
         submitLabel="Create job"
+        properties={properties}
+        propertyId={prop?.id ?? null}
       />
     </div>
   );

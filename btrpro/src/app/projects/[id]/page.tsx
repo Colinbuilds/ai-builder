@@ -75,7 +75,7 @@ export default async function ProjectPage({
     orderBy: { createdAt: "desc" },
   });
 
-  const [companies, users, allContacts] = await Promise.all([
+  const [companies, users, allContacts, properties] = await Promise.all([
     prisma.company.findMany({
       select: { id: true, name: true, type: true },
       orderBy: { name: "asc" },
@@ -89,6 +89,7 @@ export default async function ProjectPage({
       include: { company: true },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     }),
+    prisma.property.findMany({ select: { id: true, name: true, address: true, companyId: true }, orderBy: { name: "asc" } }),
   ]);
   const jobTasks = (await prisma.task.findMany({
     where: { projectId: id },
@@ -496,6 +497,8 @@ export default async function ProjectPage({
             action={updateDetailsAction}
             companies={companies}
             users={users}
+            properties={properties}
+            propertyId={project.propertyId}
             showContract
             submitLabel="Save details"
             values={{

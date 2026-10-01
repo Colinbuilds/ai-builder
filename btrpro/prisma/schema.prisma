@@ -208,6 +208,9 @@ model Project {
   leadSource         String?
   // NORMAL | HIGH (job header priority dropdown)
   priority           String            @default("NORMAL")
+  // the customer's property this job is at (multi-family / commercial portfolios)
+  propertyId         String?
+  property           Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   status             ProjectStatus     @default(LEAD)
   statusChangedAt    DateTime          @default(now())
   lostReason         String?
@@ -334,22 +337,49 @@ model Company {
   contacts    Contact[]
   projects    Project[]
   priceSheets PriceSheet[]
+  properties  Property[]
+}
+
+// A property a customer manages (e.g. one apartment community of a property-management company). Jobs happen at a
+// property; its office and site staff are the job's contacts.
+model Property {
+  id        String    @id @default(cuid())
+  companyId String
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  notes     String?
+  // set when the property came from an imported directory, so a newer directory updates it instead of duplicating
+  source    String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  contacts  Contact[]
+  projects  Project[]
+
+  @@index([companyId])
 }
 
 model Contact {
-  id        String   @id @default(cuid())
-  firstName String
-  lastName  String
-  title     String?
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  email     String?
-  phone     String?
+  id         String    @id @default(cuid())
+  firstName  String
+  lastName   String
+  title      String?
+  companyId  String?
+  company    Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  email      String?
+  phone      String?
   // digits only, for duplicate detection
-  phoneKey  String?
-  address   String?
-  notes     String?
-  createdAt DateTime @default(now())
+  phoneKey   String?
+  address    String?
+  notes      String?
+  // the property this person works at (site manager, maintenance…); null = the company's office
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  // a second number (direct line / office) when a directory lists one
+  phone2     String?
+  createdAt  DateTime  @default(now())
 
   projects ProjectContact[]
 
@@ -1499,4 +1529,20 @@ model ReceiptScan {
 
   @@index([createdAt])
   @@index([emailId])
+}
+
+// A staff directory a customer sent (PDF/Word/photo): what was read, waiting for someone to preview and import it.
+model DirectoryImport {
+  id          String    @id @default(cuid())
+  companyId   String?
+  fileName    String
+  fileUrl     String
+  // READING | READ | FAILED | IMPORTED
+  status      String    @default("READING")
+  error       String?
+  extracted   Json?
+  result      Json?
+  createdById String
+  createdAt   DateTime  @default(now())
+  importedAt  DateTime?
 }

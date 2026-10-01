@@ -114,6 +114,7 @@ export async function createProjectAction(
     if (appt && "problem" in appt) return { problems: [appt.problem] };
     ({ id } = await createProject(input, user, homeowner));
     await leadExtras(id, f, appt, input.salespersonId ?? null, user);
+    await linkProperty(id, str(f, "propertyId"), input.clientCompanyId ?? null, true);
   } catch (e) {
     return fail(e);
   }
@@ -141,6 +142,7 @@ export async function updateDetailsAction(
       },
       user,
     );
+    if (f.has("propertyId")) await linkProperty(id, str(f, "propertyId"), input.clientCompanyId ?? null, false);
   } catch (e) {
     return fail(e);
   }
@@ -304,6 +306,20 @@ function leadAppointment(f: FormData): { date: Date; when: string } | { problem:
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return { problem: "Pick the appointment date." };
   if (a && b && b <= a) return { problem: "The appointment ends before it starts." };
   return { date: new Date(`${d}T12:00:00Z`), when: a ? `${t12(a)}${b ? `–${t12(b)}` : ""}` : "" };
+}
+
+/** Ties the job to one of the client's properties; on a new job the site's staff become job contacts. */
+async function linkProperty(projectId: string, propertyId: string | null, companyId: string | null, addStaff: boolean) {
+  const prop = propertyId && companyId ? await prisma.property.findFirst({ where: { id: propertyId, companyId }, include: { contacts: true } }) : null;
+  await prisma.project.update({ where: { id: projectId }, data: { propertyId: prop?.id ?? null } });
+  if (!prop || !addStaff) return;
+  const primary = prop.contacts.find((c) => /manager/i.test(c.title ?? "") && !/regional|assistant/i.test(c.title ?? ""))?.id;
+  for (const c of prop.contacts)
+    await prisma.projectContact.upsert({
+      where: { projectId_contactId: { projectId, contactId: c.id } },
+      update: {},
+      create: { projectId, contactId: c.id, role: "PROPERTY_MANAGER", isPrimary: c.id === primary },
+    });
 }
 
 async function leadExtras(
