@@ -8,6 +8,7 @@ import { DEFAULT_COMM_SHEET, DEFAULT_RES_SHEET } from "@/lib/production/board";
 import { mineWhere, pmScope } from "@/lib/production/assign";
 import { ProdSheetSettings, ProdSyncButton } from "@/components/production/prod-forms";
 import { stepAction } from "./actions";
+import { NavSelect } from "@/components/dashboard/tab-select";
 
 type Search = { v?: string; m?: string; who?: string; q?: string; all?: string };
 const VIEWS = [
@@ -203,14 +204,19 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
       view === "crew" && who ? prisma.crew.findFirst({ where: { name: who }, select: { trade: true } }) : null,
     ]);
     body = (
-      <div className="flex flex-col gap-3 lg:flex-row">
-        <nav className="flex shrink-0 flex-row flex-wrap gap-1 lg:w-56 lg:flex-col">
-          {list.map((n) => (
-            <Link key={n} href={`/production?v=${view}&who=${encodeURIComponent(n)}${market ? `&m=${sp.m}` : ""}`} className={`rounded-md px-2 py-1 text-sm ${n === who ? "bg-btr-blue text-white" : "hover:bg-muted"}`}>
-              {n}
-            </Link>
-          ))}
-        </nav>
+      <div className="flex flex-col gap-3">
+        {list.length > 0 && (
+          <label className="flex items-center gap-2 text-sm">
+            {view === "crew" ? "Crew" : "Project manager"}
+            <NavSelect
+              label={view === "crew" ? "Crew" : "Project manager"}
+              value={who ? ((n: string) => `/production?v=${view}&who=${encodeURIComponent(n)}${market ? `&m=${sp.m}` : ""}`)(who) : ""}
+              className="w-full max-w-md"
+              options={list.map((n) => ({ label: n, href: `/production?v=${view}&who=${encodeURIComponent(n)}${market ? `&m=${sp.m}` : ""}` }))}
+            />
+            <span className="text-xs text-muted-foreground">{list.length} with open work</span>
+          </label>
+        )}
         <section className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-semibold">

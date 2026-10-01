@@ -26,12 +26,12 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
               { href: "/customers/new?kind=contact", label: "New contact" },
               { href: "/customers/new", label: "New customer account" },
               { href: "/today#add-task", label: "New task" },
+              { href: "/ideas", label: "New idea for BTRpro" },
               ...(admin ? [{ href: "/updates#post", label: "Company update" }] : []),
             ],
           },
         ]
       : []),
-    { key: "recent", label: "Recent", icon: "History", orange: true },
     { key: "dashboard", label: "Dashboard", icon: "Gauge", href: "/" },
     {
       key: "jobs",
@@ -40,6 +40,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       items: [
         { href: "/jobs", label: "All open jobs" },
         { href: "/jobs?mine=1", label: "My jobs" },
+        { href: "/jobs?stage=LEAD", label: "Leads" },
         { href: "/jobs?watch=1", label: "Watch list" },
         { heading: "By milestone" },
         { href: "/jobs?m=LEAD", label: "Lead" },
@@ -62,9 +63,6 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
         { href: "/builders", label: "Builders" },
       ],
     },
-    { key: "leads", label: "Leads", icon: "User", href: "/jobs?stage=LEAD" },
-    { key: "today", label: "My day", icon: "CalendarDays", href: "/today" },
-    ...(staff ? [{ key: "ideas", label: "Ideas", icon: "Megaphone" as const, href: "/ideas" }] : []),
     {
       key: "production",
       label: "Production",
@@ -121,6 +119,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
     tools,
     admin: admin
       ? [
+          ...(staff ? [{ href: "/ideas", label: "Ideas board (office requests)" }] : []),
           { href: "/admin/users", label: "Users" },
           { href: "/updates", label: "Company updates" },
           { href: "/settings/company", label: "Company settings" },
@@ -129,7 +128,9 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
           { href: "/settings/import-jobs", label: "Import jobs (schedules)" },
           { href: "/settings/acculynx", label: "Import from AccuLynx (one-time)" },
         ]
-      : [],
+      : staff
+        ? [{ href: "/ideas", label: "Ideas board (office requests)" }]
+        : [],
   };
 }
 

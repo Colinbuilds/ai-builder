@@ -7,7 +7,7 @@ import { dashboardSchedules } from "@/lib/dashboard-schedules";
 describe("who does what", () => {
   afterAll(async () => {
     await prisma.prodLine.deleteMany({ where: { builder: { startsWith: "WDW_TEST_ONLY" } } });
-    await prisma.crew.deleteMany({ where: { name: { startsWith: "TEST_ONLY" } } });
+    await prisma.crew.deleteMany({ where: { name: "WDW_TEST_ONLY Crew Z" } });
     await prisma.user.deleteMany({ where: { email: "test_only_pm@example.com" } });
   });
 
@@ -42,7 +42,7 @@ describe("who does what", () => {
   });
 
   it("saves crew scopes and keeps the trade text in step", async () => {
-    const c = await prisma.crew.create({ data: { name: "TEST_ONLY Crew Z" } });
+    const c = await prisma.crew.create({ data: { name: "WDW_TEST_ONLY Crew Z" } });
     await saveCrewScopes(c.id, ["Siding", "Gutters", "Siding", ""]);
     const back = await prisma.crew.findUniqueOrThrow({ where: { id: c.id } });
     expect(back.scopes).toEqual(["Siding", "Gutters"]);

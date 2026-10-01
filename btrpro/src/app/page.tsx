@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, Binoculars, Camera, Receipt, Wallet, CalendarClock, FileSignature, History, Ruler, ShoppingCart, Signature, DollarSign, ListChecks, Megaphone } from "lucide-react";
+import { AlertTriangle, Camera, Receipt, Wallet, FileSignature, History, Ruler, ShoppingCart, Signature, DollarSign, ListChecks, Megaphone, HardHat, FileText, Send, Search, CheckCircle2 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getMarketView } from "@/lib/market";
@@ -9,7 +9,7 @@ import { SheetDateBanner } from "@/components/sheet-banner";
 import { MilestoneDot } from "@/components/shell/milestone-dot";
 import { Panel, axLink } from "@/components/shell/panel";
 import { Markdown } from "@/components/markdown";
-import { TabSelect } from "@/components/dashboard/tab-select";
+import { NavSelect } from "@/components/dashboard/tab-select";
 import { dashboardSchedules } from "@/lib/dashboard-schedules";
 
 const usd0 = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -31,11 +31,14 @@ const ICON = {
   MR: Ruler,
   PS: Signature,
   TK: ListChecks,
-  W: Binoculars,
-  P: CalendarClock,
   CI: Wallet,
   RC: Receipt,
   PH: Camera,
+  PP: HardHat,
+  PB: FileText,
+  DI: Send,
+  SL: Search,
+  SA: CheckCircle2,
 } as const;
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ lb?: string; denied?: string; dash?: string; es?: string; pc?: string }> }) {
@@ -48,7 +51,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const admin = user.role === "ADMIN";
   const period: Period = sp.lb === "week" || sp.lb === "ytd" ? sp.lb : "month";
   const [data, feed, board, sched, counts, updates, sq] = await Promise.all([
-    dashboardData(view, user.id),
+    dashboardData(view),
     activityFeed(view),
     staff ? leaderboard(view, period) : Promise.resolve([]),
     workSchedule(view),
@@ -133,22 +136,20 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </Panel>
 
         <Panel title="Production schedule" right={<Link className={axLink} href="/production">Open ({sq.prodCount})</Link>} className="flex h-[440px] flex-col" bodyClass="flex min-h-0 flex-1 flex-col">
-          <Tabs>
-            {sq.pm && (
-              <TabLink href={tabHref("pc", "mine")} on={sq.pc === "mine"}>
-                Mine
-              </TabLink>
-            )}
-            <TabLink href={tabHref("pc", "all")} on={sq.pc === "all"}>
-              All crews
-            </TabLink>
-            <TabSelect param="pc" options={sq.moreCrews} value={sq.pc ?? ""} />
-            {sq.crewTabs.map((c) => (
-              <TabLink key={c} href={tabHref("pc", c)} on={sq.pc === c}>
-                {c}
-              </TabLink>
-            ))}
-          </Tabs>
+          <div className="flex shrink-0 items-center gap-2 border-b px-3 py-1.5 text-xs text-muted-foreground">
+            Showing
+            <NavSelect
+              label="Crew"
+              value={tabHref("pc", sq.pc ?? "all")}
+              className="h-7 min-w-0 flex-1 text-xs"
+              options={[
+                ...(sq.pm ? [{ label: "My crews & builders", href: tabHref("pc", "mine") }] : []),
+                { label: "All crews", href: tabHref("pc", "all") },
+                ...sq.crewTabs.map((c) => ({ label: c, href: tabHref("pc", c), group: sq.pm ? "My crews" : "Busiest crews" })),
+                ...sq.moreCrews.map((c) => ({ label: c, href: tabHref("pc", c), group: "All other crews" })),
+              ]}
+            />
+          </div>
           <ol className="min-h-0 flex-1 divide-y overflow-y-auto">
             {sq.lines.length === 0 && <li className="p-3 text-sm text-muted-foreground">Nothing on this schedule right now.</li>}
             {sq.lines.map((l) => (
@@ -193,41 +194,28 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             </Panel>
           )}
 
-          <Panel title={`Job action items (${[...data.actions.progress, ...data.actions.financial, ...data.actions.management].filter((a) => a.n > 0 && a.key !== "W").length})`} bodyClass="flex flex-col gap-3 p-3">
-            <Group label="Progress">
-              {data.actions.progress.map((a) => (
-                <Tile key={a.key} n={a.n} label={a.label} href={a.href} icon={a.stage ? <MilestoneDot stage={a.stage} size={24} className={a.n ? "" : "opacity-40"} /> : undefined} k={a.key} />
-              ))}
-            </Group>
+          <Panel title={`Action items (${[...(staff ? data.actions.office : []), ...data.actions.ordering].filter((a) => a.n > 0).length})`} bodyClass="grid gap-4 p-3 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             {staff && (
-              <Group label="Financial">
-                {data.actions.financial.map((a) => (
+              <Group label="Office" cols="sm:grid-cols-2">
+                {data.actions.office.map((a) => (
                   <Tile key={a.key} n={a.n} label={a.label} href={a.href} k={a.key} />
                 ))}
               </Group>
             )}
-            <Group label="Management">
-              {data.actions.management.map((a) => (
-                <Tile key={a.key} n={a.n} label={a.label} href={a.href} k={a.key} />
-              ))}
-            </Group>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <h3 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">Order measurements</h3>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Outbound href="https://www.eagleview.com/" name="EagleView" note="Roof & wall reports" />
-                  <Outbound href="https://www.gaf.com/en-us/for-professionals/tools/quickmeasure" name="GAF QuickMeasure" note="Roof reports" />
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">Order materials</h3>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Outbound href="https://www.abcsupply.com/" name="ABC Supply" note="Branch #112 · 402-734-1414" />
-                  <Link href="/deliveries" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
-                    <span className="font-medium text-btr-link">BTR material orders</span>
-                    <span className="text-xs text-muted-foreground">Orders from estimates, deliveries</span>
-                  </Link>
-                </div>
+            <div className="flex flex-col gap-3">
+              <Group label="Ordering" cols="sm:grid-cols-2 xl:grid-cols-1">
+                {data.actions.ordering.map((a) => (
+                  <Tile key={a.key} n={a.n} label={a.label} href={a.href} k={a.key} />
+                ))}
+              </Group>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Link href="/deliveries" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
+                  <span className="font-medium text-btr-link">BTR material orders</span>
+                  <span className="text-xs text-muted-foreground">Orders from estimates, deliveries</span>
+                </Link>
+                <Outbound href="https://www.abcsupply.com/" name="ABC Supply" note="Branch #112 · 402-734-1414" />
+                <Outbound href="https://www.eagleview.com/" name="EagleView" note="Roof & wall reports" />
+                <Outbound href="https://www.gaf.com/en-us/for-professionals/tools/quickmeasure" name="GAF QuickMeasure" note="Roof reports" />
               </div>
             </div>
           </Panel>
@@ -362,22 +350,22 @@ function TabLink({ href, on, children }: { href: string; on: boolean; children: 
   );
 }
 
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
+function Group({ label, cols, children }: { label: string; cols: string; children: React.ReactNode }) {
   return (
     <div>
       <h3 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</h3>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">{children}</div>
+      <div className={`grid grid-cols-1 gap-2 ${cols}`}>{children}</div>
     </div>
   );
 }
 
-function Tile({ n, label, href, icon, k }: { n: number; label: string; href: string; icon?: React.ReactNode; k: string }) {
+function Tile({ n, label, href, k }: { n: number; label: string; href: string; k: string }) {
   const Icon = ICON[k as keyof typeof ICON] ?? AlertTriangle;
   return (
     <Link href={href} className={`flex items-center gap-3 border bg-background px-3 py-2.5 hover:bg-muted/60 ${n ? "" : "text-muted-foreground"}`}>
       <span className={`w-8 text-lg tabular-nums ${n ? "text-btr-blue" : ""}`}>{n}</span>
       <span className={`flex-1 text-center text-xs leading-tight ${n ? "text-foreground" : "opacity-60"}`}>{label}</span>
-      {icon ?? <Icon size={22} className={n ? "text-btr-blue" : "opacity-40"} />}
+      <Icon size={22} className={n ? "text-btr-blue" : "opacity-40"} />
     </Link>
   );
 }
