@@ -57,7 +57,7 @@ export async function aiDraftTakeoff(input: { imageBase64: string; mediaType: "i
     task: task(input.view, allowed),
     schema: Schema,
     effort: "high",
-    maxTokens: 32000,
+    maxTokens: 16000, // above ~21k the SDK insists on streaming; aiParse is a single request
     messages: [
       {
         role: "user",

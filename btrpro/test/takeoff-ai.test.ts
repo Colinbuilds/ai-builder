@@ -39,6 +39,8 @@ describe("AI draft takeoff", () => {
     // the image went to the model, with the estimator system prompt and the roof-plan instructions
     const body = seen[0] as { messages: { content: { type: string }[] }[]; system: { text: string }[] };
     expect(body.messages[0].content[0].type).toBe("image");
+    // a non-streaming request: the SDK refuses large max_tokens without streaming
+    expect((seen[0] as { max_tokens: number }).max_tokens).toBeLessThanOrEqual(16000);
     expect(body.system.map((s) => s.text).join("\n")).toMatch(/ROOF PLAN/);
   });
 
