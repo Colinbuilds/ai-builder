@@ -2080,3 +2080,20 @@ model CompanyFile {
   uploadedBy  String
   createdAt   DateTime  @default(now())
 }
+
+// Company playbook: how BTR does its repeat work, written down so it doesn't live in one person's head.
+// Each procedure has an owner and a review cycle; overdue reviews show on the playbook page.
+model Sop {
+  id                String    @id @default(cuid())
+  title             String
+  area              String // OFFICE | ESTIMATING | PRODUCTION | PURCHASING | SAFETY | FINANCE
+  ownerName         String?
+  body              String // markdown steps
+  reviewEveryMonths Int       @default(12)
+  reviewedAt        DateTime?
+  reviewedBy        String?
+  draft             Boolean   @default(true)
+  updatedBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}

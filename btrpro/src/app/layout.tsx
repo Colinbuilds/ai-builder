@@ -95,6 +95,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
               { href: "/reports/risk", label: "Risk desk (insurance, lien deadlines)" },
               { href: "/reports/extras", label: "Extra work desk (field tags → change orders)" },
               { href: "/safety", label: "Safety & prequal packet" },
+              { href: "/playbook", label: "Playbook (how we do things, SOPs)" },
               { href: "/reports/customers", label: "Customer relationships (who went quiet)" },
               ...(isOwner ? [{ href: "/audit", label: "Owner audit" }] : []),
               { href: "/reports/sales", label: "Sales & pipeline" },
