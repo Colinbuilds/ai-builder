@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireCrew } from "@/lib/crew/auth";
 import { crewJobs, PHOTO_STAGES, REQUIRED_STAGES, STAGE_HINT, STAGE_LABEL } from "@/lib/crew/service";
 import { prisma } from "@/lib/db";
-import { CrewInvoiceForm, ExtraWorkForm, IssueForm, PhotoUploader } from "@/components/crew/forms";
+import { CrewInvoiceForm, ExtraWorkForm, IssueForm, PhotoUploader, TalkForm } from "@/components/crew/forms";
 import { CrewHeader } from "../../crew-header";
 
 export const metadata = { title: "BTR crew portal" };
@@ -54,6 +54,11 @@ export default async function CrewJob({ params }: { params: Promise<{ id: string
         <h2 className="text-lg font-semibold">Extra work tag</h2>
         <p className="text-sm text-muted-foreground">Did work beyond the contract because the super or builder asked? Log it the same day with hours, materials and photos, and have them sign. A signed tag gets paid.</p>
         <ExtraWorkForm projectId={id} />
+      </section>
+      <section className="flex flex-col gap-3 rounded-xl border border-btr-line bg-background p-4">
+        <h2 className="text-lg font-semibold">Safety talk</h2>
+        <p className="text-sm text-muted-foreground">Five minutes before work starts. Log who was there — GCs ask for this.</p>
+        <TalkForm projectId={id} />
       </section>
       <section className="flex flex-col gap-3 rounded-xl border border-btr-line bg-background p-4">
         <h2 className="text-lg font-semibold">Send an invoice for this job</h2>

@@ -8,6 +8,9 @@ import { wipSchedule } from "./wip";
 import { cashForecast } from "./cash";
 import { riskDesk } from "./risk";
 import { extrasDesk } from "@/lib/production/field";
+import { bondingCapacity } from "./bonding";
+import { relationships } from "./relationships";
+import { safetyOverview } from "@/lib/safety/service";
 
 const DAY = 86_400_000;
 const r2 = (n: number) => round(n, 2);
@@ -87,7 +90,7 @@ export async function crewLoad(now = new Date()) {
 }
 
 export async function scorecard(user: { id: string; role: string }, now = new Date()) {
-  const [wip, cash, risk, bids, rev12, rev90, crews, ar, cos, resBacklog, extras] = await Promise.all([
+  const [wip, cash, risk, bids, rev12, rev90, crews, ar, cos, resBacklog, extras, bond, rel, safety] = await Promise.all([
     wipSchedule(user),
     cashForecast(now),
     riskDesk(now),
@@ -99,7 +102,11 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
     prisma.changeOrder.findMany({ where: { status: "PENDING" }, select: { amount: true, createdAt: true, kind: true } }),
     prisma.prodLine.aggregate({ where: { board: { in: ["ADD", "UPCOMING", "CURRENT"] }, completed: null, market: "RESIDENTIAL" }, _sum: { sell: true } }),
     extrasDesk(now),
+    bondingCapacity(user),
+    relationships(now),
+    safetyOverview(now),
   ]);
+  const lastYear = safety.years[1];
   const backlog = r2(wip.totals.backlog + (resBacklog._sum.sell ?? 0));
   const monthly = rev12.total / 12;
   // until BTRpro holds real billing history (invoices, pay apps, builder billing), months and shares would mislead
@@ -190,6 +197,33 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
       note: thin ? "Needs a year of billing in BTRpro to be meaningful" : undefined,
       benchmark: "Keep any one GC or builder under ~20–25% of revenue",
       href: "/reports/scorecard#customers",
+    },
+    {
+      key: "bonding",
+      label: "Bonding room left",
+      value: bond.room == null ? "enter surety limits" : usd(bond.room),
+      tone: bond.room == null ? "none" : bond.room < 0 ? "bad" : (bond.usedPct ?? 0) > 80 ? "watch" : "good",
+      note: bond.usedPct != null ? `${bond.usedPct}% of ${bond.fromLetter ? "the surety's" : "the estimated"} aggregate used` : undefined,
+      benchmark: "Keep 20%+ of the aggregate free so the next big bonded bid isn't turned down",
+      href: "/reports/bonding",
+    },
+    {
+      key: "quiet",
+      label: "Repeat customers gone quiet",
+      value: String(rel.counts.DORMANT + rel.counts.DECLINING),
+      tone: !rel.customers.length ? "none" : rel.counts.DORMANT + rel.counts.DECLINING > 0 ? "watch" : "good",
+      note: rel.customers.length ? `${rel.counts.ACTIVE} of ${rel.customers.length} repeat customers active` : undefined,
+      benchmark: "Call a GC or builder within 30–90 days of their bid invitations stopping",
+      href: "/reports/customers",
+    },
+    {
+      key: "safety",
+      label: `Safety: ${lastYear.year} TRIR · EMR`,
+      value: `${lastYear.trir ?? "—"} · ${lastYear.emr ?? "—"}`,
+      tone: lastYear.emr == null && lastYear.trir == null ? "none" : (lastYear.emr ?? 0) > 1 ? "bad" : (lastYear.trir ?? 0) > 5 ? "watch" : "good",
+      note: safety.missing.length ? `prequal packet missing ${safety.missing.length} item${safety.missing.length === 1 ? "" : "s"}` : "prequal packet complete",
+      benchmark: "EMR at or under 1.0 keeps you on GC bid lists; roofing contractors average a TRIR near 5 (BLS), under that is a selling point",
+      href: "/safety",
     },
     {
       key: "insurance",

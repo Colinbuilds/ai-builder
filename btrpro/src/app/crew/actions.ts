@@ -1,9 +1,11 @@
 "use server";
 
 import { logExtraWork, reportIssue } from "@/lib/production/field";
+import { addToolboxTalk } from "@/lib/safety/service";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/db";
 import { CREW_COOKIE, CREW_MAX_AGE, signCrewSession } from "@/lib/session";
 import { requireCrew } from "@/lib/crew/auth";
 import { checkCrewLogin } from "@/lib/crew/login";
@@ -123,6 +125,18 @@ export async function crewExtraAction(_: CrewResult, f: FormData): Promise<CrewR
     );
     revalidatePath(`/crew/jobs/${projectId}`);
     return { problems: [], ok: true, note: "Extra work tag sent to the office. They'll price it into a change order." };
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+}
+
+export async function crewTalkAction(_: CrewResult, f: FormData): Promise<CrewResult> {
+  const crew = await requireCrew();
+  const projectId = str(f, "projectId");
+  try {
+    if (!(await prisma.scheduleEvent.findFirst({ where: { projectId, crewId: crew.id } })) && !(await prisma.workOrder.findFirst({ where: { projectId, crewId: crew.id } }))) throw new CrewError("That job isn't assigned to your crew.");
+    await addToolboxTalk({ date: new Date(), topic: str(f, "topic"), presenter: str(f, "presenter") || crew.name, crewId: crew.id, projectId, attendees: str(f, "attendees"), notes: null }, { name: crew.name });
+    return { problems: [], ok: true, note: "Safety talk logged. Thank you." };
   } catch (e) {
     return { problems: [msg(e)] };
   }

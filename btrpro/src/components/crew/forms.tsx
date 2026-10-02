@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { shrinkPhoto as shrink } from "@/components/shrink-photo";
-import { crewInvoiceAction, crewLoginAction, crewPhotosAction, crewIssueAction, crewExtraAction, type CrewResult } from "@/app/crew/actions";
+import { crewInvoiceAction, crewLoginAction, crewPhotosAction, crewIssueAction, crewExtraAction, crewTalkAction, type CrewResult } from "@/app/crew/actions";
 
 const field = "w-full rounded-lg border border-btr-line bg-background px-3 py-3 text-base";
 const primary = "w-full rounded-lg bg-btr-blue px-4 py-3 text-base font-semibold text-white disabled:opacity-60";
@@ -281,6 +281,30 @@ export function ExtraWorkForm({ projectId }: { projectId: string }) {
       <input name="signerName" placeholder="Name of who signed" required={!!sig} className={field} />
       <button disabled={pending || busy || (!picked && !sig)} className={primary}>
         {busy ? "Preparing…" : pending ? "Sending…" : "Send extra work tag"}
+      </button>
+      <Result state={state} />
+    </form>
+  );
+}
+
+/** Toolbox talk sign-in from the job: topic, who gave it, who was there. */
+export function TalkForm({ projectId }: { projectId: string }) {
+  const [state, action, pending] = useActionState(crewTalkAction, null);
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="projectId" value={projectId} />
+      <select name="topic" required className={field} defaultValue="">
+        <option value="" disabled>
+          Topic
+        </option>
+        {["Fall protection at roof edges", "Ladder setup and tie-off", "Skylights and roof openings", "Heat — water, rest, shade", "Power lines", "Tear-off debris and ground zone", "Nail gun safety", "PPE"].map((t) => (
+          <option key={t}>{t}</option>
+        ))}
+      </select>
+      <input name="presenter" placeholder="Who gave the talk" className={field} />
+      <textarea name="attendees" required rows={3} placeholder="Who was there — one name per line" className={field} />
+      <button disabled={pending} className={primary}>
+        {pending ? "Sending…" : "Log safety talk"}
       </button>
       <Result state={state} />
     </form>

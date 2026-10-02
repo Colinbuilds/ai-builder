@@ -91,9 +91,11 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
             label: "Reports",
             icon: "FileText" as const,
             items: [
-              ...(admin || role === "OFFICE" ? [{ href: "/reports/scorecard", label: "Owner scorecard" }, { href: "/reports/wip", label: "WIP schedule (bank / surety)" }, { href: "/reports/cash", label: "13-week cash forecast" }] : []),
+              ...(admin || role === "OFFICE" ? [{ href: "/reports/scorecard", label: "Owner scorecard" }, { href: "/reports/wip", label: "WIP schedule (bank / surety)" }, { href: "/reports/cash", label: "13-week cash forecast" }, { href: "/reports/bonding", label: "Bonding capacity" }] : []),
               { href: "/reports/risk", label: "Risk desk (insurance, lien deadlines)" },
               { href: "/reports/extras", label: "Extra work desk (field tags → change orders)" },
+              { href: "/safety", label: "Safety & prequal packet" },
+              { href: "/reports/customers", label: "Customer relationships (who went quiet)" },
               ...(isOwner ? [{ href: "/audit", label: "Owner audit" }] : []),
               { href: "/reports/sales", label: "Sales & pipeline" },
               { href: "/reports/win-loss", label: "Win / loss & win-back" },

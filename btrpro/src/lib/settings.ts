@@ -46,8 +46,14 @@ export type CompanySettings = {
   weeklyPayroll: number | null; // in-house payroll per week (office + W-2 crews), all-in
   monthlyOverhead: number | null; // rent, insurance, trucks, software… per month
   cashFloor: number | null; // the lowest balance you're comfortable with
+  suretyName: string | null; // bonding company / agent
+  bondSingleLimit: number | null; // largest single bonded job the surety will write (from their letter)
+  bondAggregateLimit: number | null; // total bonded work-in-progress allowed (from their letter)
+  workingCapital: number | null; // current assets − current liabilities, from the last CPA statement
+  netWorth: number | null; // equity, from the last CPA statement
+  financialsAsOf: string | null; // date of that statement (ISO)
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError", "jobsDriveId", "driveImportMonths", "driveImportOn", "driveImportScannedAt", "cashOnHand", "cashAsOf", "weeklyPayroll", "monthlyOverhead", "cashFloor"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError", "jobsDriveId", "driveImportMonths", "driveImportOn", "driveImportScannedAt", "cashOnHand", "cashAsOf", "weeklyPayroll", "monthlyOverhead", "cashFloor", "suretyName", "bondSingleLimit", "bondAggregateLimit", "workingCapital", "netWorth", "financialsAsOf"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });

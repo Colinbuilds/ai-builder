@@ -2021,3 +2021,62 @@ model CodeQuestion {
 
   @@index([projectId])
 }
+
+// ---------- Safety & prequalification ----------
+// GCs prequalify subs on the OSHA 300A summary for the last 3 years, EMR (experience mod) on the carrier's
+// letter, TRIR/DART rates, a safety program and a bonding letter. These hold the raw facts; the packet is built from them.
+model SafetyIncident {
+  id             String   @id @default(cuid())
+  date           DateTime
+  // OBSERVATION | NEAR_MISS | FIRST_AID | RECORDABLE | RESTRICTED | LOST_TIME | FATALITY
+  kind           String
+  personName     String?
+  crewId         String?
+  projectId      String?
+  description    String
+  daysAway       Int?
+  daysRestricted Int?
+  correctiveAction String?
+  createdBy      String
+  createdAt      DateTime @default(now())
+
+  @@index([date])
+}
+
+model ToolboxTalk {
+  id        String   @id @default(cuid())
+  date      DateTime
+  topic     String
+  presenter String
+  crewId    String?
+  projectId String?
+  // one name per line
+  attendees String
+  notes     String?
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+// hours worked and average headcount per calendar year (the 300A denominators) and the EMR the carrier issued
+model SafetyYear {
+  year         Int      @id
+  hoursWorked  Float?
+  avgEmployees Float?
+  emr          Float?
+  updatedBy    String?
+  updatedAt    DateTime @updatedAt
+}
+
+// company-level files: COI, EMR letter, bonding letter, safety manual, W-9, licenses
+model CompanyFile {
+  id          String    @id @default(cuid())
+  kind        String
+  title       String
+  fileUrl     String
+  contentType String?
+  expiresAt   DateTime?
+  uploadedBy  String
+  createdAt   DateTime  @default(now())
+}
