@@ -72,6 +72,6 @@ describe("reports on real data", () => {
     expect(row).toMatchObject({ costToDate: 50_000, estTotalCost: 150_000, basis: "PM forecast", projectedGp: 50_000 });
     expect(row.pctComplete).toBeCloseTo(33.3, 1);
     const s = await scorecard(ADMIN);
-    expect(s.metrics.map((m) => m.key)).toEqual(["backlog", "margin", "billing", "cash", "dso", "winrate", "cos", "concentration", "insurance", "liens"]);
+    expect(s.metrics.map((m) => m.key)).toEqual(["backlog", "margin", "billing", "cash", "dso", "winrate", "cos", "extras", "concentration", "insurance", "liens"]);
   });
 });

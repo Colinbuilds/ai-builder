@@ -93,6 +93,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
             items: [
               ...(admin || role === "OFFICE" ? [{ href: "/reports/scorecard", label: "Owner scorecard" }, { href: "/reports/wip", label: "WIP schedule (bank / surety)" }, { href: "/reports/cash", label: "13-week cash forecast" }] : []),
               { href: "/reports/risk", label: "Risk desk (insurance, lien deadlines)" },
+              { href: "/reports/extras", label: "Extra work desk (field tags → change orders)" },
               ...(isOwner ? [{ href: "/audit", label: "Owner audit" }] : []),
               { href: "/reports/sales", label: "Sales & pipeline" },
               { href: "/reports/win-loss", label: "Win / loss & win-back" },

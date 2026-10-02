@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { EDIT_ROLES } from "@/lib/roles";
-import { addPunch, resolveIssue, setPunchDone, setReadyCheck } from "@/lib/production/field";
+import { addPunch, priceTag, resolveIssue, setPunchDone, setReadyCheck } from "@/lib/production/field";
 
 const again = (id: string) => revalidatePath(`/projects/${id}`, "layout");
 
@@ -32,4 +32,15 @@ export async function resolveIssueAction(f: FormData) {
   const u = await requireUser(EDIT_ROLES);
   const i = await resolveIssue(String(f.get("id")), f.get("status") === "NO_CHARGE" ? "NO_CHARGE" : "PRICED", String(f.get("resolution") ?? "") || null, u);
   again(i.projectId);
+}
+
+export async function priceTagAction(f: FormData) {
+  const u = await requireUser(EDIT_ROLES);
+  const n = (k: string) => {
+    const v = String(f.get(k) ?? "").replace(/[$,\s]/g, "");
+    return v ? Number(v) : null;
+  };
+  const co = await priceTag(String(f.get("id")), { amount: n("amount") ?? NaN, costImpact: n("costImpact"), description: String(f.get("description") ?? "") || null }, u);
+  again(co.projectId);
+  revalidatePath("/reports/extras");
 }

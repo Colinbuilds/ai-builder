@@ -7,6 +7,7 @@ import { payTotals, type SovLine } from "@/lib/billing/payapps";
 import { wipSchedule } from "./wip";
 import { cashForecast } from "./cash";
 import { riskDesk } from "./risk";
+import { extrasDesk } from "@/lib/production/field";
 
 const DAY = 86_400_000;
 const r2 = (n: number) => round(n, 2);
@@ -86,7 +87,7 @@ export async function crewLoad(now = new Date()) {
 }
 
 export async function scorecard(user: { id: string; role: string }, now = new Date()) {
-  const [wip, cash, risk, bids, rev12, rev90, crews, ar, cos, resBacklog] = await Promise.all([
+  const [wip, cash, risk, bids, rev12, rev90, crews, ar, cos, resBacklog, extras] = await Promise.all([
     wipSchedule(user),
     cashForecast(now),
     riskDesk(now),
@@ -97,6 +98,7 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
     prisma.invoice.findMany({ where: { status: { in: ["SENT", "PARTIAL"] } }, select: { amountDue: true, dueDate: true, payments: { select: { amount: true } } } }),
     prisma.changeOrder.findMany({ where: { status: "PENDING" }, select: { amount: true, createdAt: true, kind: true } }),
     prisma.prodLine.aggregate({ where: { board: { in: ["ADD", "UPCOMING", "CURRENT"] }, completed: null, market: "RESIDENTIAL" }, _sum: { sell: true } }),
+    extrasDesk(now),
   ]);
   const backlog = r2(wip.totals.backlog + (resBacklog._sum.sell ?? 0));
   const monthly = rev12.total / 12;
@@ -170,6 +172,15 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
       tone: !cos.length ? "good" : (coAge ?? 0) > 30 ? "bad" : "watch",
       benchmark: "Price and send extras within days; specialty contractors lose 1–3% of revenue to unbilled or written-off change orders",
       note: coAge != null ? `waiting ${coAge} days on average` : undefined,
+    },
+    {
+      key: "extras",
+      label: "Field extras not priced yet",
+      value: String(extras.unpriced),
+      tone: !extras.unpriced ? "good" : (extras.oldestUnpriced ?? 0) > 7 ? "bad" : "watch",
+      note: extras.oldestUnpriced != null ? `oldest ${extras.oldestUnpriced} days` : undefined,
+      benchmark: "Price a signed tag within a week. Paper tags take ~3 weeks to become a change order; on-site digital tags ~3.5 days",
+      href: "/reports/extras",
     },
     {
       key: "concentration",

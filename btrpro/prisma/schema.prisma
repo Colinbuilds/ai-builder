@@ -1713,6 +1713,17 @@ model FieldIssue {
   photos     Json
   // OPEN | PRICED | NO_CHARGE
   status     String    @default("OPEN")
+  // extra-work (T&M) tag: what the crew spent, and who on site authorized it
+  kind           String?   // ISSUE (found, needs pricing before work) | EXTRA (extra work done / directed on site)
+  workDate       DateTime?
+  men            Int?
+  hours          Float?    // total man-hours
+  materials      String?
+  directedBy     String?   // super / builder rep who asked for it
+  signerName     String?
+  signatureImage String?
+  signedAt       DateTime?
+  changeOrderId  String?
   resolution String?
   resolvedBy String?
   resolvedAt DateTime?

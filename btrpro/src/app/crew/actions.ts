@@ -1,6 +1,6 @@
 "use server";
 
-import { reportIssue } from "@/lib/production/field";
+import { logExtraWork, reportIssue } from "@/lib/production/field";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -95,6 +95,34 @@ export async function crewIssueAction(_: CrewResult, f: FormData): Promise<CrewR
     await reportIssue({ crewId: crew.id, name: crew.name }, projectId, str(f, "note"), await filesOf(f, "photos"));
     revalidatePath(`/crew/jobs/${projectId}`);
     return { problems: [], ok: true, note: "Sent to the office. Don't do the extra work until BTR says it's approved." };
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+}
+
+export async function crewExtraAction(_: CrewResult, f: FormData): Promise<CrewResult> {
+  const crew = await requireCrew();
+  const projectId = str(f, "projectId");
+  const num = (k: string) => (str(f, k) ? Number(str(f, k)) : null);
+  const date = str(f, "workDate");
+  try {
+    await logExtraWork(
+      { crewId: crew.id, name: crew.name },
+      projectId,
+      {
+        note: str(f, "note"),
+        workDate: date ? new Date(`${date}T12:00:00Z`) : null,
+        men: num("men"),
+        hours: num("hours"),
+        materials: str(f, "materials") || null,
+        directedBy: str(f, "directedBy") || null,
+        signerName: str(f, "signerName") || null,
+        signatureImage: str(f, "signature") || null,
+      },
+      await filesOf(f, "photos"),
+    );
+    revalidatePath(`/crew/jobs/${projectId}`);
+    return { problems: [], ok: true, note: "Extra work tag sent to the office. They'll price it into a change order." };
   } catch (e) {
     return { problems: [msg(e)] };
   }
