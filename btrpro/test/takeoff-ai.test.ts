@@ -54,14 +54,20 @@ describe("AI draft takeoff", () => {
       printed_scale: 'SCALE: 1/8" = 1\'-0"',
       items: [
         { type: "wall_area", points: [{ x: 0, y: 400 }, { x: 1000, y: 400 }, { x: 1000, y: 900 }, { x: 0, y: 900 }], note: "main wall" },
-        { type: "rough_opening", points: [{ x: 100, y: 500 }, { x: 200, y: 500 }, { x: 200, y: 700 }, { x: 100, y: 700 }], note: "window" },
+        { type: "window", points: [{ x: 100, y: 500 }, { x: 200, y: 500 }, { x: 200, y: 700 }, { x: 100, y: 700 }], note: "window" },
+        { type: "patio_door", points: [{ x: 300, y: 450 }, { x: 380, y: 450 }, { x: 380, y: 700 }, { x: 300, y: 700 }], note: "slider behind railing" },
         { type: "roof_area", points: [{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 500, y: 300 }], note: "roof seen in elevation" },
       ],
+      scale_bar: { x0: 100, y0: 950, x1: 225, y1: 950, feet: 10 },
+      counted: { windows: 1, doors: 0, patio_sliders: 1, garage_doors: 0 },
       cannot_trace: ["1", "2", "3", "4", "5", "6", "7"],
     });
     const r = await aiDraftTakeoff({ imageBase64: "AAAA", mediaType: "image/jpeg", region: { x: 0, y: 0, w: 1000, h: 1000 }, view: "ROOF_PLAN" });
     expect(r.detectedView).toBe("ELEVATION");
-    expect(r.items.map((i) => i.type)).toEqual(["wall_area", "rough_opening"]);
+    expect(r.items.map((i) => i.type)).toEqual(["wall_area", "window", "patio_door"]);
+    // the scale bar comes back in sheet units (region is 0..1000 here): 125 units = 10'
+    expect(r.scaleBar).toEqual({ a: [100, 950], b: [225, 950], feet: 10 });
+    expect(r.counted.patio_sliders).toBe(1);
     expect(r.printedScale).toBe('1/8" = 1\'-0"');
     expect(r.cannotTrace).toHaveLength(5);
   });
@@ -71,6 +77,27 @@ describe("AI draft takeoff", () => {
     const r = await aiDraftTakeoff({ imageBase64: "AAAA", mediaType: "image/jpeg", region: { x: 0, y: 0, w: 10, h: 10 }, view: "ELEVATION" });
     expect(r.detectedView).toBeNull();
     expect(r.items).toEqual([]);
+  });
+
+  it("an opening inside masonry isn't taken out twice; shake is reported apart from lap", () => {
+    const page: PageTakeoff = {
+      view: "ELEVATION",
+      pitch: null,
+      scale: { upf: 1, method: "CALIBRATED", label: "TEST_ONLY", check: { expectedFt: 10, measuredFt: 10, diffPct: 0 } },
+      items: [
+        { id: "w", type: "wall_area", points: [[0, 0], [100, 0], [100, 30], [0, 30]] }, // 3000
+        { id: "m", type: "masonry", points: [[0, 20], [100, 20], [100, 30], [0, 30]] }, // 1000 (lower floor stone)
+        { id: "g", type: "garage_door", points: [[10, 22], [20, 30]] }, // 80, inside the stone
+        { id: "s", type: "patio_door", points: [[40, 5], [46, 12]] }, // 42, in siding
+        { id: "k", type: "shake_area", points: [[60, 0], [80, 0], [80, 5], [60, 5]] }, // 100
+      ],
+    };
+    const t = pageTotals(page, 0).totals;
+    const v = (k: string) => t.find((x) => x.key === k)?.raw;
+    expect(v("siding_sf")).toBe(3000 - 1000 - 42);
+    expect(v("lap_siding_sf")).toBe(3000 - 1000 - 42 - 100);
+    expect(v("garage_door_count")).toBe(1);
+    expect(v("rough_openings_count")).toBe(2);
   });
 
   it("reads printed scales", () => {

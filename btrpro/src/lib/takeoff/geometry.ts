@@ -11,7 +11,7 @@ export type PitchRule = "none" | "slope" | "hip";
 export type TakeoffType = {
   id: string;
   label: string;
-  group: "Roof" | "Siding" | "Other";
+  group: "Roof" | "Siding" | "Openings" | "Other";
   tool: Tool;
   /** the job measurement this total feeds */
   key: string;
@@ -37,7 +37,12 @@ export const TAKEOFF_TYPES: TakeoffType[] = [
   // siding — trace on the elevations (true size; no pitch)
   { id: "wall_area", label: "Wall area", group: "Siding", tool: "area", key: "wall_total_sf", unit: "SF", pitch: "none", color: "#1f6fd1", hint: "Trace the whole wall face. Masonry and openings traced inside it are taken out of the siding total." },
   { id: "masonry", label: "Masonry (excluded)", group: "Siding", tool: "area", key: "masonry_sf", unit: "SF", pitch: "none", color: "#7f1d1d", hint: "Brick or stone. Never counted in siding (SID-01)." },
-  { id: "rough_opening", label: "Rough opening", group: "Siding", tool: "rect", key: "openings_sf", unit: "SF", pitch: "none", color: "#0f766e", hint: "Drag corner to corner over each window or door. Gives the opening count, area and perimeter." },
+  { id: "shake_area", label: "Shake / accent siding", group: "Siding", tool: "area", key: "shake_sf", unit: "SF", pitch: "none", color: "#a855f7", hint: "Shake or other accent siding inside a traced wall (gables). Still siding — reported separately from lap." },
+  { id: "window", label: "Window", group: "Openings", tool: "rect", key: "openings_sf", unit: "SF", pitch: "none", color: "#0f766e", hint: "One box per window." },
+  { id: "patio_door", label: "Patio / sliding door", group: "Openings", tool: "rect", key: "openings_sf", unit: "SF", pitch: "none", color: "#0891b2", hint: "One box per slider — on balconies it's behind the railing." },
+  { id: "door", label: "Door", group: "Openings", tool: "rect", key: "openings_sf", unit: "SF", pitch: "none", color: "#4338ca", hint: "One box per entry/service door." },
+  { id: "garage_door", label: "Garage door", group: "Openings", tool: "rect", key: "openings_sf", unit: "SF", pitch: "none", color: "#64748b", hint: "One box per garage door." },
+  { id: "rough_opening", label: "Rough opening (other)", group: "Siding", tool: "rect", key: "openings_sf", unit: "SF", pitch: "none", color: "#0f766e", hint: "Drag corner to corner over each window or door. Gives the opening count, area and perimeter." },
   { id: "top_board", label: "Top board", group: "Siding", tool: "line", key: "top_board_lf", unit: "LF", pitch: "none", color: "#c2410c" },
   { id: "starter", label: "Starter", group: "Siding", tool: "line", key: "siding_starter_lf", unit: "LF", pitch: "none", color: "#15803d" },
   { id: "outside_corner", label: "Outside corner", group: "Siding", tool: "line", key: "outside_corners_lf", unit: "LF", pitch: "none", color: "#6d28d9" },
@@ -65,6 +70,17 @@ export type PageTakeoff = { view: View; pitch: number | null; scale: Scale | nul
 export const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
 const dist = (a: Pt, b: Pt) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 export const pathLength = (pts: Pt[]) => pts.slice(1).reduce((s, p, i) => s + dist(pts[i], p), 0);
+/** Ray-casting point-in-polygon test. */
+export function insidePolygon([x, y]: Pt, poly: Pt[]) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 export function polygonArea(pts: Pt[]) {
   let s = 0;
   for (let i = 0; i < pts.length; i++) {
@@ -167,6 +183,9 @@ export function pageTotals(page: PageTakeoff, allowancePct = 1): { totals: Total
   };
   let unsized = 0;
   let drafts = 0;
+  // an opening inside masonry (garage door in stone) is already gone with the masonry — don't take it out twice
+  const masonry = page.items.filter((i) => !i.ai && i.type === "masonry" && i.points.length >= 3).map((i) => i.points);
+  let openingsInMasonry = 0;
   for (const it of page.items) {
     const t = TYPE_BY_ID.get(it.type);
     if (!t) continue;
@@ -180,8 +199,12 @@ export function pageTotals(page: PageTakeoff, allowancePct = 1): { totals: Total
       continue;
     }
     add(t.key, t.label, t.unit, r.value);
-    if (t.id === "rough_opening") {
+    if (t.key === "openings_sf") {
+      const pts = it.points.length === 2 ? rectCorners(it.points[0], it.points[1]) : it.points;
+      const c: Pt = [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
+      if (masonry.some((m) => insidePolygon(c, m))) openingsInMasonry += r.value;
       add("rough_openings_count", "Rough openings", "EA", 1);
+      if (t.id !== "rough_opening") add(`${t.id}_count`, `${t.label}s`, "EA", 1);
       add("opening_perimeter_lf", "Window/door perimeter", "LF", r.perimeterLf ?? 0);
     }
   }
@@ -191,8 +214,10 @@ export function pageTotals(page: PageTakeoff, allowancePct = 1): { totals: Total
   if (roof) add("roof_sq", "Roof squares", "SQ", roof.raw / 100);
   const wall = sums.get("wall_total_sf");
   if (wall) {
-    const net = wall.raw - (sums.get("masonry_sf")?.raw ?? 0) - (sums.get("openings_sf")?.raw ?? 0);
-    add("siding_sf", "Siding (wall − masonry − openings)", "SF", Math.max(0, net));
+    const net = wall.raw - (sums.get("masonry_sf")?.raw ?? 0) - ((sums.get("openings_sf")?.raw ?? 0) - openingsInMasonry);
+    add("siding_sf", "Siding (wall − masonry − openings in siding)", "SF", Math.max(0, net));
+    const shake = sums.get("shake_sf")?.raw ?? 0;
+    if (shake > 0) add("lap_siding_sf", "Lap siding (siding − shake)", "SF", Math.max(0, net - shake));
   }
   if (page.view !== "ROOF_PLAN" && page.items.some((i) => TYPE_BY_ID.get(i.type)?.key === "roof_total_sf"))
     problems.push("Roof area should come from the roof plan sheet (ROOF-01). Set this sheet's view to Roof plan.");
