@@ -41,8 +41,13 @@ export type CompanySettings = {
   driveImportMonths: number | null; // how far back the Drive job import looks; blank = 12
   driveImportOn: boolean | null; // true while the background import is running
   driveImportScannedAt: string | null;
+  cashOnHand: number | null; // bank balance for the 13-week forecast
+  cashAsOf: string | null; // when that balance was read (ISO date)
+  weeklyPayroll: number | null; // in-house payroll per week (office + W-2 crews), all-in
+  monthlyOverhead: number | null; // rent, insurance, trucks, software… per month
+  cashFloor: number | null; // the lowest balance you're comfortable with
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError", "jobsDriveId", "driveImportMonths", "driveImportOn", "driveImportScannedAt"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError", "jobsDriveId", "driveImportMonths", "driveImportOn", "driveImportScannedAt", "cashOnHand", "cashAsOf", "weeklyPayroll", "monthlyOverhead", "cashFloor"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });

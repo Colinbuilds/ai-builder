@@ -295,6 +295,10 @@ model Project {
   // categories an Admin/estimator marked "no bills expected" for close-out
   costNoneExpected Json?
   costClosedAt     DateTime?
+  // WIP: the PM's estimate of cost still to come (blank = budget − cost to date), and when it was last updated
+  wipEtc           Float?
+  wipEtcAt         DateTime?
+  wipEtcBy         String?
   costClosedBy     String?
   // the P&L as it stood when the job was closed; later edits are Admin-only and audit-logged
   finalPnl         Json?
@@ -1929,4 +1933,36 @@ model DriveJobFolder {
   updatedAt   DateTime  @updatedAt
 
   @@index([status])
+}
+
+// Month-end WIP line kept for each open job, so fade and over/under billing can be compared month to month.
+model WipSnapshot {
+  id            String   @id @default(cuid())
+  month         String
+  projectId     String
+  revenue       Float
+  costToDate    Float
+  estTotalCost  Float
+  pctComplete   Float
+  earned        Float
+  billed        Float
+  overUnder     Float
+  projectedGp   Float
+  bidMarginPct  Float?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+
+  @@unique([month, projectId])
+  @@index([projectId])
+}
+
+// One-off cash items for the 13-week forecast (a loan draw, an equipment payment, a big expected check).
+model CashItem {
+  id        String   @id @default(cuid())
+  date      DateTime
+  label     String
+  // positive = money in, negative = money out
+  amount    Float
+  createdBy String?
+  createdAt DateTime @default(now())
 }
