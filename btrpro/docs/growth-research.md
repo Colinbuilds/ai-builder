@@ -80,6 +80,33 @@ parties, a notice of right to lien should be served.
 speeds by location come from the ASCE Hazard Tool. Manufacturer installation instructions and
 specifications (GAF, Hardie, Mule-Hide, etc.) govern the details and the warranty.
 
+## Round 2 (October 2026): field extras, prequal, bonding, relationships
+
+**Field extras leak margin quietly.** Specialty contractors report the time from a signed T&M tag to a priced change order request averages about 3 weeks on paper. When the tag is captured digitally on site, with photos and the super's signature, it drops to about 3.5 days. Unsigned or late extras get written off. *Built:* crews log **extra-work tags** from the crew portal: hours, workers, materials, photos, who directed it, and the super's finger signature. The office turns a tag into a change order with one click, already described. The **Extra work desk** (Reports) ages every tag that isn't approved money yet. The scorecard flags any unpriced tag older than a week.
+
+**Prequalification gates the bigger GCs.** GC prequal forms ask for:
+- OSHA 300/300A logs for the last 3 years
+- TRIR and DART rates
+- EMR on the carrier's letterhead (often ≤ 1.0 to bid)
+- a bonding letter, current COI and workers' comp
+- a written safety program
+
+Roofing contractors average a TRIR near 5. Documented toolbox talks with sign-ins are the standard evidence of training, kept 3 years. *Built:* **Safety & prequal** has toolbox talks (office and crew portal), an incident and near-miss log, the 300A summary with TRIR/DART by year, EMR by year, company files with expirations, and a **one-click prequal packet PDF**. The packet is a cover page with the 3-year table plus every current file merged in, and it lists what's missing.
+
+**Bonding capacity caps public and large commercial growth.** Sureties set two limits:
+- **Single-job limit:** about 10× working capital (range 8–15×) or 5× net worth, whichever is less.
+- **Aggregate limit** (total bonded backlog): about 15–25× working capital, or 2–3× the single limit.
+
+The WIP schedule and the CPA-reviewed year-end statement drive both. *Built:* **Bonding capacity** shows the bonded backlog (from WIP) against the surety's limits, or an estimate from working capital until the letter is entered, and the room left. It's on the scorecard.
+
+**Repeat GCs go quiet without saying so.** Firms lose repeat work when follow-up depends on memory. Win-back outreach works best 30–90 days after an account goes quiet. *Built:* **Customer relationships** reads the estimating schedule and flags each repeat GC or builder (3+ bids in 2 years) as one of:
+- **active:** bid in the last 2 months
+- **cooling:** 2–4 months since the last bid
+- **declining:** this year's bids are under half of last year's
+- **gone quiet:** 4+ months since the last bid
+
+**Branches (not built yet):** multi-branch roofers report that labor, scheduling across locations, and a P&L that doesn't break out by department are the hard parts. Worth adding a branch/region field to jobs, crews and reports once a second location is real.
+
 ## Sources
 
 - ENR, "Specialty Firms Post 2025 Revenue Growth, but Hurdles Remain" — https://www.enr.com/articles/63579-specialty-firms-post-2025-revenue-growth-but-hurdles-remain
@@ -106,3 +133,23 @@ specifications (GAF, Hardie, Mule-Hide, etc.) govern the details and the warrant
 - Submittal, "What Building Code Does Omaha, NE Use?" — https://codes.submittal.app/cities/omaha/
 - ICC Digital Codes, 2018 IRC Chapter 9 Roof Assemblies — https://codes.iccsafe.org/content/IRC2018/chapter-9-roof-assemblies
 - ASCE Hazard Tool — https://ascehazardtool.org/
+- Clearstory, "2026 Specialty Contractor Change Order Report" — https://www.clearstory.build/construction-blog/2026-sc-change-order-report
+- Clearstory, "Time and material tracking" — https://www.clearstory.build/learn/time-and-material-tracking-software-and-app
+- Rhumbix, "T&M billing software for construction" — https://www.rhumbix.com/blog/tm-billing-software-construction
+- Rhumbix, "Change order tracking" — https://www.rhumbix.com/blog/change-order-tracking-construction
+- SafetyIQ, "Contractor prequalification: everything the GC asked for already existed" — https://www.safetyiq.com/blog/contractor-prequalification-everything-the-gc-asked-for-already-existed
+- Swinerton, "Subcontractor prequalification" — https://swinerton.com/subcontractor-prequalification/
+- Novak Construction, subcontractor prequal form (2026) — https://www.novakconstruction.com/wp-content/uploads/2026/05/Novak-Subcontractor-Pre-Qual-Form-FILLABLE-2026.pdf
+- Projul, "Construction bonding capacity guide" — https://projul.com/blog/construction-bonding-capacity-guide/
+- Alter Accounting, "How sureties set bonding capacity" — https://alteraccountingcpa.com/blog/how-sureties-set-bonding-capacity/
+- Higginbotham, "What is bonding capacity?" — https://www.higginbotham.com/blog/what-is-bonding-capacity/
+- BuySuretyBonds, "Bonding capacity guide" — https://buysuretybonds.com/learn/bonding-capacity-guide/
+- Grit Insurance, "WIP reporting and bonding capacity" — https://gritinsurance.com/bonds-surety/increase-bonding-capacity/work-in-progress-reporting/
+- Procore, "Construction business development" — https://www.procore.com/library/construction-business-development
+- Sendspark, "Win-back campaigns for dormant B2B accounts" — https://blog.sendspark.com/win-back-campaigns-dormant-b2b-accounts
+- Salus, "Toolbox talk template and sign-in sheet" — https://www.salussafety.io/us/toolbox-talks/template
+- Safetyfolio, "Toolbox talks: where to find them and how to use them" — https://safetyfolio.com/articles/training-requirements/toolbox-talks-pdf-free
+- The Roofing Brief, "Roofing safety & fatality report (BLS data)" — https://theroofingbrief.com/roofing-safety-fatality-report/
+- ABC STEP, maximum incidence rates by NAICS (2023) — https://step.abc.org/Documents/STEPNAICSCodes2023.pdf
+- Profitability Partners, "Roofing profit margins" — https://profitabilitypartners.io/roofing-profit-margins/
+- JobNimbus / ContractorHUB, managing a growing roofing company — https://contractorhub.app/learning-center/articles/how-to-manage-a-growing-roofing-company
