@@ -4,6 +4,7 @@ import { DocTypeSelect } from "@/components/docs/doc-type-select";
 import { ExtractButton } from "@/components/docs/extract-button";
 import { PlanReviewButton } from "@/components/docs/plan-review-button";
 import { ConvertProposalButton } from "@/components/docs/convert-proposal-button";
+import { ContractReviewButton } from "@/components/docs/contract-review-button";
 import { isOldProposal } from "@/lib/proposals/legacy";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 
@@ -97,6 +98,7 @@ export function DocList({
               <TD className="hidden text-xs whitespace-nowrap tabular-nums lg:table-cell">{when(d.uploadedAt)}</TD>
               <TD className="max-w-sm">
                 {canEdit && isOldProposal(d.fileName) && <ConvertProposalButton id={d.id} disabled={!ai} />}
+                {canEdit && /contract|subcontract|agreement|purchase order|\bpo\b|terms and conditions/i.test(d.fileName) && fileType(d) === "PDF" && <ContractReviewButton id={d.id} disabled={!ai} />}
                 {extractable && canEdit ? (
                   d.type === "EAGLEVIEW" ? (
                     <ExtractButton id={d.id} label="Read measurements" disabled={!ai} />
@@ -119,7 +121,12 @@ export function DocList({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold">Documents ({docs.length})</h2>
+        <h2 className="font-semibold">
+          Documents ({docs.length}){" "}
+          <Link href={`/library/codes?job=${projectId}`} className="ml-2 text-xs font-normal text-btr-link hover:underline">
+            Code & spec questions for this job →
+          </Link>
+        </h2>
         <div className="flex overflow-hidden rounded-md border text-sm">
           {(["folders", "list"] as const).map((v) => (
             <Link key={v} href={link({ view: v })} className={`px-3 py-1 ${view === v ? "bg-btr-black text-white" : "hover:bg-muted"}`}>

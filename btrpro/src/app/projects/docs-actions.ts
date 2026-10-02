@@ -16,6 +16,8 @@ import {
 import { importFromDrive } from "@/lib/integrations/drive";
 import { aiErrorMessage } from "@/lib/ai/claude";
 import { convertOldProposal, LegacyProposalError } from "@/lib/proposals/legacy";
+import { ContractReviewError, reviewContract } from "@/lib/docs/contract-review";
+import { redirect } from "next/navigation";
 
 export type DocsResult = {
   problems: string[];
@@ -252,4 +254,20 @@ export async function convertProposalAction(_: DocsResult, f: FormData): Promise
   } catch (e) {
     return { problems: [e instanceof LegacyProposalError ? e.message : aiErrorMessage(e)] };
   }
+}
+
+/** BTRbot reads a contract on the job and flags the risky clauses; opens the review. */
+export async function contractReviewAction(_: DocsResult, f: FormData): Promise<DocsResult> {
+  const u = await requireUser([...EDITORS]);
+  const id = String(f.get("id"));
+  let reviewId = "";
+  let projectId = "";
+  try {
+    const r = await reviewContract(id, u);
+    reviewId = r.id;
+    projectId = r.projectId;
+  } catch (e) {
+    return { problems: [e instanceof ContractReviewError ? e.message : aiErrorMessage(e)] };
+  }
+  redirect(`/projects/${projectId}/contract-review/${reviewId}`);
 }

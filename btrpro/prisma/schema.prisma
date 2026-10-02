@@ -1966,3 +1966,47 @@ model CashItem {
   createdBy String?
   createdAt DateTime @default(now())
 }
+
+// BTRbot's read of a contract / subcontract on a job: risky clauses quoted word for word, key terms, and what's missing.
+model ContractReview {
+  id         String   @id @default(cuid())
+  projectId  String
+  documentId String
+  summary    String
+  terms      Json
+  findings   Json
+  missing    Json
+  createdBy  String?
+  createdAt  DateTime @default(now())
+
+  @@index([projectId])
+  @@index([documentId])
+}
+
+// Code & spec library: links the team adds (codes, manufacturer installation instructions, standards).
+model LibraryLink {
+  id           String   @id @default(cuid())
+  // CODE | MANUFACTURER | STANDARD | LOCAL
+  kind         String
+  title        String
+  url          String
+  jurisdiction String?
+  note         String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+}
+
+// A code / spec question answered by BTRbot with live web research, with the sources it cited.
+model CodeQuestion {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  sources      Json
+  jurisdiction String?
+  projectId    String?
+  officialOnly Boolean  @default(false)
+  createdBy    String?
+  createdAt    DateTime @default(now())
+
+  @@index([projectId])
+}

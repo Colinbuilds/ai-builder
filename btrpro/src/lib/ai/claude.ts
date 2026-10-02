@@ -118,3 +118,58 @@ export function aiErrorMessage(e: unknown): string {
   }
   return e instanceof Error ? e.message : String(e);
 }
+
+export type WebSource = { url: string; title: string | null; cited: string | null };
+
+/**
+ * Research answer using live web search + fetch (server-side tools), with the pages it cited.
+ * `allowedDomains` restricts both tools to those sites (e.g. official code / manufacturer domains).
+ */
+export async function aiResearch(opts: { task: string; question: string; context?: string; allowedDomains?: string[]; effort?: Effort; maxSearches?: number }) {
+  const domains = opts.allowedDomains?.length ? { allowed_domains: opts.allowedDomains } : {};
+  const messages: Msg[] = [
+    {
+      role: "user",
+      content: [...(opts.context ? [{ type: "text" as const, text: opts.context }] : []), { type: "text" as const, text: opts.question }],
+    },
+  ];
+  const content: Anthropic.Beta.BetaContentBlock[] = [];
+  let model = MODEL;
+  // a long research turn can pause; resume by sending the paused turn back (a few times at most)
+  for (let round = 0; round < 4; round++) {
+    const res = await client().beta.messages.create({
+      model: MODEL,
+      max_tokens: 16000,
+      betas: [FALLBACK_BETA],
+      fallbacks: "default",
+      system: system(opts.task),
+      output_config: { effort: opts.effort ?? "high" },
+      tools: [
+        { type: "web_search_20260209", name: "web_search", max_uses: opts.maxSearches ?? 6, ...domains },
+        { type: "web_fetch_20260209", name: "web_fetch", max_uses: 6, ...domains },
+      ],
+      messages,
+    });
+    checkStop(res);
+    model = res.model;
+    content.push(...res.content);
+    if (res.stop_reason !== "pause_turn") break;
+    messages.push({ role: "assistant", content: res.content });
+  }
+  const text = content
+    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
+  // the pages the answer actually cites (deduplicated by URL)
+  const seen = new Map<string, WebSource>();
+  for (const b of content) {
+    if (b.type !== "text") continue;
+    for (const c of b.citations ?? []) {
+      const url = "url" in c ? (c.url as string) : null;
+      if (!url || seen.has(url)) continue;
+      seen.set(url, { url, title: "title" in c ? ((c.title as string | null) ?? null) : null, cited: "cited_text" in c ? ((c.cited_text as string | null) ?? null) : null });
+    }
+  }
+  return { text, sources: [...seen.values()], model };
+}

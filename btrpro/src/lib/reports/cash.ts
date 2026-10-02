@@ -87,7 +87,7 @@ export async function cashForecast(now = new Date()) {
 
   // ---- money in: residential work billed to builders, at their usual pace
   const [billedLines, paidLines] = await Promise.all([
-    prisma.prodLine.findMany({ where: { billedAt: { not: null }, btrPaid: null, sell: { not: null } }, select: { builder: true, location: true, sell: true, billedAt: true } }),
+    prisma.prodLine.findMany({ where: { billedAt: { not: null }, btrPaid: null, sell: { not: null }, board: { not: "COMPLETED" } }, select: { builder: true, location: true, sell: true, billedAt: true } }),
     prisma.prodLine.findMany({ where: { billedAt: { not: null }, paidAt: { not: null } }, select: { builder: true, billedAt: true, paidAt: true }, take: 2000, orderBy: { paidAt: "desc" } }),
   ]);
   const builderDays = new Map<string, number[]>();

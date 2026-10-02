@@ -108,6 +108,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       label: "Estimating",
       icon: "Wrench",
       items: [
+        { href: "/library/codes", label: "Code & spec library (BTRbot research)" },
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },
         { href: "/settings/templates", label: "Estimate templates" },

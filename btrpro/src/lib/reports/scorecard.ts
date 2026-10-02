@@ -31,7 +31,7 @@ export async function bidStats(now = new Date()) {
   const group = (k: "market" | "estimator" | "customer", min = 3) => {
     const m = new Map<string, typeof rows>();
     for (const r of rows) {
-      const v = (r[k] ?? "").trim() || "—";
+      const v = (r[k] ?? "").trim() || "Not recorded";
       m.set(v, [...(m.get(v) ?? []), r]);
     }
     return [...m.entries()]
@@ -100,7 +100,9 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
   ]);
   const backlog = r2(wip.totals.backlog + (resBacklog._sum.sell ?? 0));
   const monthly = rev12.total / 12;
-  const backlogMonths = monthly ? round(backlog / monthly, 1) : null;
+  // until BTRpro holds real billing history (invoices, pay apps, builder billing), months and shares would mislead
+  const thin = rev12.total < Math.max(250_000, backlog / 24);
+  const backlogMonths = monthly && !thin ? round(backlog / monthly, 1) : null;
   const arOpen = r2(ar.reduce((a, i) => a + Math.max(0, balanceDue(i)), 0));
   const ar60 = r2(ar.filter((i) => i.dueDate.getTime() < now.getTime() - 60 * DAY).reduce((a, i) => a + Math.max(0, balanceDue(i)), 0));
   const dso = rev90.total ? Math.round(arOpen / (rev90.total / 90)) : null;
@@ -113,7 +115,8 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
       key: "backlog",
       label: "Backlog",
       value: backlogMonths == null ? usd(backlog) : `${usd(backlog)} · ${backlogMonths} months`,
-      tone: backlogMonths == null ? "none" : backlogMonths >= 8 ? "good" : backlogMonths >= 4 ? "watch" : "bad",
+      tone: backlogMonths == null ? "none" : backlogMonths >= 8 && backlogMonths <= 15 ? "good" : backlogMonths >= 4 ? "watch" : "bad",
+      note: thin ? "Months appear once BTRpro has a year of billing (invoices, pay apps, builder billing)" : undefined,
       benchmark: "8–12 months of revenue under contract is steady; under 4 means sell now, over 15 means check crew capacity",
       href: "/reports/wip",
     },
@@ -146,7 +149,7 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
       key: "dso",
       label: "Days to get paid (DSO)",
       value: dso == null ? "—" : `${dso} days`,
-      tone: dso == null ? "none" : dso <= 45 ? "good" : dso <= 60 ? "watch" : "bad",
+      tone: dso == null || !rev90.total ? "none" : dso <= 45 ? "good" : dso <= 60 ? "watch" : "bad",
       benchmark: "Under 45 days",
       note: `${usd(arOpen)} open · ${usd(ar60)} over 60 days late`,
       href: "/reports/ar",
@@ -157,6 +160,7 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
       value: bids.rate == null ? "—" : `${bids.rate}% of ${bids.decided} decided`,
       tone: bids.rate == null ? "none" : bids.rate >= 20 ? "good" : bids.rate >= 12 ? "watch" : "bad",
       benchmark: "Hard-bid public 10–20%, competitive private 15–25%, negotiated higher. Low rates mean too many low-odds bids",
+      note: bids.bids > bids.decided ? `${(bids.bids - bids.decided).toLocaleString()} sent bids have no win/loss marked — mark results on the estimating schedule for a true rate` : undefined,
       href: "/reports/scorecard#bids",
     },
     {
@@ -170,8 +174,9 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
     {
       key: "concentration",
       label: "Biggest customer's share (12 months)",
-      value: top ? `${top.share}% · ${top.name}` : "—",
-      tone: !top ? "none" : top.share > 30 ? "bad" : top.share > 20 ? "watch" : "good",
+      value: top && !thin ? `${top.share}% · ${top.name}` : "—",
+      tone: !top || thin ? "none" : top.share > 30 ? "bad" : top.share > 20 ? "watch" : "good",
+      note: thin ? "Needs a year of billing in BTRpro to be meaningful" : undefined,
       benchmark: "Keep any one GC or builder under ~20–25% of revenue",
       href: "/reports/scorecard#customers",
     },

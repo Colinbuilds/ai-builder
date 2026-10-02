@@ -82,7 +82,7 @@ export default async function Scorecard() {
           <p className="text-xs text-muted-foreground">Open schedule lines for each crew ÷ the lines that crew finished per week over the last 8 weeks. Over ~6 weeks queued means jobs will wait — line up another crew before selling more of that work.</p>
           <Table
             head={["Crew", "Open lines", "Finishes / week", "Weeks queued"]}
-            rows={s.crews.slice(0, 20).map((c) => [c.crew, c.open, c.perWeek, c.weeks == null ? "no recent finishes" : c.weeks])}
+            rows={s.crews.slice(0, 20).map((c) => [c.crew, c.open, c.perWeek, c.weeks == null ? "no finishes logged in 8 weeks" : c.weeks])}
           />
         </section>
       </div>
