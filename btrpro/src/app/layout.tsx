@@ -120,6 +120,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
     admin: admin
       ? [
           { href: "/connections", label: "Connections (ABC, EagleView, QuickBooks)" },
+          { href: "/settings/drive-jobs", label: "Move jobs from Drive" },
           ...(staff ? [{ href: "/ideas", label: "Ideas board (office requests)" }] : []),
           { href: "/admin/users", label: "Users" },
           { href: "/updates", label: "Company updates" },

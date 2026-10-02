@@ -7,6 +7,9 @@ export function guessDocType(fileName: string, text: string, contentType?: strin
   if (contentType?.startsWith("image/") || /\.(jpe?g|png|heic|webp|gif)$/.test(name)) return "PHOTO";
   if (/eagleview/.test(name) || /eagleview|premium report|walls report|report summary.*pitch/.test(t)) return "EAGLEVIEW";
   if (/change order|\bco[ -]?#?\d|pco\b|cor\b/.test(name) || /change order (request|no\.|number)|potential change order/.test(t)) return "CHANGE_ORDER";
+  // BTR's own proposals moved from a job's Drive "Proposals" folder aren't sub proposals
+  if (/(^|› )proposals ›/.test(name) || /\(btrpro format\)/.test(name)) return "OTHER";
+  if (/(^|› )(plans|elevations) ›/.test(name)) return "PLANS";
   if (/proposal|quote|bid form/.test(name) && !/request/.test(name)) return "SUB_PROPOSAL";
   if (/spec|project manual/.test(name) || /section 07\s?\d{2}|division 07|part 1 ?- ?general/.test(t)) return "SPECS";
   if (/product data|data sheet|installation (guide|instructions)|technical data/.test(t) || /pds|tds|data ?sheet/.test(name)) return "MFR_DATA";

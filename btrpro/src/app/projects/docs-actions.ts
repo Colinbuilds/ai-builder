@@ -15,6 +15,7 @@ import {
 } from "@/lib/docs/confirm";
 import { importFromDrive } from "@/lib/integrations/drive";
 import { aiErrorMessage } from "@/lib/ai/claude";
+import { convertOldProposal, LegacyProposalError } from "@/lib/proposals/legacy";
 
 export type DocsResult = {
   problems: string[];
@@ -236,5 +237,19 @@ export async function planReviewAction(
     });
     revalidatePath(`/projects/${doc.projectId}/plans`);
     return { problems: [aiErrorMessage(e)] };
+  }
+}
+
+/** Reprints an old Drive proposal in BTR's current proposal layout (added next to the original). */
+export async function convertProposalAction(_: DocsResult, f: FormData): Promise<DocsResult> {
+  const u = await requireUser([...EDITORS]);
+  const id = String(f.get("id"));
+  const doc = await prisma.document.findUniqueOrThrow({ where: { id }, select: { projectId: true } });
+  try {
+    const r = await convertOldProposal(id, u);
+    revalidatePath(path(doc.projectId));
+    return { problems: [], ok: true, note: r.duplicate ? "Already converted — see the (BTRpro format) copy." : "Added a copy in the BTRpro layout. Check the amounts against the original." };
+  } catch (e) {
+    return { problems: [e instanceof LegacyProposalError ? e.message : aiErrorMessage(e)] };
   }
 }

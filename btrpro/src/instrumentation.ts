@@ -9,5 +9,7 @@ export async function register() {
     startProductionWatcher();
     const { startAbcWatcher } = await import("@/lib/integrations/abc");
     startAbcWatcher();
+    const { startDriveImportWorker } = await import("@/lib/import/drive-jobs");
+    startDriveImportWorker();
   }
 }

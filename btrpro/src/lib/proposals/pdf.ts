@@ -47,6 +47,30 @@ async function sections(estimateId: string) {
 let logoBytes: Buffer | null = null;
 const logo = () => (logoBytes ??= readFileSync(path.join(process.cwd(), "src/assets/btr-logo.png")));
 
+/** Everything the proposal page shows — built from a BTRpro proposal, or read from an old Drive proposal. */
+export type ProposalView = {
+  title: string;
+  date: Date;
+  number: string | null;
+  validUntil: Date | null;
+  rep: { name: string; email: string; phone: string | null } | null;
+  jobName: string;
+  who: string | null;
+  address: string | null;
+  sections: { title: string; items: Line[] }[];
+  subtotal: number | null;
+  tax: number | null;
+  extraRows: [string, string][];
+  total: number | null;
+  depositPct: number | null;
+  options: string[];
+  weWill: string[];
+  weWillNot: string[];
+  terms: string;
+  signed: { image: string | null; name: string | null; email: string | null; at: Date; ip: string | null } | null;
+  footerId: string;
+};
+
 export async function proposalPdf(p: Proposal) {
   const project = await prisma.project.findUnique({
     where: { id: p.projectId },
@@ -54,9 +78,40 @@ export async function proposalPdf(p: Proposal) {
   });
   const rep = project?.salesperson ?? (p.createdById ? await prisma.user.findUnique({ where: { id: p.createdById }, select: { name: true, email: true, phone: true } }) : null);
   const work = await sections(p.estimateId);
+  const alts = (p.alternates as Alternate[] | null) ?? [];
+  const sel = (p.selectedAlternates as string[] | null) ?? [];
+  const scope = p.scope as { weWill: string[]; weWillNot: string[] };
+  const signed = p.status === "SIGNED" && p.signedAt;
+  return renderProposal({
+    title: p.title,
+    date: p.createdAt,
+    number: p.number,
+    validUntil: p.validUntil,
+    rep,
+    jobName: project?.name ?? p.title,
+    who: p.recipientName ?? project?.clientCompany?.name ?? null,
+    address: project?.address ?? null,
+    sections: work,
+    subtotal: p.basePrice - p.taxAmount,
+    tax: p.taxAmount,
+    extraRows: signed ? alts.filter((a) => sel.includes(a.name)).map((a) => [`Option: ${a.name}`, `+ ${usd(a.price)}`]) : [],
+    total: signed && p.acceptedTotal != null ? p.acceptedTotal : p.basePrice,
+    depositPct: p.depositPct,
+    options: signed ? [] : alts.map((a) => `${a.name}${a.description ? ` — ${a.description}` : ""}: + ${usd(a.price)}`),
+    weWill: scope.weWill,
+    weWillNot: scope.weWillNot,
+    terms: p.terms,
+    signed: signed ? { image: p.signatureImage, name: p.signerName, email: p.signerEmail, at: p.signedAt!, ip: p.signerIp } : null,
+    footerId: p.number,
+  });
+}
 
+/** Draws a proposal in BTR's estimate-form layout. */
+export async function renderProposal(v: ProposalView) {
+  const rep = v.rep;
+  const work = v.sections;
   const doc = await PDFDocument.create();
-  doc.setTitle(safe(`${BTR.name} — ${p.title}`));
+  doc.setTitle(safe(`${BTR.name} — ${v.title}`));
   doc.setProducer("BTRpro");
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -121,22 +176,22 @@ export async function proposalPdf(p: Proposal) {
     t(rep.email, hx, (hy -= 11));
   }
   // title, right aligned, wrapped to two lines like the form
-  const titleLines = wrap(p.title, font, 22, 230);
+  const titleLines = wrap(v.title, font, 22, 230);
   let ty = y + 6;
   for (const l of titleLines) t(l, W - M, (ty -= 24), { size: 22, right: true });
-  t(day(p.createdAt), W - M, (ty -= 17), { size: 10, right: true });
-  t(`Proposal ${p.number}`, W - M, (ty -= 11), { size: 8, right: true, c: SOFT });
-  if (p.validUntil) t(`Valid until ${day(p.validUntil)}`, W - M, (ty -= 10), { size: 8, right: true, c: SOFT });
+  t(day(v.date), W - M, (ty -= 17), { size: 10, right: true });
+  if (v.number) t(`Proposal ${v.number}`, W - M, (ty -= 11), { size: 8, right: true, c: SOFT });
+  if (v.validUntil) t(`Valid until ${day(v.validUntil)}`, W - M, (ty -= 10), { size: 8, right: true, c: SOFT });
   y = Math.min(hy, ty) - 40;
 
   // ---------- customer + work box ----------
   const boxTop = y;
   const pad = 14;
-  const who = p.recipientName ?? project?.clientCompany?.name ?? null;
-  const [street, ...rest] = (project?.address ?? "").split(",").map((s) => s.trim());
+  const who = v.who;
+  const [street, ...rest] = (v.address ?? "").split(",").map((s) => s.trim());
   y -= 16;
-  t(project?.name ?? p.title, M + pad, y, { f: bold, size: 9 });
-  if (who && who !== project?.name) t(who, M + pad, (y -= 11));
+  t(v.jobName, M + pad, y, { f: bold, size: 9 });
+  if (who && who !== v.jobName) t(who, M + pad, (y -= 11));
   if (street) t(street, M + pad, (y -= 11));
   if (rest.length) t(rest.join(", "), M + pad, (y -= 11));
   y -= 20;
@@ -175,12 +230,10 @@ export async function proposalPdf(p: Proposal) {
     y -= 14;
   }
   // subtotal at the bottom of the box (price before tax; TOTAL below matches the proposal price)
-  const total = p.status === "SIGNED" && p.acceptedTotal != null ? p.acceptedTotal : p.basePrice;
-  const subtotal = p.basePrice - p.taxAmount;
   room(40);
   y -= 4;
   page.drawLine({ start: { x: M + pad + 6, y }, end: { x: W - M - pad, y }, thickness: 1.2, color: INK });
-  t(usd(subtotal), W - M - pad, y - 18, { f: bold, size: 9, right: true });
+  if (v.subtotal != null) t(usd(v.subtotal), W - M - pad, y - 18, { f: bold, size: 9, right: true });
   y -= 30;
   closeBox(y);
   for (const b of boxPages) b.page.drawRectangle({ x: M, y: b.bottom, width: W - 2 * M, height: b.top - b.bottom, borderColor: LINE, borderWidth: 1 });
@@ -196,12 +249,10 @@ export async function proposalPdf(p: Proposal) {
     y -= h;
   };
   y -= 10;
-  row("Tax", usd(p.taxAmount));
-  const alts = (p.alternates as Alternate[] | null) ?? [];
-  const sel = (p.selectedAlternates as string[] | null) ?? [];
-  if (p.status === "SIGNED") for (const a of alts.filter((a) => sel.includes(a.name))) row(`Option: ${a.name}`, `+ ${usd(a.price)}`);
-  row("TOTAL", usd(total), true);
-  if (p.depositPct) row(`Deposit due at signing (${p.depositPct}%)`, usd((total * p.depositPct) / 100));
+  if (v.tax != null) row("Tax", usd(v.tax));
+  for (const [l, val] of v.extraRows) row(l, val);
+  if (v.total != null) row("TOTAL", usd(v.total), true);
+  if (v.depositPct && v.total != null) row(`Deposit due at signing (${v.depositPct}%)`, usd((v.total * v.depositPct) / 100));
   y -= 18;
 
   // ---------- options, scope, terms (only what's filled in) ----------
@@ -218,11 +269,10 @@ export async function proposalPdf(p: Proposal) {
       }
     y -= 8;
   };
-  if (p.status !== "SIGNED") block("Options (add to the total if selected)", alts.map((a) => `${a.name}${a.description ? ` — ${a.description}` : ""}: + ${usd(a.price)}`));
-  const scope = p.scope as { weWill: string[]; weWillNot: string[] };
-  block("We Will", scope.weWill.map((s) => `• ${s}`));
-  block("We Will Not", scope.weWillNot.map((s) => `• ${s}`));
-  if (p.terms.trim()) block("Terms", [p.terms], 7.5);
+  block("Options (add to the total if selected)", v.options);
+  block("We Will", v.weWill.map((s) => `• ${s}`));
+  block("We Will Not", v.weWillNot.map((s) => `• ${s}`));
+  if (v.terms.trim()) block("Terms", [v.terms], 7.5);
 
   // ---------- signatures ----------
   room(150);
@@ -246,9 +296,9 @@ export async function proposalPdf(p: Proposal) {
     y -= 58;
   };
   await sig("Company Authorized Signature");
-  if (p.status === "SIGNED" && p.signedAt) {
-    await sig("Customer Signature", { image: p.signatureImage, name: p.signerName ?? undefined, date: p.signedAt });
-    t(`Signed electronically by ${p.signerName} (${p.signerEmail}) · ${p.signedAt.toISOString()} · IP ${p.signerIp ?? "unknown"}`, M, y + 40, { size: 6.5, c: SOFT });
+  if (v.signed) {
+    await sig("Customer Signature", { image: v.signed.image, name: v.signed.name ?? undefined, date: v.signed.at });
+    t(`Signed electronically by ${v.signed.name} (${v.signed.email}) · ${v.signed.at.toISOString()} · IP ${v.signed.ip ?? "unknown"}`, M, y + 40, { size: 6.5, c: SOFT });
     await sig("Customer Signature");
   } else {
     await sig("Customer Signature");
@@ -257,7 +307,7 @@ export async function proposalPdf(p: Proposal) {
 
   const pages = doc.getPages();
   pages.forEach((pg, i) => {
-    if (pages.length > 1) pg.drawText(safe(`${BTR.name} · ${p.number} · Page ${i + 1} of ${pages.length}`), { x: M, y: 20, size: 7, font, color: SOFT });
+    if (pages.length > 1) pg.drawText(safe(`${BTR.name} · ${v.footerId} · Page ${i + 1} of ${pages.length}`), { x: M, y: 20, size: 7, font, color: SOFT });
   });
   return doc.save();
 }

@@ -3,6 +3,8 @@ import type { Document, ExtractionRun } from "@prisma/client";
 import { DocTypeSelect } from "@/components/docs/doc-type-select";
 import { ExtractButton } from "@/components/docs/extract-button";
 import { PlanReviewButton } from "@/components/docs/plan-review-button";
+import { ConvertProposalButton } from "@/components/docs/convert-proposal-button";
+import { isOldProposal } from "@/lib/proposals/legacy";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 
 export type DocRow = Document & { runs: ExtractionRun[]; jobEmail: { subject: string } | null };
@@ -11,6 +13,7 @@ export const FOLDERS = [
   "Email documents",
   "Measurement reports",
   "Plans & specs",
+  "Our proposals",
   "Job paperwork",
   "Receipts & invoices",
   "Delivery tickets",
@@ -27,6 +30,7 @@ export function docFolder(d: Pick<Document, "type" | "source" | "jobEmailId" | "
   if (d.type === "EAGLEVIEW") return "Measurement reports";
   if (d.type === "PLANS" || d.type === "SPECS") return "Plans & specs";
   if (d.type === "CHANGE_ORDER") return "Change orders";
+  if (/(^|› )proposals ›|\(btrpro format\)/i.test(d.fileName)) return "Our proposals";
   if (d.type === "SUB_PROPOSAL") return "Sub proposals";
   if (d.type === "MFR_DATA") return "Manufacturer data";
   if (/^delivery ticket/i.test(d.fileName)) return "Delivery tickets";
@@ -92,6 +96,7 @@ export function DocList({
               <TD className="hidden text-xs md:table-cell">{by(d)}</TD>
               <TD className="hidden text-xs whitespace-nowrap tabular-nums lg:table-cell">{when(d.uploadedAt)}</TD>
               <TD className="max-w-sm">
+                {canEdit && isOldProposal(d.fileName) && <ConvertProposalButton id={d.id} disabled={!ai} />}
                 {extractable && canEdit ? (
                   d.type === "EAGLEVIEW" ? (
                     <ExtractButton id={d.id} label="Read measurements" disabled={!ai} />

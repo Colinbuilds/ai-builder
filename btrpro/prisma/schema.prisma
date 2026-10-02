@@ -219,6 +219,8 @@ model Project {
   companyCamId       String?
   // Drive folder CompanyCam syncs this job's photos into (BTR Contracting/CompanyCam/<project - address>)
   photoFolderId      String?
+  // the job's folder in the company jobs Drive (set by the Drive job import; files copied, Drive untouched)
+  driveFolderId      String?
   eagleViewReportId  String?
   eagleViewOrderedAt DateTime?
   leadSource         String?
@@ -1904,4 +1906,27 @@ model SupplierFeed {
   @@unique([provider, kind, externalId])
   @@index([projectId])
   @@index([date])
+}
+
+// One job folder in the company jobs Drive, found by the Drive job import (Settings → Move jobs from Drive).
+// Drive is only read; files are copied into the BTRpro job's Documents.
+model DriveJobFolder {
+  id          String    @id @default(cuid())
+  folderId    String    @unique
+  name        String
+  modifiedAt  DateTime?
+  // PENDING | DONE | ERROR | SKIPPED
+  status      String    @default("PENDING")
+  fileCount   Int?
+  totalBytes  Float?
+  filesAdded  Int       @default(0)
+  filesSkipped Int      @default(0)
+  errors      Json?
+  projectId   String?
+  matchedBy   String?
+  lastRunAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
 }

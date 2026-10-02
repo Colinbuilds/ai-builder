@@ -37,8 +37,12 @@ export type CompanySettings = {
   abcBillTo: string | null; // ABC Supply bill-to account number (invoice history is read for it)
   abcSyncedAt: string | null; // ISO time of the last ABC background sync
   abcSyncError: string | null; // last ABC sync problem, cleared on success
+  jobsDriveId: string | null; // the shared drive (or folder) holding one folder per job; blank = BTR's jobs drive
+  driveImportMonths: number | null; // how far back the Drive job import looks; blank = 12
+  driveImportOn: boolean | null; // true while the background import is running
+  driveImportScannedAt: string | null;
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError", "jobsDriveId", "driveImportMonths", "driveImportOn", "driveImportScannedAt"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });
