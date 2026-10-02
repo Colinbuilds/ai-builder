@@ -2097,3 +2097,59 @@ model Sop {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }
+
+// ---------- Public bids ----------
+// Bid boards BTRpro reads every morning: SDI's plan room, county/city IonWave and CivicEngage boards,
+// any other page (read by BTRbot), and SAM.gov federal work. Each posting lands in PublicBid for triage.
+model BidSource {
+  id            String      @id @default(cuid())
+  name          String
+  // SDI | IONWAVE | CIVIC | PAGE | SAM
+  kind          String
+  url           String
+  // used when a posting doesn't say where (a county board's own town)
+  defaultCity   String?
+  defaultState  String?
+  enabled       Boolean     @default(true)
+  builtIn       Boolean     @default(false)
+  lastCheckedAt DateTime?
+  lastOkAt      DateTime?
+  lastError     String?
+  lastCount     Int?
+  contentHash   String?
+  createdBy     String?
+  createdAt     DateTime    @default(now())
+  bids          PublicBid[]
+}
+
+model PublicBid {
+  id            String    @id @default(cuid())
+  sourceId      String
+  source        BidSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  key           String    @unique
+  title         String
+  number        String?
+  agency        String?
+  city          String?
+  state         String?
+  dueAt         DateTime?
+  postedAt      DateTime?
+  url           String?
+  summary       String?
+  // straight-line miles to the nearer of Omaha / Lincoln (null = town not found)
+  miles         Float?
+  nearest       String?
+  // ROOFING | EXTERIOR | BUILDING | OTHER
+  relevance     String
+  // NEW | WATCH | PASS | ADDED
+  status        String    @default("NEW")
+  decidedBy     String?
+  decidedAt     DateTime?
+  estimateLogId String?
+  firstSeenAt   DateTime  @default(now())
+  lastSeenAt    DateTime  @default(now())
+  // no longer listed on the source
+  gone          Boolean   @default(false)
+
+  @@index([status, dueAt])
+}

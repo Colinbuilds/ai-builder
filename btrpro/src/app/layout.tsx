@@ -112,6 +112,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       label: "Estimating",
       icon: "Wrench",
       items: [
+        ...(staff ? [{ href: "/bids", label: "Public bids (county, city, SDI plan room)" }] : []),
         { href: "/library/codes", label: "Code & spec library (BTRbot research)" },
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },

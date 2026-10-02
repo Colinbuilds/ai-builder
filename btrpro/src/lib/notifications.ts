@@ -155,5 +155,7 @@ export async function topBarCounts(userId: string) {
   ]);
   const seen = user?.notificationsSeenAt ?? new Date(0);
   const feed = await notificationFeed(userId, 100);
-  return { bell: feed.filter((n) => n.at > seen && n.kind !== "task").length, mentions: mentions.length, tasks };
+  const { newBidCount } = await import("@/lib/bids/service");
+  const bids = await newBidCount().catch(() => 0);
+  return { bell: feed.filter((n) => n.at > seen && n.kind !== "task").length, mentions: mentions.length, tasks, bids };
 }

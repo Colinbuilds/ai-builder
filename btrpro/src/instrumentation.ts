@@ -11,5 +11,7 @@ export async function register() {
     startAbcWatcher();
     const { startDriveImportWorker } = await import("@/lib/import/drive-jobs");
     startDriveImportWorker();
+    const { startBidWatcher } = await import("@/lib/bids/service");
+    startBidWatcher();
   }
 }
