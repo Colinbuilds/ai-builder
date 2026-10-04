@@ -157,5 +157,7 @@ export async function topBarCounts(userId: string) {
   const feed = await notificationFeed(userId, 100);
   const { newBidCount } = await import("@/lib/bids/service");
   const bids = await newBidCount().catch(() => 0);
-  return { bell: feed.filter((n) => n.at > seen && n.kind !== "task").length, mentions: mentions.length, tasks, bids };
+  // website requests nobody has assigned yet (everyone sees it; the sales manager also gets a task)
+  const webLeads = await prisma.webLead.count({ where: { status: "NEW" } });
+  return { bell: feed.filter((n) => n.at > seen && n.kind !== "task").length, mentions: mentions.length, tasks, bids, webLeads };
 }

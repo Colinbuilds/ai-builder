@@ -41,6 +41,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
         { href: "/jobs", label: "All open jobs" },
         { href: "/jobs?mine=1", label: "My jobs" },
         { href: "/jobs?stage=LEAD", label: "Leads" },
+        { href: "/leads/web", label: "Website requests (customer form)" },
         { href: "/jobs?watch=1", label: "Watch list" },
         { heading: "By milestone" },
         { href: "/jobs?m=LEAD", label: "Lead" },

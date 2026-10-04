@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Bell,
   Gavel,
+  Inbox,
   BookUser,
   Calendar,
   CalendarDays,
@@ -46,7 +47,7 @@ export function TopBar({
   adminLinks,
 }: {
   user: { name: string; role: string };
-  counts: { bell: number; mentions: number; tasks: number; watching: number; bids?: number };
+  counts: { bell: number; mentions: number; tasks: number; watching: number; bids?: number; webLeads?: number };
   recent: RecentJob[];
   tools: Tool[];
   view: string;
@@ -143,13 +144,14 @@ export function TopBar({
             button={
               <>
                 <Bell size={18} />
-                <Dot n={counts.bell + counts.mentions + counts.tasks + (counts.bids ?? 0)} />
+                <Dot n={counts.bell + counts.mentions + counts.tasks + (counts.bids ?? 0) + (counts.webLeads ?? 0)} />
               </>
             }
           >
             <NoteRow label="Notifications" n={counts.bell} onClick={() => setDrawer("all")} icon={<Bell size={15} />} />
             <NoteRow label="Mentions of me" n={counts.mentions} onClick={() => setDrawer("mentions")} icon={<AtSign size={15} />} />
             <NoteRow label="My day — tasks due" n={counts.tasks} href="/today" icon={<Calendar size={15} />} />
+            <NoteRow label="Website requests to assign" n={counts.webLeads ?? 0} href="/leads/web" icon={<Inbox size={15} />} />
             <NoteRow label="New public bids to review" n={counts.bids ?? 0} href="/bids" icon={<Gavel size={15} />} />
             <NoteRow label="Watch list" n={counts.watching} href="/jobs?watch=1" icon={<Pin size={15} />} />
             <NoteRow label="Company updates" href="/updates" icon={<Megaphone size={15} />} />

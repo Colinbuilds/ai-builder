@@ -233,6 +233,7 @@ model Project {
   payContracts       PayContract[]
   // ready-to-schedule items ticked by hand: { color, permit, dumpster, notified }
   readyChecks        Json?
+  webLeads           WebLead[]
   // the customer's property this job is at (multi-family / commercial portfolios)
   propertyId         String?
   property           Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
@@ -2152,4 +2153,58 @@ model PublicBid {
   gone          Boolean   @default(false)
 
   @@index([status, dueAt])
+}
+
+// ---------- Customer request form (public link) ----------
+// A homeowner or property manager fills in /quote: who they are, the property, what they want done, photos.
+// It becomes a LEAD job right away; they can then try looks on their own photo (renderings); the sales
+// manager assigns a salesperson, who sets up the inspection.
+model WebLead {
+  id              String    @id @default(cuid())
+  token           String    @unique
+  projectId       String?
+  project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  firstName       String
+  lastName        String
+  phone           String
+  email           String
+  contactPref     String? // CALL | TEXT | EMAIL
+  textOk          Boolean   @default(false)
+  street          String
+  city            String
+  state           String
+  zip             String
+  // HOME | TOWNHOME | MULTIFAMILY | COMMERCIAL | CHURCH_SCHOOL | OTHER
+  propertyType    String
+  // OWNER | PROPERTY_MANAGER | TENANT | BUILDER | OTHER
+  relationship    String
+  workTypes       Json
+  description     String
+  stories         String?
+  currentRoof     String?
+  roofAge         String?
+  insurance       Boolean   @default(false)
+  insuranceCarrier String?
+  claimNumber     String?
+  dateOfLoss      DateTime?
+  timeline        String?
+  heardFrom       String?
+  inspectionTimes String?
+  // [{ url, type }]
+  photos          Json
+  // [{ url, label, choices, favorite, at }]
+  renderings      Json?
+  renderCount     Int       @default(0)
+  // NEW | ASSIGNED | SCHEDULED | CLOSED
+  status          String    @default("NEW")
+  assignedToId    String?
+  assignedAt      DateTime?
+  assignedBy      String?
+  inspectionAt    DateTime?
+  inspectionWhen  String?
+  ip              String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status, createdAt])
 }
