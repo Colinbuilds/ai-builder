@@ -122,3 +122,30 @@ describe("AI draft takeoff", () => {
     expect(t.totals.find((x) => x.key === "siding_starter_lf")?.raw).toBe(10);
   });
 });
+
+describe("returns at decks and entries (BTRbot)", () => {
+  it("passes return heights from the elevation and lengths only from printed dimensions", async () => {
+    const { aiDraftTakeoff, aiReadSheet } = await import("@/lib/takeoff/ai");
+    const seen: unknown[] = [];
+    const fake = (output: unknown) => setAiClientForTests({ beta: { messages: { parse: async (b: unknown) => (seen.push(b), { stop_reason: "end_turn", model: "fake", parsed_output: output }) } } } as never);
+    fake({
+      sheet: "north elevation",
+      sheet_type: "ELEVATION",
+      printed_scale: null,
+      items: [],
+      scale_bar: null,
+      counted: { windows: 0, doors: 1, patio_sliders: 0, garage_doors: 0 },
+      cannot_trace: [],
+      returns: [{ where: "front entry", sides: 2, top: { x: 500, y: 200 }, bottom: { x: 500, y: 800 } }],
+    });
+    const r = await aiDraftTakeoff({ imageBase64: "AAAA", mediaType: "image/jpeg", region: { x: 0, y: 0, w: 1000, h: 1000 }, view: "ELEVATION" });
+    expect(r.returns).toEqual([{ where: "front entry", sides: 2, heightPts: [[500, 200], [500, 800]] }]);
+    expect(JSON.stringify(seen[0])).toMatch(/RETURNS \(elevations\)/);
+    fake({ views: [], notes: [], printed_scale: null, returns: [{ where: "front entry", depth_as_printed: "6'-0\"", found_on: "MAIN FLOOR PLAN" }, { where: "rear deck", depth_as_printed: null, found_on: null }] });
+    const s = await aiReadSheet({ imageBase64: "AAAA", mediaType: "image/jpeg" });
+    expect(s.returns).toEqual([
+      { where: "front entry", depthFt: 6, printed: "6'-0\"", foundOn: "MAIN FLOOR PLAN" },
+      { where: "rear deck", depthFt: null, printed: null, foundOn: null },
+    ]);
+  });
+});

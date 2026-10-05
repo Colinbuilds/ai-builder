@@ -15,8 +15,10 @@ import {
   round,
   TAKEOFF_TYPES,
   TYPE_BY_ID,
+  returnHeight,
   type PageTakeoff,
   type Pt,
+  type WallReturn,
   type Scale,
   type TakeoffItem,
   type View,
@@ -65,6 +67,8 @@ export function TakeoffEditor({
   const [pitch, setPitch] = useState<number | null>(initial?.pitch ?? null);
   const [scale, setScale] = useState<Scale | null>(initial?.scale ?? null);
   const [items, setItems] = useState<TakeoffItem[]>(initial?.items ?? []);
+  const [returns, setReturns] = useState<WallReturn[]>(initial?.returns ?? []);
+  const [returnsChecked, setReturnsChecked] = useState(!!initial?.returnsChecked);
   const [typeId, setTypeId] = useState(initial?.view === "ELEVATION" ? "wall_area" : "roof_area");
   const [mode, setMode] = useState<Mode>(canEdit ? (initial?.scale ? "draw" : "calibrate") : "pan");
   const [draft, setDraft] = useState<Pt[]>([]);
@@ -92,7 +96,7 @@ export function TakeoffEditor({
   const dirty = useRef(false);
 
   const type = TYPE_BY_ID.get(typeId)!;
-  const pageData: PageTakeoff = useMemo(() => ({ view, pitch, scale, items }), [view, pitch, scale, items]);
+  const pageData: PageTakeoff = useMemo(() => ({ view, pitch, scale, items, returns, returnsChecked }), [view, pitch, scale, items, returns, returnsChecked]);
   const { totals, problems } = useMemo(() => pageTotals(pageData, allowancePct), [pageData, allowancePct]);
 
   // ---------- load the sheet ----------
@@ -216,6 +220,12 @@ export function TakeoffEditor({
     setItems(next);
     touch();
   };
+  const editReturns = (next: WallReturn[]) => {
+    setReturns(next);
+    touch();
+  };
+  const patchReturn = (id: string, p: Partial<WallReturn>) => editReturns(returns.map((r) => (r.id === id ? { ...r, ...p } : r)));
+  const newId = () => `r${Math.random().toString(36).slice(2, 9)}`;
   const undo = () => {
     if (draft.length) return setDraft((d) => d.slice(0, -1));
     setHistory((h) => {
@@ -259,8 +269,27 @@ export function TakeoffEditor({
 
   type Ok = Extract<Awaited<ReturnType<typeof aiMeasureAction>>, { ok: true }>;
   /** Folds BTRbot results into the sheet: drafts, the detected view, a scale from the scale bar, and a summary. */
-  const applyAi = (results: { label: string; r: Ok }[], notes: string[], cannot: string[]) => {
+  type Printed = { where: string; depthFt: number | null; printed: string | null; foundOn: string | null };
+  const applyAi = (results: { label: string; r: Ok }[], notes: string[], cannot: string[], printed: Printed[] = []) => {
     const drawn = results.flatMap((x) => x.r.items);
+    // returns: heights come from the elevation, lengths only from a printed dimension (matched by kind of recess)
+    const KINDS = ["entry", "porch", "deck", "balcon", "patio", "alcove", "stoop", "garage", "breezeway"];
+    const kindOf = (t: string) => KINDS.find((k) => t.toLowerCase().includes(k)) ?? null;
+    const found: WallReturn[] = results.flatMap((x) =>
+      (x.r.returns ?? []).map((rt) => {
+        const k = kindOf(rt.where);
+        const match = k ? printed.filter((p) => p.depthFt != null && kindOf(p.where) === k) : [];
+        const one = match.length === 1 ? match[0] : null;
+        return { id: newId(), where: `${x.label}: ${rt.where}`.slice(0, 200), depthFt: one?.depthFt ?? null, heightFt: null, heightPts: rt.heightPts, sides: rt.sides, masonry: false, source: one ? `Printed ${one.printed}${one.foundOn ? ` on ${one.foundOn}` : ""}`.slice(0, 200) : null, ai: true };
+      }),
+    );
+    if (found.length) {
+      editReturns([...returns, ...found]);
+      const missing = found.filter((f) => f.depthFt == null).length;
+      notes.push(`Found ${found.length} return${found.length === 1 ? "" : "s"} at decks/entries${missing ? ` — ${missing} need${missing === 1 ? "s" : ""} the length from the floor plan` : ""}. Check them under Returns.`);
+    }
+    const listed = printed.filter((p) => p.printed);
+    if (listed.length) notes.push(`Return lengths printed on this sheet: ${listed.map((p) => `${p.where} ${p.printed}${p.foundOn ? ` (${p.foundOn})` : ""}`).join("; ")}.`);
     const detected = results.find((x) => x.r.detectedView)?.r.detectedView ?? null;
     if (detected && detected !== view) {
       setView(detected);
@@ -348,7 +377,7 @@ export function TakeoffEditor({
         cannot.push(...r.cannotTrace.map((c) => `${v.title}: ${c}`));
       }
       if (!results.length) return setAi({ busy: false, message: "BTRbot couldn't trace this sheet.", cannot });
-      applyAi(results, notes, cannot);
+      applyAi(results, notes, cannot, read.returns ?? []);
     } catch (e) {
       setAi({ busy: false, message: e instanceof Error ? e.message : "Couldn't capture the sheet." });
     }
@@ -915,6 +944,86 @@ export function TakeoffEditor({
                 </div>
               )}
               <p className="mt-2 text-xs text-muted-foreground">BTRbot only draws; lengths and areas come from this sheet&apos;s checked scale. Set and check the scale first.</p>
+            </div>
+          )}
+
+          {(view === "ELEVATION" || returns.length > 0) && (
+            <div className="rounded-md border border-amber-300 p-3">
+              <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Returns at decks &amp; entries</div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Recessed entries, porches, covered decks and balconies have side walls (returns) that run straight back — they don&apos;t show on an elevation. Read the floor plan (or deck plan)
+                for each return&apos;s length. Never guess it.
+              </p>
+              {returns.map((r) => {
+                const h = returnHeight(r, scale);
+                return (
+                  <div key={r.id} className={`mt-2 flex flex-col gap-1 rounded border p-2 text-xs ${r.ai ? "border-dashed border-violet-400" : ""}`}>
+                    <input value={r.where} disabled={!canEdit} onChange={(e) => patchReturn(r.id, { where: e.target.value.slice(0, 200) })} className="h-7 rounded border px-1" placeholder="Where (e.g. front entry)" />
+                    <div className="flex flex-wrap items-center gap-1">
+                      <label className="flex items-center gap-1">
+                        Length
+                        <input
+                          defaultValue={r.depthFt != null ? fmtFeet(r.depthFt) : ""}
+                          disabled={!canEdit}
+                          placeholder="from floor plan"
+                          onBlur={(e) => patchReturn(r.id, { depthFt: parseFeet(e.target.value), source: r.source ?? (e.target.value ? "Typed from the floor plan" : null) })}
+                          className={`h-7 w-24 rounded border px-1 ${r.depthFt == null ? "border-red-400" : ""}`}
+                        />
+                      </label>
+                      <label className="flex items-center gap-1">
+                        Height
+                        <input
+                          defaultValue={r.heightFt != null ? fmtFeet(r.heightFt) : ""}
+                          disabled={!canEdit}
+                          placeholder={h != null ? `${fmtFeet(h)} measured` : "ft"}
+                          onBlur={(e) => patchReturn(r.id, { heightFt: parseFeet(e.target.value) })}
+                          className="h-7 w-24 rounded border px-1"
+                        />
+                      </label>
+                      <select value={r.sides} disabled={!canEdit} onChange={(e) => patchReturn(r.id, { sides: Number(e.target.value) })} className="h-7 rounded border px-1">
+                        {[1, 2, 3, 4].map((n) => (
+                          <option key={n} value={n}>
+                            {n} side{n === 1 ? "" : "s"}
+                          </option>
+                        ))}
+                      </select>
+                      <label className="flex items-center gap-1">
+                        <input type="checkbox" checked={r.masonry} disabled={!canEdit} onChange={(e) => patchReturn(r.id, { masonry: e.target.checked })} /> masonry
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground">
+                        {r.depthFt != null && h != null ? `${round(r.depthFt * h * r.sides, 1)} SF` : "needs length and height"}
+                        {r.source && ` · ${r.source}`}
+                      </span>
+                      {canEdit && (
+                        <span className="flex gap-2">
+                          {r.ai && (
+                            <button type="button" onClick={() => patchReturn(r.id, { ai: undefined })} className="text-violet-700 hover:underline">
+                              Accept
+                            </button>
+                          )}
+                          <button type="button" onClick={() => editReturns(returns.filter((x) => x.id !== r.id))} className="text-muted-foreground hover:underline">
+                            Delete
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {canEdit && (
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <button type="button" onClick={() => { setReturnsChecked(false); editReturns([...returns, { id: newId(), where: "", depthFt: null, heightFt: null, heightPts: null, sides: 2, masonry: false, source: null }]); }} className="rounded-md border px-2 py-1 hover:bg-accent">
+                    + Add a return
+                  </button>
+                  {!returns.length && (
+                    <label className="flex items-center gap-1">
+                      <input type="checkbox" checked={returnsChecked} onChange={(e) => { setReturnsChecked(e.target.checked); touch(); }} /> No returns on this elevation
+                    </label>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

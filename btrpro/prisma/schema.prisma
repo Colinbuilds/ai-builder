@@ -1603,6 +1603,8 @@ model PlanTakeoff {
   pitch      Float?
   scale      Json?
   items      Json
+  // { list: WallReturn[], checked: boolean } — returns at decks/entries (depth from the floor plan)
+  returns    Json?
   // sheet size in its own units, so totals can be re-computed without opening the file
   width      Float?
   height     Float?

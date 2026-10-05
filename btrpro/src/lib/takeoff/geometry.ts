@@ -65,7 +65,38 @@ export type Scale = {
   /** a second known dimension measured to confirm the scale */
   check?: { expectedFt: number; measuredFt: number; diffPct: number } | null;
 };
-export type PageTakeoff = { view: View; pitch: number | null; scale: Scale | null; items: TakeoffItem[] };
+/**
+ * A return: the side wall of a recessed entry, porch, covered deck or balcony. It runs straight back from the
+ * face of the elevation, so the elevation can't show its length — the depth has to be read off the floor plan
+ * (or deck plan / section). Height can be typed or measured on the elevation (two points, using the scale).
+ */
+export type WallReturn = {
+  id: string;
+  where: string;
+  depthFt: number | null;
+  heightFt: number | null;
+  heightPts?: [Pt, Pt] | null;
+  sides: number;
+  masonry: boolean;
+  source: string | null;
+  ai?: boolean;
+};
+export type PageTakeoff = { view: View; pitch: number | null; scale: Scale | null; items: TakeoffItem[]; returns?: WallReturn[]; returnsChecked?: boolean };
+
+/** A return's height: typed, else measured from its two points with the sheet scale. */
+export const returnHeight = (r: WallReturn, scale: Scale | null) => r.heightFt ?? (r.heightPts && scale ? round(Math.abs(r.heightPts[1][1] - r.heightPts[0][1]) / scale.upf, 2) : null);
+
+/** What still needs doing before an elevation's returns can be counted. */
+export function returnIssues(page: PageTakeoff) {
+  const rs = page.returns ?? [];
+  const hasWalls = page.items.some((i) => i.type === "wall_area");
+  return {
+    drafts: rs.filter((r) => r.ai).length,
+    noDepth: rs.filter((r) => !r.ai && r.depthFt == null).length,
+    noHeight: rs.filter((r) => !r.ai && returnHeight(r, page.scale) == null).length,
+    unchecked: page.view === "ELEVATION" && hasWalls && !rs.length && !page.returnsChecked,
+  };
+}
 
 export const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
 const dist = (a: Pt, b: Pt) => Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -212,10 +243,27 @@ export function pageTotals(page: PageTakeoff, allowancePct = 1): { totals: Total
   if (drafts) problems.push(`${drafts} BTRbot-drawn item${drafts === 1 ? " isn't" : "s aren't"} reviewed yet and ${drafts === 1 ? "isn't" : "aren't"} counted. Check each one against the plan, then accept or delete.`);
   const roof = sums.get("roof_total_sf");
   if (roof) add("roof_sq", "Roof squares", "SQ", roof.raw / 100);
+  // returns at decks / entries: depth (from the floor plan) × height × sides; masonry returns aren't siding
+  let returnSiding = 0;
+  for (const r of page.returns ?? []) {
+    const h = returnHeight(r, page.scale);
+    if (r.ai || r.depthFt == null || h == null) continue;
+    const sf = r.depthFt * h * Math.max(1, r.sides);
+    if (r.masonry) add("masonry_return_sf", "Masonry returns (not siding)", "SF", sf);
+    else {
+      add("return_sf", "Wall returns at decks / entries", "SF", sf);
+      returnSiding += sf;
+    }
+  }
+  const ri = returnIssues(page);
+  if (ri.drafts) problems.push(`${ri.drafts} BTRbot-found return${ri.drafts === 1 ? " isn't" : "s aren't"} reviewed yet. Check each against the floor plan, then accept or delete.`);
+  if (ri.noDepth) problems.push(`${ri.noDepth} return${ri.noDepth === 1 ? " has" : "s have"} no length. Read the floor plan (or deck plan) for the return length — never guess it from the elevation.`);
+  if (ri.noHeight) problems.push(`${ri.noHeight} return${ri.noHeight === 1 ? " has" : "s have"} no height. Type it, or measure it on the elevation.`);
+  if (ri.unchecked) problems.push("Check for returns at decks and entryways — recessed walls don't show on an elevation. Add each return with its length from the floor plan, or tick “No returns on this elevation”.");
   const wall = sums.get("wall_total_sf");
-  if (wall) {
-    const net = wall.raw - (sums.get("masonry_sf")?.raw ?? 0) - ((sums.get("openings_sf")?.raw ?? 0) - openingsInMasonry);
-    add("siding_sf", "Siding (wall − masonry − openings in siding)", "SF", Math.max(0, net));
+  if (wall || returnSiding) {
+    const net = (wall?.raw ?? 0) + returnSiding - (sums.get("masonry_sf")?.raw ?? 0) - ((sums.get("openings_sf")?.raw ?? 0) - openingsInMasonry);
+    add("siding_sf", `Siding (wall${returnSiding ? " + returns" : ""} − masonry − openings in siding)`, "SF", Math.max(0, net));
     const shake = sums.get("shake_sf")?.raw ?? 0;
     if (shake > 0) add("lap_siding_sf", "Lap siding (siding − shake)", "SF", Math.max(0, net - shake));
   }

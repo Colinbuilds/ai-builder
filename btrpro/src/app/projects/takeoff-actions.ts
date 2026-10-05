@@ -44,6 +44,7 @@ export type AiMeasureResult =
       scaleBar: { a: [number, number]; b: [number, number]; feet: number } | null;
       counted: { windows: number; doors: number; patio_sliders: number; garage_doors: number };
       cannotTrace: string[];
+      returns: { where: string; sides: number; heightPts: [[number, number], [number, number]] }[];
       dropped: number;
     }
   | { ok: false; message: string };
@@ -65,7 +66,9 @@ export async function aiMeasureAction(
   }
 }
 
-export type AiSheetResult = { ok: true; views: Awaited<ReturnType<typeof aiReadSheet>>["views"]; notes: string[]; printedScale: string | null } | { ok: false; message: string };
+export type AiSheetResult =
+  | { ok: true; views: Awaited<ReturnType<typeof aiReadSheet>>["views"]; notes: string[]; printedScale: string | null; returns: Awaited<ReturnType<typeof aiReadSheet>>["returns"] }
+  | { ok: false; message: string };
 
 /** First pass of "measure the whole sheet": find each view and read the notes. */
 export async function aiReadSheetAction(documentId: string, input: { imageBase64: string; mediaType: "image/jpeg" | "image/png" }): Promise<AiSheetResult> {

@@ -5,7 +5,7 @@
 // AI item stays a draft (not counted, can't be sent to the job) until a person reviews and accepts it.
 import { z } from "zod";
 import { aiParse } from "@/lib/ai/claude";
-import { PRESET_SCALES, TAKEOFF_TYPES, type Pt, type TakeoffItem, type View } from "./geometry";
+import { PRESET_SCALES, TAKEOFF_TYPES, parseFeet, type Pt, type TakeoffItem, type View } from "./geometry";
 
 export class AiMeasureError extends Error {}
 
@@ -34,6 +34,16 @@ const Schema = z.object({
     .object({ windows: z.number(), doors: z.number(), patio_sliders: z.number(), garage_doors: z.number() })
     .describe("how many of each opening you counted on the drawing BEFORE tracing (floor by floor)"),
   cannot_trace: z.array(z.string()).describe("at most 5 short lines (under 15 words each): specific things left for the estimator to trace by hand"),
+  returns: z
+    .array(
+      z.object({
+        where: z.string().describe("which recess, e.g. 'front entry, left side wall' or 'covered deck, both side walls'"),
+        sides: z.number().describe("how many side walls this recess has (usually 2; 1 if it's open on one side)"),
+        top: Point.describe("on the elevation: the top of the return wall (ceiling / soffit / beam line inside the recess)"),
+        bottom: Point.describe("on the elevation: the bottom of the return wall (floor / deck / grade line), straight below `top`"),
+      }),
+    )
+    .describe("every place on this elevation where the wall steps back at a recessed entry, porch, covered deck, balcony or alcove (side walls run straight back and can't be measured here). Empty if none."),
 });
 
 const describe = (ids: readonly string[]) =>
@@ -62,6 +72,7 @@ function task(view: View, notes?: string) {
     "- ONE ITEM PER PIECE, never grouped: each window its own `window` box, each balcony/patio slider its own `patio_door` box, each entry door its own `door`, each garage door its own `garage_door`, each masonry band or stone area its own `masonry` polygon, each wall plane its own `wall_area`. Never one polygon covering several windows or several walls, and never two items for the same piece — the estimator deletes a wrong piece with one click.",
     "- Openings, 4 corners each: windows, entry doors, garage doors, storefronts, and PATIO / BALCONY SLIDING DOORS — on apartments the slider sits behind the balcony railing; box the full door (head of the door down to the balcony floor), not the railing. Count openings floor by floor first (counted), then make sure each one has a box. Size notes on the drawing (e.g. '38sf') tell you which openings are which.",
     "- Don't trace roofs, railings, gutters, downspouts, dashed (hidden/future) lines, or anything below the grade line. Roof area comes from the roof plan.",
+    "- RETURNS (elevations): where the wall steps back at a recessed entry, porch, covered deck, balcony or alcove, the side walls of that recess run straight back from this face, so they are NOT in any wall_area you trace and their length can't be seen here. List each one in `returns` with the top and bottom of the return wall as drawn (for its height). Never guess the return's length — the app asks for it from the floor plan.",
     "- scale_bar: if a graphic scale bar (0 4 10 …) is drawn for this view, give its 0 mark and its last numbered mark precisely.",
     "- One item per run of a type; don't duplicate an edge or area under two types.",
     "- printed_scale: copy the scale printed under or near this view, if there is one.",
@@ -137,6 +148,7 @@ export async function aiDraftTakeoff(input: { imageBase64: string; mediaType: "i
         ? { a: toSheet({ x: data.scale_bar.x0, y: data.scale_bar.y0 }), b: toSheet({ x: data.scale_bar.x1, y: data.scale_bar.y1 }), feet: data.scale_bar.feet }
         : null,
     counted: data.counted,
+    returns: (data.returns ?? []).map((r) => ({ where: r.where.slice(0, 200), sides: Math.min(8, Math.max(1, Math.round(r.sides || 2))), heightPts: [toSheet(r.top), toSheet(r.bottom)] as [Pt, Pt] })),
     cannotTrace: data.cannot_trace.slice(0, 5),
     dropped,
   };
@@ -163,6 +175,15 @@ const SheetRead = z.object({
   ),
   notes: z.array(z.string()).describe("every material callout, legend entry, general note and size note on the sheet, as written (e.g. 'STONE VENEER — lower floor, grid-coursed pattern', '38sf — balcony doors')"),
   printed_scale: z.string().nullable(),
+  returns: z
+    .array(
+      z.object({
+        where: z.string().describe("the recess: e.g. 'front entry', 'rear covered deck', 'unit balconies (typ.)'"),
+        depth_as_printed: z.string().nullable().describe("the return's length (how far the wall goes back) EXACTLY as a printed dimension on this sheet shows it, e.g. 6'-0\"; null if no printed dimension on this sheet gives it"),
+        found_on: z.string().nullable().describe("the view where that dimension is printed, e.g. 'MAIN FLOOR PLAN'"),
+      }),
+    )
+    .describe("every recessed entry, porch, covered deck, balcony or alcove where wall returns occur; empty if none"),
 });
 
 /** First pass over a whole sheet: where each view is, and every note/callout to carry into the tracing. */
@@ -173,6 +194,7 @@ export async function aiReadSheet(input: { imageBase64: string; mediaType: "imag
       "TASK: read this construction-plan sheet before a takeoff. List every view drawn on it (elevations, roof plan, floor plans, sections, details) with a box around each drawing, and copy every material callout, legend item, general note and size note.",
       "For each material callout, also say which hatch pattern it points to (e.g. 'FACE BRICK — small running-bond pattern, full-height bands between siding').",
       "Boxes use 0–1000 image coordinates (0,0 top-left). Include the whole drawing of the view, but not the title block or other views.",
+      "RETURNS: list every recessed entry, porch, covered deck, balcony or alcove — the side walls there (returns) run straight back and can't be measured on an elevation. Give each return's length only from a printed dimension on THIS sheet (floor plan, deck plan, section); copy it exactly and say which view it's on. If no printed dimension gives it, leave depth_as_printed null. Never estimate a length from the drawing.",
     ].join("\n"),
     schema: SheetRead,
     effort: "high",
@@ -194,5 +216,6 @@ export async function aiReadSheet(input: { imageBase64: string; mediaType: "imag
       .filter((v) => v.box.x1 - v.box.x0 > 10 && v.box.y1 - v.box.y0 > 10),
     notes: data.notes.slice(0, 80),
     printedScale: matchPreset(data.printed_scale),
+    returns: (data.returns ?? []).slice(0, 40).map((r) => ({ where: r.where.slice(0, 200), depthFt: r.depth_as_printed ? parseFeet(r.depth_as_printed.replace(/\s+/g, "")) : null, printed: r.depth_as_printed, foundOn: r.found_on })),
   };
 }

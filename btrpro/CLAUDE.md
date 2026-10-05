@@ -99,6 +99,7 @@ Expect EagleView reports, blueprints, digital plans, dimensions, and price sheet
 - **Masonry exclusion (locked):** siding takeoffs NEVER include masonry-classified wall area. Use the EagleView "Siding" wall area only, excluding windows and doors. Exclude masonry area and masonry corner LF entirely.
 - Siding SF deducts windows and doors only. Stone/stucco zone deductions are a GC boundary decision, not a default deduction.
 - Default residential siding product: **8.25" HardiePlank** (not 7.25") unless specified otherwise.
+- **Returns at decks and entryways (locked):** recessed entries, porches, covered decks, balconies and alcoves have side walls (returns) that run straight back from the elevation face, so they don't show on an elevation and aren't in its wall area. Check every elevation for them. Read each return's length from the floor plan (or deck plan / section) and its height from the elevation; add return area = length × height × number of sides. If the plans don't give a return's length, mark it MISSING and ask. Never guess it.
 - House wrap: always use the **cheapest** house wrap/underlayment on the applicable BTR sheet. Don't default to HardieWrap or premium wrap unless the spec requires it.
 
 **Roofing**
