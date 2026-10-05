@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { shrinkPhoto as shrink } from "@/components/shrink-photo";
 import { crewInvoiceAction, crewLoginAction, crewPhotosAction, crewIssueAction, crewExtraAction, crewTalkAction, type CrewResult } from "@/app/crew/actions";
+import { useBrand } from "@/components/brand";
 
 const field = "w-full rounded-lg border border-btr-line bg-background px-3 py-3 text-base";
 const primary = "w-full rounded-lg bg-btr-blue px-4 py-3 text-base font-semibold text-white disabled:opacity-60";
@@ -90,6 +91,7 @@ export function PhotoUploader({ projectId, stage, label, hint, count, required }
 }
 
 export function CrewInvoiceForm({ projectId, blocked }: { projectId: string; blocked: string | null }) {
+  const { shortName } = useBrand();
   const [state, action, pending] = useActionState(crewInvoiceAction, null);
   if (blocked)
     return <p className="rounded-lg border border-btr-line bg-muted p-3 text-sm">{blocked}</p>;
@@ -119,7 +121,7 @@ export function CrewInvoiceForm({ projectId, blocked }: { projectId: string; blo
         <input name="file" type="file" accept="application/pdf,image/*" className="text-sm" />
       </label>
       <button disabled={pending} className={primary}>
-        {pending ? "Sending…" : "Send invoice to BTR"}
+        {pending ? "Sending…" : `Send invoice to ${shortName}`}
       </button>
       <Result state={state} />
     </form>

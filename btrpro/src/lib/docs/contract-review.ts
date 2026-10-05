@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { aiParse } from "@/lib/ai/claude";
 import { readUpload } from "@/lib/storage";
+import { botName, companyName, shortName } from "@/lib/company-profile";
 
 export class ContractReviewError extends Error {}
 
@@ -32,7 +33,7 @@ const Finding = z.object({
   risk: z.enum(["HIGH", "MEDIUM", "LOW"]),
   quote: z.string().describe("the contract's exact words, copied verbatim (shorten with … only)"),
   where: z.string().nullable().describe("section number or page, as printed"),
-  plain: z.string().describe("what it means for BTR in one or two plain sentences"),
+  plain: z.string().describe(`what it means for ${shortName()} in one or two plain sentences`),
   ask: z.string().nullable().describe("the change to request before signing, if any"),
 });
 const Review = z.object({
@@ -55,7 +56,7 @@ export async function reviewContract(documentId: string, actor: { id: string | n
   const doc = await prisma.document.findUniqueOrThrow({ where: { id: documentId } });
   const text = doc.extractedText?.trim();
   const isPdf = doc.contentType === "application/pdf" || /\.pdf$/i.test(doc.fileName);
-  if (!text && !isPdf) throw new ContractReviewError("BTRbot can read PDF contracts. Upload the contract as a PDF.");
+  if (!text && !isPdf) throw new ContractReviewError(`${botName()} can read PDF contracts. Upload the contract as a PDF.`);
   const content: Parameters<typeof aiParse>[0]["messages"][number]["content"] = text
     ? [{ type: "text", text: `Contract file: ${doc.fileName}\n\n${text.slice(0, 180_000)}` }]
     : [
@@ -64,10 +65,10 @@ export async function reviewContract(documentId: string, actor: { id: string | n
       ];
   const { data } = await aiParse({
     task: [
-      "TASK: review this construction contract or subcontract for BTR Contracting (the roofing/siding subcontractor or contractor signing it).",
-      "Find every clause that shifts risk or money onto BTR. Quote the contract's exact words — never paraphrase inside `quote`, never invent a clause. If a topic isn't in the contract, don't make a finding for it; list important missing protections in `missing` instead.",
-      "Risk: HIGH = could cost BTR payment, uninsured liability, or open-ended damages (pay-if-paid, broad-form indemnity incl. GC's own negligence, uncapped LDs, no-damage-for-delay, very short claim notice, waiver of lien rights before payment). MEDIUM = costly but bounded. LOW = normal but worth knowing.",
-      "`ask` is the practical change to request (e.g. 'change pay-if-paid to pay-when-paid with a 45-day outside date', 'cap LDs at the amount assessed against the GC for BTR-caused delay').",
+      `TASK: review this construction contract or subcontract for ${companyName()} (the roofing/siding subcontractor or contractor signing it).`,
+      "Find every clause that shifts risk or money onto " + shortName() + ". Quote the contract's exact words — never paraphrase inside `quote`, never invent a clause. If a topic isn't in the contract, don't make a finding for it; list important missing protections in `missing` instead.",
+      `Risk: HIGH = could cost ${shortName()} payment, uninsured liability, or open-ended damages (pay-if-paid, broad-form indemnity incl. GC's own negligence, uncapped LDs, no-damage-for-delay, very short claim notice, waiver of lien rights before payment). MEDIUM = costly but bounded. LOW = normal but worth knowing.`,
+      "`ask` is the practical change to request (e.g. 'change pay-if-paid to pay-when-paid with a 45-day outside date', 'cap LDs at the amount assessed against the GC for " + shortName() + "-caused delay').",
       "This is a checklist for whoever signs, not legal advice.",
     ].join("\n"),
     schema: Review,
@@ -81,7 +82,7 @@ export async function reviewContract(documentId: string, actor: { id: string | n
     data: { projectId: doc.projectId, documentId: doc.id, summary: data.summary, terms: data.terms, findings: data.findings, missing: data.missing, createdBy: actor.name },
   });
   await prisma.projectActivity.create({
-    data: { projectId: doc.projectId, userId: actor.id, kind: "document", text: `${actor.name} ran a BTRbot contract review on "${doc.fileName}" — ${data.findings.filter((f) => f.risk === "HIGH").length} high-risk clause(s)` },
+    data: { projectId: doc.projectId, userId: actor.id, kind: "document", text: `${actor.name} ran a ${botName()} contract review on "${doc.fileName}" — ${data.findings.filter((f) => f.risk === "HIGH").length} high-risk clause(s)` },
   });
   return row;
 }

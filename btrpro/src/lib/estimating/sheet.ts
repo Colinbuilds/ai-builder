@@ -4,6 +4,7 @@
 import { createHash } from "node:crypto";
 import type { Tab } from "@/lib/import/xlsx";
 import { norm, parseDate, parseMoney } from "@/lib/import/schedule";
+import { appName } from "@/lib/company-profile";
 
 export type Board = "CURRENT" | "MISC" | "PASSING" | "SENT" | "REDRAW" | "LOST" | "SOLD" | "ARCHIVE" | "TRACT";
 export type Market = "COMMERCIAL" | "RESIDENTIAL";
@@ -303,7 +304,7 @@ export function parseEstimatingWorkbook(tabs: Tab[]): { rows: SheetRow[]; tabs: 
     if (got) {
       rows.push(...got);
       summary.push({ tab: n, rows: got.length });
-    } else summary.push({ tab: n, rows: 0, skipped: "Not a tab BTRpro reads" });
+    } else summary.push({ tab: n, rows: 0, skipped: `Not a tab ${appName()} reads` });
   }
   return { rows, tabs: summary };
 }

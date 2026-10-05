@@ -52,15 +52,29 @@ Goal: run BTRpro for contractors other than BTR Contracting without changing any
 
 **v1: one deployment per customer company** (own Railway service + own SQLite DB), configured by a company profile in settings plus env vars. BTR's deployment stays as is. True multi-tenant (one deployment, company id on every table, tenant-scoped auth and queries) is only worth it for self-serve SaaS signup; it touches every query in the app.
 
-*Pending Colin's answer — see question below.*
+**Decision (Colin, 2026-10-05): one deployment per company.**
 
-## 3. Foundation build (v1)
+## 3. Built in this pass
 
-1. **Company profile** (`src/lib/company-profile.ts`): stored in the existing `CompanySetting` key/value table, so no schema change. Fields: company name, product name (default "BTRpro"), assistant name (default "BTRbot"), logo (uploaded through existing storage), brand colors, address, phone, email, proposal letterhead, supplier block, state/region, time zone. `getCompany()` returns BTR's values for anything unset. Admin page under Settings.
-2. **Swap hard-coded values**: server code and PDFs read `getCompany()`; layout injects brand color CSS variables and product name; `BTR` constant stays as the default source.
-3. **AI rules**: split `CLAUDE.md` into the generic product core and the company layer. Company layer = editable "estimating rules" text in settings. Unset → BTR's current text, so BTR's prompt is byte-for-byte what it is today.
-4. **Region rules as data** (`src/lib/region.ts`): per-state table of lien days + statute, public-purchasing tax-exempt form (NE: Form 17), code adoptions note, default jurisdiction, time zone. NE = BTR's. Unknown state → rules show as MISSING, never guessed.
-5. **Tests**: default profile equals today's BTR constants; system prompt with no settings equals `CLAUDE.md`; NE region gives 120 days / Form 17; overrides flow through.
+- **Company profile** — `src/lib/company-profile.ts`, stored as `CompanySetting` `companyProfile` (no schema change). Settings → *Company profile & branding* (`/settings/profile`, Admin): names, short name, contact, letterhead, own addresses, supplier + account, state, home jurisdiction, lien-days override, accent and top-bar colors, logo (PNG/JPEG ≤ 2 MB, served at `/brand/logo`).
+  - Fallback rule: while the company name is BTR's (or unset), every blank field is BTR's value. For any other company, BTR's contact facts, supplier and state never fill in: they're blank / MISSING. Product and assistant names default to BTRpro / BTRbot for everyone.
+- **Hard-coded values swapped**: the `BTR` / `SUPPLIER` constants (public pages, PDFs, emails, orders, pay apps, safety packet, receipts, price-sheet account warning), "BTRpro", "BTRbot", "BTR Contracting" and most "BTR" copy now come from the profile. Server code uses `getCompany()` or the name helpers; client components use `useBrand()` (`src/components/brand.tsx`); pure modules shared with the browser use `src/lib/brand-names.ts`.
+- **Brand colors**: `brandCss()` overrides the `--btr-*` CSS variables from the root layout. Nothing is injected for BTR.
+- **AI rules** — `src/lib/ai/prompt.ts`. BTR with no saved rules: `CLAUDE.md` verbatim. Saved rules (`CompanySetting` `aiRules`) or another company: `prompts/estimator-core.md` (CLAUDE.md §3, 4, 7, 8, 9 with BTR wording removed) + a context block from the profile + the company's rules. The editor starts from BTR's own sections (§1, 2, 5, 6, 10). Saving them unchanged keeps CLAUDE.md.
+- **Region rules as data** — `src/lib/region.ts`: lien days + statute, tax-exempt purchasing form, code-edition note. Nebraska is filled in. Any other state starts with nulls (lien deadline MISSING, generic form label), so nothing is guessed. Used by the risk desk, scorecard, Form 17 messages/banner/tasks, code library and the bid board (built-in Omaha/Lincoln boards only load for NE).
+- **Tests** — `test/white-label.test.ts` proves BTR's defaults: same facts, names, CLAUDE.md byte-for-byte, Nebraska rules, unchanged messages, no injected CSS. It also covers a TEST_ONLY company end to end, including checking that no BTR text leaks into its prompt. The rest of the suite is unchanged and still passes.
 
-## 4. Later (not in this pass)
-- Bid sources per region (currently NE boards only); time zone at all 76 call sites; seed packs per company (rules, templates, price sheets); retire BTR Drive/Sheet defaults for non-BTR deployments; rename `btr-*` tokens to `brand-*`.
+## 4. Standing up a new company (v1)
+
+1. New Railway service from this repo with its own volume (`/data`) and its own env (Anthropic key, Google, email, `APP_URL`, `SEED_ADMIN_*`). Never reuse BTR's credentials.
+2. Sign in as the seeded admin → Settings → Company profile: name, contact, state, colors, logo, estimating rules.
+3. Load that company's price sheets; set its own Drive / sheet links (see "Later").
+
+## 5. Later (not in this pass)
+- **Seed data**: `prisma/seed.ts` loads BTR's price sheets, rules, templates, labor rates, crews and Drive folders into every new DB. Needs a `SEED_COMPANY=btr|blank` switch before a second company goes live.
+- **BTR defaults in integrations**: estimating/production Google Sheets, jobs shared drive, CompanyCam folder (`DEFAULT_*` constants) should apply only to BTR.
+- **Bids**: home points (`HOMES` in `bids/parse.ts`) are Omaha/Lincoln. Non-NE companies need their own centers and boards.
+- **Time zone**: about 76 `America/Chicago` call sites. Add a profile time zone.
+- **Remaining copy**: comments, BTR sheet names ("BTR - Steep Slope"), `btr-*` token names, a few module-level labels that pick up a rename only after a restart (bid source kinds, estimate status labels, crew-portal titles).
+- **Address search bias** to Omaha (`integrations/address.ts`) and the AccuLynx importer (BTR-only).
+- **More states** in `region.ts`, each checked against its statute.

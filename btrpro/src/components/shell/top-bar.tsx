@@ -45,6 +45,7 @@ export function TopBar({
   tools,
   view,
   adminLinks,
+  brand = { productName: "BTRpro", logo: false },
 }: {
   user: { name: string; role: string };
   counts: { bell: number; mentions: number; tasks: number; watching: number; bids?: number; webLeads?: number };
@@ -52,6 +53,7 @@ export function TopBar({
   tools: Tool[];
   view: string;
   adminLinks: { href: string; label: string }[];
+  brand?: { productName: string; logo: boolean };
 }) {
   const path = usePathname();
   const [drawer, setDrawer] = useState<null | "all" | "mentions" | "messages" | "updates">(null);
@@ -107,9 +109,18 @@ export function TopBar({
   return (
     <header className="sticky top-0 z-40 bg-btr-black text-white print:hidden">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-2 px-3 sm:px-4">
-        <Link href="/" className="mr-1 flex h-12 items-center gap-1.5 sm:mr-2" aria-label="BTRpro home">
-          <span className="rounded bg-white px-1.5 py-0.5 text-sm font-black tracking-wider text-btr-black">BTR</span>
-          <span className="text-sm font-semibold tracking-wide text-white/90">pro</span>
+        <Link href="/" className="mr-1 flex h-12 items-center gap-1.5 sm:mr-2" aria-label={`${brand.productName} home`}>
+          {brand.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- uploaded logo, served by /brand/logo
+            <img src="/brand/logo" alt={brand.productName} className="h-7 w-auto rounded bg-white px-1 py-0.5" />
+          ) : brand.productName === "BTRpro" ? (
+            <>
+              <span className="rounded bg-white px-1.5 py-0.5 text-sm font-black tracking-wider text-btr-black">BTR</span>
+              <span className="text-sm font-semibold tracking-wide text-white/90">pro</span>
+            </>
+          ) : (
+            <span className="text-sm font-semibold tracking-wide text-white">{brand.productName}</span>
+          )}
         </Link>
         {newTool?.items && (
           <Dropdown

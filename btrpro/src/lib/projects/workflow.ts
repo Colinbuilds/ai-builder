@@ -1,5 +1,6 @@
 // Job stages and the checks that gate moving between them (BUILD_PROMPT §13, PUB-01).
 import type { Readiness } from "./readiness";
+import { exemptForm } from "@/lib/brand-names";
 
 export const STAGES = [
   "LEAD",
@@ -76,7 +77,7 @@ export function checkStageChange(g: GateInput): GateResult {
   if (order(g.to) >= order("SCHEDULED") && g.to !== "LOST") {
     if (!g.contractSignedAt) problems.push("A signed contract is required before scheduling.");
     if (g.form17Status === "PENDING")
-      problems.push("PUB-01: Nebraska Form 17 must be executed with the owner before materials are purchased or the job is scheduled.");
+      problems.push(`PUB-01: ${exemptForm().named} must be executed with the owner before materials are purchased or the job is scheduled.`);
   }
   if (problems.length) return { ok: false, problems, overridable: overridable && problems.length === 1 };
   return { ok: true, overridden: g.to === "SUBMITTED" && g.readiness === "NOT_READY" };

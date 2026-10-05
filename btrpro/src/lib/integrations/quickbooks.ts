@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { accessToken, getConnection } from "./oauth";
 import { getSettings } from "@/lib/settings";
 import type { InvLine } from "@/lib/billing/math";
+import { appName } from "@/lib/company-profile";
 
 // QuickBooks Online push: customers, invoices, payments. Only runs when an Admin has connected
 // BTR's QuickBooks company; otherwise the office keys them in (or exports) as before.
@@ -197,7 +198,7 @@ export async function ensureJobNumber(projectId: string): Promise<string | null>
   const r = await qbo<{ Estimate: { Id: string; DocNumber?: string } }>("POST", "estimate", {
     CustomerRef: { value: customer },
     DocNumber: doc,
-    PrivateNote: `Opened in BTRpro: ${p.name}${p.address ? ` — ${p.address}` : ""}`.slice(0, 4000),
+    PrivateNote: `Opened in ${appName()}: ${p.name}${p.address ? ` — ${p.address}` : ""}`.slice(0, 4000),
     Line: [{ Amount: 0, DetailType: "SalesItemLineDetail", Description: "Job opened — pricing to follow", SalesItemLineDetail: { ItemRef: { value: s.qboItemId }, Qty: 1, UnitPrice: 0 } }],
   });
   const no = r.Estimate.DocNumber ?? doc;

@@ -9,6 +9,7 @@ import { mineWhere, pmScope } from "@/lib/production/assign";
 import { ProdSheetSettings, ProdSyncButton } from "@/components/production/prod-forms";
 import { stepAction } from "./actions";
 import { NavSelect } from "@/components/dashboard/tab-select";
+import { appName, shortName } from "@/lib/company-profile";
 
 type Search = { v?: string; m?: string; who?: string; q?: string; all?: string };
 const VIEWS = [
@@ -41,7 +42,7 @@ function Steps({ l, billing }: { l: ProdLine; billing: boolean }) {
       {!l.completed && btn("complete", "Completed", true)}
       {billing && l.completed && !l.approved && btn("approve", "Crew paid")}
       {billing && l.market === "RESIDENTIAL" && l.completed && !l.billed && btn("bill", "Billed")}
-      {billing && l.billed && !l.btrPaid && btn("paid", "BTR paid")}
+      {billing && l.billed && !l.btrPaid && btn("paid", `${shortName()} paid`)}
     </div>
   );
 }
@@ -278,7 +279,7 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
           <h1 className="text-2xl font-semibold">Schedule</h1>
           <p className="text-sm text-muted-foreground">
             {settings.prodSheetOff
-              ? "BTRpro is the schedule."
+              ? `${appName()} is the schedule.`
               : `Synced from the Residential and Commercial live sheets${synced ? ` · last ${synced.toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : " · not synced yet"}.`}{" "}
             Press <b>Completed</b> when the crew is done — the office gets a note that the crew can be paid.{" "}
             <Link href="/schedule" className="text-btr-link hover:underline">

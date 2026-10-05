@@ -5,8 +5,10 @@ import { saveSheetFolderAction, syncSheetsNowAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Problems } from "@/components/projects/problems";
+import { useBrand } from "@/components/brand";
 
 export function DriveSyncPanel({ folder, connected, lastCheck, serviceAccount }: { folder: string | null; connected: boolean; lastCheck: string | null; serviceAccount: string | null }) {
+  const { productName: app } = useBrand();
   const [state, action, pending] = useFormAction(saveSheetFolderAction, null);
   const [sState, sAction, sPending] = useFormAction(syncSheetsNowAction, null);
   return (
@@ -21,7 +23,7 @@ export function DriveSyncPanel({ folder, connected, lastCheck, serviceAccount }:
       <Problems state={state} />
       {serviceAccount ? (
         <p className="text-xs text-muted-foreground">
-          BTRpro reads Drive as <span className="font-mono">{serviceAccount}</span>. Share the price-sheet folder (or its shared drive) with that address as a Viewer.
+          {app} reads Drive as <span className="font-mono">{serviceAccount}</span>. Share the price-sheet folder (or its shared drive) with that address as a Viewer.
         </p>
       ) : !connected ? (
         <p className="text-sm text-amber-700 dark:text-amber-400">

@@ -6,6 +6,7 @@ import { STAFF_ROLES } from "@/lib/roles";
 import { getSettings } from "@/lib/settings";
 import { DEFAULT_RADIUS, KINDS, ensureSources, type Kind } from "@/lib/bids/service";
 import { addSourceAction, checkNowAction, checkOneAction, decideAction, deleteSourceAction, radiusAction, scheduleAction, toggleSourceAction } from "./actions";
+import { appName, botName } from "@/lib/company-profile";
 
 const VIEWS = { review: "To review", watch: "Watching", added: "On the schedule", all: "Everything open", passed: "Passed", sources: "Boards" } as const;
 type View = keyof typeof VIEWS;
@@ -56,7 +57,7 @@ export default async function BidsPage({ searchParams }: { searchParams: Promise
         <div>
           <h1 className="text-2xl font-semibold">Public bids</h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Every morning BTRpro reads SDI&apos;s plan room and the county, city, school and state bid boards within about 2 hours of Omaha or Lincoln ({radius} straight-line miles), plus federal work on
+            Every morning {appName()} reads SDI&apos;s plan room and the county, city, school and state bid boards within about 2 hours of Omaha or Lincoln ({radius} straight-line miles), plus federal work on
             SAM.gov. New roofing, exterior and building projects land here to review: add it to the estimating schedule, watch it, or pass.
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -269,7 +270,7 @@ export default async function BidsPage({ searchParams }: { searchParams: Promise
                   <input name="defaultCity" placeholder="Town (if the board doesn't say)" className="h-8 rounded-md border border-input bg-background px-2" />
                   <input name="defaultState" placeholder="NE" maxLength={2} className="h-8 rounded-md border border-input bg-background px-2" />
                 </div>
-                <p className="text-xs text-muted-foreground">Town websites ending in /Bids.aspx are CivicEngage; links with ionwave.net are IonWave. Anything else: pick &ldquo;Any page&rdquo; and BTRbot reads it.</p>
+                <p className="text-xs text-muted-foreground">Town websites ending in /Bids.aspx are CivicEngage; links with ionwave.net are IonWave. Anything else: pick &ldquo;Any page&rdquo; and {botName()} reads it.</p>
                 <button className="h-8 self-start rounded-md bg-btr-blue px-3 text-white hover:bg-btr-blue-dark">Add and check</button>
               </form>
               <form action={radiusAction} className="flex flex-col gap-2 rounded-lg border bg-background p-3 text-sm">

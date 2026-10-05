@@ -3,7 +3,7 @@
 // (/quote/<token>) to try looks on their own photo and see who's coming out.
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { saveUpload, readUpload } from "@/lib/storage";
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 import { getSettings } from "@/lib/settings";
@@ -110,11 +110,12 @@ const mail = async (to: string | null | undefined, subject: string, text: string
 };
 
 export async function submitWebLead(x: LeadInput, files: { bytes: Uint8Array; name: string }[], meta: { ip: string | null }) {
+  const co = await getCompany();
   const real = files.filter((f) => f.bytes.length);
   const problems = checkLead(x, real.length);
   if (problems.length) throw new LeadFormError(problems.join(" "));
   if (meta.ip && (await prisma.webLead.count({ where: { ip: meta.ip, createdAt: { gte: new Date(Date.now() - 86_400_000) } } })) >= 5)
-    throw new LeadFormError(`We already have several requests from this connection today. Please call us at ${BTR.phone}.`);
+    throw new LeadFormError(`We already have several requests from this connection today. Please call us at ${co.phone}.`);
 
   // photos: real images only, stored as upright JPEGs
   const token = randomBytes(18).toString("base64url");
@@ -199,8 +200,8 @@ export async function submitWebLead(x: LeadInput, files: { bytes: Uint8Array; na
   for (const m of managers) await mail(m.email, `New website request — ${lead.firstName} ${lead.lastName}, ${lead.city}`, `${summary(lead)}\n\nAssign a salesperson: ${appUrl()}/leads/web\nJob: ${appUrl()}/projects/${job.id}`);
   await mail(
     lead.email,
-    `${BTR.name} — we got your request`,
-    `Hi ${lead.firstName},\n\nThanks for reaching out to ${BTR.name}. A project consultant will call you at ${lead.phone} to set up a free inspection.\n\nYour request, photos and design ideas: ${requestUrl(token)}\n\n${BTR.name} · ${BTR.phone}`,
+    `${co.name} — we got your request`,
+    `Hi ${lead.firstName},\n\nThanks for reaching out to ${co.name}. A project consultant will call you at ${lead.phone} to set up a free inspection.\n\nYour request, photos and design ideas: ${requestUrl(token)}\n\n${co.name} · ${co.phone}`,
   );
   return lead;
 }
@@ -287,6 +288,7 @@ export async function assignWebLead(id: string, salespersonId: string, actor: Ac
 }
 
 export async function scheduleInspection(id: string, input: { date: string; time: string }, actor: Actor) {
+  const co = await getCompany();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new LeadFormError("Pick the inspection date.");
   const lead = await prisma.webLead.findUniqueOrThrow({ where: { id } });
   const day = new Date(`${input.date}T12:00:00Z`);
@@ -301,7 +303,7 @@ export async function scheduleInspection(id: string, input: { date: string; time
   await prisma.webLead.update({ where: { id }, data: { status: "SCHEDULED", inspectionAt: day, inspectionWhen: when || null } });
   await prisma.task.updateMany({ where: { auto: `WEBLEAD-CALL:${id}`, doneAt: null }, data: { doneAt: new Date(), doneBy: actor.name } });
   const nice = day.toLocaleDateString("en-US", { timeZone: "UTC", weekday: "long", month: "long", day: "numeric" });
-  await mail(lead.email, `${BTR.name} — your inspection is set for ${nice}`, `Hi ${lead.firstName},\n\nYour free inspection at ${lead.street} is set for ${nice}${when ? ` at ${when}` : ""}${rep ? ` with ${rep.name.split(" ")[0]}` : ""}.\n\nYour request and design ideas: ${requestUrl(lead.token)}\n\nNeed to change it? Call ${BTR.phone}.\n\n${BTR.name}`);
+  await mail(lead.email, `${co.name} — your inspection is set for ${nice}`, `Hi ${lead.firstName},\n\nYour free inspection at ${lead.street} is set for ${nice}${when ? ` at ${when}` : ""}${rep ? ` with ${rep.name.split(" ")[0]}` : ""}.\n\nYour request and design ideas: ${requestUrl(lead.token)}\n\nNeed to change it? Call ${co.phone}.\n\n${co.name}`);
 }
 
 export async function closeWebLead(id: string, actor: Actor) {

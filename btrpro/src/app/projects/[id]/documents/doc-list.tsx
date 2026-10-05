@@ -7,6 +7,7 @@ import { ConvertProposalButton } from "@/components/docs/convert-proposal-button
 import { ContractReviewButton } from "@/components/docs/contract-review-button";
 import { isOldProposal } from "@/lib/proposals/legacy";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
+import { botName } from "@/lib/company-profile";
 
 export type DocRow = Document & { runs: ExtractionRun[]; jobEmail: { subject: string } | null };
 
@@ -74,7 +75,7 @@ export function DocList({
           <TH className="hidden md:table-cell">File</TH>
           <TH className="hidden md:table-cell">Uploaded by</TH>
           <TH className="hidden lg:table-cell">Updated</TH>
-          <TH>Read with BTRbot</TH>
+          <TH>Read with {botName()}</TH>
         </TR>
       </THead>
       <TBody>

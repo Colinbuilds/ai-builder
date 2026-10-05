@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { getSettings } from "@/lib/settings";
 import { getInvoiceByToken, stripeConfigured } from "@/lib/billing/service";
 import {
@@ -12,10 +12,13 @@ import {
 import { payOnlineAction } from "@/app/projects/billing-actions";
 import { Button } from "@/components/ui/button";
 
-export const metadata: Metadata = {
-  title: `Invoice — ${BTR.name}`,
+export async function generateMetadata(): Promise<Metadata> {
+  const co = await getCompany();
+  return {
+  title: `Invoice — ${co.name}`,
   robots: { index: false },
 };
+}
 const usd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 const d = (x: Date) => x.toLocaleDateString("en-US", { timeZone: "UTC" });
@@ -27,6 +30,7 @@ export default async function PublicInvoice({
   params: Promise<{ token: string }>;
   searchParams: Promise<{ paid?: string; error?: string }>;
 }) {
+  const co = await getCompany();
   const { token } = await params;
   const { paid, error } = await searchParams;
   const inv = await getInvoiceByToken(token);
@@ -43,9 +47,9 @@ export default async function PublicInvoice({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 py-4">
       <header className="border-b pb-3">
-        <p className="text-xl font-semibold">{BTR.name}</p>
+        <p className="text-xl font-semibold">{co.name}</p>
         <p className="text-sm text-muted-foreground">
-          {BTR.address} · {BTR.phone} · {BTR.email}
+          {co.address} · {co.phone} · {co.email}
         </p>
       </header>
       <div>
@@ -130,7 +134,7 @@ export default async function PublicInvoice({
           {s.remitTo ? (
             <p className="text-sm whitespace-pre-wrap">{s.remitTo}</p>
           ) : (
-            <p className="text-sm">Call {BTR.phone} to pay by check or ACH.</p>
+            <p className="text-sm">Call {co.phone} to pay by check or ACH.</p>
           )}
         </section>
       )}

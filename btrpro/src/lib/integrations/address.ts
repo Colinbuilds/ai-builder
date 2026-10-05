@@ -1,6 +1,7 @@
 // Address suggestions for the address boxes. Google Places (if GOOGLE_MAPS_API_KEY is set) is best for US house
 // addresses; otherwise Photon (free, OpenStreetMap). Both are biased toward Omaha. Called server-side only, so the
 // key never reaches the browser.
+import { appName } from "@/lib/company-profile";
 const OMAHA = { lat: 41.2565, lon: -95.9345 };
 
 export type Suggestion = { label: string };
@@ -63,7 +64,7 @@ export async function suggestAddresses(query: string, near = OMAHA): Promise<Sug
 async function photon(text: string, typed: string, near: { lat: number; lon: number }, local: boolean): Promise<Suggestion[]> {
   const area = local ? `&bbox=${near.lon - 1.3},${near.lat - 0.9},${near.lon + 1.3},${near.lat + 0.8}` : `&lat=${near.lat}&lon=${near.lon}`;
   const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(text)}${area}&limit=8&lang=en`, {
-    headers: { "User-Agent": "BTRpro (btrcontracting.com)" },
+    headers: { "User-Agent": `${appName()} (btrcontracting.com)` },
     signal: AbortSignal.timeout(4000),
   });
   if (!r.ok) return [];
@@ -84,7 +85,7 @@ async function photon(text: string, typed: string, near: { lat: number; lon: num
 /** The address at a GPS point (rep standing at the house). Photon reverse; the house number may be missing in OSM. */
 export async function addressAt(lat: number, lon: number): Promise<string | null> {
   const r = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lon}&limit=1&lang=en`, {
-    headers: { "User-Agent": "BTRpro (btrcontracting.com)" },
+    headers: { "User-Agent": `${appName()} (btrcontracting.com)` },
     signal: AbortSignal.timeout(4000),
   });
   if (!r.ok) return null;

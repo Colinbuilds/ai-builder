@@ -1,6 +1,7 @@
 // Company playbook (SOPs). Growth research: every process that lives in one person's head breaks when that
 // person is out, and the owner stays the bottleneck. Each procedure has an owner and a review date.
 import { prisma } from "@/lib/db";
+import { appName, shortName, exemptForm } from "@/lib/company-profile";
 
 export class PlaybookError extends Error {}
 export const AREAS = { OFFICE: "Office", ESTIMATING: "Estimating & sales", PRODUCTION: "Production & crews", PURCHASING: "Purchasing", SAFETY: "Safety", FINANCE: "Finance & month-end" } as const;
@@ -53,18 +54,18 @@ export const STARTERS: { title: string; area: Area; body: string }[] = [
   {
     title: "New crew or sub onboarding",
     area: "OFFICE",
-    body: `1. Get the W-9, certificate of insurance (GL) and workers' comp certificate — BTR named as certificate holder.
+    body: `1. Get the W-9, certificate of insurance (GL) and workers' comp certificate — ${shortName()} named as certificate holder.
 2. Enter the crew on **Crews** with COI and workers' comp expiration dates.
 3. Set the crew's scopes in **Schedule → Who does what**.
 4. Create the crew portal login and walk the lead through photos, extra-work tags, safety talks and invoices.
 5. The **Risk desk** warns 60/30/15 days before either policy lapses.`,
   },
   {
-    title: "Tax-exempt public job setup (Form 17)",
+    title: `Tax-exempt public job setup (${exemptForm().short})`,
     area: "OFFICE",
     body: `1. When a public job is sold, confirm the owner is tax-exempt.
-2. Execute the Nebraska Form 17 Purchasing Agent Appointment with the owner **before** any material is bought.
-3. Mark Form 17 executed on the job; only then set the job tax-exempt in BTRpro.
+2. Execute the ${exemptForm().title} with the owner **before** any material is bought.
+3. Mark ${exemptForm().short} executed on the job; only then set the job tax-exempt in ${appName()}.
 4. Purchasing confirms supplier orders go out tax-exempt with the appointment attached.`,
   },
   {

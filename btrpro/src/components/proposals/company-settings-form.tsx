@@ -6,8 +6,10 @@ import type { CompanySettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Problems } from "@/components/projects/problems";
+import { useBrand } from "@/components/brand";
 
 export function CompanySettingsForm({ s }: { s: CompanySettings }) {
+  const { companyName, address } = useBrand();
   const [state, action, pending] = useFormAction(
     saveCompanySettingsAction,
     null,
@@ -123,7 +125,7 @@ export function CompanySettingsForm({ s }: { s: CompanySettings }) {
           defaultValue={s.remitTo ?? ""}
           rows={3}
           className="rounded-md border border-input bg-background p-2 text-sm"
-          placeholder="Make checks payable to BTR Contracting, 10852 Hanover St., Omaha, NE 68142. ACH details on request."
+          placeholder={`Make checks payable to ${companyName}, ${address}. ACH details on request.`}
         />
       </div>
       <div className="flex flex-col gap-1">

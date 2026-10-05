@@ -2,7 +2,7 @@ import type { Role } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { nextInSequence } from "@/lib/numbering";
 import { round } from "@/lib/calc/core";
-import { BTR, SUPPLIER } from "@/lib/company";
+import { getCompany, exemptForm } from "@/lib/company-profile";
 import { getSettings } from "@/lib/settings";
 import { showForm17Banner } from "@/lib/projects/workflow";
 import { addDocument } from "@/lib/docs/documents";
@@ -76,6 +76,7 @@ export async function createOrder(
   estimateId: string | null,
   actor: OrderActor,
 ) {
+  const co = await getCompany();
   guard(actor);
   const lines: {
     itemNumber: string | null;
@@ -135,7 +136,7 @@ export async function createOrder(
       projectId,
       number: await nextNumber(),
       estimateId,
-      supplier: SUPPLIER.name,
+      supplier: co.supplier.name,
       createdBy: actor.name,
       lines: { create: lines },
     },
@@ -288,7 +289,7 @@ export function sendProblems(o: Awaited<ReturnType<typeof loadOrder>>) {
   const problems: string[] = [];
   if (showForm17Banner(o.project))
     problems.push(
-      "PUB-01: this is a public, tax-exempt job and the Form 17 isn't executed. Materials can't be ordered until it is (it can't be overridden).",
+      `PUB-01: this is a public, tax-exempt job and the ${exemptForm().short} isn't executed. Materials can't be ordered until it is (it can't be overridden).`,
     );
   if (!o.lines.length) problems.push("The order has no lines.");
   const noQty = o.lines.filter((l) => l.quantity == null);
@@ -304,18 +305,19 @@ export function sendProblems(o: Awaited<ReturnType<typeof loadOrder>>) {
 }
 
 export async function orderPdf(orderId: string) {
+  const co = await getCompany();
   const o = await loadOrder(orderId);
   const w = await PdfWriter.create({
     title: `Material order ${o.number}`,
-    footer: `${BTR.name} · PO ${o.number} · ${o.project.name}`,
+    footer: `${co.name} · PO ${o.number} · ${o.project.name}`,
   });
-  w.text(`${BTR.name.toUpperCase()}  ·  ${BTR.address}  ·  ${BTR.phone}`, {
+  w.text(`${co.name.toUpperCase()}  ·  ${co.address}  ·  ${co.phone}`, {
     size: 8,
     gap: 0,
   });
-  w.text(`ABC account ${BTR.abcAccount}`, { size: 8, gap: 8 });
+  w.text(`ABC account ${co.abcAccount}`, { size: 8, gap: 8 });
   w.heading(`Material order ${o.number}`);
-  w.text(`To: ${o.supplier} · ${SUPPLIER.address} · ${SUPPLIER.phone}`, {
+  w.text(`To: ${o.supplier} · ${co.supplier.address} · ${co.supplier.phone}`, {
     size: 10,
     gap: 2,
   });
@@ -333,7 +335,7 @@ export async function orderPdf(orderId: string) {
     { size: 10, gap: 2 },
   );
   w.text(
-    `Please put PO ${o.number} on the invoice.${o.project.isTaxExempt ? " Tax-exempt job — Form 17 on file." : ""}`,
+    `Please put PO ${o.number} on the invoice.${o.project.isTaxExempt ? ` Tax-exempt job — ${exemptForm().short} on file.` : ""}`,
     { size: 10, gap: 8 },
   );
   w.table(
@@ -359,6 +361,7 @@ export async function sendOrder(
   opts: { method: "EMAIL" | "MANUAL"; to?: string | null },
   actor: OrderActor,
 ) {
+  const co = await getCompany();
   guard(actor);
   const o = await loadOrder(orderId);
   if (o.status !== "DRAFT")
@@ -391,7 +394,7 @@ export async function sendOrder(
     await sendEmail({
       to: sentTo,
       subject: `PO ${o.number} — ${o.project.name} — deliver ${o.requestedDate!.toLocaleDateString("en-US", { timeZone: "UTC" })}`,
-      text: `Please confirm this order and delivery date by reply.\n\nJob: ${o.project.name}\nDeliver to: ${o.project.address}\nDrop: ${o.dropLocation}\nSite contact: ${o.siteContact}\nAccount: ${BTR.abcAccount}\n\n${o.lines.map((l) => `${l.itemNumber ?? "-"}  ${l.description}  ${l.quantity} ${l.unit ?? ""}`).join("\n")}\n\n${BTR.name} · ${BTR.phone}`,
+      text: `Please confirm this order and delivery date by reply.\n\nJob: ${o.project.name}\nDeliver to: ${o.project.address}\nDrop: ${o.dropLocation}\nSite contact: ${o.siteContact}\nAccount: ${co.abcAccount}\n\n${o.lines.map((l) => `${l.itemNumber ?? "-"}  ${l.description}  ${l.quantity} ${l.unit ?? ""}`).join("\n")}\n\n${co.name} · ${co.phone}`,
       attachments: [
         { name: `${o.number}.pdf`, contentType: "application/pdf", bytes: pdf },
       ],

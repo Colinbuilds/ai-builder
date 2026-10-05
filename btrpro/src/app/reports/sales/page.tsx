@@ -4,6 +4,7 @@ import { closeRate, pipeline, type Market } from "@/lib/reports/sales";
 import { arAging } from "@/lib/billing/service";
 import { STAGE_LABEL, type Stage } from "@/lib/projects/workflow";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
+import { appName } from "@/lib/company-profile";
 
 const usd = (n: number) =>
   n.toLocaleString("en-US", {
@@ -215,7 +216,7 @@ export default async function SalesDashboard({
             </TBody>
           </Table>
           <p className="text-xs text-muted-foreground">
-            Won and lost come from stage changes made in BTRpro. Jobs imported
+            Won and lost come from stage changes made in {appName()}. Jobs imported
             already sold aren&apos;t counted.
           </p>
         </div>

@@ -24,6 +24,7 @@ import {
   Users,
 } from "lucide-react";
 import { Dropdown } from "@/components/shell/dropdown";
+import { useBrand } from "@/components/brand";
 
 export type JobCounts = {
   chat: number;
@@ -40,7 +41,7 @@ export type JobCounts = {
 
 type Item = { href: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; n?: number | string; hot?: boolean };
 
-export function jobMenu(id: string, c: JobCounts, showCosts: boolean): Item[][] {
+export function jobMenu(id: string, c: JobCounts, showCosts: boolean, bot = "BTRbot"): Item[][] {
   const b = `/projects/${id}`;
   return [
     [
@@ -67,7 +68,7 @@ export function jobMenu(id: string, c: JobCounts, showCosts: boolean): Item[][] 
           ]
         : []),
       { href: `${b}#portal`, label: "Customer portal", icon: Users },
-      { href: `${b}/assistant`, label: "BTRbot", icon: Bot },
+      { href: `${b}/assistant`, label: bot, icon: Bot },
     ],
     [
       { href: `${b}#history`, label: "History", icon: History },
@@ -76,7 +77,7 @@ export function jobMenu(id: string, c: JobCounts, showCosts: boolean): Item[][] 
   ];
 }
 
-const LABEL: [RegExp, string][] = [
+const labels = (bot: string): [RegExp, string][] => [
   [/\/chat/, "Messages"],
   [/\/email/, "Communications"],
   [/\/production/, "Schedule & crews"],
@@ -88,15 +89,16 @@ const LABEL: [RegExp, string][] = [
   [/\/photos/, "Photos"],
   [/\/billing/, "Invoices & payments"],
   [/\/costs/, "Profit analysis"],
-  [/\/assistant/, "BTRbot"],
+  [/\/assistant/, bot],
 ];
 
 /** The bar under the job header: Overview, the section you're in, and the JOB MENU panel. */
 export function JobMenuBar({ id, counts, showCosts }: { id: string; counts: JobCounts; showCosts: boolean }) {
   const path = usePathname();
+  const { assistantName: bot } = useBrand();
   const base = `/projects/${id}`;
-  const section = path === base ? null : (LABEL.find(([r]) => r.test(path.slice(base.length)))?.[1] ?? null);
-  const groups = jobMenu(id, counts, showCosts);
+  const section = path === base ? null : (labels(bot).find(([r]) => r.test(path.slice(base.length)))?.[1] ?? null);
+  const groups = jobMenu(id, counts, showCosts, bot);
   const tab = (on: boolean) => `-mb-px flex items-center gap-1.5 border-b-[3px] px-3 py-2 text-sm whitespace-nowrap ${on ? "border-btr-blue text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`;
   return (
     <div className="flex items-stretch border-b bg-background">
@@ -109,7 +111,7 @@ export function JobMenuBar({ id, counts, showCosts }: { id: string; counts: JobC
         <span className="hidden items-stretch xl:flex">
           {groups
             .flat()
-            .filter((i) => !i.href.includes("#") && !(section && LABEL.find(([, l]) => l === i.label && l === section)))
+            .filter((i) => !i.href.includes("#") && !(section && labels(bot).find(([, l]) => l === i.label && l === section)))
             .slice(0, 9)
             .map((i) => (
               <Link key={i.href} href={i.href} className={tab(false)}>

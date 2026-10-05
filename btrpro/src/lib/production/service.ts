@@ -2,7 +2,7 @@ import type { Role } from "@/lib/session";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { nextInSequence } from "@/lib/numbering";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { changeStage, ProjectError } from "@/lib/projects/service";
 import { addCost, canSeeCosts } from "@/lib/costing/service";
 import { emailConfigured, sendEmail } from "@/lib/email/send";
@@ -422,6 +422,7 @@ export const workOrderUrl = (token: string) =>
   `${process.env.APP_URL ?? ""}/w/${token}`;
 
 export async function sendWorkOrder(id: string, actor: ProdActor) {
+  const co = await getCompany();
   guard(actor);
   const w = await prisma.workOrder.findUniqueOrThrow({
     where: { id },
@@ -471,7 +472,7 @@ export async function sendWorkOrder(id: string, actor: ProdActor) {
     await sendEmail({
       to: w.crew.email,
       subject: `Work order ${w.number} — ${w.project.name} — start ${w.startDate!.toLocaleDateString("en-US", { timeZone: "UTC" })}`,
-      text: `${w.crew.leadName ?? w.crew.name},\n\nYour work order for ${w.project.name} (${w.project.address ?? "address on the order"}) is here:\n${workOrderUrl(w.token)}\n\n${BTR.name} · ${BTR.phone}`,
+      text: `${w.crew.leadName ?? w.crew.name},\n\nYour work order for ${w.project.name} (${w.project.address ?? "address on the order"}) is here:\n${workOrderUrl(w.token)}\n\n${co.name} · ${co.phone}`,
     }).then(
       () => (emailed = true),
       (e) => console.error("work order email failed", e),

@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { saveUpload } from "@/lib/storage";
 import { accountWarning } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { builderSheetWarning } from "@/lib/builders";
 import { parseCoverage } from "./coverage";
 import { extractSheetText } from "./extract";
@@ -102,8 +103,8 @@ export async function applyImport(importId: string, reviewed: ReviewedImport, us
         salesRep: reviewed.header.salesRep?.trim() || null,
         effectiveDate: effective,
         expirationDate: expiration,
-        // BTR sheets must be on BTR's account; a builder's sheet on the builder's account
-        warning: builder ? builderSheetWarning(reviewed.header.account, builder) : accountWarning(reviewed.header.account),
+        // the company's sheets must be on its own account; a builder's sheet on the builder's account
+        warning: builder ? builderSheetWarning(reviewed.header.account, builder) : accountWarning(reviewed.header.account, await getCompany()),
         isLoaded: true,
         importId: imp.id,
         companyId: imp.companyId ?? null,

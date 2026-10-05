@@ -3,7 +3,7 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { nextInSequence } from "@/lib/numbering";
 import { round } from "@/lib/calc/core";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { getSettings } from "@/lib/settings";
 import { loadCosting } from "@/lib/costing/service";
 import { changeStage } from "@/lib/projects/service";
@@ -236,6 +236,7 @@ export async function sendInvoice(
   to: { name: string | null; email: string | null },
   actor: BillActor,
 ) {
+  const co = await getCompany();
   guard(actor);
   const inv = await prisma.invoice.findUniqueOrThrow({
     where: { id },
@@ -257,8 +258,8 @@ export async function sendInvoice(
   if (email && emailConfigured()) {
     await sendEmail({
       to: email,
-      subject: `${BTR.name} invoice ${inv.number} — ${inv.project.name}`,
-      text: `${to.name ?? inv.billTo ?? ""}\n\nInvoice ${inv.number} for ${inv.project.name}: $${inv.amountDue.toFixed(2)} due ${inv.dueDate.toLocaleDateString("en-US", { timeZone: "UTC" })}.\n\nView and pay: ${invoiceUrl(inv.token)}\n\n${BTR.name} · ${BTR.phone}`,
+      subject: `${co.name} invoice ${inv.number} — ${inv.project.name}`,
+      text: `${to.name ?? inv.billTo ?? ""}\n\nInvoice ${inv.number} for ${inv.project.name}: $${inv.amountDue.toFixed(2)} due ${inv.dueDate.toLocaleDateString("en-US", { timeZone: "UTC" })}.\n\nView and pay: ${invoiceUrl(inv.token)}\n\n${co.name} · ${co.phone}`,
     }).then(
       () => (emailed = true),
       (e) => console.error("invoice email failed", e),
@@ -496,6 +497,7 @@ export async function getInvoiceByToken(token: string) {
 }
 
 export async function invoicePdf(id: string) {
+  const co = await getCompany();
   const inv = await prisma.invoice.findUniqueOrThrow({
     where: { id },
     include: { payments: true, project: true },
@@ -503,9 +505,9 @@ export async function invoicePdf(id: string) {
   const s = await getSettings();
   const w = await PdfWriter.create({
     title: `Invoice ${inv.number}`,
-    footer: `${BTR.name} · ${BTR.phone} · ${BTR.email}`,
+    footer: `${co.name} · ${co.phone} · ${co.email}`,
   });
-  w.text(`${BTR.name.toUpperCase()}  ·  ${BTR.address}  ·  ${BTR.phone}`, {
+  w.text(`${co.name.toUpperCase()}  ·  ${co.address}  ·  ${co.phone}`, {
     size: 8,
     gap: 8,
   });
@@ -553,6 +555,7 @@ export const stripeConfigured = () => !!process.env.STRIPE_SECRET_KEY;
 
 /** Card checkout for an invoice's balance (plus the surcharge line, if the company set one). */
 export async function stripeCheckout(token: string) {
+  const co = await getCompany();
   if (!stripeConfigured())
     throw new BillingError("Online card payment isn't set up.");
   const inv = await getInvoiceByToken(token);
@@ -569,7 +572,7 @@ export async function stripeCheckout(token: string) {
     "metadata[invoiceId]": inv.id,
     "metadata[amount]": due.toFixed(2),
     "metadata[surcharge]": sur.surcharge.toFixed(2),
-    "payment_intent_data[description]": `${BTR.name} ${inv.number}`,
+    "payment_intent_data[description]": `${co.name} ${inv.number}`,
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": "usd",
     "line_items[0][price_data][unit_amount]": String(Math.round(due * 100)),

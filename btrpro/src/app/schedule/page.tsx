@@ -9,6 +9,7 @@ import { crewWarning } from "@/components/production/compliance-badge";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { exemptForm } from "@/lib/company-profile";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function monday(d: Date) {
@@ -112,7 +113,7 @@ export default async function Schedule({ searchParams }: { searchParams: Promise
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold">Add to the schedule</h2>
           <EventForm projects={projects} crews={crewOpts} />
-          <p className="text-xs text-muted-foreground">Scheduling an install on a sold job moves it to Scheduled; that needs a signed contract (and the Form 17 on public tax-exempt jobs). Deliveries come from material orders.</p>
+          <p className="text-xs text-muted-foreground">Scheduling an install on a sold job moves it to Scheduled; that needs a signed contract (and the {exemptForm().short} on public tax-exempt jobs). Deliveries come from material orders.</p>
         </section>
       )}
     </div>

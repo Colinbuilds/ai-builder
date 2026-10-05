@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { refreshReadiness } from "@/lib/projects/service";
 import { round } from "@/lib/calc/core";
+import { shortName } from "@/lib/company-profile";
 
 type Actor = { id: string; name: string };
 
@@ -111,7 +112,7 @@ export async function saveLaborStandard(
   if (input.rateType === "UNIT") {
     if (!(input.unitRate != null && input.unitRate > 0)) throw new Error("Enter the piece rate ($ per unit).");
   } else if (!(input.productionRate != null && input.productionRate > 0)) throw new Error("Production rate must be above zero.");
-  if (!input.source.trim()) throw new Error("Where does this rate come from? (BTR history, crew agreement, etc.)");
+  if (!input.source.trim()) throw new Error(`Where does this rate come from? (${shortName()} history, crew agreement, etc.)`);
   const data = { ...input, task: input.task.trim(), unit: input.unit.trim(), source: input.source.trim(), enteredBy: actor.name };
   const { id, ...rest } = data;
   const s = id ? await prisma.laborStandard.update({ where: { id }, data: rest }) : await prisma.laborStandard.create({ data: rest });

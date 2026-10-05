@@ -11,6 +11,7 @@ import { TemplateMetaForm, UseOnJob } from "@/components/estimates/templates";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible } from "@/components/collapsible";
+import { shortName } from "@/lib/company-profile";
 
 const SLOT: Record<string, string> = {
   shingle: "Shingles",
@@ -255,7 +256,7 @@ export default async function Templates() {
         );
       })}
       <p className="text-xs text-muted-foreground">
-        Prices shown are BTR standard.{" "}
+        Prices shown are {shortName()} standard.{" "}
         <Link href="/builders" className="underline">
           Builder jobs
         </Link>{" "}

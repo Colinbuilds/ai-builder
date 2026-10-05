@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/db";
 import { getSettings, saveSettings } from "@/lib/settings";
 import { ABC_API, accessToken, getConnection, oauthConfigured } from "./oauth";
+import { shortName } from "@/lib/company-profile";
 
 const SYSTEM = { id: "", name: "ABC Supply sync" };
 const DAY = 86_400_000;
@@ -87,7 +88,7 @@ export async function syncAbc(days = 90): Promise<AbcSync> {
     if (s.abcBillTo) {
       const path = `/api/invoice/v1/invoices/history/${encodeURIComponent(s.abcBillTo)}`;
       for (const r of await getPages(path, { startDate: start.toISOString().slice(0, 19) + "Z", endDate: end.toISOString().slice(0, 19) + "Z" }, token)) if (await upsert("INVOICE", r)) invoices++;
-    } else note = "Add BTR's ABC bill-to account number to pull invoices.";
+    } else note = `Add ${shortName()}'s ABC bill-to account number to pull invoices.`;
     await saveSettings({ abcSyncedAt: new Date().toISOString(), abcSyncError: null }, SYSTEM);
     return { orders, invoices, note };
   } catch (e) {

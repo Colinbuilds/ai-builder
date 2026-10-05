@@ -5,6 +5,7 @@ import { catchUpAction } from "@/app/projects/comms-actions";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import { Problems } from "@/components/projects/problems";
+import { useBrand } from "@/components/brand";
 
 export function CatchUp({
   projectId,
@@ -20,6 +21,7 @@ export function CatchUp({
   } | null;
   aiReady: boolean;
 }) {
+  const { assistantName: bot } = useBrand();
   const [state, action, pending] = useFormAction(catchUpAction, null);
   return (
     <section className="rounded-md border p-4">
@@ -59,7 +61,7 @@ export function CatchUp({
               ? `Covers since ${latest.coversFrom}`
               : "Covers the whole job"}{" "}
             · written {latest.createdAt}
-            {latest.by && ` for ${latest.by}`}. BTRbot summary of the job record;
+            {latest.by && ` for ${latest.by}`}. {bot} summary of the job record;
             check anything you act on.
           </p>
           <Markdown text={latest.content} />

@@ -10,6 +10,7 @@ import { CREW_COOKIE, CREW_MAX_AGE, signCrewSession } from "@/lib/session";
 import { requireCrew } from "@/lib/crew/auth";
 import { checkCrewLogin } from "@/lib/crew/login";
 import { CrewError, addJobPhotos, submitCrewInvoice } from "@/lib/crew/service";
+import { shortName } from "@/lib/company-profile";
 
 export type CrewResult = { problems: string[]; ok?: boolean; note?: string } | null;
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -96,7 +97,7 @@ export async function crewIssueAction(_: CrewResult, f: FormData): Promise<CrewR
   try {
     await reportIssue({ crewId: crew.id, name: crew.name }, projectId, str(f, "note"), await filesOf(f, "photos"));
     revalidatePath(`/crew/jobs/${projectId}`);
-    return { problems: [], ok: true, note: "Sent to the office. Don't do the extra work until BTR says it's approved." };
+    return { problems: [], ok: true, note: `Sent to the office. Don't do the extra work until ${shortName()} says it's approved.` };
   } catch (e) {
     return { problems: [msg(e)] };
   }

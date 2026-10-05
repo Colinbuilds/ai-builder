@@ -11,6 +11,7 @@ import { extrasDesk } from "@/lib/production/field";
 import { bondingCapacity } from "./bonding";
 import { relationships } from "./relationships";
 import { safetyOverview } from "@/lib/safety/service";
+import { appName } from "@/lib/company-profile";
 
 const DAY = 86_400_000;
 const r2 = (n: number) => round(n, 2);
@@ -125,7 +126,7 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
       label: "Backlog",
       value: backlogMonths == null ? usd(backlog) : `${usd(backlog)} · ${backlogMonths} months`,
       tone: backlogMonths == null ? "none" : backlogMonths >= 8 && backlogMonths <= 15 ? "good" : backlogMonths >= 4 ? "watch" : "bad",
-      note: thin ? "Months appear once BTRpro has a year of billing (invoices, pay apps, builder billing)" : undefined,
+      note: thin ? `Months appear once ${appName()} has a year of billing (invoices, pay apps, builder billing)` : undefined,
       benchmark: "8–12 months of revenue under contract is steady; under 4 means sell now, over 15 means check crew capacity",
       href: "/reports/wip",
     },
@@ -194,7 +195,7 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
       label: "Biggest customer's share (12 months)",
       value: top && !thin ? `${top.share}% · ${top.name}` : "—",
       tone: !top || thin ? "none" : top.share > 30 ? "bad" : top.share > 20 ? "watch" : "good",
-      note: thin ? "Needs a year of billing in BTRpro to be meaningful" : undefined,
+      note: thin ? `Needs a year of billing in ${appName()} to be meaningful` : undefined,
       benchmark: "Keep any one GC or builder under ~20–25% of revenue",
       href: "/reports/scorecard#customers",
     },
@@ -238,7 +239,7 @@ export async function scorecard(user: { id: string; role: string }, now = new Da
       label: "Lien deadlines in the next 30 days",
       value: String(risk.liensDueSoon),
       tone: risk.liensDueSoon ? "watch" : "good",
-      benchmark: "Nebraska: record within 120 days of last work, or the lien right is gone",
+      benchmark: risk.lienRule ? `${risk.lienRule.stateName}: ${risk.lienRule.summary}` : "Lien deadline MISSING for this state (Settings → Company profile)",
       href: "/reports/risk",
     },
   ];

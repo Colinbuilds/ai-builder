@@ -10,6 +10,7 @@ import { scopesFor } from "@/lib/import/schedule";
 import { createProject } from "@/lib/projects/service";
 import { parseEstimatingWorkbook, type Board, type SheetRow, type TabSummary } from "./sheet";
 import type { Role } from "@/lib/session";
+import { appName } from "@/lib/company-profile";
 
 export const DEFAULT_ESTIMATING_SHEET = "https://docs.google.com/spreadsheets/d/1Lt10jy0tcMCLMd8fQ8_MQ2p1NRXcK8KgLsGx2GzWefA/edit";
 
@@ -95,7 +96,7 @@ export function startEstimatingWatcher(everyMs = 30 * 60_000) {
       const s = await getSettings();
       if (s.estimatingSheetOff) return;
       const r = await syncEstimatingSheet(null);
-      console.log(`[estimating sheet] +${r.added} ~${r.updated} -${r.removed} (kept ${r.keptEdited} edited in BTRpro)`);
+      console.log(`[estimating sheet] +${r.added} ~${r.updated} -${r.removed} (kept ${r.keptEdited} edited in ${appName()})`);
     } catch (e) {
       console.error("[estimating sheet] sync failed:", e instanceof Error ? e.message : e);
     }

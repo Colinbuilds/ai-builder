@@ -1,13 +1,16 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { getPortal } from "@/lib/portal/customer";
 import { INVOICE_KIND_LABEL } from "@/lib/billing/math";
 
-export const metadata: Metadata = {
-  title: `Your project — ${BTR.name}`,
+export async function generateMetadata(): Promise<Metadata> {
+  const co = await getCompany();
+  return {
+  title: `Your project — ${co.name}`,
   robots: { index: false },
 };
+}
 const usd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 const d = (x: Date) =>
@@ -31,6 +34,7 @@ export default async function CustomerPortal({
 }: {
   params: Promise<{ token: string }>;
 }) {
+  const co = await getCompany();
   const { token } = await params;
   const p = await getPortal(token);
   if (!p) notFound();
@@ -39,13 +43,13 @@ export default async function CustomerPortal({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 py-4">
       <header className="border-b pb-3">
-        <p className="text-xl font-semibold">{BTR.name}</p>
+        <p className="text-xl font-semibold">{co.name}</p>
         <p className="text-sm text-muted-foreground">
-          {BTR.address} ·{" "}
-          <a href={`tel:${BTR.phone}`} className="underline">
-            {BTR.phone}
+          {co.address} ·{" "}
+          <a href={`tel:${co.phone}`} className="underline">
+            {co.phone}
           </a>{" "}
-          · {BTR.email}
+          · {co.email}
         </p>
       </header>
       <div>
@@ -179,7 +183,7 @@ export default async function CustomerPortal({
         )}
       </section>
       <p className="text-xs text-muted-foreground">
-        Questions? Call {BTR.phone}. This page is private to you — please
+        Questions? Call {co.phone}. This page is private to you — please
         don&apos;t share the link.
       </p>
     </div>

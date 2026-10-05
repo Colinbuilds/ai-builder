@@ -18,6 +18,7 @@ import { qboJobNumberAction } from "@/app/projects/actions";
 import { canSeeCosts } from "@/lib/costing/service";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatUsd } from "@/lib/utils";
+import { exemptForm } from "@/lib/company-profile";
 
 const initials = (n: string) =>
   n
@@ -196,7 +197,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
             .join(" · ")}
         </p>
       )}
-      {showForm17Banner(project) && <Form17Banner id={project.id} canEdit={canEdit} />}
+      {showForm17Banner(project) && <Form17Banner id={project.id} canEdit={canEdit} form={exemptForm()} />}
       <JobBody id={id}>{children}</JobBody>
     </div>
   );

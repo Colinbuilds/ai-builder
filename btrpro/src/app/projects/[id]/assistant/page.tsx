@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/claude";
 import { QUICK_ACTIONS } from "@/lib/ai/assistant";
 import { AssistantPanel } from "@/components/assistant/assistant-panel";
+import { botName } from "@/lib/company-profile";
 
 export default async function AssistantPage({
   params,
@@ -19,9 +20,9 @@ export default async function AssistantPage({
   return (
     <div className="flex max-w-4xl flex-col gap-2">
       <p className="text-sm text-muted-foreground">
-        <strong>BTRbot</strong>, the estimating assistant for this job. Prices and item numbers come only from
+        <strong>{botName()}</strong>, the estimating assistant for this job. Prices and item numbers come only from
         the loaded sheets; lines it proposes wait on the Estimates tab as{" "}
-        <strong>BTRbot suggestion</strong> until someone accepts them.
+        <strong>{botName()} suggestion</strong> until someone accepts them.
       </p>
       <AssistantPanel
         projectId={id}

@@ -11,7 +11,7 @@ import { getSettings } from "@/lib/settings";
 import { qboConnected } from "@/lib/integrations/quickbooks";
 import { canSeeCosts } from "@/lib/costing/service";
 import { isSoldOrLater, type Stage } from "@/lib/projects/workflow";
-import { BTR } from "@/lib/company";
+import { getCompany, shortName } from "@/lib/company-profile";
 import { ReceiptReview } from "@/components/receipts/review";
 import { AutoRefresh } from "@/components/receipts/auto-refresh";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,7 @@ const STATUS: Record<string, [string, "green" | "red" | "amber" | "outline" | "b
 const OUTCOME: Record<string, string> = { COST_ONLY: "Filed to job costs", CHANGE_ORDER: "Change order drafted", INVOICE: "Invoice drafted" };
 
 export default async function ReceiptPage({ params, searchParams }: { params: Promise<{ rid: string }>; searchParams: Promise<{ job?: string }> }) {
+  const co = await getCompany();
   const user = await requireUser(STAFF_ROLES);
   const { rid } = await params;
   const { job } = await searchParams;
@@ -97,7 +98,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
           <p className="rounded-lg border border-btr-line p-4 text-sm">
             {scan.status === "READING"
               ? "Reading the receipt… this page updates on its own."
-              : /Railway|isn't configured|BTRbot service|BTRbot request|BTRbot isn|out of credit|busy/.test(scan.error ?? "")
+              : /Railway|isn't configured| service error| request rejected| isn't turned on|out of credit|busy/.test(scan.error ?? "")
                 ? `Couldn't read this receipt: ${scan.error}`
                 : `Couldn't read this receipt${scan.error ? `: ${scan.error}` : "."} Retake the photo flat and in good light, or enter it by hand on the job's costs.`}
           </p>
@@ -212,7 +213,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
           lineMarkup={(scan.lineMarkup as Record<string, number> | null) ?? {}}
           reason={scan.message}
           project={project ? { id: project.id, name: project.name, address: project.address, sold: isSoldOrLater(project.status as Stage), contractNow: d.contractNow } : null}
-          company={{ name: BTR.name, address: BTR.address }}
+          company={{ name: co.name, address: co.address }}
           qbo={{ connected: qbo, itemSet: !!settings.qboItemId, expenseSet: !!(settings.qboExpenseAccountId && settings.qboPaymentAccountId) }}
           filed={filed ? { outcome: scan.outcome, qboStatus: scan.qboStatus } : null}
           canApprove={!project || !access || canSeeCosts(user, access)}
@@ -231,7 +232,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
-          {d.scope.builderName ? `${d.scope.builderName}'s pricing${d.scope.fallback === "STANDARD" ? " (BTR standard where they have no price)" : ""}` : "BTR standard sheets"}. What ABC charged vs what our sheets say — separate from the markup above.
+          {d.scope.builderName ? `${d.scope.builderName}'s pricing${d.scope.fallback === "STANDARD" ? ` (${shortName()} standard where they have no price)` : ""}` : `${shortName()} standard sheets`}. What ABC charged vs what our sheets say — separate from the markup above.
         </p>
         <div className="overflow-x-auto rounded-lg border border-btr-line">
           <table className="w-full text-sm">

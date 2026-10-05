@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { STAFF_ROLES } from "@/lib/roles";
 import { CLAUSES, type ContractFindings } from "@/lib/docs/contract-review";
+import { botName } from "@/lib/company-profile";
 
 const TONE = { HIGH: "border-red-300 bg-red-50 dark:bg-red-950/30", MEDIUM: "border-amber-300 bg-amber-50 dark:bg-amber-950/30", LOW: "bg-background" } as const;
 const TERM_LABEL: Record<string, string> = {
@@ -38,7 +39,7 @@ export default async function ContractReviewPage({ params }: { params: Promise<{
               {doc.fileName}
             </a>
           )}{" "}
-          · BTRbot, {r.createdAt.toLocaleString("en-US", { timeZone: "America/Chicago" })} · a checklist for whoever signs, not legal advice — send HIGH items to the attorney.
+          · {botName()}, {r.createdAt.toLocaleString("en-US", { timeZone: "America/Chicago" })} · a checklist for whoever signs, not legal advice — send HIGH items to the attorney.
         </p>
       </div>
       <p className="rounded-md border bg-background p-3 text-sm">{r.summary}</p>

@@ -2,6 +2,7 @@
 // changes stage, plus reminders computed from the data (bids due, expiring crew insurance, overdue invoices).
 import { prisma } from "@/lib/db";
 import { balanceDue } from "@/lib/billing/math";
+import { exemptForm } from "@/lib/company-profile";
 
 type Actor = { id: string | null; name: string; role?: string };
 type StageProject = {
@@ -36,7 +37,7 @@ export const STAGE_TASKS: Record<string, Rule[]> = {
   SOLD: [
     {
       key: "form17",
-      title: "Office: get Form 17 executed with the owner (before ordering materials)",
+      title: `Office: get ${exemptForm().short} executed with the owner (before ordering materials)`,
       days: 1,
       who: "office",
       when: (p) => p.isPublic && p.isTaxExempt && p.form17Status !== "EXECUTED",

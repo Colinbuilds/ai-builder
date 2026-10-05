@@ -2,6 +2,7 @@
 // (salesperson, estimator, or watching), @mentions, tasks due, and company updates.
 import { prisma } from "@/lib/db";
 import { prettyStages, stageMoveTitle } from "@/lib/projects/milestones";
+import { exemptForm } from "@/lib/company-profile";
 
 export type Note = {
   id: string;
@@ -132,7 +133,7 @@ export function activityTitle(kind: string) {
       created: "New lead",
       stage: "Job moved",
       intake: "Intake updated",
-      form17: "Form 17",
+      form17: exemptForm().short,
       details: "Job updated",
       contact: "Contact",
       override: "Override",

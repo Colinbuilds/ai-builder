@@ -2,11 +2,12 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { STAFF_ROLES } from "@/lib/roles";
-import { ADOPTIONS, REFERENCES, isOfficial, type Ref } from "@/lib/codes/library";
+import { adoptionsFor, referencesFor, isOfficial, type Ref } from "@/lib/codes/library";
 import type { WebSource } from "@/lib/ai/claude";
 import { AskForm } from "@/components/codes/ask-form";
 import { Markdown } from "@/components/markdown";
 import { addLinkAction, removeLinkAction } from "./actions";
+import { botName, getCompany } from "@/lib/company-profile";
 
 const KIND: Record<Ref["kind"], string> = { CODE: "Codes in force", MANUFACTURER: "Manufacturer instructions & specs", STANDARD: "Standards & design data", LOCAL: "Nebraska law" };
 const host = (u: string) => {
@@ -20,26 +21,27 @@ const host = (u: string) => {
 export default async function CodesLibrary({ searchParams }: { searchParams: Promise<{ job?: string; q?: string }> }) {
   await requireUser(STAFF_ROLES);
   const sp = await searchParams;
-  const [jobs, questions, links] = await Promise.all([
+  const [jobs, questions, links, co] = await Promise.all([
     prisma.project.findMany({ where: { status: { notIn: ["LOST", "CLOSED", "PAID"] } }, select: { id: true, name: true }, orderBy: { statusChangedAt: "desc" }, take: 200 }),
     prisma.codeQuestion.findMany({ where: sp.job ? { projectId: sp.job } : {}, orderBy: { createdAt: "desc" }, take: 30 }),
     prisma.libraryLink.findMany({ orderBy: { createdAt: "desc" } }),
+    getCompany(),
   ]);
   const jobName = new Map(jobs.map((j) => [j.id, j.name]));
-  const refs: (Ref & { id?: string })[] = [...REFERENCES, ...links.map((l) => ({ ...l, kind: l.kind as Ref["kind"], jurisdiction: l.jurisdiction ?? undefined, note: l.note ?? undefined }))];
+  const refs: (Ref & { id?: string })[] = [...referencesFor(co.state), ...links.map((l) => ({ ...l, kind: l.kind as Ref["kind"], jurisdiction: l.jurisdiction ?? undefined, note: l.note ?? undefined }))];
 
   return (
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-2xl font-semibold">Code & spec library</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Ask BTRbot a code, spec or manufacturer question. It searches the live web — code text, the city, standards bodies and the manufacturer&apos;s current instructions — and the job&apos;s own spec book,
+          Ask {botName()} a code, spec or manufacturer question. It searches the live web — code text, the city, standards bodies and the manufacturer&apos;s current instructions — and the job&apos;s own spec book,
           answers for the edition your jurisdiction actually enforces, and lists every source. Anything it can&apos;t verify is marked unverified.
         </p>
       </div>
 
       <section className="rounded-lg border bg-background p-4">
-        <AskForm jobs={jobs} job={sp.job} />
+        <AskForm jobs={jobs} job={sp.job} jurisdiction={co.jurisdiction} />
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -99,7 +101,7 @@ export default async function CodesLibrary({ searchParams }: { searchParams: Pro
         <aside className="flex flex-col gap-4 text-sm">
           <section className="rounded-lg border bg-background p-3">
             <h2 className="font-semibold">Code editions in force</h2>
-            {ADOPTIONS.map((a) => (
+            {adoptionsFor(co.state).map((a) => (
               <div key={a.jurisdiction} className="mt-1">
                 <b>{a.jurisdiction}</b>: {a.codes}{" "}
                 <a href={a.source} target="_blank" rel="noreferrer" className="text-xs text-btr-link hover:underline">
@@ -107,11 +109,13 @@ export default async function CodesLibrary({ searchParams }: { searchParams: Pro
                 </a>
               </div>
             ))}
-            <p className="mt-1 text-xs text-muted-foreground">Other towns (Lincoln, Papillion, Council Bluffs, Douglas/Sarpy County) can adopt different editions — ask BTRbot with that jurisdiction.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {co.state === "NE" ? "Other towns (Lincoln, Papillion, Council Bluffs, Douglas/Sarpy County) can" : "Towns and counties"} adopt different editions — ask {botName()} with that jurisdiction.
+            </p>
           </section>
           {(Object.keys(KIND) as Ref["kind"][]).map((k) => (
             <section key={k} className="rounded-lg border bg-background p-3">
-              <h2 className="font-semibold">{KIND[k]}</h2>
+              <h2 className="font-semibold">{k === "LOCAL" ? `${co.region.name} law` : KIND[k]}</h2>
               <ul className="mt-1 flex flex-col gap-1">
                 {refs
                   .filter((r) => r.kind === k)
@@ -139,7 +143,7 @@ export default async function CodesLibrary({ searchParams }: { searchParams: Pro
             <select name="kind" className="h-8 rounded-md border border-input bg-background px-1">
               {(Object.keys(KIND) as Ref["kind"][]).map((k) => (
                 <option key={k} value={k}>
-                  {KIND[k]}
+                  {k === "LOCAL" ? `${co.region.name} law` : KIND[k]}
                 </option>
               ))}
             </select>

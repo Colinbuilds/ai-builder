@@ -21,6 +21,7 @@ import {
   type TakeoffItem,
   type View,
 } from "@/lib/takeoff/geometry";
+import { useBrand } from "@/components/brand";
 
 type PdfPage = {
   getViewport(o: { scale: number }): { width: number; height: number };
@@ -61,6 +62,7 @@ export function TakeoffEditor({
   fileName: string;
   savedToJob: string | null;
 }) {
+  const { assistantName: bot } = useBrand();
   const [view, setView] = useState<View>(initial?.view ?? "ROOF_PLAN");
   const [pitch, setPitch] = useState<number | null>(initial?.pitch ?? null);
   const [scale, setScale] = useState<Scale | null>(initial?.scale ?? null);
@@ -290,8 +292,8 @@ export function TakeoffEditor({
     if (drawn.length) {
       commitItems([...items, ...drawn]);
       setMode("select");
-      notes.push(`BTRbot drew ${drawn.length} item${drawn.length === 1 ? "" : "s"} (dashed) on ${results.filter((x) => x.r.items.length).map((x) => x.label).join(", ")}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`);
-    } else notes.push("BTRbot couldn't trace anything it was sure of. Zoom in on one elevation or roof plan and use “measure on screen”.");
+      notes.push(`${bot} drew ${drawn.length} item${drawn.length === 1 ? "" : "s"} (dashed) on ${results.filter((x) => x.r.items.length).map((x) => x.label).join(", ")}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`);
+    } else notes.push(`${bot} couldn't trace anything it was sure of. Zoom in on one elevation or roof plan and use “measure on screen”.`);
     touch();
     setAi({ busy: false, message: notes.join(" "), cannot: cannot.slice(0, 8) });
   };
@@ -329,7 +331,7 @@ export function TakeoffEditor({
       const kindOf: View = elev.length >= roof.length ? "ELEVATION" : "ROOF_PLAN";
       if (!views.length) return setAi({ busy: false, message: `No elevation or roof plan on this sheet (found: ${read.views.map((v) => v.title).join(", ") || "nothing"}). Open the elevations or the roof plan.` });
       const notes: string[] = [];
-      if (elev.length && roof.length) notes.push(`This sheet has both elevations and a roof plan; BTRbot traced the ${kindOf === "ELEVATION" ? "elevations" : "roof plan"}. Open the other as its own sheet.`);
+      if (elev.length && roof.length) notes.push(`This sheet has both elevations and a roof plan; ${bot} traced the ${kindOf === "ELEVATION" ? "elevations" : "roof plan"}. Open the other as its own sheet.`);
       const sheetNotes = read.notes.join("\n");
       const results: { label: string; r: Ok }[] = [];
       const cannot: string[] = [];
@@ -347,14 +349,14 @@ export function TakeoffEditor({
         results.push({ label: v.title, r });
         cannot.push(...r.cannotTrace.map((c) => `${v.title}: ${c}`));
       }
-      if (!results.length) return setAi({ busy: false, message: "BTRbot couldn't trace this sheet.", cannot });
+      if (!results.length) return setAi({ busy: false, message: `${bot} couldn't trace this sheet.`, cannot });
       applyAi(results, notes, cannot);
     } catch (e) {
       setAi({ busy: false, message: e instanceof Error ? e.message : "Couldn't capture the sheet." });
     }
   };
   const aiCount = items.filter((i) => i.ai).length;
-  const acceptAi = (id?: string) => commitItems(items.map((i) => (i.ai && (!id || i.id === id) ? { ...i, ai: undefined, note: i.note?.replace(/^BTRbot: /, "BTRbot (checked): ") ?? null } : i)));
+  const acceptAi = (id?: string) => commitItems(items.map((i) => (i.ai && (!id || i.id === id) ? { ...i, ai: undefined, note: i.note?.startsWith(`${bot}: `) ? `${bot} (checked): ${i.note.slice(bot.length + 2)}` : (i.note ?? null) } : i)));
 
   // ---------- pointer → sheet coordinates ----------
   const toSheet = (e: { clientX: number; clientY: number }, constrain: boolean): Pt => {
@@ -639,18 +641,18 @@ export function TakeoffEditor({
                 onClick={aiMeasureSheet}
                 disabled={ai.busy || !size}
                 className="rounded-md border border-violet-500 bg-violet-600 px-2.5 py-1 text-white hover:bg-violet-700 disabled:opacity-50"
-                title="BTRbot reads the whole sheet (views, notes, material callouts), then traces each elevation or roof plan up close as dashed drafts."
+                title={`${bot} reads the whole sheet (views, notes, material callouts), then traces each elevation or roof plan up close as dashed drafts.`}
               >
-                {ai.busy ? "BTRbot measuring…" : "BTRbot measure whole sheet"}
+                {ai.busy ? `${bot} measuring…` : `${bot} measure whole sheet`}
               </button>
               <button
                 type="button"
                 onClick={aiMeasure}
                 disabled={ai.busy || !size}
                 className="rounded-md border border-violet-400 bg-violet-50 px-2.5 py-1 text-violet-900 hover:bg-violet-100 disabled:opacity-50 dark:bg-violet-950 dark:text-violet-200"
-                title="BTRbot traces what's on screen as dashed drafts. Zoom to one roof plan or elevation first for the best result."
+                title={`${bot} traces what's on screen as dashed drafts. Zoom to one roof plan or elevation first for the best result.`}
               >
-                {ai.busy ? "BTRbot measuring…" : "BTRbot measure on screen"}
+                {ai.busy ? `${bot} measuring…` : `${bot} measure on screen`}
               </button>
               <button type="button" onClick={() => zoomBy(1 / 1.25)} className="rounded-md border px-2.5 py-1 hover:bg-accent" aria-label="Zoom out">
                 −
@@ -872,7 +874,7 @@ export function TakeoffEditor({
                 <div className="mt-2 flex gap-3">
                   {sel.ai && (
                     <button type="button" onClick={() => acceptAi(sel.id)} className="text-violet-700 hover:underline dark:text-violet-300">
-                      Accept this BTRbot line
+                      Accept this {bot} line
                     </button>
                   )}
                   <button
@@ -892,7 +894,7 @@ export function TakeoffEditor({
 
           {(ai.message || aiCount > 0) && (
             <div className="rounded-md border border-violet-300 bg-violet-50/60 p-3 dark:border-violet-800 dark:bg-violet-950/40">
-              <div className="text-xs font-semibold tracking-wide text-violet-800 uppercase dark:text-violet-300">BTRbot measure</div>
+              <div className="text-xs font-semibold tracking-wide text-violet-800 uppercase dark:text-violet-300">{bot} measure</div>
               {ai.message && <p className="mt-1">{ai.message}</p>}
               {ai.cannot && ai.cannot.length > 0 && (
                 <div className="mt-1 text-xs">
@@ -910,11 +912,11 @@ export function TakeoffEditor({
                     Accept all {aiCount} after checking
                   </button>
                   <button type="button" onClick={() => commitItems(items.filter((i) => !i.ai))} className="rounded-md border px-2.5 py-1 hover:bg-accent">
-                    Remove BTRbot drafts
+                    Remove {bot} drafts
                   </button>
                 </div>
               )}
-              <p className="mt-2 text-xs text-muted-foreground">BTRbot only draws; lengths and areas come from this sheet&apos;s checked scale. Set and check the scale first.</p>
+              <p className="mt-2 text-xs text-muted-foreground">{bot} only draws; lengths and areas come from this sheet&apos;s checked scale. Set and check the scale first.</p>
             </div>
           )}
 

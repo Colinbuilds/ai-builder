@@ -11,6 +11,7 @@ import { Panel, axLink } from "@/components/shell/panel";
 import { Markdown } from "@/components/markdown";
 import { NavSelect } from "@/components/dashboard/tab-select";
 import { dashboardSchedules } from "@/lib/dashboard-schedules";
+import { shortName } from "@/lib/company-profile";
 
 const usd0 = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const usd2 = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -210,7 +211,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               </Group>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Link href="/deliveries" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
-                  <span className="font-medium text-btr-link">BTR material orders</span>
+                  <span className="font-medium text-btr-link">{shortName()} material orders</span>
                   <span className="text-xs text-muted-foreground">Orders from estimates, deliveries</span>
                 </Link>
                 <Outbound href="https://www.abcsupply.com/" name="ABC Supply" note="Branch #112 · 402-734-1414" />

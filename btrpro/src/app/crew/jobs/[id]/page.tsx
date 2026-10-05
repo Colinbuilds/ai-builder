@@ -4,8 +4,9 @@ import { crewJobs, PHOTO_STAGES, REQUIRED_STAGES, STAGE_HINT, STAGE_LABEL } from
 import { prisma } from "@/lib/db";
 import { CrewInvoiceForm, ExtraWorkForm, IssueForm, PhotoUploader, TalkForm } from "@/components/crew/forms";
 import { CrewHeader } from "../../crew-header";
+import { shortName } from "@/lib/company-profile";
 
-export const metadata = { title: "BTR crew portal" };
+export const metadata = { title: `${shortName()} crew portal` };
 
 export default async function CrewJob({ params }: { params: Promise<{ id: string }> }) {
   const crew = await requireCrew();

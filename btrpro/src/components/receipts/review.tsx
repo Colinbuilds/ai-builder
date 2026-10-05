@@ -6,6 +6,7 @@ import { approveReceiptAction } from "@/app/receipts/actions";
 import { receiptPricing } from "@/lib/receipts/pricing";
 import { Problems } from "@/components/projects/problems";
 import { Button } from "@/components/ui/button";
+import { useBrand } from "@/components/brand";
 
 type Line = { itemNumber: string | null; description: string; quantity: number | null; uom: string | null; amount: number | null };
 type Outcome = "COST_ONLY" | "CHANGE_ORDER" | "INVOICE";
@@ -34,6 +35,7 @@ export function ReceiptReview(props: {
   filed: { outcome: string | null; qboStatus: string | null } | null;
   canApprove: boolean;
 }) {
+  const { productName: app } = useBrand();
   const p = props;
   const [markup, setMarkup] = useState(String(p.defaultMarkup));
   const [lineM, setLineM] = useState<Record<string, string>>(Object.fromEntries(Object.entries(p.lineMarkup).map(([k, v]) => [k, String(v)])));
@@ -215,7 +217,7 @@ export function ReceiptReview(props: {
       <section className="rounded-lg border border-btr-line bg-background p-4 text-sm">
         <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">QuickBooks Online · sent on approval</h2>
         {!p.qbo.connected ? (
-          <p className="text-muted-foreground">QuickBooks isn&apos;t connected (Admin → Integrations), so nothing will be sent. Everything still files in BTRpro.</p>
+          <p className="text-muted-foreground">QuickBooks isn&apos;t connected (Admin → Integrations), so nothing will be sent. Everything still files in {app}.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {outcome === "CHANGE_ORDER" && <QboRow title="Change order as an Estimate" amount={usd(pr.billed)} note={`Customer: ${p.project?.name ?? "the job"} · ${p.lines.length} lines`} ok={p.qbo.itemSet} />}

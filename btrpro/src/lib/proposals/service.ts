@@ -6,7 +6,7 @@ import { totalsFor } from "@/lib/estimates/service";
 import { getSettings } from "@/lib/settings";
 import { saveUpload } from "@/lib/storage";
 import { emailConfigured, sendEmail } from "@/lib/email/send";
-import { BTR } from "@/lib/company";
+import { getCompany, shortName } from "@/lib/company-profile";
 import { acceptedTotal, proposalPrice, type Alternate } from "./price";
 import { proposalPdf } from "./pdf";
 import { freezeBaseline } from "@/lib/costing/service";
@@ -145,6 +145,7 @@ export async function sendProposal(
   to: { name: string | null; email: string | null },
   actor: Actor,
 ) {
+  const co = await getCompany();
   const p = await prisma.proposal.findUniqueOrThrow({ where: { id } });
   if (!["DRAFT", "SENT", "VIEWED"].includes(p.status))
     throw new ProposalError(`Proposal is ${p.status.toLowerCase()}.`);
@@ -152,9 +153,9 @@ export async function sendProposal(
   if (to.email && emailConfigured()) {
     await sendEmail({
       to: to.email,
-      subject: `${BTR.name} proposal ${p.number} — ${p.title}`,
-      text: `Hi ${to.name ?? ""},\n\nYour proposal from ${BTR.name} is ready to review and sign:\n${proposalUrl(p.token)}\n\n${p.validUntil ? `It's valid until ${p.validUntil.toLocaleDateString("en-US")}.\n\n` : ""}Questions? Call ${BTR.phone} or reply to this email.\n\n${BTR.name}\n${BTR.address}`,
-      replyTo: BTR.email,
+      subject: `${co.name} proposal ${p.number} — ${p.title}`,
+      text: `Hi ${to.name ?? ""},\n\nYour proposal from ${co.name} is ready to review and sign:\n${proposalUrl(p.token)}\n\n${p.validUntil ? `It's valid until ${p.validUntil.toLocaleDateString("en-US")}.\n\n` : ""}Questions? Call ${co.phone} or reply to this email.\n\n${co.name}\n${co.address}`,
+      replyTo: co.email,
     });
     emailed = true;
   }
@@ -214,7 +215,7 @@ const open = (p: { status: string; validUntil: Date | null }) => {
     throw new ProposalError(`This proposal is ${p.status.toLowerCase()}.`);
   if (p.validUntil && p.validUntil < new Date())
     throw new ProposalError(
-      "This proposal has expired. Contact BTR for an updated one.",
+      `This proposal has expired. Contact ${shortName()} for an updated one.`,
     );
 };
 
@@ -230,6 +231,7 @@ export async function signProposal(
     agent: string | null;
   },
 ) {
+  const co = await getCompany();
   const p = await getByToken(token);
   if (!p) throw new ProposalError("Proposal not found.");
   open(p);
@@ -341,8 +343,8 @@ export async function signProposal(
   if (emailConfigured())
     await sendEmail({
       to: input.email.trim(),
-      subject: `Signed: ${BTR.name} proposal ${p.number}`,
-      text: `Thank you, ${input.name.trim()}. Your signed proposal is attached for your records.\n\n${BTR.name} · ${BTR.phone}`,
+      subject: `Signed: ${co.name} proposal ${p.number}`,
+      text: `Thank you, ${input.name.trim()}. Your signed proposal is attached for your records.\n\n${co.name} · ${co.phone}`,
       attachments: [
         {
           name: `${p.number}-signed.pdf`,

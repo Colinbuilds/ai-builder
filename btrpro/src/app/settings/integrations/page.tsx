@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { integrationCatalog, type IntegrationStatus } from "@/lib/integrations/catalog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { appName } from "@/lib/company-profile";
 
 const VARIANT: Record<IntegrationStatus, "green" | "blue" | "amber" | "outline"> = {
   connected: "green",
@@ -19,7 +20,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
       <div>
         <h1 className="text-2xl font-semibold">Integrations</h1>
         <p className="text-sm text-muted-foreground">
-          Every integration has a manual fallback, so BTRpro works before anything is connected. Server keys go in the host&apos;s
+          Every integration has a manual fallback, so {appName()} works before anything is connected. Server keys go in the host&apos;s
           environment variables; connection tokens are stored encrypted.
         </p>
       </div>

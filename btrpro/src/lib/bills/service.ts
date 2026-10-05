@@ -7,6 +7,7 @@ import { pushSupplierBill, qboBillBalance, qboConnected } from "@/lib/integratio
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 import type { Role } from "@/lib/session";
 import { matchBill, type BillMatch } from "./match";
+import { companyName, companySync } from "@/lib/company-profile";
 
 export class BillError extends Error {}
 type Actor = { id: string; name: string; role: Role; isOwner?: boolean };
@@ -176,7 +177,7 @@ export async function disputeBill(id: string, note: string, to: string | null, a
     `Please send a corrected invoice or a credit memo.`,
     ``,
     `Thanks,`,
-    `${actor.name}, BTR Contracting · 402-739-9811`,
+    `${actor.name}, ${companyName()} · ${companySync().phone}`,
   ].join("\n");
   let sent = false;
   if (to?.trim() && emailConfigured()) {

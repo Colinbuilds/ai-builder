@@ -5,6 +5,7 @@ import { saveUpload } from "@/lib/storage";
 import { crewNotice } from "@/lib/crew/notice";
 import { addChangeOrder } from "@/lib/costing/service";
 import type { Role } from "@/lib/session";
+import { exemptForm } from "@/lib/company-profile";
 
 export class FieldError extends Error {}
 type Actor = { id: string; name: string; role: Role };
@@ -36,7 +37,7 @@ export async function readyChecklist(projectId: string): Promise<ReadyItem[]> {
     const paid = p.invoices.reduce((a, i) => a + i.payments.reduce((b, x) => b + x.amount, 0), 0);
     items.push({ key: "deposit", label: "Deposit paid", ok: p.invoices.length ? paid > 0 : false, detail: !p.invoices.length ? "No deposit invoice." : paid > 0 ? undefined : "Deposit invoice not paid yet." });
   }
-  if (p.isPublic && p.isTaxExempt) items.push({ key: "form17", label: "Form 17 executed (office)", ok: p.form17Status === "EXECUTED", detail: p.form17Status === "EXECUTED" ? undefined : "Tax-exempt public job — the office gets it signed with the owner." });
+  if (p.isPublic && p.isTaxExempt) items.push({ key: "form17", label: `${exemptForm().short} executed (office)`, ok: p.form17Status === "EXECUTED", detail: p.form17Status === "EXECUTED" ? undefined : "Tax-exempt public job — the office gets it signed with the owner." });
   const delivered = p.materialOrders.some((o) => o.status === "DELIVERED");
   const confirmed = p.materialOrders.filter((o) => o.confirmedDate);
   const beforeInstall = install ? confirmed.some((o) => o.confirmedDate! <= install.startDate) : confirmed.length > 0;
