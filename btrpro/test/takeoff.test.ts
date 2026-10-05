@@ -96,3 +96,22 @@ describe("ventilation (Lomanco method)", () => {
     expect(ventilation(11564, 300, null, null).exhaustCount).toBeNull();
   });
 });
+
+describe("phone photos as plan sheets", () => {
+  it("names photos by their contents and recognizes them as sheets", async () => {
+    const sharp = (await import("sharp")).default;
+    const { normalizePhoto } = await import("@/lib/docs/documents");
+    const { sheetKind } = await import("@/lib/takeoff/sheets");
+    const jpg = new Uint8Array(await sharp({ create: { width: 20, height: 10, channels: 3, background: "#fff" } }).jpeg().toBuffer());
+    const png = new Uint8Array(await sharp({ create: { width: 20, height: 10, channels: 3, background: "#fff" } }).png().toBuffer());
+    expect((await normalizePhoto(jpg, "image", null)).fileName).toBe("image.jpg");
+    expect((await normalizePhoto(jpg, "IMG_1.JPEG", null)).fileName).toBe("IMG_1.JPEG");
+    expect(await normalizePhoto(png, "sheet A2.jpg", null)).toMatchObject({ fileName: "sheet A2.png", contentType: "image/png" });
+    const pdf = new TextEncoder().encode("%PDF-1.4 TEST_ONLY");
+    expect((await normalizePhoto(pdf, "plans.pdf", "application/pdf")).fileName).toBe("plans.pdf");
+    expect(sheetKind("image.jpg")).toBe("image");
+    expect(sheetKind("upload", "image/jpeg")).toBe("image");
+    expect(sheetKind("IMG_1.HEIC", "image/heic")).toBeNull();
+    expect(sheetKind("plans.PDF")).toBe("pdf");
+  });
+});

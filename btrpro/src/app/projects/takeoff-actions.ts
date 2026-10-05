@@ -79,3 +79,25 @@ export async function aiReadSheetAction(documentId: string, input: { imageBase64
     return { ok: false, message: e instanceof AiMeasureError ? e.message : aiErrorMessage(e) };
   }
 }
+
+/** Upload a plan sheet or a photo straight from the measure page; returns the new sheet to open. */
+export async function uploadSheetAction(f: FormData): Promise<TakeoffResult & { docId?: string }> {
+  const { STAFF_ROLES } = await import("@/lib/roles");
+  const u = await requireUser([...STAFF_ROLES]);
+  const projectId = String(f.get("projectId") ?? "");
+  const file = f.get("file");
+  if (!(file instanceof File) || !file.size) return { ok: false, message: "Choose a plan PDF or a photo." };
+  const { addDocument } = await import("@/lib/docs/documents");
+  const { sheetKind } = await import("@/lib/takeoff/sheets");
+  try {
+    if (!(await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } }))) return { ok: false, message: "That job wasn't found." };
+    const { doc } = await addDocument({ projectId, bytes: new Uint8Array(await file.arrayBuffer()), fileName: file.name || "photo.jpg", contentType: file.type || null, userId: u.id });
+    revalidatePath(`/projects/${projectId}`, "layout");
+    if (!sheetKind(doc.fileName, doc.contentType))
+      return { ok: false, message: `${doc.fileName} was saved to the job's documents, but it can't be measured. Use a PDF, JPG or PNG — on an iPhone, Settings → Camera → Formats → Most Compatible.` };
+    return { ok: true, docId: doc.id };
+  } catch (e) {
+    console.error("sheet upload failed", e);
+    return { ok: false, message: `Upload failed: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
