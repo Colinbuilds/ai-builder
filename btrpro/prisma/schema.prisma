@@ -234,6 +234,7 @@ model Project {
   // ready-to-schedule items ticked by hand: { color, permit, dumpster, notified }
   readyChecks        Json?
   webLeads           WebLead[]
+  billingSteps       BillingStep[]
   // the customer's property this job is at (multi-family / commercial portfolios)
   propertyId         String?
   property           Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
@@ -2209,4 +2210,29 @@ model WebLead {
   updatedAt       DateTime  @updatedAt
 
   @@index([status, createdAt])
+}
+
+// Progress billing schedule: the draws a job is billed in (deposit → progress → final). Each draw comes due on a
+// job event; when it does the office gets a task and one click drafts the invoice for it.
+model BillingStep {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order       Int
+  label       String
+  // PERCENT (of the contract incl. approved change orders) | AMOUNT | REMAINDER (whatever is left to bill)
+  basis       String
+  pct         Float?
+  amount      Float?
+  // SIGNED | MATERIALS_DELIVERED | STARTED | COMPLETED | DATE | MANUAL
+  trigger     String
+  triggerDate DateTime?
+  // PLANNED | READY | INVOICED | SKIPPED
+  status      String    @default("PLANNED")
+  readyAt     DateTime?
+  invoiceId   String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+
+  @@index([status])
 }

@@ -358,3 +358,45 @@ export async function declineCoAction(
   revalidatePath(`/co/${token}`);
   return { problems: [], ok: true };
 }
+
+// ---------- progress billing schedule ----------
+export async function scheduleAction(_: BResult, f: FormData): Promise<BResult> {
+  const a = await actor();
+  const projectId = str(f, "projectId");
+  const { addSteps, applyPreset, billToPercent, invoiceStep, markStepReady, ScheduleError } = await import("@/lib/billing/schedule");
+  try {
+    await mayBill(a, projectId);
+    const op = str(f, "op");
+    let note = "";
+    if (op === "preset") {
+      await applyPreset(projectId, str(f, "preset"), a);
+      note = "Billing schedule set. Each draw comes due on its own.";
+    } else if (op === "add") {
+      const basis = str(f, "basis") as "PERCENT" | "AMOUNT" | "REMAINDER";
+      const v = num(str(f, "value"));
+      await addSteps(projectId, [{ label: str(f, "label"), basis, pct: basis === "PERCENT" ? v : null, amount: basis === "AMOUNT" ? v : null, trigger: str(f, "trigger") as never, triggerDate: day(str(f, "triggerDate")) }], a);
+      note = "Draw added.";
+    } else if (op === "invoice") {
+      const inv = await invoiceStep(str(f, "id"), a);
+      note = `Drafted ${inv.number} for $${inv.subtotal.toFixed(2)}. Check it, then send it.`;
+    } else if (op === "ready") {
+      await markStepReady(str(f, "id"));
+      note = "Marked ready to bill.";
+    } else if (op === "skip" || op === "delete") {
+      const step = await prisma.billingStep.findFirst({ where: { id: str(f, "id"), projectId } });
+      if (!step) throw new ScheduleError("That draw is gone.");
+      if (step.status === "INVOICED") throw new ScheduleError("That draw is invoiced. Void the invoice first.");
+      if (op === "delete") await prisma.billingStep.delete({ where: { id: step.id } });
+      else await prisma.billingStep.update({ where: { id: step.id }, data: { status: "SKIPPED" } });
+      await prisma.task.updateMany({ where: { auto: `BILLSTEP:${step.id}`, doneAt: null }, data: { doneAt: new Date(), doneBy: a.name } });
+      note = op === "delete" ? "Draw removed." : "Draw skipped.";
+    } else if (op === "percent") {
+      const inv = await billToPercent(projectId, num(str(f, "pct")) ?? NaN, a);
+      note = `Drafted ${inv.number} for $${inv.subtotal.toFixed(2)}. Check it, then send it.`;
+    } else return { problems: ["Unknown action."] };
+    paths(projectId);
+    return { problems: [], ok: true, note };
+  } catch (e) {
+    return { problems: [msg(e)], needsOverride: e instanceof BillingError && e.needsOverride };
+  }
+}

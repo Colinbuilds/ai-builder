@@ -69,7 +69,10 @@ export async function officeDesk(now = new Date()) {
     prisma.prodLine.count({ where: { market: "RESIDENTIAL", completed: { not: null }, billed: null, board: { not: "COMPLETED" } } }),
   ]);
   const comingIn = r2(rows.filter((r) => r.dueDate <= week).reduce((a, r) => a + r.balance, 0));
+  const { readyDraws } = await import("@/lib/billing/schedule");
+  const draws = await readyDraws();
   return {
+    draws,
     awaitingPayment: rows.filter((r) => r.balance > 0.005),
     callList,
     parked,
