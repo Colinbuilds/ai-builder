@@ -7,7 +7,8 @@ export default function setup() {
   const root = path.resolve(__dirname, "..");
   rmSync(path.join(root, "prisma", "test.db"), { force: true });
   rmSync(path.join(root, "prisma", "test-uploads"), { recursive: true, force: true });
-  const env = { ...process.env, DATABASE_URL: "file:./test.db" };
+  // the tests run as BTR's deployment (a fresh database otherwise seeds blank)
+  const env = { ...process.env, DATABASE_URL: "file:./test.db", SEED_COMPANY: "btr" };
   execSync("npx prisma db push --skip-generate", { cwd: root, env, stdio: "pipe" });
   execSync("npx tsx prisma/seed.ts", { cwd: root, env, stdio: "pipe" });
 }

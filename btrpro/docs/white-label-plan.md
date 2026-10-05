@@ -66,12 +66,12 @@ Goal: run BTRpro for contractors other than BTR Contracting without changing any
 
 ## 4. Standing up a new company (v1)
 
-1. New Railway service from this repo with its own volume (`/data`) and its own env (Anthropic key, Google, email, `APP_URL`, `SEED_ADMIN_*`). Never reuse BTR's credentials.
+1. New Railway service from this repo with its own volume (`/data`) and its own env (Anthropic key, Google, email, `APP_URL`, `SEED_ADMIN_*`). Never reuse BTR's credentials. Leave `SEED_COMPANY` unset (or `blank`): the new database gets only the admin user, with no BTR price sheets, rules, templates, labor rates, crews, companies or Drive folders (`src/lib/seed-mode.ts`).
 2. Sign in as the seeded admin → Settings → Company profile: name, contact, state, colors, logo, estimating rules.
-3. Load that company's price sheets; set its own Drive / sheet links (see "Later").
+3. Upload that company's price sheets (Library → Price sheets); set its own Drive / sheet links (see "Later").
 
 ## 5. Later (not in this pass)
-- **Seed data**: `prisma/seed.ts` loads BTR's price sheets, rules, templates, labor rates, crews and Drive folders into every new DB. Needs a `SEED_COMPANY=btr|blank` switch before a second company goes live.
+- **Seed data**: done (Colin, 2026-10-05): BTR's /data loads only for BTR. BTR's existing database keeps loading as before. **Rebuilding BTR from an empty database needs `SEED_COMPANY=btr`.**
 - **BTR defaults in integrations**: estimating/production Google Sheets, jobs shared drive, CompanyCam folder (`DEFAULT_*` constants) should apply only to BTR.
 - **Bids**: home points (`HOMES` in `bids/parse.ts`) are Omaha/Lincoln. Non-NE companies need their own centers and boards.
 - **Time zone**: about 76 `America/Chicago` call sites. Add a profile time zone.
