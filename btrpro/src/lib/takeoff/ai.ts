@@ -5,6 +5,7 @@
 // AI item stays a draft (not counted, can't be sent to the job) until a person reviews and accepts it.
 import { z } from "zod";
 import { aiParse } from "@/lib/ai/claude";
+import { botName } from "@/lib/brand-names";
 import { PRESET_SCALES, TAKEOFF_TYPES, parseFeet, type Pt, type TakeoffItem, type View } from "./geometry";
 
 export class AiMeasureError extends Error {}
