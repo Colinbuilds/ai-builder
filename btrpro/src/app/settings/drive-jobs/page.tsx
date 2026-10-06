@@ -7,6 +7,7 @@ import { serviceAccountEmail } from "@/lib/integrations/google-sa";
 import { DEFAULT_JOBS_DRIVE, driveImportSummary } from "@/lib/import/drive-jobs";
 import { DriveScanButton, ReprintAllButton } from "@/components/connections/drive-scan";
 import { retryAction, runAction, settingsAction, skipAction } from "./actions";
+import { appName, shortName } from "@/lib/company-profile";
 
 const gb = (b: number) => (b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`);
 const STATUS: Record<string, string> = { PENDING: "Waiting", DONE: "Moved", ERROR: "Problem", SKIPPED: "Skipped" };
@@ -29,7 +30,7 @@ export default async function DriveJobs({ searchParams }: { searchParams: Promis
       <div>
         <h1 className="text-2xl font-semibold">Move jobs from Drive</h1>
         <p className="text-sm text-muted-foreground">
-          Every job folder in the jobs Drive becomes a BTRpro job (or joins the one that already exists), and every file in it is copied into that job&apos;s Documents with its folder path. Drive is only read — nothing there is moved, renamed or deleted.
+          Every job folder in the jobs Drive becomes a {appName()} job (or joins the one that already exists), and every file in it is copied into that job&apos;s Documents with its folder path. Drive is only read — nothing there is moved, renamed or deleted.
         </p>
       </div>
 
@@ -44,7 +45,7 @@ export default async function DriveJobs({ searchParams }: { searchParams: Promis
         <form action={settingsAction} className="flex flex-wrap items-end gap-3 text-sm">
           <label className="flex flex-col gap-1">
             Jobs Drive (shared drive or folder link)
-            <input name="drive" defaultValue={s.jobsDriveId ?? ""} placeholder={`BTR jobs drive (${DEFAULT_JOBS_DRIVE})`} className="h-9 w-80 rounded-md border border-input bg-background px-2" />
+            <input name="drive" defaultValue={s.jobsDriveId ?? ""} placeholder={`${shortName()} jobs drive (${DEFAULT_JOBS_DRIVE})`} className="h-9 w-80 rounded-md border border-input bg-background px-2" />
           </label>
           <label className="flex flex-col gap-1">
             Jobs from the last
@@ -104,7 +105,7 @@ export default async function DriveJobs({ searchParams }: { searchParams: Promis
                   <th className="px-2 py-1.5">Drive folder</th>
                   <th className="px-2 py-1.5">Files</th>
                   <th className="px-2 py-1.5">Status</th>
-                  <th className="px-2 py-1.5">BTRpro job</th>
+                  <th className="px-2 py-1.5">{appName()} job</th>
                   <th className="px-2 py-1.5" />
                 </tr>
               </thead>

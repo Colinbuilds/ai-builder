@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
+import { useBrand } from "@/components/brand";
 
 type Msg = { role: "user" | "assistant"; content: string; tools?: string[] };
 
@@ -34,6 +35,7 @@ export function AssistantPanel({
   quickActions: { key: string; label: string; prompt: string }[];
   enabled: boolean;
 }) {
+  const { assistantName: bot } = useBrand();
   const [msgs, setMsgs] = useState<Msg[]>(initial);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -171,13 +173,13 @@ export function AssistantPanel({
           disabled={!enabled}
           placeholder={
             enabled
-              ? "Ask BTRbot — e.g. What's the coverage on the Omniridge? · Price the EPDM system per the spec · (Ctrl+Enter sends)"
-              : "BTRbot isn't turned on yet (needs ANTHROPIC_API_KEY on the server)."
+              ? `Ask ${bot} — e.g. What's the coverage on the Omniridge? · Price the EPDM system per the spec · (Ctrl+Enter sends)`
+              : `${bot} isn't turned on yet (needs ANTHROPIC_API_KEY on the server).`
           }
           className="flex-1 rounded-md border border-input bg-background p-2 text-sm"
         />
         <Button disabled={busy || !enabled || !draft.trim()}>
-          {busy ? "BTRbot is working…" : "Ask BTRbot"}
+          {busy ? `${bot} is working…` : `Ask ${bot}`}
         </Button>
       </form>
     </div>

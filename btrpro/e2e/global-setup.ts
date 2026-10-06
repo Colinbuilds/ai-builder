@@ -14,6 +14,7 @@ export default function globalSetup() {
     ...process.env,
     DATABASE_URL: "file:./e2e.db",
     AUTH_SECRET: "TEST_ONLY-e2e-auth-secret",
+    SEED_COMPANY: "btr", // e2e runs as BTR's deployment
   };
   execSync("npx prisma db push --skip-generate", {
     cwd: root,

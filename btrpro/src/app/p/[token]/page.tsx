@@ -2,13 +2,17 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getByToken, markViewed } from "@/lib/proposals/service";
 import type { Alternate } from "@/lib/proposals/price";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { SignForm } from "@/components/proposals/sign-form";
 
-export const metadata: Metadata = { title: `Proposal — ${BTR.name}`, robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const co = await getCompany();
+  return { title: `Proposal — ${co.name}`, robots: { index: false } };
+}
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 export default async function PublicProposal({ params }: { params: Promise<{ token: string }> }) {
+  const co = await getCompany();
   const { token } = await params;
   const p = await getByToken(token);
   if (!p) notFound();
@@ -19,9 +23,9 @@ export default async function PublicProposal({ params }: { params: Promise<{ tok
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 py-4">
       <header className="border-b pb-3">
-        <p className="text-xl font-semibold">{BTR.name}</p>
+        <p className="text-xl font-semibold">{co.name}</p>
         <p className="text-sm text-muted-foreground">
-          {BTR.address} · {BTR.phone} · {BTR.email}
+          {co.address} · {co.phone} · {co.email}
         </p>
       </header>
       <div>
@@ -61,9 +65,9 @@ export default async function PublicProposal({ params }: { params: Promise<{ tok
           </a>
         </section>
       ) : p.status === "DECLINED" ? (
-        <p className="rounded-md border p-4">You declined this proposal. Call {BTR.phone} if you&apos;d like to talk it over.</p>
+        <p className="rounded-md border p-4">You declined this proposal. Call {co.phone} if you&apos;d like to talk it over.</p>
       ) : expired ? (
-        <p className="rounded-md border p-4">This proposal has expired. Call {BTR.phone} for an updated one.</p>
+        <p className="rounded-md border p-4">This proposal has expired. Call {co.phone} for an updated one.</p>
       ) : (
         <SignForm token={token} base={p.basePrice} alternates={alts} depositPct={p.depositPct} defaultName={p.recipientName ?? ""} defaultEmail={p.recipientEmail ?? ""} />
       )}

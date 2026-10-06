@@ -1,5 +1,6 @@
 // Three-way match for supplier bills: what was ordered (our PO), what was delivered (delivery tickets) and what
 // was billed, plus the price-sheet check. Pure — the screen and the approval run the same code.
+import { shortName } from "@/lib/company-profile";
 
 export type BillLine = {
   itemNumber: string | null;
@@ -61,7 +62,7 @@ export function matchBill(input: {
   }
   if (!input.order) {
     flags.push("NO_PO");
-    notes.push("No BTR purchase order matched (by PO or order number), so quantities can't be checked against what was ordered.");
+    notes.push(`No ${shortName()} purchase order matched (by PO or order number), so quantities can't be checked against what was ordered.`);
   } else if (!input.order.tickets) {
     flags.push("NO_DELIVERY");
     notes.push(`No delivery ticket checked in on ${input.order.number} yet, so billed quantities can't be checked against what arrived.`);

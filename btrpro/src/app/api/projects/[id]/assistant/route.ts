@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { aiConfigured } from "@/lib/ai/claude";
 import { runAssistant, type StreamEvent } from "@/lib/ai/assistant";
+import { botName } from "@/lib/company-profile";
 
 export const maxDuration = 300;
 
@@ -10,8 +11,8 @@ export const maxDuration = 300;
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Sign in" }, { status: 401 });
-  if (user.role === "VIEWER") return NextResponse.json({ error: "Viewers can't use BTRbot." }, { status: 403 });
-  if (!aiConfigured()) return NextResponse.json({ error: "BTRbot isn't turned on (ANTHROPIC_API_KEY)." }, { status: 400 });
+  if (user.role === "VIEWER") return NextResponse.json({ error: `Viewers can't use ${botName()}.` }, { status: 403 });
+  if (!aiConfigured()) return NextResponse.json({ error: `${botName()} isn't turned on (ANTHROPIC_API_KEY).` }, { status: 400 });
   const { id } = await params;
   if (!(await prisma.project.findUnique({ where: { id }, select: { id: true } }))) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const { message } = (await req.json().catch(() => ({}))) as { message?: string };

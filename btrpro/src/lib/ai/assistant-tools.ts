@@ -12,6 +12,7 @@ import { liveItems, measureMap } from "@/lib/estimates/service";
 import { runModule, defaultConfig, type Module, type TakeoffConfig } from "@/lib/estimates/takeoff";
 import { buildJobRecord } from "@/lib/comms/summaries";
 import { refreshReadiness } from "@/lib/projects/service";
+import { botName, shortName } from "@/lib/company-profile";
 
 export type ToolCtx = { projectId: string; user: { id: string; name: string } };
 
@@ -49,7 +50,7 @@ export const TOOL_SCHEMAS = {
 type ToolName = keyof typeof TOOL_SCHEMAS;
 
 const DESCRIPTIONS: Record<ToolName, string> = {
-  search_price_items: "Search BTR's loaded price sheets by item number, description words, or section. Returns item #, description, unit price (or CALL), UOM, sheet code, sheet date status, and parsed coverage. The only source of prices and item numbers.",
+  search_price_items: `Search ${shortName()}'s loaded price sheets by item number, description words, or section. Returns item #, description, unit price (or CALL), UOM, sheet code, sheet date status, and parsed coverage. The only source of prices and item numbers.`,
   get_price_item: "Look up one item number on the live sheets. Says so if it's not on any loaded sheet.",
   get_measurements: "Confirmed and hand-entered measurements for this job with their sources, plus how many extracted values are still waiting for confirmation (those can't be used).",
   get_intake: "The job's intake checklist: each field's status (VERIFIED / MISSING / ASSUMED / N/A), value, and source.",
@@ -107,15 +108,15 @@ const TOOLS: Impl = {
     return r.items
       .map(
         (it) =>
-          `${it.itemNumber} | ${it.description} | ${money(it.unitPrice)}/${it.uom} | sheet ${it.sheet.code}${scope.builderId ? (it.sheet.companyId ? ` (${scope.builderName} pricing)` : " (BTR standard — not builder pricing)") : ""} (${sheetDateStatus(it.sheet).status})${it.coverageQty != null ? ` | coverage ${it.coverageQty} ${it.coverageUnit}` : ""}${it.sheet.warning ? " | CONFIRM ACCOUNT" : ""}`,
+          `${it.itemNumber} | ${it.description} | ${money(it.unitPrice)}/${it.uom} | sheet ${it.sheet.code}${scope.builderId ? (it.sheet.companyId ? ` (${scope.builderName} pricing)` : ` (${shortName()} standard — not builder pricing)`) : ""} (${sheetDateStatus(it.sheet).status})${it.coverageQty != null ? ` | coverage ${it.coverageQty} ${it.coverageUnit}` : ""}${it.sheet.warning ? " | CONFIRM ACCOUNT" : ""}`,
       )
       .join("\n");
   },
   async get_price_item(i, ctx) {
     const scope = await priceScopeFor(ctx.projectId);
     const it = (await liveItems([i.item_number.trim()], scope)).get(i.item_number.trim());
-    if (!it) return scope.builderId ? `${i.item_number} — ${notOnBuilderNote(scope)} Mark it MISSING.` : `${i.item_number} is not on any loaded BTR price sheet. Mark it MISSING and ask for the correct sheet.`;
-    return `${it.itemNumber} | ${it.description} | ${money(it.unitPrice)}/${it.uom} | sheet ${it.sheetCode}${it.priceSource === "BUILDER" ? ` (${scope.builderName} pricing)` : it.priceSource === "STANDARD_FALLBACK" ? " (BTR standard fallback — not on the builder's sheet)" : ""} (${it.sheetStatus})${it.coverageQty != null ? ` | coverage ${it.coverageQty} ${it.coverageUnit}` : ""}${it.sheetWarning ? ` | WARNING: ${it.sheetWarning}` : ""}`;
+    if (!it) return scope.builderId ? `${i.item_number} — ${notOnBuilderNote(scope)} Mark it MISSING.` : `${i.item_number} is not on any loaded ${shortName()} price sheet. Mark it MISSING and ask for the correct sheet.`;
+    return `${it.itemNumber} | ${it.description} | ${money(it.unitPrice)}/${it.uom} | sheet ${it.sheetCode}${it.priceSource === "BUILDER" ? ` (${scope.builderName} pricing)` : it.priceSource === "STANDARD_FALLBACK" ? ` (${shortName()} standard fallback — not on the builder's sheet)` : ""} (${it.sheetStatus})${it.coverageQty != null ? ` | coverage ${it.coverageQty} ${it.coverageUnit}` : ""}${it.sheetWarning ? ` | WARNING: ${it.sheetWarning}` : ""}`;
   },
   async get_measurements(_i, ctx) {
     const ms = await prisma.measurement.findMany({ where: { projectId: ctx.projectId }, include: { sourceDoc: { select: { fileName: true } } } });
@@ -196,7 +197,7 @@ const TOOLS: Impl = {
           total: null, // counted only once a person accepts it
           formula: l.formula,
           sourceStatus: "PENDING_AI",
-          note: `BTRbot suggestion: ${l.reason}`,
+          note: `${botName()} suggestion: ${l.reason}`,
           sortOrder: 9000,
         },
       });
@@ -204,7 +205,7 @@ const TOOLS: Impl = {
       results.push(`ADDED as PENDING_AI: ${it?.itemNumber ?? l.item_name} × ${l.quantity} ${it?.uom ?? l.unit}`);
     }
     if (accepted) {
-      await prisma.projectActivity.create({ data: { projectId: ctx.projectId, userId: null, kind: "estimate", text: `BTRbot proposed ${accepted} line(s) on ${e.name} for review` } });
+      await prisma.projectActivity.create({ data: { projectId: ctx.projectId, userId: null, kind: "estimate", text: `${botName()} proposed ${accepted} line(s) on ${e.name} for review` } });
       await refreshReadiness(ctx.projectId);
     }
     return results.join("\n");

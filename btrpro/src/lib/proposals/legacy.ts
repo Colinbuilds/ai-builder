@@ -8,11 +8,12 @@ import { readUpload } from "@/lib/storage";
 import { readXlsx } from "@/lib/import/xlsx";
 import { addDocument } from "@/lib/docs/documents";
 import { renderProposal } from "./pdf";
+import { appName, companyName, shortName } from "@/lib/company-profile";
 
 export class LegacyProposalError extends Error {}
 
 /** Drive files that look like BTR's own proposals (not supplier quotes or sub bids). */
-export const isOldProposal = (fileName: string) => /proposal/i.test(fileName) && !/sub|supplier|quote request|\(BTRpro format\)/i.test(fileName);
+export const isOldProposal = (fileName: string) => /proposal/i.test(fileName) && !/sub|supplier|quote request|\([^)]* format\)/i.test(fileName);
 
 const money = z.number().nullable().describe("as printed, in dollars; null if not on the proposal");
 const Read = z.object({
@@ -40,7 +41,7 @@ async function documentText(doc: { fileUrl: string; fileName: string; extractedT
     const tabs = await readXlsx(new Uint8Array(await readUpload(doc.fileUrl)));
     return tabs.map((t) => `=== ${t.name}\n${t.rows.map((r) => r.map((c) => c ?? "").join("\t").replace(/\t+$/, "")).filter(Boolean).join("\n")}`).join("\n\n");
   }
-  throw new LegacyProposalError("Couldn't read text from this file (scanned image?). Open it and rebuild the proposal in BTRpro.");
+  throw new LegacyProposalError(`Couldn't read text from this file (scanned image?). Open it and rebuild the proposal in ${appName()}.`);
 }
 
 /** Reads an old proposal and adds a copy in the BTRpro layout to the same job. */
@@ -51,7 +52,7 @@ export async function convertOldProposal(documentId: string, actor: { id: string
   const text = (await documentText(doc)).slice(0, 60_000);
   const { data } = await aiParse({
     task: [
-      "TASK: read this old BTR Contracting proposal into fields so it can be reprinted in BTR's current proposal layout.",
+      `TASK: read this old ${companyName()} proposal into fields so it can be reprinted in ${shortName()}'s current proposal layout.`,
       "Copy every item description, amount, subtotal, tax and total EXACTLY as written. Never calculate, round, re-price or add anything. If a value isn't on the proposal, leave it null/empty.",
       "Keep the proposal's own grouping (sections like Siding, Roofing, Gutters); a proposal with no groups is one section titled 'Scope of Work'.",
       "Spreadsheet exports may include helper columns and internal cost tabs — use only what the customer-facing proposal shows.",
@@ -89,6 +90,6 @@ export async function convertOldProposal(documentId: string, actor: { id: string
     footerId: data.total != null ? usd(data.total) : "proposal",
   });
   const base = doc.fileName.replace(/\.(pdf|xlsx|docx?)$/i, "");
-  const added = await addDocument({ projectId: doc.projectId, bytes, fileName: `${base} (BTRpro format).pdf`, contentType: "application/pdf", source: "UPLOAD", externalId: `converted:${doc.id}`, userId: actor.id });
+  const added = await addDocument({ projectId: doc.projectId, bytes, fileName: `${base} (${appName()} format).pdf`, contentType: "application/pdf", source: "UPLOAD", externalId: `converted:${doc.id}`, userId: actor.id });
   return { documentId: added.doc.id, duplicate: false };
 }

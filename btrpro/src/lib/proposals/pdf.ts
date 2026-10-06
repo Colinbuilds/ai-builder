@@ -6,7 +6,7 @@ import path from "node:path";
 import type { Proposal } from "@prisma/client";
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { prisma } from "@/lib/db";
-import { BTR } from "@/lib/company";
+import { companyLogo, getCompany } from "@/lib/company-profile";
 import { safe } from "@/lib/pdf/writer";
 import type { Alternate } from "./price";
 
@@ -106,18 +106,20 @@ export async function proposalPdf(p: Proposal) {
   });
 }
 
-/** Draws a proposal in BTR's estimate-form layout. */
+/** Draws a proposal in the estimate-form layout (BTR's, with the company's name, letterhead and logo). */
 export async function renderProposal(v: ProposalView) {
+  const co = await getCompany();
   const rep = v.rep;
   const work = v.sections;
   const doc = await PDFDocument.create();
-  doc.setTitle(safe(`${BTR.name} — ${v.title}`));
-  doc.setProducer("BTRpro");
+  doc.setTitle(safe(`${co.name} — ${v.title}`));
+  doc.setProducer(co.productName);
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   let img: PDFImage | null = null;
   try {
-    img = await doc.embedPng(logo());
+    const own = await companyLogo(co);
+    img = own ? await (own.type === "png" ? doc.embedPng(own.bytes) : doc.embedJpg(own.bytes)) : await doc.embedPng(logo());
   } catch {
     img = null;
   }
@@ -165,9 +167,9 @@ export async function renderProposal(v: ProposalView) {
   }
   let hy = y;
   const hx = 170;
-  t(BTR.name, hx, hy, { f: bold, size: 9 });
-  for (const l of BTR.proposalAddress) t(l, hx, (hy -= 11));
-  t(`Phone: ${BTR.officePhone}`, hx, (hy -= 11));
+  t(co.name, hx, hy, { f: bold, size: 9 });
+  for (const l of co.proposalAddress) t(l, hx, (hy -= 11));
+  t(`Phone: ${co.officePhone}`, hx, (hy -= 11));
   if (rep) {
     hy -= 8;
     t("Company Representative", hx, (hy -= 11), { f: bold });
@@ -307,7 +309,7 @@ export async function renderProposal(v: ProposalView) {
 
   const pages = doc.getPages();
   pages.forEach((pg, i) => {
-    if (pages.length > 1) pg.drawText(safe(`${BTR.name} · ${v.footerId} · Page ${i + 1} of ${pages.length}`), { x: M, y: 20, size: 7, font, color: SOFT });
+    if (pages.length > 1) pg.drawText(safe(`${co.name} · ${v.footerId} · Page ${i + 1} of ${pages.length}`), { x: M, y: 20, size: 7, font, color: SOFT });
   });
   return doc.save();
 }

@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useRef, useState } from "react";
 import { shrinkPhoto } from "@/components/shrink-photo";
 import { submitRequestAction } from "@/app/quote/actions";
+import { useBrand } from "@/components/brand";
 
 type Opts = Record<string, string>;
 const field = "w-full rounded-lg border border-btr-line bg-background px-3 py-3 text-base";
@@ -10,6 +11,7 @@ const label = "flex flex-col gap-1 text-sm font-medium";
 const STEPS = ["What you need", "Your property", "Photos", "How to reach you"];
 
 export function RequestForm({ wants, propertyTypes, relationships, timelines, stories, roofNow, phone }: { wants: Opts; propertyTypes: Opts; relationships: Opts; timelines: Opts; stories: readonly string[]; roofNow: readonly string[]; phone: string }) {
+  const { companyName } = useBrand();
   const [state, dispatch, pending] = useActionState(submitRequestAction, null);
   const [step, setStep] = useState(0);
   const [err, setErr] = useState("");
@@ -255,7 +257,7 @@ export function RequestForm({ wants, propertyTypes, relationships, timelines, st
           </select>
         </label>
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" name="textOk" className="mt-0.5 size-5" /> It&apos;s OK for BTR Contracting to text me about this request and my appointment.
+          <input type="checkbox" name="textOk" className="mt-0.5 size-5" /> It&apos;s OK for {companyName} to text me about this request and my appointment.
         </label>
         <label className={label}>
           Good days and times for a free inspection

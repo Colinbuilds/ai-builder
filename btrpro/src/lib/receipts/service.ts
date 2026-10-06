@@ -17,7 +17,7 @@ import { guardCostEdit, importInvoiceRows, type CostActor } from "@/lib/costing/
 import type { InvoiceRow } from "@/lib/costing/invoice-csv";
 import { DEFAULT_RECEIPT_MARKUP, lineAmount, matchReceiptJob, priceCheckLine, receiptPricing, totalsCheck, type Receipt, type SheetPrice } from "./check";
 import { getSettings } from "@/lib/settings";
-import { BTR } from "@/lib/company";
+import { getCompany, shortName } from "@/lib/company-profile";
 
 export class ReceiptError extends Error {}
 export const MAX_RECEIPT_FILES = 6;
@@ -66,7 +66,7 @@ Layouts you will see:
   The "PO #" line is usually the job name (e.g. a customer name) — put it in poNumber.
 - ABC Supply delivery tickets: ORDERED / SHIPPED / UNIT columns, then item number and description, usually NO prices (prices null). Use the SHIPPED quantity as quantity and ORDERED as orderedQuantity.
   Handwritten additions are real line items: transcribe them with handwritten true (e.g. "1  #1179 Trim Nail" → quantity 1, description "#1179 Trim Nail", itemNumber null unless a supplier item number is written).
-  "Ship To" BTR's shop or office is not the job site — still put it in shipToAddress; the PO is how the job is known.
+  "Ship To" ${shortName()}'s shop or office is not the job site — still put it in shipToAddress; the PO is how the job is known.
 - ABC invoices: same columns plus unit price and extension.
 If several photos are pages of the same document, combine them in order without repeating lines.`;
 
@@ -178,6 +178,7 @@ async function sheetRowsFor(itemNumbers: string[], builderId: string | null) {
 
 /** A scan with its job match, math checks and price check against the job's pricing (or BTR standard when no job is chosen). */
 export async function loadReceipt(id: string, chosenProjectId?: string | null) {
+  const co = await getCompany();
   const scan = await prisma.receiptScan.findUnique({ where: { id }, include: { project: { select: { id: true, name: true, address: true } } } });
   if (!scan) return null;
   const r = scan.extracted as Receipt | null;
@@ -190,7 +191,7 @@ export async function loadReceipt(id: string, chosenProjectId?: string | null) {
     r,
     jobs.map((j) => ({ ...j, clientName: j.clientCompany?.name ?? null })),
     orders,
-    { subject: scan.subject, message: scan.message, ownAddresses: BTR.ownAddresses },
+    { subject: scan.subject, message: scan.message, ownAddresses: co.ownAddresses },
   );
   const projectId = chosenProjectId ?? scan.projectId ?? match?.projectId ?? null;
   const scope = projectId ? await priceScopeFor(projectId) : STANDARD_SCOPE;

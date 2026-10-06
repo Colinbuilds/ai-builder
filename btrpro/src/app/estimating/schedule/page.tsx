@@ -7,6 +7,7 @@ import { serviceAccountEmail } from "@/lib/integrations/google-sa";
 import { DEFAULT_ESTIMATING_SHEET, PRIORITIES, type Priority } from "@/lib/estimating/schedule";
 import { SheetSettings, SyncButton } from "@/components/estimating/schedule-forms";
 import { Badge } from "@/components/ui/badge";
+import { appName } from "@/lib/company-profile";
 
 type Search = { m?: string; q?: string; show?: string };
 type Section = { id: string; title: string; hint?: string; where: Prisma.EstimateLogWhereInput; order: Prisma.EstimateLogOrderByWithRelationInput[]; limit: number | null; cols: "bid" | "followup" | "sold" | "lost" | "hildy" | "tract" };
@@ -190,7 +191,7 @@ export default async function EstimatingSchedule({ searchParams }: { searchParam
           <h1 className="text-2xl font-semibold">Estimating schedule</h1>
           <p className="text-sm text-muted-foreground">
             {settings.estimatingSheetOff
-              ? "BTRpro is the schedule."
+              ? `${appName()} is the schedule.`
               : `Synced from the Google estimating sheet${synced ? ` · last ${synced.toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : " · not synced yet"}. A row edited here stays as edited.`}
           </p>
         </div>
@@ -275,7 +276,7 @@ export default async function EstimatingSchedule({ searchParams }: { searchParam
           <h2 className="text-sm font-semibold">Google sheet sync</h2>
           <p className="text-xs text-muted-foreground">
             Reads every tab of the estimating sheet every 30 minutes{serviceAccountEmail() ? ` as ${serviceAccountEmail()} — the sheet must be shared with that email` : ""}. Once everyone works here instead,
-            an Admin ticks &quot;BTRpro is now the estimating schedule&quot; below.
+            an Admin ticks &quot;{appName()} is now the estimating schedule&quot; below.
           </p>
           <SyncButton />
         </section>

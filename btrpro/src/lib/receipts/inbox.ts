@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import type { NormalizedEmail } from "@/lib/comms/email";
 import { readReceipt, saveReceiptFiles } from "./service";
+import { shortName } from "@/lib/company-profile";
 
 export const RECEIPTS_LOCAL = () => (process.env.RECEIPTS_INBOX ?? "receipts").toLowerCase();
 export const receiptsAddress = () => (process.env.INBOUND_EMAIL_DOMAIN ? `${RECEIPTS_LOCAL()}@${process.env.INBOUND_EMAIL_DOMAIN}` : null);
@@ -19,7 +20,7 @@ export async function receiptsFromEmail(email: NormalizedEmail): Promise<{ ids: 
   const addr = senderEmail(email.from);
   const user = await prisma.user.findUnique({ where: { email: addr }, select: { id: true, name: true } });
   const crew = user ? null : await prisma.crew.findFirst({ where: { active: true, OR: [{ loginEmail: addr }, { email: addr }] }, select: { id: true, name: true } });
-  if (!user && !crew) return { ids: [], ignored: `sender ${addr} isn't a BTR staff or crew email` };
+  if (!user && !crew) return { ids: [], ignored: `sender ${addr} isn't a ${shortName()} staff or crew email` };
   if (email.externalId && (await prisma.receiptScan.findFirst({ where: { emailId: email.externalId } }))) return { ids: [], ignored: "already received" };
   const files = email.attachments.filter((a) => /^(image\/|application\/pdf)/i.test(a.contentType) || /\.(jpe?g|png|heic|webp|pdf)$/i.test(a.name));
   if (!files.length) return { ids: [], ignored: "no photo or PDF attached" };

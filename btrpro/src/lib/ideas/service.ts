@@ -1,5 +1,6 @@
 // Team ideas: anyone on staff adds what slows them down; owners/admins set the status and reply.
 import { prisma } from "@/lib/db";
+import { appName } from "@/lib/company-profile";
 
 export const OFTEN = { DAILY: "Every day", WEEKLY: "Every week", MONTHLY: "Every month", RARELY: "Now and then" } as const;
 export const STATUS = { NEW: "New", PLANNED: "Planned", BUILDING: "Being built", DONE: "Done — live", NOT_NOW: "Not right now" } as const;
@@ -36,7 +37,7 @@ export const hoursPerMonth = (i: { often: string; minutes: number | null; votes:
 export async function ideasForClaude() {
   const open = await prisma.idea.findMany({ where: { status: { in: ["NEW", "PLANNED"] } }, orderBy: { createdAt: "asc" } });
   return [
-    `BTRpro team ideas — ${open.length} open (${new Date().toISOString().slice(0, 10)})`,
+    `${appName()} team ideas — ${open.length} open (${new Date().toISOString().slice(0, 10)})`,
     "",
     ...open.map((i, n) => `${n + 1}. [${i.id}] ${i.title}\n   From: ${i.createdBy} · ${i.area ?? "—"} · ${OFTEN[i.often as keyof typeof OFTEN] ?? i.often}${i.minutes ? ` · saves ~${i.minutes} min each time` : ""} · ${(i.votes as string[]).length} want it\n   ${i.details.replace(/\n/g, "\n   ")}`),
   ].join("\n");

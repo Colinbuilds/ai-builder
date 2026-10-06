@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { saveEntryAction, sheetSettingsAction, syncSheetAction } from "@/app/estimating/schedule/actions";
 import { Problems } from "@/components/projects/problems";
+import { useBrand } from "@/components/brand";
 
 const box = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 const area = "min-h-[4.5rem] w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm";
@@ -44,6 +45,7 @@ export function SyncButton() {
 }
 
 export function SheetSettings({ link, off }: { link: string; off: boolean }) {
+  const { productName: app } = useBrand();
   const [state, dispatch, pending] = useActionState(sheetSettingsAction, null);
   return (
     <form action={dispatch} className="flex flex-col gap-2 text-sm">
@@ -52,7 +54,7 @@ export function SheetSettings({ link, off }: { link: string; off: boolean }) {
         <input name="estimatingSheet" defaultValue={link} className={box} />
       </label>
       <label className="flex items-center gap-2">
-        <input type="checkbox" name="off" defaultChecked={off} /> BTRpro is now the estimating schedule — stop the automatic sheet sync
+        <input type="checkbox" name="off" defaultChecked={off} /> {app} is now the estimating schedule — stop the automatic sheet sync
       </label>
       <div className="flex items-center gap-2">
         <button disabled={pending} className="h-8 rounded-md border px-3 hover:bg-muted">

@@ -17,6 +17,7 @@ import {
   updateProjectDetails,
   type ProjectInput,
 } from "@/lib/projects/service";
+import { exemptForm } from "@/lib/company-profile";
 
 const EDITORS = ["ADMIN", "ESTIMATOR"] as const;
 export type ActionResult = {
@@ -260,7 +261,7 @@ export async function executeForm17Action(
   const id = String(f.get("id"));
   const executedAt = date(f, "executedAt");
   if (!executedAt)
-    return { problems: ["Enter the date Form 17 was executed."] };
+    return { problems: [`Enter the date ${exemptForm().short} was executed.`] };
   try {
     await executeForm17(id, { executedAt, note: str(f, "note") }, user);
   } catch (e) {

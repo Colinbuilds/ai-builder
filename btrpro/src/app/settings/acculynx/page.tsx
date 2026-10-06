@@ -16,6 +16,7 @@ import {
   MapAccuLynx,
 } from "@/components/import/acculynx-forms";
 import { Badge } from "@/components/ui/badge";
+import { appName } from "@/lib/company-profile";
 
 type Check = {
   done: boolean;
@@ -138,7 +139,7 @@ export default async function AccuLynxMigration({
       <div>
         <h1 className="text-2xl font-semibold">Import from AccuLynx</h1>
         <p className="text-sm text-muted-foreground">
-          BTRpro has replaced AccuLynx. Use this once to bring the old jobs and
+          {appName()} has replaced AccuLynx. Use this once to bring the old jobs and
           history over, then check the setup list below.
         </p>
       </div>
@@ -172,7 +173,7 @@ export default async function AccuLynxMigration({
           In AccuLynx, open the Jobs list (all milestones you want, including
           Closed for history), and export it to Excel/CSV. Upload it here.
           Customers and companies come along with each job; jobs already in
-          BTRpro at the same address are linked, and re-importing updates by
+          {appName()} at the same address are linked, and re-importing updates by
           AccuLynx job number instead of duplicating.
         </p>
         <LoadAccuLynx />

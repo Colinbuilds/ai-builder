@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { STAFF_ROLES } from "@/lib/roles";
 import { CREW_SCOPES, list, suggestions } from "@/lib/production/assign";
 import { savePmAction, saveCrewScopesAction } from "./actions";
+import { appName } from "@/lib/company-profile";
 
 const box = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 const btn = "h-8 rounded-md bg-btr-blue px-3 text-sm font-medium text-white hover:bg-btr-blue-dark";
@@ -28,8 +29,8 @@ export default async function WhoDoesWhat() {
         </Link>
         <h1 className="text-2xl font-semibold">Who does what</h1>
         <p className="text-sm text-muted-foreground">
-          For the office: tell BTRpro which builders and crews each project manager runs, and what work each crew does. PMs then see their own jobs first on the dashboard and the schedule. Boxes marked{" "}
-          <span className="rounded bg-amber-100 px-1 text-amber-900">suggested</span> are BTRpro&apos;s guess from the live schedule — check them, fix them, press Save.
+          For the office: tell {appName()} which builders and crews each project manager runs, and what work each crew does. PMs then see their own jobs first on the dashboard and the schedule. Boxes marked{" "}
+          <span className="rounded bg-amber-100 px-1 text-amber-900">suggested</span> are {appName()}&apos;s guess from the live schedule — check them, fix them, press Save.
         </p>
       </div>
 

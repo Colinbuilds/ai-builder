@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { sheetDateStatus } from "@/lib/sheets/date-status";
 import { normEmail } from "@/lib/customers";
+import { shortName } from "@/lib/company-profile";
 
 export class BuilderError extends Error {}
 export const PREFIX_RE = /^[A-Z]{2,4}$/;
@@ -23,14 +24,14 @@ export type BuilderInput = {
 export async function saveBuilder(id: string | null, input: BuilderInput, actor: { id: string; name: string; role: string }) {
   if (actor.role === "VIEWER") throw new BuilderError("Viewers can't edit builders.");
   if (!input.name.trim()) throw new BuilderError("Builder name is required.");
-  if (!input.pricingFallback) throw new BuilderError("Choose what happens when an item isn't on this builder's pricing: use BTR standard pricing (flagged), or leave it MISSING.");
+  if (!input.pricingFallback) throw new BuilderError(`Choose what happens when an item isn't on this builder's pricing: use ${shortName()} standard pricing (flagged), or leave it MISSING.`);
   const prefix = input.sheetPrefix?.trim().toUpperCase() || null;
   if (prefix && !PREFIX_RE.test(prefix)) throw new BuilderError("Sheet prefix must be 2–4 letters, e.g. LEG for Legacy Homes.");
   if (prefix) {
     const clash = await prisma.company.findFirst({ where: { sheetPrefix: prefix, ...(id ? { id: { not: id } } : {}) } });
     if (clash) throw new BuilderError(`Prefix ${prefix} is already used by ${clash.name}.`);
     const standard = await prisma.priceSheet.findFirst({ where: { code: prefix, companyId: null } });
-    if (standard) throw new BuilderError(`${prefix} is a BTR standard sheet code. Pick another prefix.`);
+    if (standard) throw new BuilderError(`${prefix} is a ${shortName()} standard sheet code. Pick another prefix.`);
   }
   const before = id ? await prisma.company.findUnique({ where: { id } }) : null;
   if (before?.sheetPrefix && before.sheetPrefix !== prefix && (await prisma.priceSheet.count({ where: { companyId: id } })))

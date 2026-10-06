@@ -5,6 +5,7 @@ import { BuilderForm } from "@/components/builders/builder-form";
 import { Collapsible } from "@/components/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
+import { shortName } from "@/lib/company-profile";
 
 export default async function Builders() {
   const user = await requireUser();
@@ -51,7 +52,7 @@ export default async function Builders() {
                   ))
                 )}
               </TD>
-              <TD className="text-sm">{b.pricingFallback === "STANDARD" ? "BTR standard price, flagged" : b.pricingFallback === "MISSING" ? "MISSING" : <Badge variant="amber">not chosen</Badge>}</TD>
+              <TD className="text-sm">{b.pricingFallback === "STANDARD" ? `${shortName()} standard price, flagged` : b.pricingFallback === "MISSING" ? "MISSING" : <Badge variant="amber">not chosen</Badge>}</TD>
               <TD className="text-right tabular-nums">{b.openJobs}</TD>
             </TR>
           ))}

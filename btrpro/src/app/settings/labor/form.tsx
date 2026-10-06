@@ -6,8 +6,10 @@ import { saveLaborStandardAction } from "@/app/projects/estimate-actions";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Problems } from "@/components/projects/problems";
+import { useBrand } from "@/components/brand";
 
 export function LaborStandardForm() {
+  const { shortName } = useBrand();
   const [state, action, pending] = useFormAction(saveLaborStandardAction, null, { resetOnOk: true });
   const [type, setType] = useState("UNIT");
   return (
@@ -31,7 +33,7 @@ export function LaborStandardForm() {
             <Input name="burdenPct" placeholder="Burden %" className="w-24" />
           </>
         )}
-        <Input name="source" placeholder="Source (BTR 2025 job average, crew agreement…)" className="min-w-72 flex-1" required />
+        <Input name="source" placeholder={`Source (${shortName} 2025 job average, crew agreement…)`} className="min-w-72 flex-1" required />
         <Button disabled={pending}>Save</Button>
       </div>
       {state?.ok && <span className="text-sm text-green-700 dark:text-green-400">Saved.</span>}

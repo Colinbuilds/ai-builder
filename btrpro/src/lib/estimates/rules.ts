@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { parseScopes } from "@/lib/projects/intake";
 import { SIDING_DEFAULT_PRODUCTS } from "@/lib/calc/siding";
 import type { TakeoffConfig } from "./takeoff";
+import { exemptForm } from "@/lib/company-profile";
 
 export type RuleResult = {
   id: string;
@@ -124,8 +125,8 @@ export function evaluateRules(ctx: Ctx, rules: { id: string; text: string; locke
     push({
       id: "PUB-01",
       status: ctx.form17Status === "EXECUTED" ? "pass" : "fail",
-      message: ctx.form17Status === "EXECUTED" ? "Form 17 executed." : "Form 17 not executed — no material purchases until it is.",
-      fix: ctx.form17Status === "EXECUTED" ? undefined : { kind: "link", href: `/projects/${ctx.projectId}`, label: "Record Form 17" },
+      message: ctx.form17Status === "EXECUTED" ? `${exemptForm().short} executed.` : `${exemptForm().short} not executed — no material purchases until it is.`,
+      fix: ctx.form17Status === "EXECUTED" ? undefined : { kind: "link", href: `/projects/${ctx.projectId}`, label: `Record ${exemptForm().short}` },
     });
   if (ctx.isPublic) push({ id: "PUB-02", status: "info", message: "Pull bid tabs after the opening and record them under Calibration." });
   return out;

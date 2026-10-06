@@ -6,17 +6,18 @@ import { prisma } from "@/lib/db";
 import { STAFF_ROLES } from "@/lib/roles";
 import { aiConfigured, aiErrorMessage } from "@/lib/ai/claude";
 import { askCodeQuestion } from "@/lib/codes/library";
+import { botName, companySync } from "@/lib/company-profile";
 
 export type AskResult = { ok: boolean; message?: string; id?: string } | null;
 
 export async function askAction(_: AskResult, f: FormData): Promise<AskResult> {
   const u = await requireUser(STAFF_ROLES);
-  if (!aiConfigured()) return { ok: false, message: "BTRbot isn't set up (ANTHROPIC_API_KEY on the server)." };
+  if (!aiConfigured()) return { ok: false, message: `${botName()} isn't set up (ANTHROPIC_API_KEY on the server).` };
   try {
     const r = await askCodeQuestion(
       {
         question: String(f.get("question") ?? ""),
-        jurisdiction: String(f.get("jurisdiction") ?? "Omaha, NE").trim() || "Omaha, NE",
+        jurisdiction: String(f.get("jurisdiction") ?? "").trim() || companySync().jurisdiction,
         projectId: String(f.get("projectId") ?? "") || null,
         officialOnly: f.get("official") === "on",
         useJobSpecs: f.get("specs") === "on",

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { BOARD_LABEL, PRIORITIES } from "@/lib/estimating/schedule";
 import { EntryForm } from "@/components/estimating/schedule-forms";
 import { deleteEntryAction, startJobAction } from "../actions";
+import { appName } from "@/lib/company-profile";
 
 export default async function ScheduleEntry({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -23,7 +24,7 @@ export default async function ScheduleEntry({ params }: { params: Promise<{ id: 
         <h1 className="text-2xl font-semibold">{e.project}</h1>
         <span className="text-sm text-muted-foreground">
           {BOARD_LABEL[e.board as keyof typeof BOARD_LABEL] ?? e.board}
-          {e.source === "SHEET" ? ` · from the sheet (${e.sourceTab?.trim()}, row ${e.sourceRow})` : e.sourceKey ? " · edited in BTRpro (the sheet sync leaves it alone)" : " · added in BTRpro"}
+          {e.source === "SHEET" ? ` · from the sheet (${e.sourceTab?.trim()}, row ${e.sourceRow})` : e.sourceKey ? ` · edited in ${appName()} (the sheet sync leaves it alone)` : ` · added in ${appName()}`}
           {e.updatedBy && ` · last edit ${e.updatedBy}`}
         </span>
       </div>
@@ -48,7 +49,7 @@ export default async function ScheduleEntry({ params }: { params: Promise<{ id: 
             ) : (
               <form action={startJobAction}>
                 <input type="hidden" name="id" value={e.id} />
-                <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted">Start a job in BTRpro from this bid</button>
+                <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted">Start a job in {appName()} from this bid</button>
               </form>
             )}
             <form action={deleteEntryAction} className="ml-auto">

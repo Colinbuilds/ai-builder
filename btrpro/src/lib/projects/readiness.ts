@@ -2,6 +2,7 @@
 //   NOT_READY  — anything MISSING that blocks a number
 //   BUDGET     — a number exists, but it rests on assumptions / placeholders / unapproved waste
 //   BID_READY  — none of the above
+import { botName } from "@/lib/brand-names";
 export type Readiness = "NOT_READY" | "BUDGET" | "BID_READY";
 
 export type ReadinessInput = {
@@ -22,11 +23,13 @@ export type Blocker = { severity: "blocks_number" | "assumption"; message: strin
 const HARD_LINE = new Set(["MISSING", "MISSING_ITEM", "MISSING_PRICE", "CALL_FOR_PRICE", "PENDING_AI", "SHEET_EXPIRED"]);
 const SOFT_LINE = new Set(["PLACEHOLDER", "ASSUMPTION_APPROVED"]);
 const LABEL: Record<string, string> = {
+  get PENDING_AI() {
+    return `${botName()} suggestion not yet accepted`;
+  },
   MISSING: "missing",
   MISSING_ITEM: "item not on any loaded sheet",
   MISSING_PRICE: "no price",
   CALL_FOR_PRICE: "CALL for price — get a quote",
-  PENDING_AI: "BTRbot suggestion not yet accepted",
   SHEET_EXPIRED: "priced from an expired sheet",
   PLACEHOLDER: "placeholder value",
   ASSUMPTION_APPROVED: "approved assumption",

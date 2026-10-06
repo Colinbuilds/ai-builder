@@ -3,8 +3,10 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { askAction } from "@/app/library/codes/actions";
+import { useBrand } from "@/components/brand";
 
-export function AskForm({ jobs, job }: { jobs: { id: string; name: string }[]; job?: string }) {
+export function AskForm({ jobs, job, jurisdiction = "Omaha, NE" }: { jobs: { id: string; name: string }[]; job?: string; jurisdiction?: string }) {
+  const { assistantName: bot } = useBrand();
   const [state, run, pending] = useActionState(askAction, null);
   const router = useRouter();
   useEffect(() => {
@@ -22,7 +24,7 @@ export function AskForm({ jobs, job }: { jobs: { id: string; name: string }[]; j
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-1">
           Where
-          <input name="jurisdiction" defaultValue="Omaha, NE" className="h-8 w-40 rounded-md border border-input bg-background px-2" />
+          <input name="jurisdiction" defaultValue={jurisdiction} className="h-8 w-40 rounded-md border border-input bg-background px-2" />
         </label>
         <label className="flex items-center gap-1">
           Job
@@ -42,7 +44,7 @@ export function AskForm({ jobs, job }: { jobs: { id: string; name: string }[]; j
           <input type="checkbox" name="official" /> official sources only
         </label>
         <button disabled={pending} className="ml-auto h-9 rounded-md bg-btr-blue px-4 font-medium text-white hover:bg-btr-blue-dark disabled:opacity-50">
-          {pending ? "Researching… (up to a minute or two)" : "Ask BTRbot"}
+          {pending ? "Researching… (up to a minute or two)" : `Ask ${bot}`}
         </button>
       </div>
       {state && !state.ok && <p className="text-red-700">{state.message}</p>}

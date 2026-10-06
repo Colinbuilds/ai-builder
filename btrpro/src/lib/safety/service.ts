@@ -4,7 +4,7 @@
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/db";
 import { round } from "@/lib/calc/core";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { PdfWriter } from "@/lib/pdf/writer";
 import { readUpload, saveUpload } from "@/lib/storage";
 
@@ -134,10 +134,11 @@ export async function safetyOverview(now = new Date()) {
  * company file (PDFs merged in, photos placed one per page). Built from what's on file — nothing is filled in.
  */
 export async function prequalPacket(now = new Date()) {
+  const co = await getCompany();
   const o = await safetyOverview(now);
-  const w = await PdfWriter.create({ title: `${BTR.name} prequalification packet`, footer: `${BTR.name} · ${BTR.phone} · prepared ${now.toISOString().slice(0, 10)}` });
-  w.heading(`${BTR.name} — subcontractor prequalification`);
-  w.text(`${BTR.address} · ${BTR.phone}`, { size: 10, gap: 10 });
+  const w = await PdfWriter.create({ title: `${co.name} prequalification packet`, footer: `${co.name} · ${co.phone} · prepared ${now.toISOString().slice(0, 10)}` });
+  w.heading(`${co.name} — subcontractor prequalification`);
+  w.text(`${co.address} · ${co.phone}`, { size: 10, gap: 10 });
   w.text("Safety record (OSHA 300A summary; rates = cases x 200,000 / hours worked)", { bold: true, size: 11, gap: 4 });
   const done = o.years.slice(1).reverse();
   const v = (n: number | null, d = 2) => (n == null ? "not on file" : n.toFixed(d));

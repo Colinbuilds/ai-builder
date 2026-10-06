@@ -9,9 +9,10 @@ import { aiParse } from "@/lib/ai/claude";
 import { getSettings, saveSettings } from "@/lib/settings";
 import { addEntry } from "@/lib/estimating/schedule";
 import { central, distance, parseCivic, parseIonWave, parseSdi, relevance, textOf, type Posting } from "./parse";
+import { appName, botName, companySync, getCompany } from "@/lib/company-profile";
 
 export class BidError extends Error {}
-export const KINDS = { SDI: "SDI plan room", IONWAVE: "IonWave bid board", CIVIC: "CivicEngage bid page", PAGE: "Any page (BTRbot reads it)", SAM: "SAM.gov federal" } as const;
+export const KINDS = { SDI: "SDI plan room", IONWAVE: "IonWave bid board", CIVIC: "CivicEngage bid page", PAGE: `Any page (${botName()} reads it)`, SAM: "SAM.gov federal" } as const;
 export type Kind = keyof typeof KINDS;
 export const DEFAULT_RADIUS = 125; // straight-line miles ≈ 2 hours' drive on I-80 / US highways
 
@@ -35,13 +36,18 @@ export const BUILTIN: { name: string; kind: Kind; url: string; defaultCity?: str
 ];
 
 export async function ensureSources() {
+  // the built-in boards are around Omaha / Lincoln; another company's deployment adds its own on the Bids page
+  if ((await getCompany()).state !== "NE") return;
   const have = new Set((await prisma.bidSource.findMany({ select: { url: true } })).map((s) => s.url));
   for (const b of BUILTIN) if (!have.has(b.url)) await prisma.bidSource.create({ data: { ...b, builtIn: true } });
 }
 
-const UA = "Mozilla/5.0 (compatible; BTRpro/1.0; bid watcher for BTR Contracting, Omaha NE)";
+const UA = () => {
+  const co = companySync();
+  return `Mozilla/5.0 (compatible; ${co.productName}/1.0; bid watcher for ${co.name}, ${co.jurisdiction.replace(",", "")})`;
+};
 export async function fetchPage(url: string) {
-  const res = await fetch(url, { headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml,application/json" }, signal: AbortSignal.timeout(30_000), redirect: "follow" });
+  const res = await fetch(url, { headers: { "user-agent": UA(), accept: "text/html,application/xhtml+xml,application/json" }, signal: AbortSignal.timeout(30_000), redirect: "follow" });
   const body = await res.text();
   if (/<title>\s*(Just a moment|Client Challenge|Attention Required|Access Denied)/i.test(body) || res.status === 403 || res.status === 429)
     throw new BidError("This site blocks automatic readers (bot check). Check it by hand, or sign up for its email alerts.");
@@ -130,7 +136,7 @@ export async function readSource(src: Source, now = new Date()): Promise<{ posti
   if (src.kind === "SDI") return { postings: parseSdi(html, src.url) };
   if (src.kind === "IONWAVE") {
     const r = parseIonWave(html, src.url);
-    return { postings: r.postings, note: r.pages > 1 ? `The board has ${r.pages} pages; BTRpro reads the first (soonest to close). Open the board for the rest.` : undefined };
+    return { postings: r.postings, note: r.pages > 1 ? `The board has ${r.pages} pages; ${appName()} reads the first (soonest to close). Open the board for the rest.` : undefined };
   }
   if (src.kind === "CIVIC") {
     if (!/bidItems/.test(html)) throw new BidError("This page doesn't look like a CivicEngage bid page anymore. Check the link.");

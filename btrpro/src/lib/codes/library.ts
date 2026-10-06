@@ -3,6 +3,7 @@
 // Answers cite the edition the jurisdiction actually adopted; anything BTRbot can't verify is marked so.
 import { prisma } from "@/lib/db";
 import { aiResearch } from "@/lib/ai/claude";
+import { getCompany } from "@/lib/company-profile";
 
 export type Ref = { kind: "CODE" | "MANUFACTURER" | "STANDARD" | "LOCAL"; title: string; url: string; jurisdiction?: string; note?: string };
 
@@ -14,6 +15,11 @@ export const ADOPTIONS: { jurisdiction: string; codes: string; source: string }[
     source: "https://codes.submittal.app/cities/omaha/",
   },
 ];
+
+/** The Omaha / Nebraska entries apply only to a Nebraska company (region.ts); other states add their own links. */
+const isNebraska = (j?: string) => !!j && (j === "Nebraska" || j.endsWith(", NE"));
+export const adoptionsFor = (state: string) => ADOPTIONS.filter((a) => state === "NE" || !isNebraska(a.jurisdiction));
+export const referencesFor = (state: string) => REFERENCES.filter((r) => state === "NE" || !isNebraska(r.jurisdiction));
 
 /** Built-in references (team-added links are stored as LibraryLink). */
 export const REFERENCES: Ref[] = [
@@ -61,10 +67,10 @@ export const OFFICIAL_DOMAINS = [
   "norandex.com",
 ];
 
-const TASK = (jurisdiction: string) =>
+const TASK = (jurisdiction: string, co: { name: string; region: { codeNote: string | null } }) =>
   [
-    "TASK: answer a building-code, specification or manufacturer-requirement question for BTR Contracting (roofing / siding / exterior envelope).",
-    `Jurisdiction: ${jurisdiction}. Use the code EDITION that jurisdiction has adopted (Omaha enforces the 2018 IBC and 2018 IRC, the 2018 IECC for commercial work), not simply the newest edition. Say which edition and section you're citing.`,
+    `TASK: answer a building-code, specification or manufacturer-requirement question for ${co.name} (roofing / siding / exterior envelope).`,
+    `Jurisdiction: ${jurisdiction}. Use the code EDITION that jurisdiction has adopted${co.region.codeNote ? ` (${co.region.codeNote})` : ""}, not simply the newest edition. Say which edition and section you're citing.`,
     "Research with web search / fetch. Prefer primary sources: the code text (ICC / UpCodes), the city or state, ASCE/NRCA/OSHA, and the manufacturer's current installation instructions or specifications. Manufacturer instructions govern warranty eligibility — call out where they're stricter than code.",
     "If job documents (spec book / plans text) are provided, check them first and cite the spec section; project specs override general practice.",
     "Never invent a section number, value or requirement. If you can't find or verify something, say it's unverified and what source would settle it.",
@@ -80,7 +86,7 @@ export async function askCodeQuestion(input: { question: string; jurisdiction: s
     const docs = await prisma.document.findMany({ where: { projectId: input.projectId, type: { in: ["SPECS", "PLANS"] }, extractedText: { not: null } }, select: { fileName: true, extractedText: true }, take: 6 });
     if (docs.length) context = `JOB DOCUMENTS (text):\n${docs.map((d) => `=== ${d.fileName}\n${d.extractedText!.slice(0, 40_000)}`).join("\n\n").slice(0, 150_000)}`;
   }
-  const r = await aiResearch({ task: TASK(input.jurisdiction), question: q, context, allowedDomains: input.officialOnly ? OFFICIAL_DOMAINS : undefined });
+  const r = await aiResearch({ task: TASK(input.jurisdiction, await getCompany()), question: q, context, allowedDomains: input.officialOnly ? OFFICIAL_DOMAINS : undefined });
   return prisma.codeQuestion.create({
     data: { question: q, answer: r.text, sources: r.sources, jurisdiction: input.jurisdiction, projectId: input.projectId ?? null, officialOnly: input.officialOnly, createdBy: actor.name },
   });

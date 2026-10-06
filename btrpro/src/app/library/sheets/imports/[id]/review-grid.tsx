@@ -29,6 +29,7 @@ export function ReviewGrid(props: {
   initialRows: ParsedRow[];
   unparsed: { line: number; text: string }[];
   oldItems: DiffItem[];
+  own?: { shortName: string; abcAccount: string };
 }) {
   const [name, setName] = useState(props.initialName);
   const [scope, setScope] = useState(props.initialScope);
@@ -44,7 +45,7 @@ export function ReviewGrid(props: {
   const changedBy = new Map(diff.changed.map((c) => [c.itemNumber, c]));
   const addedSet = new Set(diff.added.map((a) => a.itemNumber));
   const problems = validateRows(clean, UOMS);
-  const warning = accountWarning(header.account);
+  const warning = accountWarning(header.account, props.own);
 
   const update = (key: number, patch: Partial<Row>) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   const setPrice = (key: number, text: string) => {

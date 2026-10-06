@@ -4,8 +4,10 @@ import { useActionState, useState } from "react";
 import { uploadSheet } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
+import { useBrand } from "@/components/brand";
 
 export function UploadForm({ sheets }: { sheets: { code: string; name: string; isLoaded: boolean }[] }) {
+  const { shortName } = useBrand();
   const [error, action, pending] = useActionState(uploadSheet, null);
   const [code, setCode] = useState(sheets[0]?.code ?? "__new");
   return (
@@ -23,7 +25,7 @@ export function UploadForm({ sheets }: { sheets: { code: string; name: string; i
       {code === "__new" && (
         <div className="grid grid-cols-[6rem_1fr] gap-2">
           <Input name="newCode" placeholder="Code" maxLength={4} required />
-          <Input name="newName" placeholder="Name, e.g. BTR - LP SmartSide" required />
+          <Input name="newName" placeholder={`Name, e.g. ${shortName} - LP SmartSide`} required />
           <Input name="newScope" placeholder="What it covers" className="col-span-2" />
         </div>
       )}

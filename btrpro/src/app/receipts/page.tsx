@@ -7,6 +7,7 @@ import { ScanReceiptForm } from "@/components/receipts/scan-form";
 import { Badge } from "@/components/ui/badge";
 import { receiptsAddress } from "@/lib/receipts/inbox";
 import { AutoRefresh } from "@/components/receipts/auto-refresh";
+import { appName, botName, shortName } from "@/lib/company-profile";
 
 export default async function Receipts() {
   await requireUser(STAFF_ROLES);
@@ -32,14 +33,14 @@ export default async function Receipts() {
         <p className="text-sm text-muted-foreground">
           {inbox ? (
             <>
-              Email receipts to <span className="font-mono font-medium text-foreground">{inbox}</span> from your BTR email (or a crew login email), or photograph one here.{" "}
+              Email receipts to <span className="font-mono font-medium text-foreground">{inbox}</span> from your {shortName()} email (or a crew login email), or photograph one here.{" "}
             </>
           ) : null}
-          Photograph an ABC (or any supplier) receipt. BTRpro reads it, finds the job from the PO, ship-to address or job name, lists every item, and checks each price against our price
+          Photograph an ABC (or any supplier) receipt. {appName()} reads it, finds the job from the PO, ship-to address or job name, lists every item, and checks each price against our price
           sheets — the builder&apos;s own pricing on builder jobs. Then file it to the job&apos;s material costs.
         </p>
       </div>
-      {aiConfigured() ? <ScanReceiptForm /> : <p className="rounded-lg border border-btr-line p-4 text-sm">Reading receipts needs BTRbot turned on (ANTHROPIC_API_KEY on the server).</p>}
+      {aiConfigured() ? <ScanReceiptForm /> : <p className="rounded-lg border border-btr-line p-4 text-sm">Reading receipts needs {botName()} turned on (ANTHROPIC_API_KEY on the server).</p>}
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">Recent receipts</h2>
         {scans.length === 0 && <p className="text-sm text-muted-foreground">None yet.</p>}

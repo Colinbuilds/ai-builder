@@ -8,7 +8,7 @@ import { lookLabel, renderPrompt, setRendererForTests } from "@/lib/render";
 const base: LeadInput = {
   firstName: "TEST_ONLY Web",
   lastName: "Customer",
-  phone: "402-555-0142",
+  phone: "402-555-0187",
   email: "test-only-web@example.com",
   contactPref: "CALL",
   textOk: true,
@@ -64,7 +64,7 @@ describe("request form", () => {
     // an earlier contact with this phone and no email: the form's email is filled in, not dropped
     await prisma.contact.create({ data: { firstName: "TEST_ONLY Web", lastName: "Old", phone: "(402) 555-0142", phoneKey: "4025550142" } });
     const lead = await submitWebLead(base, [await photo()], { ip });
-    expect(lead.phone).toBe("(402) 555-0142");
+    expect(lead.phone).toBe("(402) 555-0187");
     expect(lead.state).toBe("NE");
     const job = await prisma.project.findUniqueOrThrow({ where: { id: lead.projectId! }, include: { contacts: { include: { contact: true } }, documents: true } });
     expect(job).toMatchObject({ status: "LEAD", market: "RESIDENTIAL", address: "123 TEST_ONLY St, Omaha, NE 68142", isInsuranceClaim: true, insuranceCarrier: "TEST_ONLY Mutual", priority: "HIGH" });

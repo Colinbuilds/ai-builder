@@ -10,6 +10,7 @@ import { saveSettings } from "@/lib/settings";
 import { parseDriveLink } from "@/lib/integrations/drive";
 import { driveAvailable } from "@/lib/integrations/google-sa";
 import { syncPriceSheets } from "@/lib/sheets/drive-sync";
+import { appName } from "@/lib/company-profile";
 
 const MAX_BYTES = 50 * 1024 * 1024;
 
@@ -127,7 +128,7 @@ export async function saveSheetFolderAction(_: SyncState, f: FormData): Promise<
   if (!(await driveAvailable(admin.id))) return { problems: ["Set up Drive for the app first: a service account key in GOOGLE_SERVICE_ACCOUNT_JSON (recommended), or connect your Google Drive under Admin → Integrations."] };
   await saveSettings({ priceSheetFolder: link, priceSheetSyncUserId: admin.id }, admin);
   revalidatePath("/library/sheets");
-  return { problems: [], ok: true, note: "Saved. BTRpro checks this folder on start and every 6 hours — or click Check now." };
+  return { problems: [], ok: true, note: `Saved. ${appName()} checks this folder on start and every 6 hours — or click Check now.` };
 }
 
 export async function syncSheetsNowAction(_: SyncState): Promise<SyncState> {

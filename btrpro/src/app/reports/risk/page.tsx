@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { STAFF_ROLES } from "@/lib/roles";
-import { LIEN_DAYS, riskDesk } from "@/lib/reports/risk";
+import { riskDesk } from "@/lib/reports/risk";
+import { getCompany } from "@/lib/company-profile";
 
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const day = (d: Date | null) => (d ? d.toLocaleDateString("en-US", { timeZone: "UTC" }) : "—");
@@ -14,12 +15,13 @@ function When({ days }: { days: number | null }) {
 
 export default async function RiskPage() {
   await requireUser(STAFF_ROLES);
-  const r = await riskDesk();
+  const [r, co] = await Promise.all([riskDesk(), getCompany()]);
+  const lien = r.lienRule;
   return (
     <div className="flex max-w-6xl flex-col gap-5">
       <div>
         <h1 className="text-2xl font-semibold">Risk desk</h1>
-        <p className="text-sm text-muted-foreground">Dates that cost real money when they slip by: crew insurance and the Nebraska lien deadline.</p>
+        <p className="text-sm text-muted-foreground">Dates that cost real money when they slip by: crew insurance and the {lien ? `${lien.stateName} ` : ""}lien deadline.</p>
       </div>
 
       <section className="flex flex-col gap-2">
@@ -71,8 +73,19 @@ export default async function RiskPage() {
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Lien deadlines on unpaid jobs</h2>
         <p className="text-xs text-muted-foreground">
-          In Nebraska a construction lien must be recorded within {LIEN_DAYS} days after the last day BTR furnished labor or materials (Neb. Rev. Stat. § 52-137). On owner-occupied residential (&quot;protected
-          party&quot;) jobs a Notice of Right to Lien should have been served. If a deadline is close and the money isn&apos;t coming, call the attorney now — the deadline doesn&apos;t move.
+          {lien ? (
+            <>
+              In {lien.stateName} a construction lien must be recorded within {lien.days} days after the last day {co.shortName} furnished labor or materials ({lien.statute}).{" "}
+              {lien.state === "NE" && (
+                <>
+                  On owner-occupied residential (&quot;protected party&quot;) jobs a Notice of Right to Lien should have been served.{" "}
+                </>
+              )}
+              If a deadline is close and the money isn&apos;t coming, call the attorney now — the deadline doesn&apos;t move.
+            </>
+          ) : (
+            <>No lien deadline is set for {co.region.name}. Add the days in Settings → Company profile; until then every deadline shows MISSING.</>
+          )}
         </p>
         <div className="overflow-x-auto rounded-md border bg-background">
           <table className="w-full text-sm">

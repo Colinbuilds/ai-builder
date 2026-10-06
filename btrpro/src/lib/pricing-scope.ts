@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { shortName } from "@/lib/company-profile";
 
 /**
  * Which price sheets a job is priced from. Standard jobs use BTR's own ABC sheets. A job whose client is a
@@ -26,5 +27,5 @@ export function sheetWhere(scope: PriceScope): Prisma.PriceSheetWhereInput {
 
 export const notOnBuilderNote = (scope: PriceScope) =>
   scope.fallback === "STANDARD"
-    ? `Not on ${scope.builderName}'s pricing — BTR standard price used (builder is set to fall back).`
+    ? `Not on ${scope.builderName}'s pricing — ${shortName()} standard price used (builder is set to fall back).`
     : `Not on ${scope.builderName}'s pricing sheet${scope.fallback == null ? " (no fallback chosen for this builder)" : ""}. Get the builder price or change the builder's fallback.`;

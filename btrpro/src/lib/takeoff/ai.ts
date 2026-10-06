@@ -134,7 +134,7 @@ export async function aiDraftTakeoff(input: { imageBase64: string; mediaType: "i
       dropped++;
       continue;
     }
-    items.push({ id: `ai${Math.random().toString(36).slice(2, 9)}`, type: it.type, points: pts, note: `BTRbot: ${it.note}`.slice(0, 200), ai: true });
+    items.push({ id: `ai${Math.random().toString(36).slice(2, 9)}`, type: it.type, points: pts, note: `${botName()}: ${it.note}`.slice(0, 200), ai: true });
   }
   return {
     items,

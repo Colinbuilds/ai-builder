@@ -18,6 +18,7 @@ import { aiErrorMessage } from "@/lib/ai/claude";
 import { convertOldProposal, LegacyProposalError } from "@/lib/proposals/legacy";
 import { ContractReviewError, reviewContract } from "@/lib/docs/contract-review";
 import { redirect } from "next/navigation";
+import { appName } from "@/lib/company-profile";
 
 export type DocsResult = {
   problems: string[];
@@ -250,7 +251,7 @@ export async function convertProposalAction(_: DocsResult, f: FormData): Promise
   try {
     const r = await convertOldProposal(id, u);
     revalidatePath(path(doc.projectId));
-    return { problems: [], ok: true, note: r.duplicate ? "Already converted — see the (BTRpro format) copy." : "Added a copy in the BTRpro layout. Check the amounts against the original." };
+    return { problems: [], ok: true, note: r.duplicate ? `Already converted — see the (${appName()} format) copy.` : `Added a copy in the ${appName()} layout. Check the amounts against the original.` };
   } catch (e) {
     return { problems: [e instanceof LegacyProposalError ? e.message : aiErrorMessage(e)] };
   }

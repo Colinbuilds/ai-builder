@@ -1,16 +1,20 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { prisma } from "@/lib/db";
 import { TIMELINES, WANTS, leadByToken, type Photo, type Rendering, type Want } from "@/lib/leads/web";
 import { ROOF_COLORS, ROOF_STYLES, SIDING_COLORS, SIDING_STYLES, TRIM_COLORS, renderProvider } from "@/lib/render";
 import { Studio } from "@/components/leads/studio";
 import { favoriteAction } from "../actions";
 
-export const metadata: Metadata = { title: `Your request — ${BTR.name}`, robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const co = await getCompany();
+  return { title: `Your request — ${co.name}`, robots: { index: false } };
+}
 const strip = <T extends { key: string; label: string; hex: string }>(l: T[]) => l.map(({ key, label, hex }) => ({ key, label, hex }));
 
 export default async function RequestPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ new?: string }> }) {
+  const co = await getCompany();
   const [{ token }, sp] = await Promise.all([params, searchParams]);
   const lead = await leadByToken(token);
   if (!lead) notFound();
@@ -26,9 +30,9 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 py-2">
       <header className="flex flex-col gap-1 border-b pb-3">
-        <p className="text-lg font-semibold">{BTR.name}</p>
+        <p className="text-lg font-semibold">{co.name}</p>
         <p className="text-sm text-muted-foreground">
-          {BTR.phone} · {BTR.email}
+          {co.phone} · {co.email}
         </p>
       </header>
 
@@ -46,7 +50,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
           <li>{rep ? `✓ ${rep.name.split(" ")[0]} is your project consultant${rep.phone ? ` · ${rep.phone}` : ""}` : "○ A project consultant will be assigned shortly"}</li>
           <li>{nice ? `✓ Free inspection: ${nice}${lead.inspectionWhen ? ` at ${lead.inspectionWhen}` : ""}` : `○ We'll call ${lead.phone} to set up your free inspection`}</li>
         </ol>
-        <p className="text-xs text-muted-foreground">Questions or need to change something? Call {BTR.phone}.</p>
+        <p className="text-xs text-muted-foreground">Questions or need to change something? Call {co.phone}.</p>
       </section>
 
       <section className="flex flex-col gap-3 rounded-xl border bg-background p-4">

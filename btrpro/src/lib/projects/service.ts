@@ -6,6 +6,7 @@ import { sheetDateStatus } from "@/lib/sheets/date-status";
 import { INTAKE_BY_KEY, INTAKE_FIELDS, parseScopes, reconcileIntake, type Scope } from "./intake";
 import { computeReadiness, type ReadinessInput } from "./readiness";
 import { checkStageChange, nextForm17Status, type Stage } from "./workflow";
+import { exemptForm } from "@/lib/company-profile";
 
 type Actor = { id: string | null; name: string };
 type ConstructionType = "NEW" | "REROOF";
@@ -122,7 +123,7 @@ export async function createProject(input: ProjectInput, actor: Actor, homeowner
     );
   }
   if (project.form17Status === "PENDING")
-    await activity(project.id, null, "form17", "Public, tax-exempt job: Nebraska Form 17 required before materials are purchased (PUB-01)");
+    await activity(project.id, null, "form17", `Public, tax-exempt job: ${exemptForm().named} required before materials are purchased (PUB-01)`);
   await refreshReadiness(project.id);
   return project;
 }
@@ -161,7 +162,7 @@ export async function updateProjectDetails(id: string, patch: Partial<ProjectInp
   );
   if (changed.length) await activity(id, actor.id, "details", `${actor.name} updated ${changed.join(", ")}`);
   if (before.form17Status !== after.form17Status)
-    await activity(id, actor.id, "form17", `Form 17 status: ${before.form17Status} → ${after.form17Status}`);
+    await activity(id, actor.id, "form17", `${exemptForm().short} status: ${before.form17Status} → ${after.form17Status}`);
   await refreshReadiness(id);
   return after;
 }
@@ -302,12 +303,12 @@ export async function changeStage(projectId: string, to: Stage, opts: { reason?:
 
 export async function executeForm17(projectId: string, input: { executedAt: Date; note: string | null }, actor: Actor) {
   const p = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
-  if (p.form17Status !== "PENDING") throw new ProjectError(["Form 17 isn't pending on this job."]);
+  if (p.form17Status !== "PENDING") throw new ProjectError([`${exemptForm().short} isn't pending on this job.`]);
   await prisma.project.update({
     where: { id: projectId },
     data: { form17Status: "EXECUTED", form17ExecutedAt: input.executedAt, form17ExecutedBy: actor.name, form17Note: input.note },
   });
-  await activity(projectId, actor.id, "form17", `${actor.name} recorded Form 17 as executed with the owner`, { note: input.note });
+  await activity(projectId, actor.id, "form17", `${actor.name} recorded ${exemptForm().short} as executed with the owner`, { note: input.note });
   await prisma.auditLog.create({
     data: { userId: actor.id, entity: "Project", entityId: projectId, action: "form17_executed", after: { executedAt: input.executedAt, note: input.note } },
   });

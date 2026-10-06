@@ -6,6 +6,7 @@ import { NewOrder } from "@/components/orders/forms";
 import { OrderStatusBadge } from "@/components/orders/status";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
+import { exemptForm } from "@/lib/company-profile";
 
 export default async function OrdersPage({
   params,
@@ -35,7 +36,7 @@ export default async function OrdersPage({
       {showForm17Banner(project) && (
         <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
           PUB-01: public, tax-exempt job. Orders can be drafted, but none can be
-          sent until the Form 17 is executed.
+          sent until the {exemptForm().short} is executed.
         </p>
       )}
       {user.role !== "VIEWER" && (

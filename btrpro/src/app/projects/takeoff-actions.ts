@@ -7,6 +7,7 @@ import { saveTakeoff, sendToJob, TakeoffError } from "@/lib/takeoff/service";
 import { aiDraftTakeoff, AiMeasureError, aiReadSheet, type AiRegion } from "@/lib/takeoff/ai";
 import { aiConfigured, aiErrorMessage } from "@/lib/ai/claude";
 import type { TakeoffItem, View } from "@/lib/takeoff/geometry";
+import { botName } from "@/lib/company-profile";
 
 export type TakeoffResult = { ok: boolean; message?: string };
 const EDIT = ["ADMIN", "ESTIMATOR"] as const;
@@ -55,7 +56,7 @@ export async function aiMeasureAction(
   input: { imageBase64: string; mediaType: "image/jpeg" | "image/png"; region: AiRegion; view: View; notes?: string },
 ): Promise<AiMeasureResult> {
   await requireUser([...EDIT]);
-  if (!aiConfigured()) return { ok: false, message: "BTRbot isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now." };
+  if (!aiConfigured()) return { ok: false, message: `${botName()} isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now.` };
   const doc = await prisma.document.findUnique({ where: { id: documentId }, select: { id: true } });
   if (!doc) return { ok: false, message: "That plan file is gone." };
   try {
@@ -73,7 +74,7 @@ export type AiSheetResult =
 /** First pass of "measure the whole sheet": find each view and read the notes. */
 export async function aiReadSheetAction(documentId: string, input: { imageBase64: string; mediaType: "image/jpeg" | "image/png" }): Promise<AiSheetResult> {
   await requireUser([...EDIT]);
-  if (!aiConfigured()) return { ok: false, message: "BTRbot isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now." };
+  if (!aiConfigured()) return { ok: false, message: `${botName()} isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now.` };
   const doc = await prisma.document.findUnique({ where: { id: documentId }, select: { id: true } });
   if (!doc) return { ok: false, message: "That plan file is gone." };
   try {

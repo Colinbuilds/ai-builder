@@ -10,9 +10,11 @@ import { Problems } from "./problems";
 export function Form17Banner({
   id,
   canEdit,
+  form = { short: "Form 17", title: "Nebraska Form 17 Purchasing Agent Appointment" },
 }: {
   id: string;
   canEdit: boolean;
+  form?: { short: string; title: string }; // the state's tax-exempt purchasing form (region.ts)
 }) {
   const [state, action, pending] = useFormAction(executeForm17Action, null);
   return (
@@ -20,9 +22,9 @@ export function Form17Banner({
       role="alert"
       className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
     >
-      <p className="font-semibold">Form 17 required: public, tax-exempt job</p>
+      <p className="font-semibold">{form.short} required: public, tax-exempt job</p>
       <p className="mt-1">
-        Nebraska Form 17 Purchasing Agent Appointment must be executed with the
+        {form.title} must be executed with the
         owner before any materials are purchased. Confirm it before setting this
         job to tax-exempt. The job can&apos;t be scheduled until
         it&apos;s recorded here.
@@ -45,7 +47,7 @@ export function Form17Banner({
             className="w-72 bg-background"
           />
           <Button size="sm" disabled={pending}>
-            Record Form 17 as executed
+            Record {form.short} as executed
           </Button>
           <Problems state={state} className="w-full" />
         </form>
