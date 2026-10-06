@@ -7,7 +7,89 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate, formatUsd } from "@/lib/utils";
+import type { PlanBookData } from "@/lib/builders/plans";
 import { importPlanBookAction } from "./actions";
+
+const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n * 1000) / 10}%`);
+const usd = (n: number | null) => (n == null ? "—" : formatUsd(n));
+
+/** The sheet's own price list and rates — what every model's numbers are built from. */
+function PriceSheet({ data }: { data: PlanBookData }) {
+  const R = data.rates.roofing;
+  const G = data.rates.gutters;
+  return (
+    <details className="rounded-lg border p-3 text-sm">
+      <summary className="cursor-pointer font-medium">Price sheet — material prices &amp; rates</summary>
+      <div className="mt-3 grid gap-6 lg:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <h3 className="font-semibold">Roofing</h3>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+            <dt className="text-muted-foreground">Tax on materials</dt>
+            <dd>{pct(R.taxPct)}</dd>
+            <dt className="text-muted-foreground">Material markup</dt>
+            <dd>{pct(R.markupPct)}</dd>
+            <dt className="text-muted-foreground">Labor (crew payout)</dt>
+            <dd>{usd(R.laborPerSq)}/SQ</dd>
+            <dt className="text-muted-foreground">Labor markup</dt>
+            <dd>{usd(R.laborMarkupPerSq)}/SQ</dd>
+            <dt className="text-muted-foreground">Boot trip</dt>
+            <dd>
+              {usd(R.bootTrip)}
+              {R.bootTripMarkup ? ` + ${usd(R.bootTripMarkup)} markup` : " (no markup)"}
+            </dd>
+            <dt className="text-muted-foreground">Fuel surcharge</dt>
+            <dd>{usd(R.fuelSurcharge)}</dd>
+          </dl>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b text-left text-xs text-muted-foreground">
+                <th className="py-1 font-normal">Material</th>
+                <th className="py-1 text-right font-normal">Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {R.catalog.map((c) => (
+                <tr key={c.name} className="border-b last:border-0">
+                  <td className="py-1">{c.name}</td>
+                  <td className="py-1 text-right">{usd(c.cost)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex flex-col gap-2">
+          <h3 className="font-semibold">Gutters</h3>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b text-left text-xs text-muted-foreground">
+                <th className="py-1 font-normal">Material</th>
+                <th className="py-1 text-right font-normal">Cost</th>
+                <th className="py-1 text-right font-normal">Markup</th>
+              </tr>
+            </thead>
+            <tbody>
+              {G.catalog.map((c) => (
+                <tr key={c.name} className="border-b last:border-0">
+                  <td className="py-1">{c.name}</td>
+                  <td className="py-1 text-right">{usd(c.cost)}</td>
+                  <td className="py-1 text-right">{usd(c.markup)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {G.dlwoPrice != null && (
+            <p className="text-muted-foreground">
+              Daylight / walkout basement: +{G.dlwoDownspoutLf ?? 0} LF downspouts, +{usd(G.dlwoPrice)}
+            </p>
+          )}
+          <h3 className="mt-2 font-semibold">Siding</h3>
+          <p className="text-muted-foreground">{data.rates.siding.priced ? `${data.rates.siding.catalog.length} items priced.` : data.rates.siding.catalog.length ? `${data.rates.siding.catalog.length} items listed, not priced yet.` : "Not on the sheet."}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">Roofing sell = materials × (1 + tax + markup) + SQ × (labor + labor markup) + boot trip. Payout = SQ × labor + boot trip. Gutters: LF × cost to the sub, LF × (cost + markup) to the builder.</p>
+    </details>
+  );
+}
 
 export default async function PlansPage({ params, searchParams }: { params: Promise<{ bid: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await requireUser();
@@ -37,7 +119,7 @@ export default async function PlansPage({ params, searchParams }: { params: Prom
       {books.length === 0 && <p className="text-sm text-muted-foreground">No plan book yet. Import {b.name}&apos;s master sheet below: each model, its elevations and options, the ordering list, sell and payout come from it.</p>}
 
       {books.map((book) => (
-        <section key={book.id} className="flex flex-col gap-3">
+        <section key={book.id} id={`book-${book.id}`} className="flex scroll-mt-4 flex-col gap-3">
           <div className="flex flex-wrap items-baseline gap-2">
             <h2 className="text-lg font-semibold">{book.label}</h2>
             <span className="text-xs text-muted-foreground">
@@ -52,6 +134,7 @@ export default async function PlansPage({ params, searchParams }: { params: Prom
               ))}
             </ul>
           )}
+          <PriceSheet data={book.data} />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {book.data.plans.map((p) => {
               const elevs = p.roofing.filter((o) => o.kind === "ELEVATION");

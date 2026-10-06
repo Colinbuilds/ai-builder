@@ -33,6 +33,7 @@ export default async function BuilderPage({ params, searchParams }: { params: Pr
       priceSheets: { where: { isActive: true }, include: { _count: { select: { items: true } } }, orderBy: { code: "asc" } },
       projects: { orderBy: { createdAt: "desc" }, select: { id: true, name: true, address: true, status: true, readiness: true, contractAmount: true, createdAt: true } },
       contacts: { orderBy: { lastName: "asc" } },
+      planBooks: { where: { active: true }, select: { id: true, label: true, importedAt: true }, orderBy: { label: "asc" } },
     },
   });
   if (!b || b.type !== "BUILDER") notFound();
@@ -72,6 +73,19 @@ export default async function BuilderPage({ params, searchParams }: { params: Pr
 
       {tab === "pricing" && (
         <div className="flex flex-col gap-4">
+          {b.planBooks.length > 0 && (
+            <p className="rounded-md border p-3 text-sm">
+              Plan book{b.planBooks.length === 1 ? "" : "s"} (model pricing, takeoffs and the sheet&apos;s price list):{" "}
+              {b.planBooks.map((pb, i) => (
+                <span key={pb.id}>
+                  {i > 0 && " · "}
+                  <Link href={`/builders/${b.id}/plans#book-${pb.id}`} className="font-medium text-primary underline">
+                    {pb.label}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          )}
           {sp.applied && <p className="text-sm text-green-700">Pricing is live. {b.name} jobs price from it now; re-run takeoffs on open estimates to pick up changes.</p>}
           <p className="text-sm text-muted-foreground">
             Every {b.name} job uses these prices. Items not on them: {b.pricingFallback === "STANDARD" ? `${shortName()} standard price, flagged on the line` : "MISSING"}.
