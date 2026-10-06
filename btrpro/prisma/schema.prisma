@@ -376,6 +376,7 @@ model Company {
   projects    Project[]
   priceSheets PriceSheet[]
   properties  Property[]
+  planBooks       BuilderPlanBook[]
 }
 
 // A property a customer manages (e.g. one apartment community of a property-management company). Jobs happen at a
@@ -2235,4 +2236,22 @@ model BillingStep {
   createdAt   DateTime  @default(now())
 
   @@index([status])
+}
+
+// A builder's plan book (e.g. DR Horton Kansas City master sheet): every model, its elevations and options, and
+// per trade what to order, what it sells for and what the crew is paid. Each import is a new version; the
+// newest active one is used. The data keeps the sheet's own numbers (sell, payout) next to the quantities.
+model BuilderPlanBook {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  label      String
+  sourceUrl  String?
+  sourceName String?
+  data       Json
+  active     Boolean  @default(true)
+  importedBy String
+  importedAt DateTime @default(now())
+
+  @@index([companyId, active])
 }
