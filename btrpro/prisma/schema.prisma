@@ -376,7 +376,8 @@ model Company {
   projects    Project[]
   priceSheets PriceSheet[]
   properties  Property[]
-  planBooks       BuilderPlanBook[]
+  planBooks   BuilderPlanBook[]
+  starts      BuilderStart[]
 }
 
 // A property a customer manages (e.g. one apartment community of a property-management company). Jobs happen at a
@@ -1708,31 +1709,31 @@ model AuditReview {
 
 // Something a crew found on the job (rotted decking, hidden damage), with photos, for the PM to price.
 model FieldIssue {
-  id         String    @id @default(cuid())
-  projectId  String
-  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  crewId     String?
-  reportedBy String
-  note       String
+  id             String    @id @default(cuid())
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  crewId         String?
+  reportedBy     String
+  note           String
   // [{ url, type }]
-  photos     Json
+  photos         Json
   // OPEN | PRICED | NO_CHARGE
-  status     String    @default("OPEN")
+  status         String    @default("OPEN")
   // extra-work (T&M) tag: what the crew spent, and who on site authorized it
-  kind           String?   // ISSUE (found, needs pricing before work) | EXTRA (extra work done / directed on site)
+  kind           String? // ISSUE (found, needs pricing before work) | EXTRA (extra work done / directed on site)
   workDate       DateTime?
   men            Int?
-  hours          Float?    // total man-hours
+  hours          Float? // total man-hours
   materials      String?
-  directedBy     String?   // super / builder rep who asked for it
+  directedBy     String? // super / builder rep who asked for it
   signerName     String?
   signatureImage String?
   signedAt       DateTime?
   changeOrderId  String?
-  resolution String?
-  resolvedBy String?
-  resolvedAt DateTime?
-  createdAt  DateTime  @default(now())
+  resolution     String?
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
 
   @@index([projectId, status])
 }
@@ -1931,42 +1932,42 @@ model SupplierFeed {
 // One job folder in the company jobs Drive, found by the Drive job import (Settings → Move jobs from Drive).
 // Drive is only read; files are copied into the BTRpro job's Documents.
 model DriveJobFolder {
-  id          String    @id @default(cuid())
-  folderId    String    @unique
-  name        String
-  modifiedAt  DateTime?
+  id           String    @id @default(cuid())
+  folderId     String    @unique
+  name         String
+  modifiedAt   DateTime?
   // PENDING | DONE | ERROR | SKIPPED
-  status      String    @default("PENDING")
-  fileCount   Int?
-  totalBytes  Float?
-  filesAdded  Int       @default(0)
-  filesSkipped Int      @default(0)
-  errors      Json?
-  projectId   String?
-  matchedBy   String?
-  lastRunAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  status       String    @default("PENDING")
+  fileCount    Int?
+  totalBytes   Float?
+  filesAdded   Int       @default(0)
+  filesSkipped Int       @default(0)
+  errors       Json?
+  projectId    String?
+  matchedBy    String?
+  lastRunAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([status])
 }
 
 // Month-end WIP line kept for each open job, so fade and over/under billing can be compared month to month.
 model WipSnapshot {
-  id            String   @id @default(cuid())
-  month         String
-  projectId     String
-  revenue       Float
-  costToDate    Float
-  estTotalCost  Float
-  pctComplete   Float
-  earned        Float
-  billed        Float
-  overUnder     Float
-  projectedGp   Float
-  bidMarginPct  Float?
-  createdBy     String?
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  month        String
+  projectId    String
+  revenue      Float
+  costToDate   Float
+  estTotalCost Float
+  pctComplete  Float
+  earned       Float
+  billed       Float
+  overUnder    Float
+  projectedGp  Float
+  bidMarginPct Float?
+  createdBy    String?
+  createdAt    DateTime @default(now())
 
   @@unique([month, projectId])
   @@index([projectId])
@@ -2031,19 +2032,19 @@ model CodeQuestion {
 // GCs prequalify subs on the OSHA 300A summary for the last 3 years, EMR (experience mod) on the carrier's
 // letter, TRIR/DART rates, a safety program and a bonding letter. These hold the raw facts; the packet is built from them.
 model SafetyIncident {
-  id             String   @id @default(cuid())
-  date           DateTime
+  id               String   @id @default(cuid())
+  date             DateTime
   // OBSERVATION | NEAR_MISS | FIRST_AID | RECORDABLE | RESTRICTED | LOST_TIME | FATALITY
-  kind           String
-  personName     String?
-  crewId         String?
-  projectId      String?
-  description    String
-  daysAway       Int?
-  daysRestricted Int?
+  kind             String
+  personName       String?
+  crewId           String?
+  projectId        String?
+  description      String
+  daysAway         Int?
+  daysRestricted   Int?
   correctiveAction String?
-  createdBy      String
-  createdAt      DateTime @default(now())
+  createdBy        String
+  createdAt        DateTime @default(now())
 
   @@index([date])
 }
@@ -2164,51 +2165,51 @@ model PublicBid {
 // It becomes a LEAD job right away; they can then try looks on their own photo (renderings); the sales
 // manager assigns a salesperson, who sets up the inspection.
 model WebLead {
-  id              String    @id @default(cuid())
-  token           String    @unique
-  projectId       String?
-  project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  firstName       String
-  lastName        String
-  phone           String
-  email           String
-  contactPref     String? // CALL | TEXT | EMAIL
-  textOk          Boolean   @default(false)
-  street          String
-  city            String
-  state           String
-  zip             String
+  id               String    @id @default(cuid())
+  token            String    @unique
+  projectId        String?
+  project          Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  firstName        String
+  lastName         String
+  phone            String
+  email            String
+  contactPref      String? // CALL | TEXT | EMAIL
+  textOk           Boolean   @default(false)
+  street           String
+  city             String
+  state            String
+  zip              String
   // HOME | TOWNHOME | MULTIFAMILY | COMMERCIAL | CHURCH_SCHOOL | OTHER
-  propertyType    String
+  propertyType     String
   // OWNER | PROPERTY_MANAGER | TENANT | BUILDER | OTHER
-  relationship    String
-  workTypes       Json
-  description     String
-  stories         String?
-  currentRoof     String?
-  roofAge         String?
-  insurance       Boolean   @default(false)
+  relationship     String
+  workTypes        Json
+  description      String
+  stories          String?
+  currentRoof      String?
+  roofAge          String?
+  insurance        Boolean   @default(false)
   insuranceCarrier String?
-  claimNumber     String?
-  dateOfLoss      DateTime?
-  timeline        String?
-  heardFrom       String?
-  inspectionTimes String?
+  claimNumber      String?
+  dateOfLoss       DateTime?
+  timeline         String?
+  heardFrom        String?
+  inspectionTimes  String?
   // [{ url, type }]
-  photos          Json
+  photos           Json
   // [{ url, label, choices, favorite, at }]
-  renderings      Json?
-  renderCount     Int       @default(0)
+  renderings       Json?
+  renderCount      Int       @default(0)
   // NEW | ASSIGNED | SCHEDULED | CLOSED
-  status          String    @default("NEW")
-  assignedToId    String?
-  assignedAt      DateTime?
-  assignedBy      String?
-  inspectionAt    DateTime?
-  inspectionWhen  String?
-  ip              String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  status           String    @default("NEW")
+  assignedToId     String?
+  assignedAt       DateTime?
+  assignedBy       String?
+  inspectionAt     DateTime?
+  inspectionWhen   String?
+  ip               String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([status, createdAt])
 }
@@ -2254,4 +2255,25 @@ model BuilderPlanBook {
   importedAt DateTime @default(now())
 
   @@index([companyId, active])
+}
+
+/// A builder's start paperwork (e.g. DR Horton "Selected Option Summary" PDF): which lot, model, elevation and
+/// options are going. Read into `data`, matched to the builder's plan book, then put on the schedule.
+model BuilderStart {
+  id          String    @id @default(cuid())
+  companyId   String?
+  company     Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  fileUrl     String
+  fileName    String
+  data        Json
+  readBy      String // PARSER | AI
+  status      String    @default("NEW") // NEW | SCHEDULED | DISMISSED
+  dedupeKey   String?
+  prodLineIds Json?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  scheduledAt DateTime?
+
+  @@index([status, createdAt])
+  @@index([dedupeKey])
 }
