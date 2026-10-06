@@ -30,6 +30,9 @@ export type CompanyProfile = {
   logo: string | null; // uploaded PNG/JPEG (storage url); null = the BTR wordmark / logo
 };
 
+/** The CRM sold to other companies. BTR's deployment keeps BTRpro / BTRbot. */
+export const PRODUCT = { name: "Joblight", assistant: "Lumen" } as const;
+
 export const DEFAULT_PROFILE: CompanyProfile = {
   name: BTR.name,
   shortName: "BTR",
@@ -60,14 +63,15 @@ const lines = (v: unknown) => (Array.isArray(v) ? v.map(str).filter((x): x is st
 /**
  * Saved partial profile → full profile. Unset or invalid fields fall back to BTR's values while the company is BTR
  * (no other name saved). For another company, BTR's contact facts, supplier and state never fill in: they're blank,
- * and whatever needs them says MISSING. The product and assistant names default to BTRpro / BTRbot for everyone.
+ * and whatever needs them says MISSING. Product and assistant names: BTRpro / BTRbot for BTR, the product's own
+ * Joblight / Lumen for every other company (each can rename them).
  */
 export function resolveProfile(saved: unknown): Company {
   const s = (saved && typeof saved === "object" ? saved : {}) as Record<string, unknown>;
   const isBtr = !str(s.name) || str(s.name) === DEFAULT_PROFILE.name;
   const d: CompanyProfile = isBtr
     ? DEFAULT_PROFILE
-    : { ...DEFAULT_PROFILE, address: "", phone: "", email: "", proposalAddress: [], officePhone: "", abcAccount: "", ownAddresses: [], supplier: { name: "", address: "", phone: "", surchargeNote: "" }, state: "", jurisdiction: "" };
+    : { ...DEFAULT_PROFILE, productName: PRODUCT.name, assistantName: PRODUCT.assistant, address: "", phone: "", email: "", proposalAddress: [], officePhone: "", abcAccount: "", ownAddresses: [], supplier: { name: "", address: "", phone: "", surchargeNote: "" }, state: "", jurisdiction: "" };
   const sup = (s.supplier && typeof s.supplier === "object" ? s.supplier : {}) as Record<string, unknown>;
   const pa = lines(s.proposalAddress);
   const own = lines(s.ownAddresses);

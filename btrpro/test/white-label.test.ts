@@ -149,7 +149,12 @@ describe("a TEST_ONLY white-label company", () => {
   });
 
   it("with no rules saved, another company gets the general rules and is told to ask for its standards", () => {
-    const prompt = buildSystemPrompt(resolveProfile({ name: "TEST_ONLY Other Co" }), null);
+    const other = resolveProfile({ name: "TEST_ONLY Other Co" });
+    // every company but BTR is on Joblight unless it renames the app
+    expect(other).toMatchObject({ productName: "Joblight", assistantName: "Lumen" });
+    const prompt = buildSystemPrompt(other, null);
+    expect(prompt).toContain("# Joblight — TEST_ONLY Other Co");
+    expect(prompt).toContain("You are Lumen");
     expect(prompt).toContain("No company estimating rules are saved yet");
     expect(prompt).not.toContain("Masonry exclusion");
   });
