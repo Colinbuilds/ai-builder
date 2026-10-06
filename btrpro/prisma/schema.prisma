@@ -1571,6 +1571,8 @@ model ReceiptScan {
   costBatch     String?
   createdById   String
   createdAt     DateTime      @default(now())
+  // when the current read started — a read cut off by a server restart is picked up again
+  readStartedAt DateTime?
   filedAt       DateTime?
   bill          SupplierBill?
 

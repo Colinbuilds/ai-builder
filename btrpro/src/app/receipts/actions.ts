@@ -2,9 +2,11 @@
 
 import { STAFF_ROLES } from "@/lib/roles";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
-import { ReceiptError, approveReceipt, recropAndReread, scanReceipt, setLinePrices, type Outcome } from "@/lib/receipts/service";
+import { ReceiptError, approveReceipt, readLooksStuck, readReceipt, recropAndReread, saveReceiptFiles, setLinePrices, type Outcome } from "@/lib/receipts/service";
+import { prisma } from "@/lib/db";
 import { BillingError } from "@/lib/billing/service";
 import { CostError } from "@/lib/costing/service";
 import { aiErrorMessage } from "@/lib/ai/claude";
@@ -22,10 +24,12 @@ export async function scanReceiptAction(_: RResult, f: FormData): Promise<RResul
         .filter((x): x is File => x instanceof File && x.size > 0)
         .map(async (x) => ({ bytes: new Uint8Array(await x.arrayBuffer()), name: x.name || "receipt" })),
     );
-    id = await scanReceipt(files, u, String(f.get("note") ?? "").trim() || null);
+    id = await saveReceiptFiles(files, { source: "UPLOAD", employeeId: u.id, employee: u.name, message: String(f.get("note") ?? "").trim() || null }, u.id);
   } catch (e) {
     return { problems: [msg(e)] };
   }
+  // read after the page answers: the receipt page shows "Reading…" and refreshes itself instead of the upload hanging
+  after(() => readReceipt(id).catch((e) => console.error("receipt read failed", id, e)));
   redirect(`/receipts/${id}`);
 }
 
@@ -95,4 +99,16 @@ export async function linePricesAction(_: RResult, f: FormData): Promise<RResult
   }
   revalidatePath(`/receipts/${id}`);
   return { problems: [], ok: true, note: "Prices saved." };
+}
+
+/** "Read again" for a receipt whose read was cut off (e.g. by a server restart). */
+export async function rereadAction(form: FormData) {
+  await requireUser(STAFF_ROLES);
+  const id = String(form.get("id"));
+  const scan = await prisma.receiptScan.findUnique({ where: { id }, select: { status: true, readStartedAt: true, createdAt: true } });
+  if (scan && (scan.status === "FAILED" || readLooksStuck(scan))) {
+    await prisma.receiptScan.update({ where: { id }, data: { status: "READING", readStartedAt: new Date(), error: null } });
+    after(() => readReceipt(id).catch((e) => console.error("receipt re-read failed", id, e)));
+  }
+  redirect(`/receipts/${id}`);
 }

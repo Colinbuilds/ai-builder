@@ -127,33 +127,90 @@ export async function saveReceiptFiles(files: { bytes: Uint8Array; name: string 
   return scan.id;
 }
 
+type Read = z.infer<typeof ReceiptSchema>;
+type Block = Anthropic.Beta.BetaContentBlockParam;
+
+/** One saved file as AI input: a PDF as-is, a photo as the whole page plus zoomed sections. */
+async function fileBlocks(f: Saved, label: string): Promise<Block[]> {
+  if (f.type === "application/pdf") return [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: (await readUpload(f.url)).toString("base64") } }];
+  const { whole, sections } = await pageImages(f);
+  const out: Block[] = [{ type: "text", text: `${label} — whole page:` }, { type: "image", source: { type: "base64", media_type: "image/jpeg", data: whole.toString("base64") } }];
+  sections.forEach((sct, k) => out.push({ type: "text", text: `${label} — zoomed section ${k + 1} of ${sections.length} (top to bottom):` }, { type: "image", source: { type: "base64", media_type: "image/jpeg", data: sct.toString("base64") } }));
+  return out;
+}
+
+/** Long receipts are read a page at a time (in parallel) and put back together in page order: header from the first
+ *  page that prints it, every page's lines, the totals from the last page that prints them. */
+export function mergePages(pages: Read[]): Read {
+  const first = <K extends keyof Read>(k: K) => pages.map((p) => p[k]).find((v) => v != null && v !== "") ?? null;
+  const last = <K extends keyof Read>(k: K) => [...pages].reverse().map((p) => p[k]).find((v) => v != null) ?? null;
+  return {
+    documentType: pages.map((p) => p.documentType).find((t) => t !== "OTHER") ?? "OTHER",
+    vendor: first("vendor") as string | null,
+    branch: first("branch") as string | null,
+    invoiceNumber: first("invoiceNumber") as string | null,
+    orderNumber: first("orderNumber") as string | null,
+    poNumber: first("poNumber") as string | null,
+    jobName: first("jobName") as string | null,
+    shipToName: first("shipToName") as string | null,
+    shipToAddress: first("shipToAddress") as string | null,
+    date: first("date") as string | null,
+    dueDate: first("dueDate") as string | null,
+    terms: first("terms") as string | null,
+    lines: pages.flatMap((p) => p.lines),
+    subtotal: last("subtotal") as number | null,
+    tax: last("tax") as number | null,
+    total: last("total") as number | null,
+    notes: pages.flatMap((p, i) => p.notes.map((n) => (pages.length > 1 ? `Page ${i + 1}: ${n}` : n))),
+  };
+}
+
+/** Pages read in one request; longer receipts are read page by page so they're fast and never run out of answer room. */
+const ONE_REQUEST_PAGES = 2;
+
 /** Sends the saved pages to the AI to transcribe. Email text goes along only as a hint for the job. */
 export async function readReceipt(id: string) {
-  const scan = await prisma.receiptScan.findUniqueOrThrow({ where: { id } });
+  const scan = await prisma.receiptScan.update({ where: { id }, data: { status: "READING", readStartedAt: new Date() } });
   const files = scan.files as Saved[];
-  const content: Anthropic.Beta.BetaContentBlockParam[] = [];
-  for (const [i, f] of files.entries()) {
-    if (f.type === "application/pdf") {
-      content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: (await readUpload(f.url)).toString("base64") } });
-      continue;
-    }
-    const { whole, sections } = await pageImages(f);
-    content.push({ type: "text", text: `Page ${i + 1} — whole page:` }, { type: "image", source: { type: "base64", media_type: "image/jpeg", data: whole.toString("base64") } });
-    sections.forEach((sct, k) =>
-      content.push({ type: "text", text: `Page ${i + 1} — zoomed section ${k + 1} of ${sections.length} (top to bottom):` }, { type: "image", source: { type: "base64", media_type: "image/jpeg", data: sct.toString("base64") } }),
-    );
-  }
   const ctx =
     scan.subject || scan.message
       ? `\n\nIt was sent by ${scan.employee ?? "an employee"} with this note (use it only to fill jobName/shipToAddress when the receipt itself doesn't show them, and say so in notes):\nSubject: ${scan.subject ?? ""}\nMessage: ${scan.message ?? ""}`
       : "";
-  content.push({ type: "text", text: `${files.length} page${files.length === 1 ? "" : "s"} of one receipt. Transcribe it.${ctx}` });
   try {
-    const { data } = await aiParse({ task: TASK, schema: ReceiptSchema, effort: "medium", messages: [{ role: "user", content }] });
+    let data: Read;
+    if (files.length <= ONE_REQUEST_PAGES) {
+      const content: Block[] = [];
+      for (const [i, f] of files.entries()) content.push(...(await fileBlocks(f, `Page ${i + 1}`)));
+      content.push({ type: "text", text: `${files.length} page${files.length === 1 ? "" : "s"} of one receipt. Transcribe it.${ctx}` });
+      ({ data } = await aiParse({ task: TASK, schema: ReceiptSchema, effort: "medium", messages: [{ role: "user", content }] }));
+    } else {
+      const pages = await Promise.all(
+        files.map(async (f, i) => {
+          const content = await fileBlocks(f, `Page ${i + 1} of ${files.length}`);
+          content.push({
+            type: "text",
+            text: `This is page ${i + 1} of ${files.length} of one receipt; the other pages are read separately. Transcribe only the lines printed on this page, each once. Fill header fields (vendor, invoice #, PO, ship-to, date…) only if this page prints them, and subtotal/tax/total only if this page prints them — otherwise null.${ctx}`,
+          });
+          return (await aiParse({ task: TASK, schema: ReceiptSchema, effort: "medium", messages: [{ role: "user", content }] })).data;
+        }),
+      );
+      data = mergePages(pages);
+    }
     await prisma.receiptScan.update({ where: { id }, data: { status: "READ", extracted: data, invoiceNo: data.invoiceNumber, vendor: data.vendor, docType: data.documentType, error: null } });
   } catch (e) {
     await prisma.receiptScan.update({ where: { id }, data: { status: "FAILED", error: aiErrorMessage(e) } });
   }
+}
+
+/** A read longer than this is treated as lost (the server restarted mid-read) and can be started again. */
+export const STUCK_READ_MS = 5 * 60_000;
+export const readLooksStuck = (s: { status: string; readStartedAt: Date | null; createdAt: Date }, now = Date.now()) => s.status === "READING" && now - (s.readStartedAt ?? s.createdAt).getTime() > STUCK_READ_MS;
+
+/** On server start: any receipt still "reading" was cut off by the restart — read it again, one at a time. */
+export async function resumeStuckReads() {
+  const stuck = await prisma.receiptScan.findMany({ where: { status: "READING" }, select: { id: true }, orderBy: { createdAt: "asc" }, take: 25 });
+  for (const s of stuck) await readReceipt(s.id).catch((e) => console.error("receipt re-read failed", s.id, e));
+  return stuck.length;
 }
 
 /** Upload from the office or a phone: save, then read right away. */

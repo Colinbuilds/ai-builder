@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { cropOf, loadReceipt, type Saved } from "@/lib/receipts/service";
+import { cropOf, loadReceipt, readLooksStuck, type Saved } from "@/lib/receipts/service";
+import { rereadAction } from "../actions";
 import { ReceiptPhotos } from "@/components/receipts/photo-tools";
 import { receiptToBillAction } from "@/app/bills/actions";
 import { LinePrices } from "@/components/receipts/line-prices";
@@ -95,13 +96,23 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         {head}
         <div className="grid gap-4 md:grid-cols-[320px_minmax(0,1fr)]">
           {photos}
-          <p className="rounded-lg border border-btr-line p-4 text-sm">
+          <div className="flex flex-col gap-3 rounded-lg border border-btr-line p-4 text-sm">
+            <p>
             {scan.status === "READING"
-              ? "Reading the receipt… this page updates on its own."
+              ? `Reading the receipt… this page updates on its own.${(scan.files as unknown[]).length > 2 ? ` ${(scan.files as unknown[]).length} pages are read side by side — about a minute.` : ""}`
               : /Railway|isn't configured| service error| request rejected| isn't turned on|out of credit|busy/.test(scan.error ?? "")
                 ? `Couldn't read this receipt: ${scan.error}`
                 : `Couldn't read this receipt${scan.error ? `: ${scan.error}` : "."} Retake the photo flat and in good light, or enter it by hand on the job's costs.`}
-          </p>
+            </p>
+            {(scan.status === "FAILED" || readLooksStuck(scan)) && (
+              <form action={rereadAction}>
+                <input type="hidden" name="id" value={scan.id} />
+                <Button type="submit" variant="outline" size="sm">
+                  {scan.status === "FAILED" ? "Try reading again" : "Taking too long — read again"}
+                </Button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     );
