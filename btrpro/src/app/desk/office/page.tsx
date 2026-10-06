@@ -19,7 +19,7 @@ function Count({ n, tone = "default" }: { n: number; tone?: "default" | "warn" |
 export default async function OfficeDesk() {
   const user = await requireUser(BILLING_ROLES);
   const [d, gaps] = await Promise.all([officeDesk(), assignGaps()]);
-  const allClear = !d.callList.length && !d.drafts.length && !d.completeNoFinal.length && !d.form17.length && !d.prodToPay && !d.prodToBill && !d.crewToApprove.length && !d.bills.ready && !d.bills.needsLook && !d.qboProblems.length;
+  const allClear = !d.callList.length && !d.drafts.length && !d.draws.length && !d.completeNoFinal.length && !d.form17.length && !d.prodToPay && !d.prodToBill && !d.crewToApprove.length && !d.bills.ready && !d.bills.needsLook && !d.qboProblems.length;
   return (
     <div className="flex max-w-6xl flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -95,8 +95,16 @@ export default async function OfficeDesk() {
             </div>
           </Panel>
 
-          <Panel title={<span className="flex items-center gap-2">Invoices to send <Count n={d.drafts.length + d.completeNoFinal.length} /></span>} bodyClass="p-0">
+          <Panel title={<span className="flex items-center gap-2">Invoices to send <Count n={d.drafts.length + d.completeNoFinal.length + d.draws.length} /></span>} bodyClass="p-0">
             <ul className="divide-y text-sm">
+              {d.draws.map((s) => (
+                <li key={s.id} className="flex justify-between gap-2 px-4 py-2">
+                  <Link href={`/projects/${s.project.id}/billing`} className={axLink}>
+                    Progress draw ready: {s.label} · {s.project.name}
+                  </Link>
+                  <span className="text-xs text-muted-foreground">since {s.readyAt?.toLocaleDateString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric" })}</span>
+                </li>
+              ))}
               {d.drafts.map((i) => (
                 <li key={i.id} className="flex justify-between gap-2 px-4 py-2">
                   <Link href={`/projects/${i.project.id}/billing`} className={axLink}>
@@ -113,7 +121,7 @@ export default async function OfficeDesk() {
                   <span className="text-xs text-muted-foreground">since {day(p.statusChangedAt)}</span>
                 </li>
               ))}
-              {!d.drafts.length && !d.completeNoFinal.length && <li className="px-4 py-3 text-muted-foreground">Nothing waiting to go out.</li>}
+              {!d.drafts.length && !d.completeNoFinal.length && !d.draws.length && <li className="px-4 py-3 text-muted-foreground">Nothing waiting to go out.</li>}
             </ul>
           </Panel>
 

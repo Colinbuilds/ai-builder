@@ -2,6 +2,28 @@ import { prisma } from "@/lib/db";
 import { saveUpload } from "@/lib/storage";
 import { pdfPages } from "@/lib/sheets/extract";
 import { guessDocType } from "./classify";
+import { IMAGE_TYPE, imageKind } from "@/lib/photos/images";
+import sharp from "sharp";
+
+/**
+ * Phone photos arrive as HEIC, WebP or with no file extension ("image", "IMG_1234.HEIC"). Browsers can't show
+ * HEIC, so it becomes a JPEG when the server can decode it, and every image gets the extension its bytes say.
+ */
+export async function normalizePhoto(bytes: Uint8Array, fileName: string, contentType: string | null) {
+  const kind = imageKind(bytes);
+  if (!kind) return { bytes, fileName, contentType };
+  const base = fileName.replace(/\.[^.\/]{1,5}$/, "") || "photo";
+  if (kind === "heic") {
+    try {
+      const jpeg = await sharp(bytes, { failOn: "none" }).rotate().jpeg({ quality: 92 }).toBuffer();
+      return { bytes: new Uint8Array(jpeg), fileName: `${base}.jpg`, contentType: "image/jpeg" };
+    } catch {
+      return { bytes, fileName: `${base}.heic`, contentType: IMAGE_TYPE.heic };
+    }
+  }
+  const ext = kind === "jpg" ? /\.jpe?g$/i.test(fileName) ? fileName.split(".").pop()! : "jpg" : kind;
+  return { bytes, fileName: new RegExp(`\\.${ext}$`, "i").test(fileName) ? fileName : `${base}.${ext}`, contentType: IMAGE_TYPE[kind] };
+}
 
 export const MAX_DOCUMENT_BYTES = 50 * 1024 * 1024;
 const isPdf = (b: Uint8Array) => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46;
@@ -16,6 +38,7 @@ export async function addDocument(opts: {
   userId?: string | null;
 }) {
   if (!opts.bytes.length) throw new Error(`${opts.fileName} is empty.`);
+  opts = { ...opts, ...(await normalizePhoto(opts.bytes, opts.fileName, opts.contentType ?? null)) };
   if (opts.bytes.length > MAX_DOCUMENT_BYTES) throw new Error(`${opts.fileName} is over 50 MB.`);
   if (opts.externalId) {
     const dup = await prisma.document.findFirst({ where: { projectId: opts.projectId, externalId: opts.externalId } });

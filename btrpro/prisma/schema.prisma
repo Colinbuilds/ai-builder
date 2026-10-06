@@ -234,6 +234,7 @@ model Project {
   // ready-to-schedule items ticked by hand: { color, permit, dumpster, notified }
   readyChecks        Json?
   webLeads           WebLead[]
+  billingSteps       BillingStep[]
   // the customer's property this job is at (multi-family / commercial portfolios)
   propertyId         String?
   property           Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
@@ -375,6 +376,7 @@ model Company {
   projects    Project[]
   priceSheets PriceSheet[]
   properties  Property[]
+  planBooks       BuilderPlanBook[]
 }
 
 // A property a customer manages (e.g. one apartment community of a property-management company). Jobs happen at a
@@ -1603,6 +1605,8 @@ model PlanTakeoff {
   pitch      Float?
   scale      Json?
   items      Json
+  // { list: WallReturn[], checked: boolean } — returns at decks/entries (depth from the floor plan)
+  returns    Json?
   // sheet size in its own units, so totals can be re-computed without opening the file
   width      Float?
   height     Float?
@@ -2207,4 +2211,47 @@ model WebLead {
   updatedAt       DateTime  @updatedAt
 
   @@index([status, createdAt])
+}
+
+// Progress billing schedule: the draws a job is billed in (deposit → progress → final). Each draw comes due on a
+// job event; when it does the office gets a task and one click drafts the invoice for it.
+model BillingStep {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order       Int
+  label       String
+  // PERCENT (of the contract incl. approved change orders) | AMOUNT | REMAINDER (whatever is left to bill)
+  basis       String
+  pct         Float?
+  amount      Float?
+  // SIGNED | MATERIALS_DELIVERED | STARTED | COMPLETED | DATE | MANUAL
+  trigger     String
+  triggerDate DateTime?
+  // PLANNED | READY | INVOICED | SKIPPED
+  status      String    @default("PLANNED")
+  readyAt     DateTime?
+  invoiceId   String?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+
+  @@index([status])
+}
+
+// A builder's plan book (e.g. DR Horton Kansas City master sheet): every model, its elevations and options, and
+// per trade what to order, what it sells for and what the crew is paid. Each import is a new version; the
+// newest active one is used. The data keeps the sheet's own numbers (sell, payout) next to the quantities.
+model BuilderPlanBook {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  label      String
+  sourceUrl  String?
+  sourceName String?
+  data       Json
+  active     Boolean  @default(true)
+  importedBy String
+  importedAt DateTime @default(now())
+
+  @@index([companyId, active])
 }

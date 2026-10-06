@@ -45,6 +45,7 @@ export type AiMeasureResult =
       scaleBar: { a: [number, number]; b: [number, number]; feet: number } | null;
       counted: { windows: number; doors: number; patio_sliders: number; garage_doors: number };
       cannotTrace: string[];
+      returns: { where: string; sides: number; heightPts: [[number, number], [number, number]] }[];
       dropped: number;
     }
   | { ok: false; message: string };
@@ -66,7 +67,9 @@ export async function aiMeasureAction(
   }
 }
 
-export type AiSheetResult = { ok: true; views: Awaited<ReturnType<typeof aiReadSheet>>["views"]; notes: string[]; printedScale: string | null } | { ok: false; message: string };
+export type AiSheetResult =
+  | { ok: true; views: Awaited<ReturnType<typeof aiReadSheet>>["views"]; notes: string[]; printedScale: string | null; returns: Awaited<ReturnType<typeof aiReadSheet>>["returns"] }
+  | { ok: false; message: string };
 
 /** First pass of "measure the whole sheet": find each view and read the notes. */
 export async function aiReadSheetAction(documentId: string, input: { imageBase64: string; mediaType: "image/jpeg" | "image/png" }): Promise<AiSheetResult> {
@@ -78,5 +81,27 @@ export async function aiReadSheetAction(documentId: string, input: { imageBase64
     return { ok: true, ...(await aiReadSheet(input)) };
   } catch (e) {
     return { ok: false, message: e instanceof AiMeasureError ? e.message : aiErrorMessage(e) };
+  }
+}
+
+/** Upload a plan sheet or a photo straight from the measure page; returns the new sheet to open. */
+export async function uploadSheetAction(f: FormData): Promise<TakeoffResult & { docId?: string }> {
+  const { STAFF_ROLES } = await import("@/lib/roles");
+  const u = await requireUser([...STAFF_ROLES]);
+  const projectId = String(f.get("projectId") ?? "");
+  const file = f.get("file");
+  if (!(file instanceof File) || !file.size) return { ok: false, message: "Choose a plan PDF or a photo." };
+  const { addDocument } = await import("@/lib/docs/documents");
+  const { sheetKind } = await import("@/lib/takeoff/sheets");
+  try {
+    if (!(await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } }))) return { ok: false, message: "That job wasn't found." };
+    const { doc } = await addDocument({ projectId, bytes: new Uint8Array(await file.arrayBuffer()), fileName: file.name || "photo.jpg", contentType: file.type || null, userId: u.id });
+    revalidatePath(`/projects/${projectId}`, "layout");
+    if (!sheetKind(doc.fileName, doc.contentType))
+      return { ok: false, message: `${doc.fileName} was saved to the job's documents, but it can't be measured. Use a PDF, JPG or PNG — on an iPhone, Settings → Camera → Formats → Most Compatible.` };
+    return { ok: true, docId: doc.id };
+  } catch (e) {
+    console.error("sheet upload failed", e);
+    return { ok: false, message: `Upload failed: ${e instanceof Error ? e.message : String(e)}` };
   }
 }

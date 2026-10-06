@@ -153,6 +153,10 @@ export async function submitWebLead(x: LeadInput, files: { bytes: Uint8Array; na
     actor,
     { firstName: x.firstName.trim(), lastName: x.lastName.trim(), phone: prettyPhone(x.phone), email: x.email.trim(), role: x.relationship === "OWNER" ? "HOMEOWNER" : "OWNER_REP" },
   );
+  // a returning customer matched by phone or email: fill in whatever the old contact record was missing
+  const pc = await prisma.projectContact.findFirst({ where: { projectId: job.id, isPrimary: true }, include: { contact: true } });
+  if (pc && (!pc.contact.email || !pc.contact.phone || !pc.contact.address))
+    await prisma.contact.update({ where: { id: pc.contactId }, data: { email: pc.contact.email ?? x.email.trim().toLowerCase(), phone: pc.contact.phone ?? prettyPhone(x.phone), address: pc.contact.address ?? fullAddress(x) } });
   for (const [i, ph] of photos.entries())
     await prisma.document.create({ data: { projectId: job.id, type: "PHOTO", fileName: `Customer photo ${i + 1}.jpg`, fileUrl: ph.url, source: "UPLOAD", contentType: ph.type } });
   if (x.timeline === "ASAP" || x.insurance) await prisma.project.update({ where: { id: job.id }, data: { priority: "HIGH" } });

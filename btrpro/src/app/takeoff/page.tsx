@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { sheetKind } from "@/lib/takeoff/sheets";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
+import { JobPicker } from "@/components/takeoff/job-picker";
 
-const SHEETS = /\.(pdf|png|jpe?g|webp)$/i;
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric" });
 
 /** Blueprint measurer: every job's plan sheets in one place, newest work first. */
@@ -16,9 +17,9 @@ export default async function BlueprintMeasurer({ searchParams }: { searchParams
       : { project: { status: { notIn: ["CLOSED", "LOST", "PAID"] } } },
     orderBy: { uploadedAt: "desc" },
     take: 400,
-    select: { id: true, fileName: true, type: true, pages: true, uploadedAt: true, project: { select: { id: true, name: true, address: true } } },
+    select: { id: true, fileName: true, contentType: true, type: true, pages: true, uploadedAt: true, project: { select: { id: true, name: true, address: true } } },
   });
-  const sheets = docs.filter((d) => SHEETS.test(d.fileName));
+  const sheets = docs.filter((d) => sheetKind(d.fileName, d.contentType));
   const takeoffs = await prisma.planTakeoff.findMany({
     where: { documentId: { in: sheets.map((d) => d.id) } },
     select: { documentId: true, page: true, items: true, savedToJob: true, updatedAt: true },
@@ -32,15 +33,17 @@ export default async function BlueprintMeasurer({ searchParams }: { searchParams
     jobs.set(d.project.id, j);
   }
   const list = [...jobs.values()].sort((a, b) => b.last.getTime() - a.last.getTime());
+  const open = await prisma.project.findMany({ where: { status: { notIn: ["CLOSED", "LOST", "PAID"] } }, select: { id: true, name: true }, orderBy: { statusChangedAt: "desc" }, take: 500 });
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Blueprint measurer</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Pick a plan sheet, set the scale on a printed dimension, check it on a second one, then trace. Totals go to the job&apos;s measurements. Plan files
-          are uploaded on each job&apos;s Documents tab.
+          Pick a plan sheet, set the scale on a printed dimension, check it on a second one, then trace. Totals go to the job&apos;s measurements. Pick a job below to upload a
+          plan or a photo.
         </p>
       </div>
+      <JobPicker jobs={open} />
       <form className="flex max-w-xl gap-2">
         <input name="q" defaultValue={q} placeholder="Search job name, address or file name" className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm" />
         <button className="h-9 rounded-md border px-3 text-sm hover:bg-muted">Search</button>
@@ -52,7 +55,7 @@ export default async function BlueprintMeasurer({ searchParams }: { searchParams
       </form>
       {list.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {q ? "No plan sheets match." : "No open jobs have plan files yet."} Upload a plan set (PDF) or sheet images on a job&apos;s Documents tab.
+          {q ? "No plan sheets match." : "No open jobs have plan files yet."} Pick a job above to upload a plan set (PDF), sheet image or photo.
         </p>
       ) : (
         <div className="flex flex-col gap-3">

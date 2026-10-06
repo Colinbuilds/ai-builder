@@ -65,6 +65,9 @@ export default async function BuilderPage({ params, searchParams }: { params: Pr
             {k === "jobs" && b.projects.length > 0 && <span className="ml-1 rounded-full bg-muted px-1.5 text-xs">{b.projects.length}</span>}
           </Link>
         ))}
+        <Link href={`/builders/${b.id}/plans`} className="-mb-px border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground">
+          Plans &amp; models
+        </Link>
       </nav>
 
       {tab === "pricing" && (

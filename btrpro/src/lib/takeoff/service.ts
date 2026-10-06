@@ -3,8 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
-import { pageTotals, TYPE_BY_ID, type PageTakeoff } from "./geometry";
-import { botName } from "@/lib/company-profile";
+import { pageTotals, returnIssues, TYPE_BY_ID, type PageTakeoff } from "./geometry";
 
 export class TakeoffError extends Error {}
 
@@ -32,6 +31,23 @@ export const PageSchema = z.object({
       }),
     )
     .max(3000),
+  returns: z
+    .array(
+      z.object({
+        id: z.string().max(40),
+        where: z.string().max(200),
+        depthFt: z.number().positive().max(200).nullable(),
+        heightFt: z.number().positive().max(200).nullable(),
+        heightPts: z.tuple([Pt, Pt]).nullable().optional(),
+        sides: z.number().int().min(1).max(8),
+        masonry: z.boolean(),
+        source: z.string().max(200).nullable(),
+        ai: z.boolean().optional(),
+      }),
+    )
+    .max(200)
+    .optional(),
+  returnsChecked: z.boolean().optional(),
   width: z.number().positive().nullable().optional(),
   height: z.number().positive().nullable().optional(),
 });
@@ -40,7 +56,8 @@ export type PageInput = z.infer<typeof PageSchema>;
 export async function loadTakeoff(documentId: string, page: number): Promise<PageInput | null> {
   const t = await prisma.planTakeoff.findUnique({ where: { documentId_page: { documentId, page } } });
   if (!t) return null;
-  return { view: t.view as PageInput["view"], pitch: t.pitch, scale: (t.scale as PageInput["scale"]) ?? null, items: (t.items as PageInput["items"]) ?? [], width: t.width, height: t.height };
+  const extra = (t.returns as { list?: PageInput["returns"]; checked?: boolean } | null) ?? {};
+  return { view: t.view as PageInput["view"], pitch: t.pitch, scale: (t.scale as PageInput["scale"]) ?? null, items: (t.items as PageInput["items"]) ?? [], returns: extra.list ?? [], returnsChecked: !!extra.checked, width: t.width, height: t.height };
 }
 
 export async function saveTakeoff(documentId: string, page: number, raw: unknown, actor: { name: string }) {
@@ -54,6 +71,7 @@ export async function saveTakeoff(documentId: string, page: number, raw: unknown
     pitch: d.pitch,
     scale: d.scale ? (d.scale as Prisma.InputJsonValue) : Prisma.JsonNull,
     items: d.items as Prisma.InputJsonValue,
+    returns: { list: d.returns ?? [], checked: !!d.returnsChecked } as Prisma.InputJsonValue,
     width: d.width ?? null,
     height: d.height ?? null,
     updatedBy: actor.name,
@@ -74,11 +92,16 @@ const NOTE = "Plan takeoff";
 export async function sendToJob(documentId: string, page: number, actor: { id: string; name: string }) {
   const t = await prisma.planTakeoff.findUnique({ where: { documentId_page: { documentId, page } }, include: { document: { select: { projectId: true, fileName: true } } } });
   if (!t) throw new TakeoffError("Save the takeoff first.");
-  const pg: PageTakeoff = { view: t.view as PageTakeoff["view"], pitch: t.pitch, scale: (t.scale as PageTakeoff["scale"]) ?? null, items: (t.items as PageTakeoff["items"]) ?? [] };
+  const extra = (t.returns as { list?: PageTakeoff["returns"]; checked?: boolean } | null) ?? {};
+  const pg: PageTakeoff = { view: t.view as PageTakeoff["view"], pitch: t.pitch, scale: (t.scale as PageTakeoff["scale"]) ?? null, items: (t.items as PageTakeoff["items"]) ?? [], returns: extra.list ?? [], returnsChecked: !!extra.checked };
   if (!pg.scale) throw new TakeoffError("Set the scale before sending measurements to the job.");
   if (pg.scale.check && Math.abs(pg.scale.check.diffPct) > 1) throw new TakeoffError("The scale check is off by more than 1%. Re-calibrate first.");
   const drafts = pg.items.filter((i) => i.ai).length;
-  if (drafts) throw new TakeoffError(`${drafts} ${botName()}-drawn item${drafts === 1 ? " is" : "s are"} still unreviewed. Accept or delete ${drafts === 1 ? "it" : "them"} before sending.`);
+  if (drafts) throw new TakeoffError(`${drafts} BTRbot-drawn item${drafts === 1 ? " is" : "s are"} still unreviewed. Accept or delete ${drafts === 1 ? "it" : "them"} before sending.`);
+  const ri = returnIssues(pg);
+  if (ri.drafts) throw new TakeoffError(`${ri.drafts} BTRbot-found return${ri.drafts === 1 ? " is" : "s are"} still unreviewed. Check against the floor plan, then accept or delete.`);
+  if (ri.noDepth || ri.noHeight) throw new TakeoffError("Every return at a deck or entry needs its length (from the floor plan) and height before sending.");
+  if (ri.unchecked) throw new TakeoffError("Check this elevation for returns at decks and entryways first: add each one with its length from the floor plan, or tick “No returns on this elevation”.");
   const allowance = (await getSettings()).takeoffAllowancePct ?? 1;
   const { totals } = pageTotals(pg, allowance);
   if (!totals.length) throw new TakeoffError("Nothing on this sheet is measured yet.");

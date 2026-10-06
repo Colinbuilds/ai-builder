@@ -1,21 +1,22 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { sheetKind } from "@/lib/takeoff/sheets";
 import { prisma } from "@/lib/db";
 import { MEASUREMENT_BY_KEY } from "@/lib/docs/measurements";
 import { Badge } from "@/components/ui/badge";
+import { SheetUpload } from "@/components/takeoff/sheet-upload";
 
-const SHEETS = /\.(pdf|png|jpe?g|webp)$/i;
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export default async function TakeoffIndex({ params }: { params: Promise<{ id: string }> }) {
   await requireUser();
   const { id } = await params;
   const [docs, takeoffs, measured] = await Promise.all([
-    prisma.document.findMany({ where: { projectId: id }, orderBy: [{ type: "asc" }, { uploadedAt: "desc" }], select: { id: true, fileName: true, type: true, pages: true, uploadedAt: true } }),
+    prisma.document.findMany({ where: { projectId: id }, orderBy: [{ type: "asc" }, { uploadedAt: "desc" }], select: { id: true, fileName: true, contentType: true, type: true, pages: true, uploadedAt: true } }),
     prisma.planTakeoff.findMany({ where: { projectId: id }, select: { documentId: true, page: true, view: true, items: true, savedToJob: true, updatedAt: true } }),
     prisma.measurement.findMany({ where: { projectId: id, note: { startsWith: "Plan takeoff" } }, select: { key: true, value: true, unit: true } }),
   ]);
-  const sheets = docs.filter((d) => SHEETS.test(d.fileName));
+  const sheets = docs.filter((d) => sheetKind(d.fileName, d.contentType));
   const plansFirst = [...sheets].sort((a, b) => Number(b.type === "PLANS") - Number(a.type === "PLANS"));
   const sums = new Map<string, { value: number; unit: string | null }>();
   for (const m of measured) {
@@ -34,15 +35,17 @@ export default async function TakeoffIndex({ params }: { params: Promise<{ id: s
         </p>
       </section>
 
+      <SheetUpload projectId={id} />
+
       <section className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold">Sheets on this job</h3>
         {plansFirst.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No plan files yet. Upload the plan set (PDF) or sheet images on the{" "}
+            No plan files yet. Use the upload button above (or the{" "}
             <Link href={`/projects/${id}/documents`} className="text-btr-link hover:underline">
               Documents
             </Link>{" "}
-            tab.
+            tab).
           </p>
         ) : (
           <ul className="divide-y rounded-md border text-sm">

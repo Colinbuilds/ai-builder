@@ -28,6 +28,8 @@ import {
   SendCo,
 } from "@/components/billing/change-order-forms";
 import { Badge } from "@/components/ui/badge";
+import { BillingSchedule } from "@/components/billing/schedule";
+import { BASES, TRIGGERS, presets as schedulePresets, refreshSteps, scheduleWarnings, stepAmount } from "@/lib/billing/schedule";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 
 const usd = (n: number | null) =>
@@ -107,6 +109,30 @@ export default async function BillingPage({
   ]);
   const canEdit = user.role !== "VIEWER";
   const isAdmin = user.role === "ADMIN";
+  await refreshSteps(id);
+  const [steps, presetList] = await Promise.all([prisma.billingStep.findMany({ where: { projectId: id }, orderBy: { order: "asc" } }), schedulePresets()]);
+  const invNum = new Map(invoices.map((i) => [i.id, i.number]));
+  const stepRows = await Promise.all(
+    steps.map(async (st) => ({
+      id: st.id,
+      label: st.label,
+      basis: st.basis,
+      pct: st.pct,
+      amount: st.amount,
+      trigger: st.trigger,
+      triggerDate: st.triggerDate ? st.triggerDate.toISOString().slice(0, 10) : null,
+      status: st.status,
+      invoiceNumber: st.invoiceId ? (invNum.get(st.invoiceId) ?? null) : null,
+      preview: st.status === "INVOICED" ? (invoices.find((i) => i.id === st.invoiceId)?.subtotal ?? null) : summary.revenue == null ? null : await stepAmount(st.id).then((x) => x.amount, () => null),
+    })),
+  );
+  // "whatever is left" previews what it will bill after the other draws, not what's unbilled today
+  for (const r of stepRows)
+    if (r.basis === "REMAINDER" && r.status !== "INVOICED" && r.status !== "SKIPPED" && summary.revenue != null) {
+      const others = stepRows.filter((o) => o.id !== r.id && o.status !== "SKIPPED").reduce((a, o) => a + (o.preview ?? 0), 0);
+      const offSchedule = invoices.filter((i) => i.status !== "VOID" && i.kind !== "RETAINAGE_RELEASE" && !steps.some((st) => st.invoiceId === i.id)).reduce((a, i) => a + i.subtotal, 0);
+      r.preview = Math.round((summary.revenue - others - offSchedule) * 100) / 100;
+    }
   const sold = !["LEAD", "ESTIMATING", "SUBMITTED", "LOST"].includes(
     project.status,
   );
@@ -140,6 +166,18 @@ export default async function BillingPage({
           Contract amount is MISSING. Set it on the Overview (or have the
           customer sign the proposal) before billing.
         </p>
+      )}
+
+      {sold && summary.revenue != null && (
+        <BillingSchedule
+          projectId={id}
+          steps={stepRows}
+          triggers={{ ...TRIGGERS }}
+          bases={{ ...BASES }}
+          presets={Object.entries(presetList).map(([key, p]) => ({ key, label: p.label }))}
+          warnings={scheduleWarnings(steps)}
+          canEdit={canEdit}
+        />
       )}
 
       <section className="flex flex-col gap-3">

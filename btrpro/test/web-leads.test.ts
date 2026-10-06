@@ -61,6 +61,8 @@ describe("request form", () => {
 
   it("turns a submission into a lead job, assigns it, and books the inspection", async () => {
     const ip = `TEST_ONLY-${Math.random()}`;
+    // an earlier contact with this phone and no email: the form's email is filled in, not dropped
+    await prisma.contact.create({ data: { firstName: "TEST_ONLY Web", lastName: "Old", phone: "(402) 555-0142", phoneKey: "4025550142" } });
     const lead = await submitWebLead(base, [await photo()], { ip });
     expect(lead.phone).toBe("(402) 555-0187");
     expect(lead.state).toBe("NE");

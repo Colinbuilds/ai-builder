@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
+import { sheetKind } from "@/lib/takeoff/sheets";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { loadTakeoff } from "@/lib/takeoff/service";
@@ -11,7 +12,7 @@ export default async function TakeoffSheet({ params, searchParams }: { params: P
   const page = Math.max(1, Number((await searchParams).page) || 1);
   const doc = await prisma.document.findFirst({ where: { id: docId, projectId: id } });
   if (!doc) notFound();
-  const kind = /\.pdf$/i.test(doc.fileName) ? "pdf" : /\.(png|jpe?g|webp)$/i.test(doc.fileName) ? "image" : null;
+  const kind = sheetKind(doc.fileName, doc.contentType);
   if (!kind) notFound();
   const [initial, settings, row] = await Promise.all([
     loadTakeoff(docId, page),
