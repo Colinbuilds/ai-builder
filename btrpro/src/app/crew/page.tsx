@@ -3,8 +3,9 @@ import { requireCrew } from "@/lib/crew/auth";
 import { crewJobs, STAGE_LABEL, REQUIRED_STAGES, PHOTO_STAGES } from "@/lib/crew/service";
 import { prisma } from "@/lib/db";
 import { CrewHeader } from "./crew-header";
+import { shortName } from "@/lib/company-profile";
 
-export const metadata = { title: "BTR crew portal" };
+export const metadata = { title: `${shortName()} crew portal` };
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 const STATUS: Record<string, string> = { SUBMITTED: "Waiting on the office", APPROVED: "Approved", REJECTED: "Sent back", PAID: "Paid" };
 

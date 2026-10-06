@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { saveTakeoff, sendToJob, TakeoffError } from "@/lib/takeoff/service";
-import { aiDraftTakeoff, AiMeasureError, type AiRegion } from "@/lib/takeoff/ai";
+import { aiDraftTakeoff, AiMeasureError, aiReadSheet, type AiRegion } from "@/lib/takeoff/ai";
 import { aiConfigured, aiErrorMessage } from "@/lib/ai/claude";
 import type { TakeoffItem, View } from "@/lib/takeoff/geometry";
+import { botName } from "@/lib/company-profile";
 
 export type TakeoffResult = { ok: boolean; message?: string };
 const EDIT = ["ADMIN", "ESTIMATOR"] as const;
@@ -34,21 +35,47 @@ export async function sendTakeoffAction(documentId: string, page: number): Promi
 }
 
 export type AiMeasureResult =
-  | { ok: true; items: TakeoffItem[]; sheet: string; detectedView: View | null; sheetType: string; printedScale: string | null; cannotTrace: string[]; dropped: number }
+  | {
+      ok: true;
+      items: TakeoffItem[];
+      sheet: string;
+      detectedView: View | null;
+      sheetType: string;
+      printedScale: string | null;
+      scaleBar: { a: [number, number]; b: [number, number]; feet: number } | null;
+      counted: { windows: number; doors: number; patio_sliders: number; garage_doors: number };
+      cannotTrace: string[];
+      dropped: number;
+    }
   | { ok: false; message: string };
 
 /** AI draft of what's on screen. The image comes from the browser's own render of the sheet. */
 export async function aiMeasureAction(
   documentId: string,
-  input: { imageBase64: string; mediaType: "image/jpeg" | "image/png"; region: AiRegion; view: View },
+  input: { imageBase64: string; mediaType: "image/jpeg" | "image/png"; region: AiRegion; view: View; notes?: string },
 ): Promise<AiMeasureResult> {
   await requireUser([...EDIT]);
-  if (!aiConfigured()) return { ok: false, message: "BTRbot isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now." };
+  if (!aiConfigured()) return { ok: false, message: `${botName()} isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now.` };
   const doc = await prisma.document.findUnique({ where: { id: documentId }, select: { id: true } });
   if (!doc) return { ok: false, message: "That plan file is gone." };
   try {
     const r = await aiDraftTakeoff(input);
     return { ok: true, ...r };
+  } catch (e) {
+    return { ok: false, message: e instanceof AiMeasureError ? e.message : aiErrorMessage(e) };
+  }
+}
+
+export type AiSheetResult = { ok: true; views: Awaited<ReturnType<typeof aiReadSheet>>["views"]; notes: string[]; printedScale: string | null } | { ok: false; message: string };
+
+/** First pass of "measure the whole sheet": find each view and read the notes. */
+export async function aiReadSheetAction(documentId: string, input: { imageBase64: string; mediaType: "image/jpeg" | "image/png" }): Promise<AiSheetResult> {
+  await requireUser([...EDIT]);
+  if (!aiConfigured()) return { ok: false, message: `${botName()} isn't set up (ANTHROPIC_API_KEY on the server). Trace by hand for now.` };
+  const doc = await prisma.document.findUnique({ where: { id: documentId }, select: { id: true } });
+  if (!doc) return { ok: false, message: "That plan file is gone." };
+  try {
+    return { ok: true, ...(await aiReadSheet(input)) };
   } catch (e) {
     return { ok: false, message: e instanceof AiMeasureError ? e.message : aiErrorMessage(e) };
   }

@@ -1,10 +1,12 @@
-// Seeds the price library, company rules, and a first admin user from /data.
+// Seeds the price library, company rules, and a first admin user from /data. The /data files are BTR's: another
+// company's deployment gets only the admin user (see src/lib/seed-mode.ts).
 // Re-running is safe: sheets/items/rules are upserted, never duplicated.
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseCoverage } from "../src/lib/sheets/coverage";
+import { seedsBtrData } from "../src/lib/seed-mode";
 
 const prisma = new PrismaClient();
 const dataDir = path.join(__dirname, "..", "data");
@@ -53,6 +55,21 @@ async function upsertSheet(code: string, data: SeedSheet) {
 }
 
 async function main() {
+  const profile = await prisma.companySetting.findUnique({ where: { key: "companyProfile" } });
+  const profileName = (profile?.value as { name?: unknown } | null)?.name;
+  const btr = seedsBtrData({
+    env: process.env.SEED_COMPANY,
+    profileName: typeof profileName === "string" && profileName.trim() ? profileName.trim() : null,
+    hasData: (await prisma.user.count()) > 0 || (await prisma.priceSheet.count()) > 0,
+  });
+  if (btr) await seedBtrLibrary();
+  else console.log("Not BTR's deployment: BTR's price sheets, rules, templates and company data are not loaded.");
+  await seedAdmin();
+  if (btr) await seedBtrCompanyData();
+  await finish();
+}
+
+async function seedBtrLibrary() {
   const meta: Record<string, SheetMeta> = readJson("price_sheets_meta.json").sheets;
   const { items } = readJson("price_items.json") as { items: RawItem[] };
 
@@ -126,7 +143,9 @@ async function main() {
     };
     await prisma.rule.upsert({ where: { id }, update: data, create: { id, ...data } });
   }
+}
 
+async function seedAdmin() {
   // Emails are stored lowercase (login lowercases what's typed). Trim stray spaces/quotes from the Railway variable.
   const clean = (v: string | undefined) => v?.trim().replace(/^["']|["']$/g, "").trim() || undefined;
   const email = (clean(process.env.SEED_ADMIN_EMAIL) ?? "admin@btrcontracting.local").toLowerCase();
@@ -155,7 +174,9 @@ async function main() {
     const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { email: true } });
     console.log(`Admin sign-ins: ${admins.map((a) => a.email).join(", ")}`);
   }
+}
 
+async function seedBtrCompanyData() {
   // Built-in estimate templates (product systems). Created once; later edits in the app are kept.
   const tplFile = path.join(dataDir, "estimate_templates.json");
   if (existsSync(tplFile)) {
@@ -212,7 +233,9 @@ async function main() {
     await prisma.companySetting.create({ data: { key: "priceSheetFolder", value: CURRENT_SHEETS, updatedBy: "Seed" } });
     console.log("Price-sheet sync folder set to BTR's Current folder.");
   }
+}
 
+async function finish() {
   // Re-read coverage on every live item (newer sheets from Drive included) when the parser learns a pattern.
   // Coverage a person entered or took from manufacturer data is never touched.
   let reparsed = 0;

@@ -1,0 +1,69 @@
+// Joblight console data: sales leads and the company buildouts (one Railway service each).
+// Each buildout keeps its own database in its own service; nothing of theirs is stored here.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  DEMO_BOOKED
+  WON
+  LOST
+}
+
+// Demo requests from the public site.
+model Lead {
+  id        String     @id @default(cuid())
+  name      String
+  company   String
+  email     String
+  phone     String?
+  trade     String
+  users     Int?
+  message   String?
+  status    LeadStatus @default(NEW)
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+enum BuildoutStatus {
+  ONBOARDING
+  LIVE
+  PAUSED
+  CANCELLED
+}
+
+// One customer company = one deployment of the CRM (a Railway service with its own volume).
+model Buildout {
+  id               String         @id @default(cuid())
+  company          String
+  trade            String
+  status           BuildoutStatus @default(ONBOARDING)
+  url              String? // public address, e.g. https://acme.joblight.net
+  internalUrl      String? // Railway private address, e.g. http://acme.railway.internal:3000
+  railwayService   String? // service name or id in the Railway project
+  branch           String? // git branch it deploys from
+  users            Int            @default(1)
+  customMonthly    Float? // agreed rate over the standard schedule (21+ users, or a deal)
+  setupFee         Float?
+  setupPaid        Boolean        @default(false)
+  ownerName        String?
+  ownerEmail       String?
+  protected        Boolean        @default(false) // never included in bulk actions (e.g. a hands-on custom account)
+  notes            String?
+  lastCheckAt      DateTime?
+  lastCheckOk      Boolean?
+  lastCheckMs      Int?
+  lastCheckError   String?
+  leadId           String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}

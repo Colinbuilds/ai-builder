@@ -5,7 +5,7 @@ import { rulesForEstimate } from "@/lib/estimates/rules";
 import { sheetDateStatus } from "@/lib/sheets/date-status";
 import { READINESS_LABEL } from "@/lib/projects/readiness";
 import { MEASUREMENT_BY_KEY } from "@/lib/docs/measurements";
-import { BTR, SUPPLIER } from "@/lib/company";
+import { getCompany, type Company, botName } from "@/lib/company-profile";
 import { AMBER, GREEN, PdfWriter, RED } from "@/lib/pdf/writer";
 import { rgb } from "pdf-lib";
 
@@ -41,7 +41,7 @@ const STATUS: Record<string, string> = {
   MISSING_PRICE: "MISSING price",
   PLACEHOLDER: "PLACEHOLDER - not for final bid",
   ASSUMPTION_APPROVED: "Approved assumption",
-  PENDING_AI: "BTRbot suggestion - not accepted",
+  PENDING_AI: `${botName()} suggestion - not accepted`,
   MISSING: "MISSING",
 };
 
@@ -62,9 +62,9 @@ export function orderCsv(b: Bundle) {
   return rows.map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
 
-function header(b: Bundle, title: string) {
+function header(co: Company, b: Bundle, title: string) {
   return (w: PdfWriter) => {
-    w.text(`${BTR.name.toUpperCase()}  ·  ${BTR.address}  ·  ${BTR.phone}  ·  ${BTR.email}`, { size: 7, color: rgb(0.4, 0.4, 0.45), gap: 0 });
+    w.text(`${co.name.toUpperCase()}  ·  ${co.address}  ·  ${co.phone}  ·  ${co.email}`, { size: 7, color: rgb(0.4, 0.4, 0.45), gap: 0 });
     w.text(`${title} — ${b.e.project.name} — ${b.e.name}`, { size: 7, color: rgb(0.4, 0.4, 0.45), gap: 6 });
   };
 }
@@ -89,7 +89,7 @@ function projectBlock(w: PdfWriter, b: Bundle) {
   w.stamp(READINESS_LABEL[r].toUpperCase(), r === "BID_READY" ? GREEN : r === "BUDGET" ? AMBER : RED);
 }
 
-function sheetFootnote(w: PdfWriter, b: Bundle) {
+function sheetFootnote(co: Company, w: PdfWriter, b: Bundle) {
   w.heading("Price sheets");
   for (const s of b.sheets) {
     if (!s.isLoaded) {
@@ -99,11 +99,12 @@ function sheetFootnote(w: PdfWriter, b: Bundle) {
     const st = sheetDateStatus(s);
     w.text(`${s.code} ${s.name}: effective ${s.effectiveDate?.toISOString().slice(0, 10)}, expires ${s.expirationDate?.toISOString().slice(0, 10)} (${st.status})${s.warning ? ` — ${s.warning}` : ""}`, { size: 7, gap: 0 });
   }
-  w.text(`${SUPPLIER.name}: ${SUPPLIER.surchargeNote}`, { size: 7, gap: 4 });
+  w.text(`${co.supplier.name}: ${co.supplier.surchargeNote}`, { size: 7, gap: 4 });
 }
 
 export async function estimatePdf(b: Bundle) {
-  const w = await PdfWriter.create({ title: `${b.e.project.name} ${b.e.name}`, footer: `${BTR.name} estimate · ${b.e.project.name} · ${b.e.name}`, header: header(b, "Estimate") });
+  const co = await getCompany();
+  const w = await PdfWriter.create({ title: `${b.e.project.name} ${b.e.name}`, footer: `${co.name} estimate · ${b.e.project.name} · ${b.e.name}`, header: header(co, b, "Estimate") });
   projectBlock(w, b);
   const cols = [
     { header: "Item", width: 34 },
@@ -198,13 +199,14 @@ export async function estimatePdf(b: Bundle) {
     else w.text("—", { size: 9 });
     w.y -= 4;
   }
-  sheetFootnote(w, b);
+  sheetFootnote(co, w, b);
   return w.save();
 }
 
 /** Internal QA copy: every formula, its inputs, and the source of every measurement. */
 export async function takeoffPdf(b: Bundle) {
-  const w = await PdfWriter.create({ title: `${b.e.project.name} takeoff`, footer: `${BTR.name} internal takeoff · ${b.e.project.name} · ${b.e.name}`, header: header(b, "INTERNAL TAKEOFF — not for customer") });
+  const co = await getCompany();
+  const w = await PdfWriter.create({ title: `${b.e.project.name} takeoff`, footer: `${co.name} internal takeoff · ${b.e.project.name} · ${b.e.name}`, header: header(co, b, "INTERNAL TAKEOFF — not for customer") });
   projectBlock(w, b);
   w.heading("Measurements used (confirmed / entered only)");
   w.table(
@@ -238,6 +240,6 @@ export async function takeoffPdf(b: Bundle) {
   const rules = await rulesForEstimate(b.e.id, null);
   w.heading("Company rules");
   for (const r of rules) w.text(`${r.status === "pass" ? "PASS" : r.status === "fail" ? "FAIL" : "INFO"}  ${r.id}  ${r.message}`, { size: 8, gap: 0 });
-  sheetFootnote(w, b);
+  sheetFootnote(co, w, b);
   return w.save();
 }

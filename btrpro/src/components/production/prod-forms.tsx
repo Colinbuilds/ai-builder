@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { prodSheetSettingsAction, saveProdAction, syncProdAction } from "@/app/production/actions";
 import { Problems } from "@/components/projects/problems";
+import { useBrand } from "@/components/brand";
 
 const box = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 const ymd = (d: Date | string | null | undefined) => (d ? new Date(d).toISOString().slice(0, 10) : "");
@@ -10,6 +11,7 @@ const ymd = (d: Date | string | null | undefined) => (d ? new Date(d).toISOStrin
 export type ProdValues = Record<string, string | number | Date | null | undefined> & { id?: string };
 
 export function ProdForm({ v, back, crews, supers, boards }: { v: ProdValues; back: string; crews: string[]; supers: string[]; boards: [string, string][] }) {
+  const { shortName } = useBrand();
   const [state, dispatch, pending] = useActionState(saveProdAction, null);
   const f = (name: string, label: string, o: { type?: string; ph?: string; list?: string; area?: boolean } = {}) => {
     const val = v[name];
@@ -74,7 +76,7 @@ export function ProdForm({ v, back, crews, supers, boards }: { v: ProdValues; ba
         {f("completed", "Completed")}
         {f("approved", "Crew paid / approved")}
         {f("billed", "Billed")}
-        {f("btrPaid", "BTR paid")}
+        {f("btrPaid", `${shortName} paid`)}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {f("notes", "Notes", { area: true })}
@@ -104,6 +106,7 @@ export function ProdSyncButton() {
 }
 
 export function ProdSheetSettings({ res, comm, off }: { res: string; comm: string; off: boolean }) {
+  const { productName: app } = useBrand();
   const [state, dispatch, pending] = useActionState(prodSheetSettingsAction, null);
   return (
     <form action={dispatch} className="flex flex-col gap-2 text-sm">
@@ -116,7 +119,7 @@ export function ProdSheetSettings({ res, comm, off }: { res: string; comm: strin
         <input name="comm" defaultValue={comm} className={box} />
       </label>
       <label className="flex items-center gap-2">
-        <input type="checkbox" name="off" defaultChecked={off} /> BTRpro is now the schedule — stop the sheet sync
+        <input type="checkbox" name="off" defaultChecked={off} /> {app} is now the schedule — stop the sheet sync
       </label>
       <div className="flex items-center gap-2">
         <button disabled={pending} className="h-8 rounded-md border px-3 hover:bg-muted">

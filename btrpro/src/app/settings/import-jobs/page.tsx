@@ -4,6 +4,7 @@ import { driveAvailable } from "@/lib/integrations/google-sa";
 import { previewSchedule, type Market } from "@/lib/import/service";
 import { LoadSchedule, MapAndImport } from "@/components/import/import-forms";
 import { Badge } from "@/components/ui/badge";
+import { appName } from "@/lib/company-profile";
 
 // BTR's live schedules in the company shared drive (links only; the app reads them with the signed-in user's Drive access).
 const PRESETS = [
@@ -51,7 +52,7 @@ export default async function ImportJobs({
       <div>
         <h1 className="text-2xl font-semibold">Import jobs</h1>
         <p className="text-sm text-muted-foreground">
-          Brings jobs from the Residential and Commercial schedules into BTRpro,
+          Brings jobs from the Residential and Commercial schedules into {appName()},
           each under its builder or customer account, so builder jobs price from
           that builder&apos;s sheets. Stage comes from the tab (Upcoming,
           Current, Completed) and the Completed / Billed / Paid columns; sell

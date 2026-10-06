@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate, formatUsd } from "@/lib/utils";
+import { shortName } from "@/lib/company-profile";
 
 const TABS = [
   ["pricing", "Pricing"],
@@ -70,7 +71,7 @@ export default async function BuilderPage({ params, searchParams }: { params: Pr
         <div className="flex flex-col gap-4">
           {sp.applied && <p className="text-sm text-green-700">Pricing is live. {b.name} jobs price from it now; re-run takeoffs on open estimates to pick up changes.</p>}
           <p className="text-sm text-muted-foreground">
-            Every {b.name} job uses these prices. Items not on them: {b.pricingFallback === "STANDARD" ? "BTR standard price, flagged on the line" : "MISSING"}.
+            Every {b.name} job uses these prices. Items not on them: {b.pricingFallback === "STANDARD" ? `${shortName()} standard price, flagged on the line` : "MISSING"}.
           </p>
           {b.priceSheets.length > 0 ? (
             <Table>

@@ -1,13 +1,16 @@
 "use server";
 
-import { reportIssue } from "@/lib/production/field";
+import { logExtraWork, reportIssue } from "@/lib/production/field";
+import { addToolboxTalk } from "@/lib/safety/service";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/db";
 import { CREW_COOKIE, CREW_MAX_AGE, signCrewSession } from "@/lib/session";
 import { requireCrew } from "@/lib/crew/auth";
 import { checkCrewLogin } from "@/lib/crew/login";
 import { CrewError, addJobPhotos, submitCrewInvoice } from "@/lib/crew/service";
+import { shortName } from "@/lib/company-profile";
 
 export type CrewResult = { problems: string[]; ok?: boolean; note?: string } | null;
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -94,7 +97,47 @@ export async function crewIssueAction(_: CrewResult, f: FormData): Promise<CrewR
   try {
     await reportIssue({ crewId: crew.id, name: crew.name }, projectId, str(f, "note"), await filesOf(f, "photos"));
     revalidatePath(`/crew/jobs/${projectId}`);
-    return { problems: [], ok: true, note: "Sent to the office. Don't do the extra work until BTR says it's approved." };
+    return { problems: [], ok: true, note: `Sent to the office. Don't do the extra work until ${shortName()} says it's approved.` };
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+}
+
+export async function crewExtraAction(_: CrewResult, f: FormData): Promise<CrewResult> {
+  const crew = await requireCrew();
+  const projectId = str(f, "projectId");
+  const num = (k: string) => (str(f, k) ? Number(str(f, k)) : null);
+  const date = str(f, "workDate");
+  try {
+    await logExtraWork(
+      { crewId: crew.id, name: crew.name },
+      projectId,
+      {
+        note: str(f, "note"),
+        workDate: date ? new Date(`${date}T12:00:00Z`) : null,
+        men: num("men"),
+        hours: num("hours"),
+        materials: str(f, "materials") || null,
+        directedBy: str(f, "directedBy") || null,
+        signerName: str(f, "signerName") || null,
+        signatureImage: str(f, "signature") || null,
+      },
+      await filesOf(f, "photos"),
+    );
+    revalidatePath(`/crew/jobs/${projectId}`);
+    return { problems: [], ok: true, note: "Extra work tag sent to the office. They'll price it into a change order." };
+  } catch (e) {
+    return { problems: [msg(e)] };
+  }
+}
+
+export async function crewTalkAction(_: CrewResult, f: FormData): Promise<CrewResult> {
+  const crew = await requireCrew();
+  const projectId = str(f, "projectId");
+  try {
+    if (!(await prisma.scheduleEvent.findFirst({ where: { projectId, crewId: crew.id } })) && !(await prisma.workOrder.findFirst({ where: { projectId, crewId: crew.id } }))) throw new CrewError("That job isn't assigned to your crew.");
+    await addToolboxTalk({ date: new Date(), topic: str(f, "topic"), presenter: str(f, "presenter") || crew.name, crewId: crew.id, projectId, attendees: str(f, "attendees"), notes: null }, { name: crew.name });
+    return { problems: [], ok: true, note: "Safety talk logged. Thank you." };
   } catch (e) {
     return { problems: [msg(e)] };
   }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { saveRuleAction } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { shortName } from "@/lib/company-profile";
 
 export default async function RulesPage() {
   const user = await requireUser();
@@ -15,7 +16,7 @@ export default async function RulesPage() {
     <div className="flex max-w-4xl flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">Company rules</h1>
-        <p className="text-sm text-muted-foreground">Checked on every estimate. Only an Admin can change them, and every change is logged. Locked rules are BTR standards (CLAUDE.md §6).</p>
+        <p className="text-sm text-muted-foreground">Checked on every estimate. Only an Admin can change them, and every change is logged. Locked rules are {shortName()} standards (CLAUDE.md §6).</p>
       </div>
       {rules.map((r) => (
         <form key={r.id} action={saveRuleAction} className="flex flex-col gap-2 rounded-md border p-3 text-sm">

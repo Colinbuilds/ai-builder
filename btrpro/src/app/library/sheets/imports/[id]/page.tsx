@@ -6,8 +6,10 @@ import type { DiffItem } from "@/lib/sheets/diff";
 import { discardImport } from "../../actions";
 import { Button } from "@/components/ui/button";
 import { ReviewGrid } from "./review-grid";
+import { getCompany } from "@/lib/company-profile";
 
 export default async function ReviewImportPage({ params }: { params: Promise<{ id: string }> }) {
+  const co = await getCompany();
   await requireUser(["ADMIN", "PURCHASING"]);
   const { id } = await params;
   const imp = await prisma.sheetImport.findUnique({ where: { id } });
@@ -56,6 +58,7 @@ export default async function ReviewImportPage({ params }: { params: Promise<{ i
           initialRows={imp.rows as ParsedRow[]}
           unparsed={imp.unparsed as { line: number; text: string }[]}
           oldItems={oldItems}
+          own={{ shortName: co.shortName, abcAccount: co.abcAccount }}
         />
       )}
     </div>

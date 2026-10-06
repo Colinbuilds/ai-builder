@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
 import { Problems } from "./problems";
 import { AddressInput } from "@/components/address-input";
+import { useBrand } from "@/components/brand";
 
 type Opt = { id: string; name: string };
 export type ProjectFormValues = {
@@ -67,6 +68,7 @@ export function ProjectForm({
   properties?: { id: string; name: string; address: string | null; companyId: string }[];
   propertyId?: string | null;
 }) {
+  const { shortName } = useBrand();
   const [state, formAction, pending] = useFormAction(action, null);
   const v = values;
   const [market, setMarket] = useState<Market>(v.market ?? "COMMERCIAL");
@@ -142,7 +144,7 @@ export function ProjectForm({
               name="clientCompanyId"
               defaultValue={v.clientCompanyId ?? ""}
             >
-              <option value="">— none: homeowner job, BTR pricing —</option>
+              <option value="">— none: homeowner job, {shortName} pricing —</option>
               {companies
                 .filter((c) => c.type === "BUILDER")
                 .map((c) => (

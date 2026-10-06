@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { botName } from "@/lib/company-profile";
 
 const LABEL: Record<string, string> = {
   VERIFIED: "Verified",
@@ -9,7 +10,7 @@ const LABEL: Record<string, string> = {
   MISSING_PRICE: "Missing price",
   PLACEHOLDER: "Placeholder",
   ASSUMPTION_APPROVED: "Approved assumption",
-  PENDING_AI: "BTRbot suggestion",
+  PENDING_AI: `${botName()} suggestion`,
   MISSING: "Missing",
 };
 // green verified · amber stale/placeholder/assumption · red missing/expired/call · blue pending AI (BUILD_PROMPT §5)

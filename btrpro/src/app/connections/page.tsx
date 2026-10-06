@@ -6,6 +6,7 @@ import { OAUTH, oauthConfigured, redirectUri, type OAuthProvider } from "@/lib/i
 import { serviceAccountEmail } from "@/lib/integrations/google-sa";
 import { AbcSyncButton } from "@/components/connections/sync-button";
 import { abcAccountAction, disconnectAction } from "./actions";
+import { appName, shortName } from "@/lib/company-profile";
 
 const when = (d: Date | string | null | undefined) =>
   d ? new Date(d).toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "never";
@@ -16,14 +17,14 @@ const CARDS: Card[] = [
   {
     p: "ABC_SUPPLY",
     name: "ABC Supply",
-    reads: "Order history and invoices for BTR's account, every 30 minutes, matched to jobs by PO number or job name.",
+    reads: `Order history and invoices for ${shortName()}'s account, every 30 minutes, matched to jobs by PO number or job name.`,
     keys: ["ABC_CLIENT_ID", "ABC_CLIENT_SECRET"],
-    ask: "Register BTRpro at apidocs.abcsupply.com (or ask Michael Poe for API access) to get the client ID and secret.",
+    ask: `Register ${appName()} at apidocs.abcsupply.com (or ask Michael Poe for API access) to get the client ID and secret.`,
   },
   {
     p: "EAGLEVIEW",
     name: "EagleView",
-    reads: "Report orders and finished reports once EagleView issues BTR's API access.",
+    reads: `Report orders and finished reports once EagleView issues ${shortName()}'s API access.`,
     keys: ["EAGLEVIEW_CLIENT_ID", "EAGLEVIEW_CLIENT_SECRET", "EAGLEVIEW_AUTH_URL", "EAGLEVIEW_TOKEN_URL"],
     ask: "Request API access at developer.eagleview.com (or Integrations@EagleView.com). They send the client ID, secret and sign-in addresses.",
   },
@@ -37,7 +38,7 @@ const CARDS: Card[] = [
   {
     p: "PROCORE",
     name: "Procore",
-    reads: "Change orders, RFIs and submittals on GC projects BTR is added to.",
+    reads: `Change orders, RFIs and submittals on GC projects ${shortName()} is added to.`,
     keys: ["PROCORE_CLIENT_ID", "PROCORE_CLIENT_SECRET"],
     ask: "Create an app at developers.procore.com.",
   },
@@ -62,7 +63,7 @@ export default async function Connections({ searchParams }: { searchParams: Prom
       <div>
         <h1 className="text-2xl font-semibold">Connections</h1>
         <p className="text-sm text-muted-foreground">
-          Press <b>Connect</b> and sign in on the company&apos;s own page (ABC, EagleView, QuickBooks). BTRpro never sees or stores the password — it gets a key that keeps it signed in and reads your data in the background. Disconnect any time.
+          Press <b>Connect</b> and sign in on the company&apos;s own page (ABC, EagleView, QuickBooks). {appName()} never sees or stores the password — it gets a key that keeps it signed in and reads your data in the background. Disconnect any time.
         </p>
       </div>
       {sp.connected && (
@@ -146,7 +147,7 @@ export default async function Connections({ searchParams }: { searchParams: Prom
             <h2 className="font-semibold">Google Drive</h2>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${serviceAccountEmail() ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"}`}>{serviceAccountEmail() ? "Connected" : "Needs setup"}</span>
           </div>
-          <p className="text-sm text-muted-foreground">Price sheets, the estimating and production schedules, plans and CompanyCam photos. Share a folder or sheet with the service account to let BTRpro read it.</p>
+          <p className="text-sm text-muted-foreground">Price sheets, the estimating and production schedules, plans and CompanyCam photos. Share a folder or sheet with the service account to let {appName()} read it.</p>
           {serviceAccountEmail() && <p className="text-xs break-all text-muted-foreground">Reads as {serviceAccountEmail()}</p>}
         </section>
       </div>
@@ -167,7 +168,7 @@ export default async function Connections({ searchParams }: { searchParams: Prom
                     <th className="px-2 py-1.5">PO / job name</th>
                     <th className="px-2 py-1.5">Status / branch</th>
                     <th className="px-2 py-1.5 text-right">Total</th>
-                    <th className="px-2 py-1.5">BTRpro job</th>
+                    <th className="px-2 py-1.5">{appName()} job</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -198,7 +199,7 @@ export default async function Connections({ searchParams }: { searchParams: Prom
       )}
 
       <p className="text-xs text-muted-foreground">
-        Sites without a sign-in connection (like a supplier portal with no API) can&apos;t be read automatically — forward their emails to the job&apos;s address or upload the PDF. Each connection reads only what that company lets BTR&apos;s account share. {OAUTH.ABC_SUPPLY.label} sign-ins refresh every 30 minutes, so they don&apos;t expire.
+        Sites without a sign-in connection (like a supplier portal with no API) can&apos;t be read automatically — forward their emails to the job&apos;s address or upload the PDF. Each connection reads only what that company lets {shortName()}&apos;s account share. {OAUTH.ABC_SUPPLY.label} sign-ins refresh every 30 minutes, so they don&apos;t expire.
       </p>
     </div>
   );

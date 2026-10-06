@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { aiMeasureAction, saveTakeoffAction, sendTakeoffAction } from "@/app/projects/takeoff-actions";
+import { aiMeasureAction, aiReadSheetAction, saveTakeoffAction, sendTakeoffAction } from "@/app/projects/takeoff-actions";
 import {
   fmtFeet,
   measureItem,
@@ -21,6 +21,7 @@ import {
   type TakeoffItem,
   type View,
 } from "@/lib/takeoff/geometry";
+import { useBrand } from "@/components/brand";
 
 type PdfPage = {
   getViewport(o: { scale: number }): { width: number; height: number };
@@ -61,6 +62,7 @@ export function TakeoffEditor({
   fileName: string;
   savedToJob: string | null;
 }) {
+  const { assistantName: bot } = useBrand();
   const [view, setView] = useState<View>(initial?.view ?? "ROOF_PLAN");
   const [pitch, setPitch] = useState<number | null>(initial?.pitch ?? null);
   const [scale, setScale] = useState<Scale | null>(initial?.scale ?? null);
@@ -226,8 +228,76 @@ export function TakeoffEditor({
     });
   };
 
-  // ---------- AI draft of what's on screen ----------
-  const AI_MAX = 2000; // longest side of the image sent, in pixels
+  // stacking order on the sheet: big areas underneath, then masonry/shake, then openings, then lines and marks
+  const layer = (it: TakeoffItem) => {
+    const t = TYPE_BY_ID.get(it.type);
+    if (!t) return 9;
+    if (t.tool === "count") return 5;
+    if (t.tool === "line") return 4;
+    if (t.key === "openings_sf") return 3;
+    if (t.id === "masonry" || t.id === "shake_area") return 2;
+    return 1;
+  };
+
+  // ---------- AI drafts: the whole sheet (read notes, then each view) or just what's on screen ----------
+  const AI_MAX = 2400; // longest side of an image sent, in pixels
+  /** Renders a region of the sheet (sheet units) to a JPEG for BTRbot. */
+  const capture = async (region: { x: number; y: number; w: number; h: number }) => {
+    const s = Math.min(AI_MAX / Math.max(region.w, region.h), 8);
+    const c = document.createElement("canvas");
+    c.width = Math.round(region.w * s);
+    c.height = Math.round(region.h * s);
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    if (kind === "pdf" && pdfPage.current) {
+      const vp = pdfPage.current.getViewport({ scale: s });
+      await pdfPage.current.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, -region.x * s, -region.y * s] }).promise;
+    } else if (imgEl.current) {
+      ctx.drawImage(imgEl.current, region.x, region.y, region.w, region.h, 0, 0, c.width, c.height);
+    } else throw new Error("The sheet isn't loaded yet.");
+    return c.toDataURL("image/jpeg", 0.9).split(",")[1];
+  };
+
+  type Ok = Extract<Awaited<ReturnType<typeof aiMeasureAction>>, { ok: true }>;
+  /** Folds BTRbot results into the sheet: drafts, the detected view, a scale from the scale bar, and a summary. */
+  const applyAi = (results: { label: string; r: Ok }[], notes: string[], cannot: string[]) => {
+    const drawn = results.flatMap((x) => x.r.items);
+    const detected = results.find((x) => x.r.detectedView)?.r.detectedView ?? null;
+    if (detected && detected !== view) {
+      setView(detected);
+      notes.push(`This is ${detected === "ELEVATION" ? "an elevation sheet" : "a roof plan"}, so the sheet setting was switched to match.`);
+    }
+    if (!scale) {
+      const bar = results.map((x) => x.r.scaleBar).find((b) => b && Math.hypot(b.b[0] - b.a[0], b.b[1] - b.a[1]) > 5);
+      const printed = results.map((x) => x.r.printedScale).find(Boolean);
+      if (bar) {
+        setScale({ upf: Math.hypot(bar.b[0] - bar.a[0], bar.b[1] - bar.a[1]) / bar.feet, method: "CALIBRATED", label: `From the drawn scale bar (${fmtFeet(bar.feet)})`, check: null });
+        notes.push(`Scale set from the drawn scale bar (${fmtFeet(bar.feet)}). Check it on one printed dimension before using the numbers.`);
+      } else if (printed && kind === "pdf") {
+        const p = PRESET_SCALES.find((x) => x.label === printed);
+        if (p) {
+          setScale({ upf: presetUpf(p.inPerFt), method: "PRESET", label: `Printed scale ${p.label}`, check: null });
+          notes.push(`Scale set from the printed ${p.label}. Check it on one known dimension before using the numbers.`);
+        }
+      } else if (printed) notes.push(`The sheet says ${printed}. Set the scale (Set scale → calibrate on a dimension).`);
+    }
+    const c = results.reduce(
+      (a, x) => ({ w: a.w + x.r.counted.windows, d: a.d + x.r.counted.doors, s: a.s + x.r.counted.patio_sliders, g: a.g + x.r.counted.garage_doors }),
+      { w: 0, d: 0, s: 0, g: 0 },
+    );
+    const openings = drawn.filter((i) => TYPE_BY_ID.get(i.type)?.key === "openings_sf").length;
+    const counted = c.w + c.d + c.s + c.g;
+    if (counted) notes.push(`Counted ${c.w} windows, ${c.s} patio sliders, ${c.d} doors, ${c.g} garage doors; traced ${openings} openings${openings < counted ? ` — ${counted - openings} still to trace by hand` : ""}.`);
+    if (drawn.length) {
+      commitItems([...items, ...drawn]);
+      setMode("select");
+      notes.push(`${bot} drew ${drawn.length} item${drawn.length === 1 ? "" : "s"} (dashed) on ${results.filter((x) => x.r.items.length).map((x) => x.label).join(", ")}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`);
+    } else notes.push(`${bot} couldn't trace anything it was sure of. Zoom in on one elevation or roof plan and use “measure on screen”.`);
+    touch();
+    setAi({ busy: false, message: notes.join(" "), cannot: cannot.slice(0, 8) });
+  };
+
   const aiMeasure = async () => {
     const sc = scroller.current;
     if (!sc || !size) return;
@@ -238,60 +308,55 @@ export function TakeoffEditor({
     if (region.w <= 0 || region.h <= 0) return;
     setAi({ busy: true, message: "Reading the plan on screen… this takes up to a minute." });
     try {
-      const s = Math.min(AI_MAX / Math.max(region.w, region.h), 8);
-      const c = document.createElement("canvas");
-      c.width = Math.round(region.w * s);
-      c.height = Math.round(region.h * s);
-      const ctx = c.getContext("2d")!;
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, c.width, c.height);
-      if (kind === "pdf" && pdfPage.current) {
-        const vp = pdfPage.current.getViewport({ scale: s });
-        await pdfPage.current.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, -region.x * s, -region.y * s] }).promise;
-      } else if (imgEl.current) {
-        ctx.drawImage(imgEl.current, region.x, region.y, region.w, region.h, 0, 0, c.width, c.height);
-      } else throw new Error("The sheet isn't loaded yet.");
-      const imageBase64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
-      const r = await aiMeasureAction(documentId, { imageBase64, mediaType: "image/jpeg", region, view });
+      const r = await aiMeasureAction(documentId, { imageBase64: await capture(region), mediaType: "image/jpeg", region, view });
       if (!r.ok) return setAi({ busy: false, message: r.message });
+      if (!r.items.length && r.sheetType === "FLOOR_PLAN") return setAi({ busy: false, message: "This is a floor plan, so there's nothing to take off here. Open the roof plan or the elevations." });
+      applyAi([{ label: r.sheet, r }], [], r.cannotTrace);
+    } catch (e) {
+      setAi({ busy: false, message: e instanceof Error ? e.message : "Couldn't capture the sheet." });
+    }
+  };
+
+  /** Whole sheet: read every view and note first, then trace each elevation (or roof plan) on its own, up close. */
+  const aiMeasureSheet = async () => {
+    if (!size) return;
+    setAi({ busy: true, message: "Reading the whole sheet: views, notes and material callouts…" });
+    try {
+      const full = { x: 0, y: 0, w: size.w, h: size.h };
+      const read = await aiReadSheetAction(documentId, { imageBase64: await capture(full), mediaType: "image/jpeg" });
+      if (!read.ok) return setAi({ busy: false, message: read.message });
+      const elev = read.views.filter((v) => v.type === "ELEVATION");
+      const roof = read.views.filter((v) => v.type === "ROOF_PLAN");
+      const views = elev.length >= roof.length ? elev : roof;
+      const kindOf: View = elev.length >= roof.length ? "ELEVATION" : "ROOF_PLAN";
+      if (!views.length) return setAi({ busy: false, message: `No elevation or roof plan on this sheet (found: ${read.views.map((v) => v.title).join(", ") || "nothing"}). Open the elevations or the roof plan.` });
       const notes: string[] = [];
-      // BTRbot read what the sheet really is: switch the setting rather than refusing
-      if (r.detectedView && r.detectedView !== view) {
-        setView(r.detectedView);
-        touch();
-        notes.push(`This is ${r.detectedView === "ELEVATION" ? "an elevation" : "a roof plan"}, so the sheet setting was switched to ${r.detectedView === "ELEVATION" ? "Elevation" : "Roof plan"}.`);
-      }
-      // no scale yet and the sheet prints one: start from it (PDF sizes are true), then ask for a check
-      if (!scale && r.printedScale && kind === "pdf") {
-        const p = PRESET_SCALES.find((x) => x.label === r.printedScale);
-        if (p) {
-          setScale({ upf: presetUpf(p.inPerFt), method: "PRESET", label: `Printed scale ${p.label}`, check: null });
-          touch();
-          notes.push(`Scale set from the printed ${p.label}. Check it on one known dimension before using the numbers.`);
+      if (elev.length && roof.length) notes.push(`This sheet has both elevations and a roof plan; ${bot} traced the ${kindOf === "ELEVATION" ? "elevations" : "roof plan"}. Open the other as its own sheet.`);
+      const sheetNotes = read.notes.join("\n");
+      const results: { label: string; r: Ok }[] = [];
+      const cannot: string[] = [];
+      for (const [i, v] of views.entries()) {
+        setAi({ busy: true, message: `Tracing ${v.title} (${i + 1} of ${views.length}) up close…` });
+        const pad = 0.01;
+        const rx = Math.max(0, (v.box.x0 / 1000 - pad) * size.w);
+        const ry = Math.max(0, (v.box.y0 / 1000 - pad) * size.h);
+        const region = { x: rx, y: ry, w: Math.min(size.w - rx, ((v.box.x1 - v.box.x0) / 1000 + 2 * pad) * size.w), h: Math.min(size.h - ry, ((v.box.y1 - v.box.y0) / 1000 + 2 * pad) * size.h) };
+        const r = await aiMeasureAction(documentId, { imageBase64: await capture(region), mediaType: "image/jpeg", region, view: kindOf, notes: `View: ${v.title}\n${sheetNotes}` });
+        if (!r.ok) {
+          cannot.push(`${v.title}: ${r.message}`);
+          continue;
         }
-      } else if (!scale && r.printedScale) notes.push(`The sheet says ${r.printedScale}. Set the scale (Set scale → calibrate on a dimension).`);
-      if (!r.items.length) {
-        const why =
-          r.sheetType === "FLOOR_PLAN"
-            ? "This is a floor plan, so there's nothing to take off here. Open the roof plan or the elevations."
-            : r.detectedView
-              ? "BTRbot couldn't trace anything it was sure of here. Zoom in on one roof or one wall and try again."
-              : "This isn't a roof plan or an elevation. Open the roof plan or the elevations.";
-        return setAi({ busy: false, message: [...notes, why].join(" "), cannot: r.cannotTrace });
+        results.push({ label: v.title, r });
+        cannot.push(...r.cannotTrace.map((c) => `${v.title}: ${c}`));
       }
-      commitItems([...items, ...r.items]);
-      setMode("select");
-      setAi({
-        busy: false,
-        message: [...notes, `BTRbot drew ${r.items.length} item${r.items.length === 1 ? "" : "s"} (dashed) on ${r.sheet}. Check each against the plan — fix or delete what's wrong, then accept. They don't count until accepted.`].join(" "),
-        cannot: r.cannotTrace,
-      });
+      if (!results.length) return setAi({ busy: false, message: `${bot} couldn't trace this sheet.`, cannot });
+      applyAi(results, notes, cannot);
     } catch (e) {
       setAi({ busy: false, message: e instanceof Error ? e.message : "Couldn't capture the sheet." });
     }
   };
   const aiCount = items.filter((i) => i.ai).length;
-  const acceptAi = (id?: string) => commitItems(items.map((i) => (i.ai && (!id || i.id === id) ? { ...i, ai: undefined, note: i.note?.replace(/^BTRbot: /, "BTRbot (checked): ") ?? null } : i)));
+  const acceptAi = (id?: string) => commitItems(items.map((i) => (i.ai && (!id || i.id === id) ? { ...i, ai: undefined, note: i.note?.startsWith(`${bot}: `) ? `${bot} (checked): ${i.note.slice(bot.length + 2)}` : (i.note ?? null) } : i)));
 
   // ---------- pointer → sheet coordinates ----------
   const toSheet = (e: { clientX: number; clientY: number }, constrain: boolean): Pt => {
@@ -467,7 +532,7 @@ export function TakeoffEditor({
   const selResult = sel ? measureItem(sel, pageData) : null;
   const liveLen = draft.length && hover && scale ? pathLength([...draft, hover]) / scale.upf : null;
   const markR = 6 / zoom;
-  const groups = ["Roof", "Siding", "Other"] as const;
+  const groups = ["Roof", "Siding", "Openings", "Other"] as const;
 
   const send = async () => {
     if (!(await save())) return;
@@ -573,12 +638,21 @@ export function TakeoffEditor({
               </button>
               <button
                 type="button"
+                onClick={aiMeasureSheet}
+                disabled={ai.busy || !size}
+                className="rounded-md border border-violet-500 bg-violet-600 px-2.5 py-1 text-white hover:bg-violet-700 disabled:opacity-50"
+                title={`${bot} reads the whole sheet (views, notes, material callouts), then traces each elevation or roof plan up close as dashed drafts.`}
+              >
+                {ai.busy ? `${bot} measuring…` : `${bot} measure whole sheet`}
+              </button>
+              <button
+                type="button"
                 onClick={aiMeasure}
                 disabled={ai.busy || !size}
                 className="rounded-md border border-violet-400 bg-violet-50 px-2.5 py-1 text-violet-900 hover:bg-violet-100 disabled:opacity-50 dark:bg-violet-950 dark:text-violet-200"
-                title="BTRbot traces what's on screen as dashed drafts. Zoom to one roof plan or elevation first for the best result."
+                title={`${bot} traces what's on screen as dashed drafts. Zoom to one roof plan or elevation first for the best result.`}
               >
-                {ai.busy ? "BTRbot measuring…" : "BTRbot measure on screen"}
+                {ai.busy ? `${bot} measuring…` : `${bot} measure on screen`}
               </button>
               <button type="button" onClick={() => zoomBy(1 / 1.25)} className="rounded-md border px-2.5 py-1 hover:bg-accent" aria-label="Zoom out">
                 −
@@ -679,7 +753,7 @@ export function TakeoffEditor({
                   onClick={onClick}
                   onDoubleClick={onDouble}
                 >
-                  {items.map((it) => {
+                  {[...items].sort((a, b) => layer(a) - layer(b)).map((it) => {
                     const t = TYPE_BY_ID.get(it.type);
                     if (!t) return null;
                     const on = it.id === selected;
@@ -697,7 +771,7 @@ export function TakeoffEditor({
                     if (t.tool === "count")
                       return <circle key={it.id} cx={it.points[0][0]} cy={it.points[0][1]} r={markR} fill={t.color} fillOpacity={0.85} strokeWidth={on ? 3 : 1} {...common} stroke={on ? "#000" : "#fff"} />;
                     if (t.tool === "line") return <polyline key={it.id} points={poly(it.points)} fill="none" strokeWidth={on ? 5 : 3} strokeLinecap="round" strokeLinejoin="round" {...common} />;
-                    return <polygon key={it.id} points={poly(pts(it))} fill={t.color} fillOpacity={t.id === "masonry" || t.id === "rough_opening" ? 0.35 : 0.18} strokeWidth={on ? 4 : 2} {...common} />;
+                    return <polygon key={it.id} points={poly(pts(it))} fill={t.color} fillOpacity={t.key === "openings_sf" || t.id === "masonry" ? 0.35 : 0.18} strokeWidth={on ? 4 : 2} {...common} />;
                   })}
                   {/* in-progress shape */}
                   {draft.length > 0 && (
@@ -800,7 +874,7 @@ export function TakeoffEditor({
                 <div className="mt-2 flex gap-3">
                   {sel.ai && (
                     <button type="button" onClick={() => acceptAi(sel.id)} className="text-violet-700 hover:underline dark:text-violet-300">
-                      Accept this BTRbot line
+                      Accept this {bot} line
                     </button>
                   )}
                   <button
@@ -820,7 +894,7 @@ export function TakeoffEditor({
 
           {(ai.message || aiCount > 0) && (
             <div className="rounded-md border border-violet-300 bg-violet-50/60 p-3 dark:border-violet-800 dark:bg-violet-950/40">
-              <div className="text-xs font-semibold tracking-wide text-violet-800 uppercase dark:text-violet-300">BTRbot measure</div>
+              <div className="text-xs font-semibold tracking-wide text-violet-800 uppercase dark:text-violet-300">{bot} measure</div>
               {ai.message && <p className="mt-1">{ai.message}</p>}
               {ai.cannot && ai.cannot.length > 0 && (
                 <div className="mt-1 text-xs">
@@ -838,11 +912,11 @@ export function TakeoffEditor({
                     Accept all {aiCount} after checking
                   </button>
                   <button type="button" onClick={() => commitItems(items.filter((i) => !i.ai))} className="rounded-md border px-2.5 py-1 hover:bg-accent">
-                    Remove BTRbot drafts
+                    Remove {bot} drafts
                   </button>
                 </div>
               )}
-              <p className="mt-2 text-xs text-muted-foreground">BTRbot only draws; lengths and areas come from this sheet&apos;s checked scale. Set and check the scale first.</p>
+              <p className="mt-2 text-xs text-muted-foreground">{bot} only draws; lengths and areas come from this sheet&apos;s checked scale. Set and check the scale first.</p>
             </div>
           )}
 

@@ -4,6 +4,7 @@ import { aiConfigured } from "@/lib/ai/claude";
 import { providerConfigured } from "@/lib/comms/mailbox";
 import { oauthConfigured, type OAuthProvider } from "./oauth";
 import { serviceAccountEmail, serviceAccountProblem } from "./google-sa";
+import { appName, botName, shortName } from "@/lib/company-profile";
 
 export type IntegrationStatus = "connected" | "ready" | "not_configured" | "manual_only";
 export type Integration = {
@@ -34,10 +35,10 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
   return [
     {
       key: "anthropic",
-      name: "BTRbot (Claude AI)",
+      name: `${botName()} (Claude AI)`,
       does: "Reads EagleView reports and plans, summarizes job email, writes catch-ups, and powers the estimator assistant. It never does the math and never invents prices.",
       needs: ["ANTHROPIC_API_KEY", "ANTHROPIC_MODEL (default claude-opus-5-5)"],
-      fallback: "Enter measurements and notes by hand; BTRbot buttons are disabled.",
+      fallback: `Enter measurements and notes by hand; ${botName()} buttons are disabled.`,
       status: aiConfigured() ? "connected" : "not_configured",
       statusText: aiConfigured() ? "Configured" : "ANTHROPIC_API_KEY not set",
     },
@@ -74,18 +75,18 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
           ? { status: "not_configured" as const, statusText: "Service account key can't be read" }
           : oauth("GOOGLE_DRIVE", "you")),
       note: serviceAccountEmail()
-        ? `BTRpro reads Drive as ${serviceAccountEmail()}. Share each folder or shared drive it should read with that address (Viewer).`
+        ? `${appName()} reads Drive as ${serviceAccountEmail()}. Share each folder or shared drive it should read with that address (Viewer).`
         : serviceAccountProblem()
           ? `GOOGLE_SERVICE_ACCOUNT_JSON is set, but: ${serviceAccountProblem()}`
           : process.env.GOOGLE_SERVICE_ACCOUNT_JSON === undefined
-            ? "GOOGLE_SERVICE_ACCOUNT_JSON isn't reaching the app — check the variable is on the BTRpro service (not the project's shared variables only) and spelled exactly, then redeploy."
+            ? `GOOGLE_SERVICE_ACCOUNT_JSON isn't reaching the app — check the variable is on the ${appName()} service (not the project's shared variables only) and spelled exactly, then redeploy.`
             : "Without a service account, each user connects their own Drive and the price-sheet sync runs as the Admin who saved the folder.",
     },
     {
       key: "quickbooks",
       name: "QuickBooks Online",
       does: "Sync customers, invoices, payments, and vendor bills; bring actual job costs into job costing.",
-      needs: ["APP_URL", "QBO_CLIENT_ID", "QBO_CLIENT_SECRET (Intuit developer app)", "An Admin connects BTR's company once"],
+      needs: ["APP_URL", "QBO_CLIENT_ID", "QBO_CLIENT_SECRET (Intuit developer app)", `An Admin connects ${shortName()}'s company once`],
       fallback: "CSV export/import.",
       ...oauth("QUICKBOOKS", "company"),
       note: "Invoice and bill sync is built with job costing and invoicing.",
@@ -94,7 +95,7 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
       key: "procore",
       name: "Procore (commercial GCs)",
       does: "Link a job to the GC's Procore project and pull change orders, RFIs, submittals, and schedule dates.",
-      needs: ["APP_URL", "PROCORE_CLIENT_ID", "PROCORE_CLIENT_SECRET (Procore developer app)", "The GC adds BTR to their project"],
+      needs: ["APP_URL", "PROCORE_CLIENT_ID", "PROCORE_CLIENT_SECRET (Procore developer app)", `The GC adds ${shortName()} to their project`],
       fallback: "Forward or upload CO/RFI PDFs to the job.",
       ...oauth("PROCORE", "company"),
       note: "Change-order sync is built with change orders.",
@@ -103,31 +104,31 @@ export async function integrationCatalog(userId: string): Promise<Integration[]>
       key: "buildertrend",
       name: "Buildertrend (residential builders)",
       does: "Pull builder change orders and schedules for new-construction jobs.",
-      needs: ["API or partner access from Buildertrend for BTR's account"],
+      needs: [`API or partner access from Buildertrend for ${shortName()}'s account`],
       fallback: "Forward the builder's CO notifications to the job's email address, or upload the PDFs.",
       status: "manual_only",
       statusText: "Needs partner access from Buildertrend",
-      note: "I couldn't confirm a public Buildertrend API that a subcontractor can build against. If Buildertrend grants BTR access, it plugs in here like Procore.",
+      note: `I couldn't confirm a public Buildertrend API that a subcontractor can build against. If Buildertrend grants ${shortName()} access, it plugs in here like Procore.`,
     },
     {
       key: "eagleview",
       name: "EagleView",
-      does: "Order roof and walls reports from the job and receive them automatically, then read them with BTRbot.",
-      needs: ["EagleView API credentials for BTR's account (EAGLEVIEW_CLIENT_ID / EAGLEVIEW_CLIENT_SECRET)"],
+      does: `Order roof and walls reports from the job and receive them automatically, then read them with ${botName()}.`,
+      needs: [`EagleView API credentials for ${shortName()}'s account (EAGLEVIEW_CLIENT_ID / EAGLEVIEW_CLIENT_SECRET)`],
       fallback: "Upload the EagleView PDF to the job's Documents tab; it's read and queued for confirmation.",
       ...(oauthConfigured("EAGLEVIEW") ? oauth("EAGLEVIEW", "company") : { status: "manual_only" as const, statusText: "Upload reports for now" }),
       connectUrl: undefined,
-      note: "Connect on the Connections page once EagleView issues BTR's API access (client ID, secret, sign-in addresses).",
+      note: `Connect on the Connections page once EagleView issues ${shortName()}'s API access (client ID, secret, sign-in addresses).`,
     },
     {
       key: "abc",
       name: "ABC Supply (myABCsupply)",
       does: "Branch #112 pricing and items, place orders from the estimate, track orders and deliveries, and import invoices into job costing.",
-      needs: ["API access granted by ABC Supply for BTR's account (ABC_CLIENT_ID / ABC_CLIENT_SECRET)"],
+      needs: [`API access granted by ABC Supply for ${shortName()}'s account (ABC_CLIENT_ID / ABC_CLIENT_SECRET)`],
       fallback: "Price-sheet upload (Sheets), emailed/PDF orders, invoice CSV import.",
       ...(oauthConfigured("ABC_SUPPLY") ? oauth("ABC_SUPPLY", "company") : { status: "manual_only" as const, statusText: "Price sheets and CSV for now" }),
       connectUrl: undefined,
-      note: "Connect on the Connections page: sign in with BTR's ABC account and BTRpro reads orders and invoices every 30 minutes. API access: apidocs.abcsupply.com or your ABC rep (Michael Poe).",
+      note: `Connect on the Connections page: sign in with ${shortName()}'s ABC account and ${appName()} reads orders and invoices every 30 minutes. API access: apidocs.abcsupply.com or your ABC rep (Michael Poe).`,
     },
     {
       key: "companycam",

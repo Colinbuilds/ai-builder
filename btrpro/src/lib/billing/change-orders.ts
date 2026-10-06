@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { round } from "@/lib/calc/core";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { totalsFor } from "@/lib/estimates/service";
 import { getSettings } from "@/lib/settings";
 import { proposalPrice } from "@/lib/proposals/price";
@@ -38,6 +38,7 @@ export async function createChangeOrderFromEstimate(projectId: string, input: { 
 }
 
 export async function sendChangeOrder(id: string, to: { name: string | null; email: string | null }, actor: CostActor) {
+  const company = await getCompany();
   if (actor.role === "VIEWER") throw new ChangeOrderError("Viewers can't send change orders.");
   const co = await prisma.changeOrder.findUniqueOrThrow({ where: { id }, include: { project: true } });
   if (co.status !== "PENDING") throw new ChangeOrderError(`${co.number} is already ${co.status.toLowerCase()}.`);
@@ -48,8 +49,8 @@ export async function sendChangeOrder(id: string, to: { name: string | null; ema
   if (to.email && emailConfigured())
     await sendEmail({
       to: to.email,
-      subject: `${BTR.name} change order ${co.number} — ${co.project.name}`,
-      text: `${to.name ?? ""}\n\nPlease review and sign change order ${co.number} for ${co.project.name}: ${co.description} ($${co.amount.toFixed(2)}).\n\n${changeOrderUrl(token)}\n\n${BTR.name} · ${BTR.phone}`,
+      subject: `${company.name} change order ${co.number} — ${co.project.name}`,
+      text: `${to.name ?? ""}\n\nPlease review and sign change order ${co.number} for ${co.project.name}: ${co.description} ($${co.amount.toFixed(2)}).\n\n${changeOrderUrl(token)}\n\n${company.name} · ${company.phone}`,
     }).then(
       () => (emailed = true),
       (e) => console.error("CO email failed", e),
@@ -65,6 +66,7 @@ export async function getChangeOrderByToken(token: string) {
 }
 
 export async function signChangeOrder(token: string, s: { name: string; email: string; consent: boolean; signatureImage: string | null; ip: string | null }) {
+  const company = await getCompany();
   const co = await getChangeOrderByToken(token);
   if (!co) throw new ChangeOrderError("This change order isn't available.");
   if (co.status !== "PENDING") throw new ChangeOrderError(`This change order was already ${co.status.toLowerCase()}.`);
@@ -72,8 +74,8 @@ export async function signChangeOrder(token: string, s: { name: string; email: s
   if (!s.consent) throw new ChangeOrderError("Check the box to agree to sign electronically.");
   if (s.signatureImage && (!s.signatureImage.startsWith("data:image/png;base64,") || s.signatureImage.length > 400_000)) throw new ChangeOrderError("The signature image didn't come through. Clear it and sign again.");
   const now = new Date();
-  const w = await PdfWriter.create({ title: `Change order ${co.number}`, footer: `${BTR.name} · ${BTR.phone}` });
-  w.text(`${BTR.name.toUpperCase()}  ·  ${BTR.address}  ·  ${BTR.phone}`, { size: 8, gap: 8 });
+  const w = await PdfWriter.create({ title: `Change order ${co.number}`, footer: `${company.name} · ${company.phone}` });
+  w.text(`${company.name.toUpperCase()}  ·  ${company.address}  ·  ${company.phone}`, { size: 8, gap: 8 });
   w.heading(`${co.kind === "SUPPLEMENT" ? "Supplement" : "Change order"} ${co.number}`);
   w.text(`Job: ${co.project.name}${co.project.address ? ` · ${co.project.address}` : ""}`, { size: 10, gap: 4 });
   w.text(co.description, { size: 11, gap: 4 });

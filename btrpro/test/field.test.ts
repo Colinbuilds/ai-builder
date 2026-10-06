@@ -56,3 +56,37 @@ describe("office desk", () => {
     expect((await officeDesk()).form17.some((p) => p.id === job.id)).toBe(false);
   });
 });
+
+describe("extra work tags", () => {
+  it("logs hours, materials and a signature, prices into a change order, and ages on the desk", async () => {
+    const { logExtraWork, priceTag, extrasDesk, tagSummary } = await import("@/lib/production/field");
+    const { a, crew, job } = await setup();
+    const who = { crewId: crew.id, name: crew.name };
+    await prisma.workOrder.create({ data: { projectId: job.id, crewId: crew.id, number: `WO-T-${Math.random().toString(36).slice(2, 8)}`, token: Math.random().toString(36).slice(2), createdBy: "t" } });
+    const base = { note: "TEST_ONLY added cricket behind chimney", workDate: new Date(Date.now() - 10 * 86_400_000), men: 2, hours: 6, materials: "2 sheets OSB", directedBy: "TEST_ONLY super", signerName: null, signatureImage: null };
+    await expect(logExtraWork(who, job.id, base, [])).rejects.toThrow(/photo or get the super/);
+    await expect(logExtraWork(who, job.id, { ...base, signatureImage: "data:image/png;base64,AAAA" }, [])).rejects.toThrow(/name/);
+    await expect(logExtraWork(who, job.id, { ...base, hours: -1 }, [{ bytes: PNG, name: "a.png" }])).rejects.toThrow(/man-hours/);
+    const tag = await logExtraWork(who, job.id, { ...base, signerName: "TEST_ONLY Sam", signatureImage: "data:image/png;base64,AAAA" }, []);
+    expect(tag.kind).toBe("EXTRA");
+    expect(tag.signedAt).not.toBeNull();
+    expect(tagSummary(tag)).toMatch(/2 workers, 6 man-hours.*Materials: 2 sheets OSB.*Signed on site by TEST_ONLY Sam/);
+
+    let d = await extrasDesk();
+    const row = d.rows.find((r) => r.id === tag.id)!;
+    expect(row.stage).toBe("UNPRICED");
+    expect(row.days).toBe(10);
+    expect(d.oldestUnpriced).toBeGreaterThanOrEqual(10);
+
+    const co = await priceTag(tag.id, { amount: 640, costImpact: 300, description: null }, a);
+    expect(co.status).toBe("PENDING");
+    expect(co.description).toMatch(/cricket/);
+    expect(await prisma.task.count({ where: { auto: `ISSUE:${tag.id}`, doneAt: null } })).toBe(0);
+    await expect(priceTag(tag.id, { amount: 1, costImpact: null, description: null }, a)).rejects.toThrow(/already/);
+    d = await extrasDesk();
+    expect(d.rows.find((r) => r.id === tag.id)?.stage).toBe("AWAITING_SIGNATURE");
+
+    await prisma.changeOrder.update({ where: { id: co.id }, data: { status: "APPROVED" } });
+    expect((await extrasDesk()).rows.some((r) => r.id === tag.id)).toBe(false);
+  });
+});

@@ -1,14 +1,18 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getWorkOrderByToken, markWorkOrderViewed } from "@/lib/production/service";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { CrewWorkOrderButtons } from "@/components/production/forms";
 
-export const metadata: Metadata = { title: `Work order — ${BTR.name}`, robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const co = await getCompany();
+  return { title: `Work order — ${co.name}`, robots: { index: false } };
+}
 const fmt = (d: Date | null) => (d ? d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }) : "TBD");
 
 /** What the crew sees on their phone. No login; the link is the key. No costs except their own pay. */
 export default async function CrewWorkOrder({ params }: { params: Promise<{ token: string }> }) {
+  const co = await getCompany();
   const { token } = await params;
   const w = await getWorkOrderByToken(token);
   if (!w) notFound();
@@ -22,7 +26,7 @@ export default async function CrewWorkOrder({ params }: { params: Promise<{ toke
     <div className="mx-auto flex max-w-xl flex-col gap-5 py-2">
       <header>
         <p className="text-sm text-muted-foreground">
-          {BTR.name} · {BTR.phone}
+          {co.name} · {co.phone}
         </p>
         <h1 className="text-2xl font-semibold">{p.name}</h1>
         <p className="text-sm">

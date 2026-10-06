@@ -1,4 +1,5 @@
-// Fixed company facts from CLAUDE.md §1. Not pricing data.
+// BTR's company facts from CLAUDE.md §1 — the defaults for the white-label profile (company-profile.ts). Not pricing data.
+// Client-safe (no DB); server code reads getCompany() instead of these.
 export const BTR = {
   name: "BTR Contracting",
   address: "10852 Hanover St., Omaha, NE 68142",
@@ -20,8 +21,9 @@ export const SUPPLIER = {
   surchargeNote: "Credit card surcharge up to 3% where permitted; no surcharge on debit/ACH/check/cash.",
 } as const;
 
-/** Warning shown wherever a sheet issued to a different ABC account is used. */
-export function accountWarning(account: string | null | undefined): string | null {
-  if (!account || account.includes(BTR.abcAccount)) return null;
-  return `Sheet is issued to account ${account}, not BTR's ${BTR.abcAccount}. Confirm pricing applies to BTR before bid use.`;
+/** Warning shown wherever a sheet issued to a different ABC account is used. `co` is the white-label company (default BTR). */
+export function accountWarning(account: string | null | undefined, co: { shortName: string; abcAccount: string } = { shortName: "BTR", abcAccount: BTR.abcAccount }): string | null {
+  if (!account || account.includes(co.abcAccount)) return null;
+  const own = co.shortName.endsWith("s") ? `${co.shortName}'` : `${co.shortName}'s`;
+  return `Sheet is issued to account ${account}, not ${own} ${co.abcAccount}. Confirm pricing applies to ${co.shortName} before bid use.`;
 }

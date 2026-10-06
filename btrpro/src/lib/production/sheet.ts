@@ -35,6 +35,10 @@ export type ProdRow = {
   billed: string | null;
   btrPaid: string | null;
   billingNotes: string | null;
+  // the same dates as real dates, when the sheet cell holds one (drives crew pace, builder pay pace, revenue)
+  completedAt: Date | null;
+  billedAt: Date | null;
+  paidAt: Date | null;
 };
 
 const txt = (v: string | undefined) => {
@@ -116,6 +120,9 @@ function residentialTab(tab: Tab): ProdRow[] {
       billed: dateText(r[14]),
       btrPaid: dateText(r[15]),
       billingNotes: txt(r[16]),
+      completedAt: date(r[10]),
+      billedAt: date(r[14]),
+      paidAt: date(r[15]),
     };
     out.push({ ...row, sourceTab: name, sourceRow: i + 1, sourceKey: key([builder, location, row.type, row.estimateNo]) });
   });
@@ -177,6 +184,9 @@ function commercialTab(tab: Tab): ProdRow[] {
       billed: null,
       btrPaid: null,
       billingNotes: txt(r[14]),
+      completedAt: date(r[13]),
+      billedAt: null,
+      paidAt: null,
     };
     out.push({ ...row, sourceTab: name, sourceRow: i + 1, sourceKey: key([row.project, b, row.location, row.type, row.crew]) });
   });

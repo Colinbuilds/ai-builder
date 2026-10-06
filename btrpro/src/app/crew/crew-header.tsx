@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { crewLogoutAction } from "./actions";
+import { shortName } from "@/lib/company-profile";
 
 export function CrewHeader({ name, back }: { name: string; back?: boolean }) {
   return (
@@ -9,7 +10,7 @@ export function CrewHeader({ name, back }: { name: string; back?: boolean }) {
           ← Jobs
         </Link>
       ) : (
-        <span className="rounded bg-white px-1.5 py-0.5 text-sm font-black tracking-wider text-btr-black">BTR</span>
+        <span className="rounded bg-white px-1.5 py-0.5 text-sm font-black tracking-wider text-btr-black">{shortName()}</span>
       )}
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
       <form action={crewLogoutAction}>

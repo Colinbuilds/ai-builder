@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { pickers, PROD_BOARDS } from "@/lib/production/board";
 import { ProdForm } from "@/components/production/prod-forms";
 import { deleteProdAction } from "../actions";
+import { appName } from "@/lib/company-profile";
 
 export default async function ProdLinePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -21,7 +22,7 @@ export default async function ProdLinePage({ params }: { params: Promise<{ id: s
         <h1 className="text-2xl font-semibold">{l.location ?? l.builder}</h1>
         <span className="text-sm text-muted-foreground">
           {[l.builder, l.type].filter(Boolean).join(" · ")}
-          {l.source === "SHEET" ? ` · from the sheet (${l.sourceTab}, row ${l.sourceRow})` : l.sourceKey ? " · edited in BTRpro (the sheet sync leaves it alone)" : " · added in BTRpro"}
+          {l.source === "SHEET" ? ` · from the sheet (${l.sourceTab}, row ${l.sourceRow})` : l.sourceKey ? ` · edited in ${appName()} (the sheet sync leaves it alone)` : ` · added in ${appName()}`}
         </span>
       </div>
       {user.role === "VIEWER" ? (

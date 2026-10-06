@@ -6,13 +6,14 @@ import { ASSISTANT_TOOLS, runTool, type ToolCtx } from "./assistant-tools";
 import { INTAKE_BY_KEY } from "@/lib/projects/intake";
 import { sheetDateStatus } from "@/lib/sheets/date-status";
 import { STAGE_LABEL } from "@/lib/projects/workflow";
+import { DEFAULT_PROFILE, botName, getCompany, type Company, shortName, exemptForm } from "@/lib/company-profile";
 
 const MAX_TOOL_ROUNDS = 12;
 
-const ASSISTANT_RULES = `You are BTRbot, the estimator assistant inside BTRpro for one BTR job (introduce yourself as BTRbot if asked who you are). The user is on the job's page.
+const assistantRules = (co: Company) => `You are ${co.assistantName}, the estimator assistant inside ${co.productName} for one ${co.shortName} job (introduce yourself as ${co.assistantName} if asked who you are). The user is on the job's page.
 - Use the tools for every fact: prices and item numbers only from search_price_items / get_price_item, measurements only from get_measurements, and all quantities from run_calc. Never do takeoff arithmetic yourself.
 - To put something on the estimate, call propose_line_items; lines arrive as PENDING_AI for a person to accept. Say so.
-- Follow CLAUDE.md exactly: missing information stays MISSING, assumptions need approval and are NOT FOR FINAL BID, no substitutions without explicit approval.
+- Follow ${co.name === DEFAULT_PROFILE.name ? "CLAUDE.md" : "the estimating rules above"} exactly: missing information stays MISSING, assumptions need approval and are NOT FOR FINAL BID, no substitutions without explicit approval.
 - Ask one targeted question at a time. Be brief and practical; results over explanations. Markdown tables are fine.
 - You work only while answering this message. Never say you'll do something later or in the background.`;
 
@@ -33,8 +34,8 @@ async function jobSnapshot(projectId: string) {
     p.address && `Address: ${p.address}.`,
     p.clientCompany && `Client: ${p.clientCompany.name}.`,
     p.clientCompany?.type === "BUILDER" &&
-      `PRICING: this is a ${p.clientCompany.name} job. Price only from ${p.clientCompany.name}'s own sheets (the tools already do). Items not on them: ${p.clientCompany.pricingFallback === "STANDARD" ? "BTR standard price, flagged" : "MISSING"}. Never quote BTR standard prices as builder pricing.`,
-    p.isPublic && `Public job${p.isTaxExempt ? `, tax-exempt, Form 17 ${p.form17Status}` : ""}.`,
+      `PRICING: this is a ${p.clientCompany.name} job. Price only from ${p.clientCompany.name}'s own sheets (the tools already do). Items not on them: ${p.clientCompany.pricingFallback === "STANDARD" ? `${shortName()} standard price, flagged` : "MISSING"}. Never quote ${shortName()} standard prices as builder pricing.`,
+    p.isPublic && `Public job${p.isTaxExempt ? `, tax-exempt, ${exemptForm().short} ${p.form17Status}` : ""}.`,
     p.isInsuranceClaim && `Insurance claim ${p.claimNumber ?? ""} with ${p.insuranceCarrier ?? "carrier"}.`,
     `Missing intake: ${missing.join(", ") || "none"}.`,
     `Measurements by status: ${measures.map((m) => `${m.status} ${m._count}`).join(", ") || "none"}.`,
@@ -54,7 +55,7 @@ export async function runAssistant(projectId: string, user: { id: string; name: 
     ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     { role: "user", content: `${user.name}: ${userText}` },
   ];
-  const sys = [...system(ASSISTANT_RULES), { type: "text" as const, text: `Current job snapshot:\n${await jobSnapshot(projectId)}` }];
+  const sys = [...(await system(assistantRules(await getCompany()))), { type: "text" as const, text: `Current job snapshot:\n${await jobSnapshot(projectId)}` }];
   const ctx: ToolCtx = { projectId, user };
   const trace: { name: string; input: unknown; ok: boolean }[] = [];
   let finalText = "";
@@ -104,7 +105,7 @@ export async function runAssistant(projectId: string, user: { id: string; name: 
       e instanceof AiRefusalError
         ? e.message
         : e instanceof Anthropic.APIError
-          ? `BTRbot service error (${e.status ?? "network"}).`
+          ? `${botName()} service error (${e.status ?? "network"}).`
           : e instanceof Error
             ? e.message
             : String(e);

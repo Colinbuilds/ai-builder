@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* Joblight brand: night ink, warm light. */
+:root {
+  --bg: #fbfaf7;
+  --surface: #ffffff;
+  --ink: #12151c;
+  --muted: #5b6270;
+  --line: #e7e4dc;
+  --light: #f5a524;
+  --light-strong: #d98a0b;
+  --light-soft: #fff4dd;
+  --night: #12151c;
+  --night-ink: #f4f1ea;
+  --ok: #1f8a4c;
+  --bad: #c2362b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1016;
+    --surface: #151922;
+    --ink: #eef0f4;
+    --muted: #9aa3b2;
+    --line: #262c38;
+    --light: #f7b23b;
+    --light-strong: #f5a524;
+    --light-soft: #2a2213;
+    --night: #070a0f;
+    --night-ink: #f4f1ea;
+    --ok: #4cc27f;
+    --bad: #f0675c;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-light: var(--light);
+  --color-light-strong: var(--light-strong);
+  --color-light-soft: var(--light-soft);
+  --color-night: var(--night);
+  --color-night-ink: var(--night-ink);
+  --color-ok: var(--ok);
+  --color-bad: var(--bad);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.field {
+  @apply h-10 w-full rounded-md border border-line bg-surface px-3 text-sm outline-none focus:border-light;
+}
+.btn {
+  @apply inline-flex h-10 items-center justify-center gap-2 rounded-md bg-light px-4 text-sm font-semibold text-night hover:bg-light-strong disabled:opacity-60;
+}
+.btn-ghost {
+  @apply inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-4 text-sm font-medium hover:bg-light-soft;
+}

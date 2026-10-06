@@ -25,6 +25,8 @@ export const MEASUREMENTS = [
   { key: "wall_total_sf", label: "Total wall area", unit: "SF", group: "wall" },
   { key: "siding_sf", label: "Siding area (EagleView Siding category)", unit: "SF", group: "wall" },
   { key: "masonry_sf", label: "Masonry area (never in siding math — SID-01)", unit: "SF", group: "wall" },
+  { key: "shake_sf", label: "Shake / accent siding area (part of siding)", unit: "SF", group: "wall" },
+  { key: "lap_siding_sf", label: "Lap siding area (siding − shake)", unit: "SF", group: "wall" },
   { key: "openings_sf", label: "Window & door openings", unit: "SF", group: "wall" },
   { key: "window_count", label: "Windows", unit: "EA", group: "wall" },
   { key: "door_count", label: "Doors", unit: "EA", group: "wall" },

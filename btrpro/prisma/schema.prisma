@@ -219,6 +219,8 @@ model Project {
   companyCamId       String?
   // Drive folder CompanyCam syncs this job's photos into (BTR Contracting/CompanyCam/<project - address>)
   photoFolderId      String?
+  // the job's folder in the company jobs Drive (set by the Drive job import; files copied, Drive untouched)
+  driveFolderId      String?
   eagleViewReportId  String?
   eagleViewOrderedAt DateTime?
   leadSource         String?
@@ -231,6 +233,7 @@ model Project {
   payContracts       PayContract[]
   // ready-to-schedule items ticked by hand: { color, permit, dumpster, notified }
   readyChecks        Json?
+  webLeads           WebLead[]
   // the customer's property this job is at (multi-family / commercial portfolios)
   propertyId         String?
   property           Property?         @relation(fields: [propertyId], references: [id], onDelete: SetNull)
@@ -293,6 +296,10 @@ model Project {
   // categories an Admin/estimator marked "no bills expected" for close-out
   costNoneExpected Json?
   costClosedAt     DateTime?
+  // WIP: the PM's estimate of cost still to come (blank = budget − cost to date), and when it was last updated
+  wipEtc           Float?
+  wipEtcAt         DateTime?
+  wipEtcBy         String?
   costClosedBy     String?
   // the P&L as it stood when the job was closed; later edits are Admin-only and audit-logged
   finalPnl         Json?
@@ -1707,6 +1714,17 @@ model FieldIssue {
   photos     Json
   // OPEN | PRICED | NO_CHARGE
   status     String    @default("OPEN")
+  // extra-work (T&M) tag: what the crew spent, and who on site authorized it
+  kind           String?   // ISSUE (found, needs pricing before work) | EXTRA (extra work done / directed on site)
+  workDate       DateTime?
+  men            Int?
+  hours          Float?    // total man-hours
+  materials      String?
+  directedBy     String?   // super / builder rep who asked for it
+  signerName     String?
+  signatureImage String?
+  signedAt       DateTime?
+  changeOrderId  String?
   resolution String?
   resolvedBy String?
   resolvedAt DateTime?
@@ -1904,4 +1922,289 @@ model SupplierFeed {
   @@unique([provider, kind, externalId])
   @@index([projectId])
   @@index([date])
+}
+
+// One job folder in the company jobs Drive, found by the Drive job import (Settings → Move jobs from Drive).
+// Drive is only read; files are copied into the BTRpro job's Documents.
+model DriveJobFolder {
+  id          String    @id @default(cuid())
+  folderId    String    @unique
+  name        String
+  modifiedAt  DateTime?
+  // PENDING | DONE | ERROR | SKIPPED
+  status      String    @default("PENDING")
+  fileCount   Int?
+  totalBytes  Float?
+  filesAdded  Int       @default(0)
+  filesSkipped Int      @default(0)
+  errors      Json?
+  projectId   String?
+  matchedBy   String?
+  lastRunAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+}
+
+// Month-end WIP line kept for each open job, so fade and over/under billing can be compared month to month.
+model WipSnapshot {
+  id            String   @id @default(cuid())
+  month         String
+  projectId     String
+  revenue       Float
+  costToDate    Float
+  estTotalCost  Float
+  pctComplete   Float
+  earned        Float
+  billed        Float
+  overUnder     Float
+  projectedGp   Float
+  bidMarginPct  Float?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+
+  @@unique([month, projectId])
+  @@index([projectId])
+}
+
+// One-off cash items for the 13-week forecast (a loan draw, an equipment payment, a big expected check).
+model CashItem {
+  id        String   @id @default(cuid())
+  date      DateTime
+  label     String
+  // positive = money in, negative = money out
+  amount    Float
+  createdBy String?
+  createdAt DateTime @default(now())
+}
+
+// BTRbot's read of a contract / subcontract on a job: risky clauses quoted word for word, key terms, and what's missing.
+model ContractReview {
+  id         String   @id @default(cuid())
+  projectId  String
+  documentId String
+  summary    String
+  terms      Json
+  findings   Json
+  missing    Json
+  createdBy  String?
+  createdAt  DateTime @default(now())
+
+  @@index([projectId])
+  @@index([documentId])
+}
+
+// Code & spec library: links the team adds (codes, manufacturer installation instructions, standards).
+model LibraryLink {
+  id           String   @id @default(cuid())
+  // CODE | MANUFACTURER | STANDARD | LOCAL
+  kind         String
+  title        String
+  url          String
+  jurisdiction String?
+  note         String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+}
+
+// A code / spec question answered by BTRbot with live web research, with the sources it cited.
+model CodeQuestion {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  sources      Json
+  jurisdiction String?
+  projectId    String?
+  officialOnly Boolean  @default(false)
+  createdBy    String?
+  createdAt    DateTime @default(now())
+
+  @@index([projectId])
+}
+
+// ---------- Safety & prequalification ----------
+// GCs prequalify subs on the OSHA 300A summary for the last 3 years, EMR (experience mod) on the carrier's
+// letter, TRIR/DART rates, a safety program and a bonding letter. These hold the raw facts; the packet is built from them.
+model SafetyIncident {
+  id             String   @id @default(cuid())
+  date           DateTime
+  // OBSERVATION | NEAR_MISS | FIRST_AID | RECORDABLE | RESTRICTED | LOST_TIME | FATALITY
+  kind           String
+  personName     String?
+  crewId         String?
+  projectId      String?
+  description    String
+  daysAway       Int?
+  daysRestricted Int?
+  correctiveAction String?
+  createdBy      String
+  createdAt      DateTime @default(now())
+
+  @@index([date])
+}
+
+model ToolboxTalk {
+  id        String   @id @default(cuid())
+  date      DateTime
+  topic     String
+  presenter String
+  crewId    String?
+  projectId String?
+  // one name per line
+  attendees String
+  notes     String?
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+// hours worked and average headcount per calendar year (the 300A denominators) and the EMR the carrier issued
+model SafetyYear {
+  year         Int      @id
+  hoursWorked  Float?
+  avgEmployees Float?
+  emr          Float?
+  updatedBy    String?
+  updatedAt    DateTime @updatedAt
+}
+
+// company-level files: COI, EMR letter, bonding letter, safety manual, W-9, licenses
+model CompanyFile {
+  id          String    @id @default(cuid())
+  kind        String
+  title       String
+  fileUrl     String
+  contentType String?
+  expiresAt   DateTime?
+  uploadedBy  String
+  createdAt   DateTime  @default(now())
+}
+
+// Company playbook: how BTR does its repeat work, written down so it doesn't live in one person's head.
+// Each procedure has an owner and a review cycle; overdue reviews show on the playbook page.
+model Sop {
+  id                String    @id @default(cuid())
+  title             String
+  area              String // OFFICE | ESTIMATING | PRODUCTION | PURCHASING | SAFETY | FINANCE
+  ownerName         String?
+  body              String // markdown steps
+  reviewEveryMonths Int       @default(12)
+  reviewedAt        DateTime?
+  reviewedBy        String?
+  draft             Boolean   @default(true)
+  updatedBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// ---------- Public bids ----------
+// Bid boards BTRpro reads every morning: SDI's plan room, county/city IonWave and CivicEngage boards,
+// any other page (read by BTRbot), and SAM.gov federal work. Each posting lands in PublicBid for triage.
+model BidSource {
+  id            String      @id @default(cuid())
+  name          String
+  // SDI | IONWAVE | CIVIC | PAGE | SAM
+  kind          String
+  url           String
+  // used when a posting doesn't say where (a county board's own town)
+  defaultCity   String?
+  defaultState  String?
+  enabled       Boolean     @default(true)
+  builtIn       Boolean     @default(false)
+  lastCheckedAt DateTime?
+  lastOkAt      DateTime?
+  lastError     String?
+  lastCount     Int?
+  contentHash   String?
+  createdBy     String?
+  createdAt     DateTime    @default(now())
+  bids          PublicBid[]
+}
+
+model PublicBid {
+  id            String    @id @default(cuid())
+  sourceId      String
+  source        BidSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  key           String    @unique
+  title         String
+  number        String?
+  agency        String?
+  city          String?
+  state         String?
+  dueAt         DateTime?
+  postedAt      DateTime?
+  url           String?
+  summary       String?
+  // straight-line miles to the nearer of Omaha / Lincoln (null = town not found)
+  miles         Float?
+  nearest       String?
+  // ROOFING | EXTERIOR | BUILDING | OTHER
+  relevance     String
+  // NEW | WATCH | PASS | ADDED
+  status        String    @default("NEW")
+  decidedBy     String?
+  decidedAt     DateTime?
+  estimateLogId String?
+  firstSeenAt   DateTime  @default(now())
+  lastSeenAt    DateTime  @default(now())
+  // no longer listed on the source
+  gone          Boolean   @default(false)
+
+  @@index([status, dueAt])
+}
+
+// ---------- Customer request form (public link) ----------
+// A homeowner or property manager fills in /quote: who they are, the property, what they want done, photos.
+// It becomes a LEAD job right away; they can then try looks on their own photo (renderings); the sales
+// manager assigns a salesperson, who sets up the inspection.
+model WebLead {
+  id              String    @id @default(cuid())
+  token           String    @unique
+  projectId       String?
+  project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  firstName       String
+  lastName        String
+  phone           String
+  email           String
+  contactPref     String? // CALL | TEXT | EMAIL
+  textOk          Boolean   @default(false)
+  street          String
+  city            String
+  state           String
+  zip             String
+  // HOME | TOWNHOME | MULTIFAMILY | COMMERCIAL | CHURCH_SCHOOL | OTHER
+  propertyType    String
+  // OWNER | PROPERTY_MANAGER | TENANT | BUILDER | OTHER
+  relationship    String
+  workTypes       Json
+  description     String
+  stories         String?
+  currentRoof     String?
+  roofAge         String?
+  insurance       Boolean   @default(false)
+  insuranceCarrier String?
+  claimNumber     String?
+  dateOfLoss      DateTime?
+  timeline        String?
+  heardFrom       String?
+  inspectionTimes String?
+  // [{ url, type }]
+  photos          Json
+  // [{ url, label, choices, favorite, at }]
+  renderings      Json?
+  renderCount     Int       @default(0)
+  // NEW | ASSIGNED | SCHEDULED | CLOSED
+  status          String    @default("NEW")
+  assignedToId    String?
+  assignedAt      DateTime?
+  assignedBy      String?
+  inspectionAt    DateTime?
+  inspectionWhen  String?
+  ip              String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status, createdAt])
 }

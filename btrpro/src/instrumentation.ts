@@ -1,6 +1,9 @@
 // Runs once when the server starts (Next.js instrumentation hook).
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs" && process.env.NODE_ENV === "production") {
+    // load the white-label company profile so sync labels (companySync) are right from the first request
+    const { getCompany } = await import("@/lib/company-profile");
+    await getCompany().catch(() => null);
     const { startSheetWatcher } = await import("@/lib/sheets/drive-sync");
     startSheetWatcher();
     const { startEstimatingWatcher } = await import("@/lib/estimating/schedule");
@@ -9,5 +12,9 @@ export async function register() {
     startProductionWatcher();
     const { startAbcWatcher } = await import("@/lib/integrations/abc");
     startAbcWatcher();
+    const { startDriveImportWorker } = await import("@/lib/import/drive-jobs");
+    startDriveImportWorker();
+    const { startBidWatcher } = await import("@/lib/bids/service");
+    startBidWatcher();
   }
 }

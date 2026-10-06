@@ -1,14 +1,17 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { getChangeOrderByToken } from "@/lib/billing/change-orders";
 import { prisma } from "@/lib/db";
 import { CoSignForm } from "@/components/billing/change-order-forms";
 
-export const metadata: Metadata = {
-  title: `Change order — ${BTR.name}`,
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompany();
+  return {
+  title: `Change order — ${company.name}`,
   robots: { index: false },
 };
+}
 const usd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
@@ -17,6 +20,7 @@ export default async function PublicChangeOrder({
 }: {
   params: Promise<{ token: string }>;
 }) {
+  const company = await getCompany();
   const { token } = await params;
   const co = await getChangeOrderByToken(token);
   if (!co) notFound();
@@ -27,9 +31,9 @@ export default async function PublicChangeOrder({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 py-4">
       <header className="border-b pb-3">
-        <p className="text-xl font-semibold">{BTR.name}</p>
+        <p className="text-xl font-semibold">{company.name}</p>
         <p className="text-sm text-muted-foreground">
-          {BTR.address} · {BTR.phone} · {BTR.email}
+          {company.address} · {company.phone} · {company.email}
         </p>
       </header>
       <div>
@@ -87,7 +91,7 @@ export default async function PublicChangeOrder({
         </p>
       ) : co.status === "REJECTED" ? (
         <p className="rounded-md border p-4">
-          This change order was declined. Call {BTR.phone} if you&apos;d like to
+          This change order was declined. Call {company.phone} if you&apos;d like to
           talk it over.
         </p>
       ) : (

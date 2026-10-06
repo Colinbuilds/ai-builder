@@ -1,0 +1,454 @@
+
+
+<!DOCTYPE html>
+<html>
+<head id="ctl00_Head1"><link href="App_Themes/Proc/v3/Ajax.Proc.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/Calendar.Proc.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/FontIcons/flaticon.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/Grid.Proc.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/Input.Proc.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/Menu.Proc.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/Proc.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/Scheduler.Proc.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/Support.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Proc/v3/TabStrip.Proc.css" type="text/css" rel="stylesheet" /><meta http-equiv="X-UA-Compatible" content="IE=edge" /><meta name="robots" content="noindex" /><title>
+	Douglas County Purchasing
+</title>
+	<style type="text/css">
+		.TelerikModalOverlayTO {
+			filter: progid:DXImageTransform.Microsoft.Alpha(style=0,opacity=95) !important;
+			opacity: .95 !important;
+			-moz-opacity: .95 !important;
+			z-index: 9999;
+		}
+
+		#divPageMainWrapper {
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+		}
+
+		#divPageMain {
+			flex-grow: 1;
+			overflow-y: auto;
+			overflow-x: auto;
+			padding: 5px 5px 25px 5px;
+		}
+	</style>
+	
+		<script type="text/javascript">
+
+			//Will redirect window to the passed in path
+			function RedirectTo(path) {
+				window.location = path;
+			}
+
+			//Will refresh current page by re-requesting the current url
+			function RefreshPage() {
+				window.location = 'https://douglascountypurchasing.ionwave.net/SourcingEvents.aspx?SourceType=1';
+			}
+
+			//function OpenRadWindowCaptcha(inUrl) {
+			//	var oWnd = $find("< % = rwPopUpCaptcha.ClientID %>");
+			//	oWnd.setUrl(inUrl);
+			//	oWnd.show();
+			//	oWnd.maximize();
+			//}
+
+			function OnClientClose(sender, args) {
+				document.location.reload();
+			}
+
+			function OnClientClose(sender, args) {
+				document.location.reload();
+			}
+
+			// Allow spaces to be entered on the commodity search textbox
+			function clientLoad(sender) {
+				$telerik.$("input", sender.get_element()).on('keydown', function (e) {
+					if (!e) var e = window.event;
+					e.cancelBubble = true;
+					if (e.stopPropagation) e.stopPropagation();
+				});
+			}
+
+			function clientShow(sender, args) {
+				if ($telerik.isChrome) {
+					sender.get_contentFrame().style.width = "";
+					setTimeout(function () {
+						sender.get_contentFrame().style.width = "100%";
+					}, 0);
+				}
+			}
+		</script>
+	
+	<style type="text/css">
+#menubar, #menubarHelp, #profileMenuBar
+{
+background-color: #555555;
+background-image: none;
+border-top-color: #555555;
+border-right-color: #555555;
+border-bottom-color: #555555;
+}
+div#menubarLogo
+{
+background-color: #555555;
+}
+div.RadMenu_Proc
+{
+background-color: #555555;
+background-image: none;
+border-right-color: #555555;
+}
+div.RadMenu_Proc .rmLink
+{
+background-color: #555555;
+background-image: none;
+border-left-color: #555555;
+color: #FFFFFF;
+}
+div.RadMenu_Proc .rmGroup
+{
+background-color: #555555 !important;
+}
+.rptHeader
+{
+background-color:#555555;
+color:#FFFFFF;
+}
+h1, h2, td.h2
+{
+border-color:#302C16;
+}
+[class^='flaticon-mainMenu_']:before, [class*=' flaticon-mainMenu_']:before,
+[class^='flaticon-mainMenu_']:after, [class*=' flaticon-mainMenu_']:after
+{
+color: #FFFFFF;
+}
+[class^='flaticon-toolbar_']:before, [class*=' flaticon-toolbar_']:before,
+[class^='flaticon-toolbar_']:after, [class*=' flaticon-toolbar_']:after
+{
+color: #555555;
+}
+[class^='flaticon-grid_']:before, [class*=' flaticon-grid_']:before,
+[class^='flaticon-grid_']:after, [class*=' flaticon-grid_']:after
+{
+color: #302C16;
+}
+.rgEdit:enabled > .rgEditIcon:after, .rgCancel:enabled > .rgCancelIcon:after, .rgUpdate:enabled > .rgUpdateIcon:after, .rgDel:enabled > .rgDelIcon:after
+{
+color: #302C16 !important;
+}
+[class^='flaticon-docType_']:before, [class*=' flaticon-docType_']:before,
+[class^='flaticon-docType_']:after, [class*=' flaticon-docType_']:after
+{
+color: #555555;
+}
+[class^='flaticon-inline_']:before, [class*=' flaticon-inline_']:before,
+[class^='flaticon-inline_']:after, [class*=' flaticon-inline_']:after
+{
+color: #302C16;
+}
+[class^='flaticon-fieldAction_']:before, [class*=' flaticon-fieldAction_']:before,
+[class^='flaticon-fieldAction_']:after, [class*=' flaticon-fieldAction_']:after
+{
+color: #302C16;
+}
+[class^='flaticon-contextMenu_']:before, [class*=' flaticon-contextMenu_']:before,
+[class^='flaticon-contextMenu_']:after, [class*=' flaticon-contextMenu_']:after
+{
+color: #302C16;
+}
+.buttonPrimary
+{
+background-color:#555555 !important;
+border-color:#555555 !important;
+}
+.buttonPrimary:hover:not(.rbDisabled)
+{
+background-color:#302C16 !important;
+border-color:#302C16 !important;
+}
+.buttonStandard
+{
+background-color:white !important;
+color:#555555 !important;
+border-color:#555555 !important;
+}
+.buttonStandard:hover:not(.rbDisabled)
+{
+background-color:white !important;
+color:#302C16 !important;
+border-color:#302C16 !important;
+}
+.buttonStandard.RadButton > .rbSplitPart
+{
+color:#555555 !important;
+}
+.buttonStandard.RadButton:hover > .rbSplitPart, .buttonStandard.RadButton > .rbSplitPart:hover
+{
+color:#302C16 !important;
+}
+div.MenuBar
+{
+background-color:#eeeeee !important;
+border-top: solid 1px #eeeeee;
+border-bottom: solid 1px #eeeeee;
+}
+.MenuBar
+{
+background-color:#eeeeee !important;
+}
+.RadCalendar_Material .rcTitlebar, .RadCalendar_Material.rcPrev, .RadCalendar_Material.rcNext, .RadCalendar_Material.rcFastPrev, .RadCalendar_Material.rcFastNext
+{
+border-color:#555555 !important;
+background-color:#555555 !important;
+color:#FFFFFF !important;
+}
+.RadGrid_Proc { border-color: #302C16 !important; }
+.RadGrid_Proc .rgHeader, .RadGrid_Proc th.rgResizeCol, .RadGrid_Proc th.rgSorted { border-bottom-color: #302C16 !important; }
+.RadGrid_Proc .rgRow td, .RadGrid_Proc .rgAltRow td { border-top-color: #302C16 !important; }
+.RadTabStrip_Proc .rtsLink
+{
+.RadTabStrip_Proc .rtsSelected, .RadTabStrip_Proc .rtsLast .rtsSelected
+{
+border-bottom-color: white;
+}
+</style>
+
+	<script type="text/javascript">
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33168174-2']);
+_gaq.push(['_setDomainName', 'ionwave.net']);
+_gaq.push(['_trackPageview', '/SourcingEvents.aspx']);
+(function () {
+var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4NYWTSNZ2P"></script><script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', 'G-4NYWTSNZ2P', {page_location: 'https://douglascountypurchasing.ionwave.net/SourcingEvents.aspx'});</script>
+
+<link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed" rel="stylesheet" /><link href="/WebResource.axd?d=_h3tqqHoL_scwqSdjPRDX7O2kMEhe3PIDw5TOXq1ouKESPAm5GLL0Ss2-TTRCtz57uTbozKCkUX6M2apRZC1HSp2LKLUP64C7Pd-KW5CXLiIzaBSWBj7Dr8uZH9EN1eKTawhHGw3QMBMzuWZMxmZhg2&amp;t=639221014900000000" type="text/css" rel="stylesheet" class="Telerik_stylesheet" /><link href="/WebResource.axd?d=ISQ2nTkDyQ6UApHxVmBsh8k8aC-sIyK2bLURA1t5Mw9H9SE2MMAo6giV4y6rFXGjXzYCf4R7QPAEd1-_rGkol_j5p7o_ukQJQACcH0cZAWDbtBlpgytMX10rOW0iRe7yS57OuZjoALAYzPcw1fo6hI38abWQDhgdXgrYwg_e_y01&amp;t=639221014900000000" type="text/css" rel="stylesheet" class="Telerik_stylesheet" /></head>
+<body style="overflow: auto; min-width: 1050px;">
+	<div id="overDiv" style="position: absolute; visibility: hidden; z-index: 1000;"></div>
+	<form method="post" action="./SourcingEvents.aspx?SourceType=1" id="aspnetForm" enctype="multipart/form-data">
+<div class="aspNetHidden">
+<input type="hidden" name="ctl00_ScriptManager_TSM" id="ctl00_ScriptManager_TSM" value="" />
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=pynGkmcFUV13He1Qd6_TZJPr2k25angMO4awhtK5XjYxJ_iizFZYTXESeXRu55iKO2VaYhnaDv6qOPA8JgIGtg2&amp;t=639190653332169432" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+//<![CDATA[
+const APP_INSIGHTS_ENABLED=false;//]]>
+</script>
+
+<script src="/ScriptResource.axd?d=NJmAwtEo3Ipnlaxl6CMhvugheA-hufiLx9kbN4Jlqu5rkKfhD4EMInQys2Qpj1Sz0r3zQr9-l0CklXsGRekKCvOuELJf73919iQAhfk3fsYr4Cf203DtHVELC-K1QBUx_wSWNnezyhKxoXUMk-5_z2-J2UItmfPjGXf0GVGRm4I1&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=dwY9oWetJoJoVpgL6Zq8OJ9soJVOJCKfm3YmA6zFsGJrir1J6pskA31SwIrzDcHW0Qr_m4ztj46osjYDIhAdUKsHEjrc3SFToGHcZ5LV7zyuGPpr2YpusIes7uVV6jbP3WtkqwSHzZyN4dIw2aLMYEQF_IPaO1Nc3O0cZ0q9-MQ1&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script src="JavaScript/input.js" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=TDVjdgRbdvNAY3tnbizUcAW7Sh0-gIu7AedUypKlxDjDvZG88ZgBC29EjPOmriSY1HRLX2Ykd8YmbKwxceifDs3yUo8tRgwv-68R0M0UIrE7bHso2HlL1FA5rCIxBD-50&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=mbGZm65DzNC0tMTq0ElbcYlpBgUKTSrh_kIXka-mPZ7T2Y1ziKhVIFeNrFNDvlYwbxuIJyFpjLr8JoBlcyZkt93sokigKIqFKzvb3Z6E6KRSONsjM567iF8myhjU7VJi_Gn8ksSFWy1TDxJsIeqq_w2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=cmIcXiVJ__exjjpjrN730uZVEt4NjcyGAGJCcGC-sPNUQWXfQ75ZiY26NqDeoApul58dLbmluiOSfvYpRslxddA8KkFyeMuJdCqXhkQFg5-hmwcn1hqyr51WmLBFCsPeNiG7a--E_vS14dnTKyCCyw2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=aoSSiMnLNTC20U5L7LFIKhluoA2fAkafvTV_bhzsEmO-fwAtunXT1Al1gwu52fNPbkB3xIX4fYMj-xYqdKXZDN5OOLcZ98D2lNsJoV7k0PG1uxTajlXvLI2J30NkL6AaqVjv-Y4CLKwNb6FPt1bkmR5qh6J50wSp2s4c9nhsqJc1&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=eKZhdBAoDXLAsQys5JFN8ucBkoNMvjKFsBond6RfG8CK4r8qdIO3ZMZFtTJ2ZBJOz3x2cDCv8oi9kTefvPLFfI3M2UxOEHPoayQBApSPB5AONriu1ekD3CZqH4hKgaF4OsDUXsoYZaaDMFO4UJ4ARzpjTD2PowCEXXl77Z5rdOQ1&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=uZyysmNAhs23bID72ZUaSvfnFKvC7xvwe6SiVsU9vNscCLxuTUW_6rjxMVUM1EJVOhA0VYUUPnp7UiZ3lwLt8zxb9PW-Pfk5JKkXZ9VZDJfXHqXOmmZgOmM6kPWPQe7_cO1Ui1xn5AXPygjW0LaCdfyvMPiD7K1UzCBKCahP5381&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=86EhAqQjfuMKlbK4FWyenA7ol18m67XDcV5DY1Me1DrJajRvUNpwfnraMU9ZGrDsZRUbEs-gZwn_hCkgKuSeXoVuWsdStcSaICOLimB2H5SMEZNPZFp6cZfbS_-0ogBx-Ui6bL9_OOOr0ZrInanjwvseFe8IRiC57w6LOwPtZE81&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=azZWDlPjvGQFzPBzbd9C4LgpPedtz6cr8RHElOtnQGJonEbvwR8znFGq47TJ7xgjOB-gEmkeEAgtbLx1O7GjghSoauDepEPcaSw6E4VRt3hxnCcR6mIhAubzAWp2U4BO-s-i_LlEUXcmByQk0Hi_DQ2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=aIiHoxEdKJSiEcFhKx_o0CaqRORvxrY5TelpF1Tggki7gVqwT8PjcHX5QsrqSvT8Cwr6lZqbgXcB19d0EaOCj5RvZLIH24arIqfFYv5vpiYPMEyE4UKaQqdwXyBIWqbak_QqFZ_x5vA1crNJNSG0vQ2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=jsREEuQJotslNUdHnktdpmfuRQ2ZrJQ8Zwrw8-56i1ezmFU9xk_uMShb_fFG_BUsgvzhgJLrk2-2_xOhEYQlLSyd4VrWL73wfoza8TvwPwIz6A7FRers9UDcCOKoRSoUiscbQaSUytK76gKRNMCk7A2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=-9rjE8XFv-zikiBdee7RrkHwpAgy0t7e-HLvp3NhSfFl8keiDgHvNipD_UN_9vJMr-9zP0yfkmf91BiEAljCwGwRelUBce91RELiTCw6rvPtMPlvvJw6fnYXdHV5vf9rTCruy2Xs_UmFthrZt-9Q-k3Ff-lUt0IjUMlLwceKPzk1&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=utaAJrK4EroNO-KNr3p19JLHxeTPXsjnEnkYF22hjGY6-QtY7mQmZo1CKuhS8aM7_v9HFCwvbur1KIqr5fsz_DI27rflmwlye1Uy7EGk3aEKBAsinDRMroAZji0yJElM-AcynxZHTJAiJthYzWfWWA2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=GiyGg6C7coGF_0YjOubjHdEZ0RYq8lTD9nAjc7T4Szgw5fYZ2vuvc_i7JPx-phZG3Ao4dIu0BeI24-MXStNsCZUh0NUI-YB10QSg3UKKAwbPi5F8wPljcDS7IXESIfKva9fHU0eScHQ6ILccAkgNBg2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=VxtOoXYuGZUEZcJ30xmYHpjBZ0PP9tqGbOBrkVQspXa7avJsY65aRutxSBOyPnOFdtaoxzEpyppTwjTzyk77nM_Ct_e5TfQusD1VZrOxMvLvlPAw3ZiuoKMmswy6-QCkZIamrJrU9ukS8yH0_fbaMA2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=OMa_nbU0_VSWnHtE895qh3XoL_ZIb825BwfdyvZUBJW6RcMfviU_YCp9FTyX2y6BoJQV8sgXzJHrf92a3phpfkzh653n8BfvTWJCYRH4WYv3s9uGq5Wvw6wojlXYU3hCiid4kOYJEhGCwD9VyS8ffl8DfBfmB5vi_0jKpegYy241&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=xvYBvOx-63dLu5JJe1OI3cB2APa0OHD4og4oJCYxvTaqGOhMRctM-DKRDMFLZeFZBda-oK-Y-9NTA6OuFhR1-cmUK2rlp_tG_9NQpgreSaazbrFMBKqj8BeHkQ2qgl9aYuMZYZSGIFTo4NsglaGJCQ2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=E5x_TPxmFLaA4jSY3dSbO8Dy-JQG1DWpzr0-rQkTxSu-mAjmXrrFvDlRws405ECdQC7K8aLFrx9zca-4YeVKRH9CZi5FLMd-RmEg5V0g3FK60NNI2rOEY3PCtR47wvJ08MoqU1bUlntSntj3SRKegGDIUbI0MIjltz7r3lMo_t41&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=LlwbgV7oh28tpCvE08ZbOcyGJ9wjqTV5PsTuw8rXBwXjnjvh_nbw3RzGSYylc-Tk8n5DAcdwPO8bPk3b8UWey6AYm50SzpE2MO0EiK67DtxIJBupBAj8CLffeC2fu3-Hx7YvypivVO9_8y82-7W4Ug2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=DJqzVDlyNLlLft2Spv1G597h8QjQdOh28giOH9NW_EqD8rUGCfVr6h9nJuCuDmHMFw9oEOs7c6XQOC72ubD48MFVFr2iuxxxJuwTuKiwsz8ryLcJmtBDDZVEGDk2uLD6GClSqGOCVFPCb6jxB5Mrbw2&amp;t=ffffffffb5cfdbde" type="text/javascript"></script>
+<script src="utility/SessionHelper.asmx/js" type="text/javascript"></script>
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="A4E5206D" />
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+</div>
+		<script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$ScriptManager', 'aspnetForm', [], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+
+		
+
+		
+		<div style="padding: 0px 5px 0px 5px;">
+			<table id="ctl00_mainContent_tblHeader" style="width: 100%;">
+	<tr>
+		<td style="vertical-align: top;">
+						<img src="https://douglascountypurchasing.ionwave.net/_custconfig/douglascountypurchasing/PageHeaderLogo.png?brs=26100212112000" id="ctl00_mainContent_imgHeader" />
+						<div style="text-align: right; vertical-align: top; padding-bottom: 10px; white-space: nowrap; padding-left: 6px; padding-right: 6px; padding-top: 4px; float: right;">
+							<a href="Login.aspx" id="ctl00_mainContent_lnkLogin" class="header">Login</a>
+						</div>
+					</td>
+	</tr>
+</table>
+
+			<h1>
+				<span id="ctl00_mainContent_lblPageHeader">Current Bid Opportunities</span>
+			</h1>
+			<div id="ctl00_mainContent_rtb" class="RadToolBar RadToolBar_Horizontal RadToolBar_Default RadToolBar_Default_Horizontal" style="width:100%;z-index:9000;">
+	<!-- 2026.3.812.462 --><div class="rtbOuter">
+		<div class="rtbMiddle">
+			<div class="rtbInner">
+				<ul class="rtbUL">
+					<li class="rtbItem rtbBtn"><a class="rtbWrap" href="#"><span class="rtbOut"><span class="rtbMid"><span class="rtbIn"><span title="" class="rtbIcon flaticon-toolbar_Return"></span><span class="rtbText">Return To Login</span></span></span></span></a></li><li class="rtbItem rtbBtn"><a class="rtbWrap" href="#"><span class="rtbOut"><span class="rtbMid"><span class="rtbIn"><span title="" class="rtbIcon flaticon-toolbar_Supplier"></span><span class="rtbText">Supplier Registration</span></span></span></span></a></li>
+				</ul>
+			</div>
+		</div>
+	</div><input id="ctl00_mainContent_rtb_ClientState" name="ctl00_mainContent_rtb_ClientState" type="hidden" />
+</div>
+			<div id="ctl00_mainContent_rgBidList" class="RadGrid RadGrid_Proc">
+
+<table class="rgMasterTable" id="ctl00_mainContent_rgBidList_ctl00" style="width:100%;table-layout:auto;empty-cells:show;">
+	<colgroup>
+        <col  />
+        <col  />
+        <col  />
+        <col  />
+        <col style="display:none;" />
+        <col  />
+        <col  />
+    </colgroup>
+<thead>
+		<tr>
+			<th scope="col" class="rgHeader" style="white-space:nowrap;">&nbsp;</th><th scope="col" class="rgHeader" style="white-space:nowrap;"><a onclick="Telerik.Web.UI.Grid.Sort($find(&#39;ctl00_mainContent_rgBidList_ctl00&#39;), &#39;BidNumber&#39;); return false;" title="Click here to sort" href="javascript:__doPostBack(&#39;ctl00$mainContent$rgBidList$ctl00$ctl02$ctl01$ctl00&#39;,&#39;&#39;)">Bid Number</a></th><th scope="col" class="rgHeader" style="white-space:nowrap;"><a onclick="Telerik.Web.UI.Grid.Sort($find(&#39;ctl00_mainContent_rgBidList_ctl00&#39;), &#39;Title&#39;); return false;" title="Click here to sort" href="javascript:__doPostBack(&#39;ctl00$mainContent$rgBidList$ctl00$ctl02$ctl01$ctl01&#39;,&#39;&#39;)">Bid Title</a></th><th scope="col" class="rgHeader" style="white-space:nowrap;"><a onclick="Telerik.Web.UI.Grid.Sort($find(&#39;ctl00_mainContent_rgBidList_ctl00&#39;), &#39;TypeTitle&#39;); return false;" title="Click here to sort" href="javascript:__doPostBack(&#39;ctl00$mainContent$rgBidList$ctl00$ctl02$ctl01$ctl02&#39;,&#39;&#39;)">Bid Type</a></th><th scope="col" class="rgHeader" style="white-space:nowrap;display:none;"><a onclick="Telerik.Web.UI.Grid.Sort($find(&#39;ctl00_mainContent_rgBidList_ctl00&#39;), &#39;WorkGroupName&#39;); return false;" title="Click here to sort" href="javascript:__doPostBack(&#39;ctl00$mainContent$rgBidList$ctl00$ctl02$ctl01$ctl03&#39;,&#39;&#39;)">Organization</a></th><th scope="col" class="rgHeader" style="white-space:nowrap;"><a onclick="Telerik.Web.UI.Grid.Sort($find(&#39;ctl00_mainContent_rgBidList_ctl00&#39;), &#39;OpenDate&#39;); return false;" title="Click here to sort" href="javascript:__doPostBack(&#39;ctl00$mainContent$rgBidList$ctl00$ctl02$ctl01$ctl05&#39;,&#39;&#39;)">Bid Issue Date</a></th><th scope="col" class="rgHeader rgSorted" style="white-space:nowrap;"><a onclick="Telerik.Web.UI.Grid.Sort($find(&#39;ctl00_mainContent_rgBidList_ctl00&#39;), &#39;CloseDate&#39;); return false;" title="Click here to sort" href="javascript:__doPostBack(&#39;ctl00$mainContent$rgBidList$ctl00$ctl02$ctl01$ctl06&#39;,&#39;&#39;)">Bid Close Date/Time</a>&nbsp;<input type="submit" name="ctl00$mainContent$rgBidList$ctl00$ctl02$ctl01$ctl07" value=" " title="Sorted asc" class="rgSortAsc" /></th>
+		</tr><tr class="rgFilterRow">
+			<td>&nbsp;</td><td style="white-space:nowrap;"><input name="ctl00$mainContent$rgBidList$ctl00$ctl02$ctl02$FilterTextBox_colBidNumber" type="text" size="10" id="ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colBidNumber" class="rgFilterBox" alt="Filter colBidNumber column" onkeydown="$find(&quot;ctl00_mainContent_rgBidList_ctl00&quot;)._filterOnKeyDownWithDelay(event,&quot;ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colBidNumber&quot;,&quot;colBidNumber&quot;,&quot;1500&quot;)" onkeypress="$find(&quot;ctl00_mainContent_rgBidList_ctl00&quot;)._filterOnKeyPressWithDelay(event,&quot;ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colBidNumber&quot;,&quot;colBidNumber&quot;,&quot;1500&quot;)" style="width:98%;" /></td><td style="white-space:nowrap;"><input name="ctl00$mainContent$rgBidList$ctl00$ctl02$ctl02$FilterTextBox_colTitle" type="text" size="10" id="ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colTitle" class="rgFilterBox" alt="Filter colTitle column" onkeydown="$find(&quot;ctl00_mainContent_rgBidList_ctl00&quot;)._filterOnKeyDownWithDelay(event,&quot;ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colTitle&quot;,&quot;colTitle&quot;,&quot;1500&quot;)" onkeypress="$find(&quot;ctl00_mainContent_rgBidList_ctl00&quot;)._filterOnKeyPressWithDelay(event,&quot;ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colTitle&quot;,&quot;colTitle&quot;,&quot;1500&quot;)" style="width:98%;" /></td><td style="white-space:nowrap;"><input name="ctl00$mainContent$rgBidList$ctl00$ctl02$ctl02$FilterTextBox_colTypeTitle" type="text" size="10" id="ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colTypeTitle" class="rgFilterBox" alt="Filter colTypeTitle column" onkeydown="$find(&quot;ctl00_mainContent_rgBidList_ctl00&quot;)._filterOnKeyDownWithDelay(event,&quot;ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colTypeTitle&quot;,&quot;colTypeTitle&quot;,&quot;1500&quot;)" onkeypress="$find(&quot;ctl00_mainContent_rgBidList_ctl00&quot;)._filterOnKeyPressWithDelay(event,&quot;ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colTypeTitle&quot;,&quot;colTypeTitle&quot;,&quot;1500&quot;)" style="width:98%;" /></td><td style="white-space:nowrap;display:none;"><input name="ctl00$mainContent$rgBidList$ctl00$ctl02$ctl02$FilterTextBox_colWorkGroupName" type="text" size="10" id="ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colWorkGroupName" class="rgFilterBox" alt="Filter colWorkGroupName column" onkeydown="$find(&quot;ctl00_mainContent_rgBidList_ctl00&quot;)._filterOnKeyDownWithDelay(event,&quot;ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colWorkGroupName&quot;,&quot;colWorkGroupName&quot;,&quot;1500&quot;)" onkeypress="$find(&quot;ctl00_mainContent_rgBidList_ctl00&quot;)._filterOnKeyPressWithDelay(event,&quot;ctl00_mainContent_rgBidList_ctl00_ctl02_ctl02_FilterTextBox_colWorkGroupName&quot;,&quot;colWorkGroupName&quot;,&quot;1500&quot;)" style="width:98%;" /></td><td>&nbsp;</td><td>&nbsp;</td>
+		</tr>
+	</thead><tfoot>
+		<tr class=" rgPager">
+			<td colspan="6"><table summary="Data pager which controls on which page is the RadGrid control." style="width:100%;border-spacing:0;">
+				<caption>
+					<span style='display: none'>Data pager</span>
+				</caption><thead>
+					<tr>
+						<th scope="col">Data pager</th>
+					</tr>
+				</thead><tbody>
+					<tr>
+						<td class="rgPagerCell NextPrevAndNumeric"><div class="rgWrap rgArrPart1">
+							<input type="submit" name="ctl00$mainContent$rgBidList$ctl00$ctl03$ctl01$ctl02" value=" " onclick="return false;" title="First Page" class="rgPageFirst" /><input type="submit" name="ctl00$mainContent$rgBidList$ctl00$ctl03$ctl01$ctl03" value=" " onclick="return false;" title="Previous Page" class="rgPagePrev" />
+						</div><div class="rgWrap rgNumPart">
+							<a onclick="return false;" class="rgCurrentPage" href="javascript:__doPostBack(&#39;ctl00$mainContent$rgBidList$ctl00$ctl03$ctl01$ctl05&#39;,&#39;&#39;)"><span>1</span></a>
+						</div><div class="rgWrap rgArrPart2">
+							<input type="submit" name="ctl00$mainContent$rgBidList$ctl00$ctl03$ctl01$ctl08" value=" " onclick="return false;" title="Next Page" class="rgPageNext" /><input type="submit" name="ctl00$mainContent$rgBidList$ctl00$ctl03$ctl01$ctl09" value=" " onclick="return false;" title="Last Page" class="rgPageLast" />
+						</div><div class="rgWrap rgAdvPart">
+							<span id="ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_ChangePageSizeLabel" class="rgPagerLabel">Page size:</span><div id="ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_PageSizeComboBox" class="RadComboBox RadComboBox_Proc" style="width:46px;">
+								<table summary="Page Size Drop Down Control" style="border-width:0;border-collapse:collapse;width:100%">
+									<caption>
+										PageSizeComboBox
+									</caption><tr class="rcbReadOnly">
+										<td class="rcbInputCell rcbInputCellLeft" style="width:100%;"><input name="ctl00$mainContent$rgBidList$ctl00$ctl03$ctl01$PageSizeComboBox" type="text" class="rcbInput radPreventDecorate" id="ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_PageSizeComboBox_Input" value="20" readonly="readonly" /></td><td class="rcbArrowCell rcbArrowCellRight"><a id="ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_PageSizeComboBox_Arrow" style="overflow: hidden;display: block;position: relative;outline: none;">select</a></td>
+									</tr>
+								</table><div class="rcbSlide" style="z-index:6000;display:none;"><div id="ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_PageSizeComboBox_DropDown" class="RadComboBoxDropDown RadComboBoxDropDown_Proc "><div class="rcbScroll rcbWidth"><ul class="rcbList"><li class="rcbItem">10</li><li class="rcbItem">20</li><li class="rcbItem">50</li></ul></div></div></div><input id="ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_PageSizeComboBox_ClientState" name="ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_PageSizeComboBox_ClientState" type="hidden" />
+							</div>
+						</div><div class="rgWrap rgInfoPart">
+							 &nbsp;<strong>9</strong> items in <strong>1</strong> pages
+						</div></td>
+					</tr>
+				</tbody>
+			</table></td>
+		</tr>
+	</tfoot><tbody>
+	<tr class="rgRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__0">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0133</td><td valign="top" style="width:25%;">Tree Removal (Contract 1) - Parks Forestry</td><td valign="top" style="width:15%;">City-QUOTE-S</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">10/1/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/6/2026 11:00:00 AM (CT)</td>
+	</tr><tr class="rgAltRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__1">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0134</td><td valign="top" style="width:25%;">Tree Removal (Contract 2) - Parks Forestry</td><td valign="top" style="width:15%;">City-QUOTE-S</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">10/1/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/6/2026 11:00:00 AM (CT)</td>
+	</tr><tr class="rgRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__2">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0114 Addendum 3</td><td valign="top" style="width:25%;">OPW 53907:  Papillion Creek Interceptor Rehabilitation</td><td valign="top" style="width:15%;">CI-BID-OPW</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">8/19/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/7/2026 11:00:00 AM (CT)</td>
+	</tr><tr class="rgAltRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__3">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0118 Addendum 4</td><td valign="top" style="width:25%;">Construction Manager at Risk for the Downtown Soccer Stadium Project</td><td valign="top" style="width:15%;">CI-RFP</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">8/26/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/7/2026 11:00:00 AM (CT)</td>
+	</tr><tr class="rgRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__4">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0122</td><td valign="top" style="width:25%;">Electric Shared Scooter Program for the City of Omaha</td><td valign="top" style="width:15%;">CI-RFP</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">9/9/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/7/2026 11:00:00 AM (CT)</td>
+	</tr><tr class="rgAltRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__5">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0123 Addendum 1</td><td valign="top" style="width:25%;">Pheasant Run Park Playground Renovation</td><td valign="top" style="width:15%;">CI-BID-P</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">9/16/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/7/2026 11:00:00 AM (CT)</td>
+	</tr><tr class="rgRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__6">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0124 Addendum 1</td><td valign="top" style="width:25%;">Demolition of One Structure</td><td valign="top" style="width:15%;">CI-BID-S</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">9/23/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/7/2026 11:00:00 AM (CT)</td>
+	</tr><tr class="rgAltRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__7">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0127</td><td valign="top" style="width:25%;">12 Cubic Yard Combo Sewer Cleaner</td><td valign="top" style="width:15%;">CI-BID-G</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">9/30/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/21/2026 11:00:00 AM (CT)</td>
+	</tr><tr class="rgRow" valign="top" id="ctl00_mainContent_rgBidList_ctl00__8">
+		<td align="center" valign="top" style="width:1%;white-space:nowrap;">
+								<span class="flaticon-grid_View" title="View Bid"></span>
+							</td><td valign="top" style="width:25%;">CI-2026-0125</td><td valign="top" style="width:25%;">OPW 55219:  Traffic Maintenance Remodel</td><td valign="top" style="width:15%;">CI-BID-OPW</td><td valign="top" style="width:10%;display:none;">Purchasing</td><td valign="top" style="width:5%;">9/30/2026</td><td class="rgSorted" valign="top" style="width:15%;white-space:nowrap;">10/28/2026 11:00:00 AM (CT)</td>
+	</tr>
+	</tbody>
+
+</table><div id="ctl00_mainContent_rgBidList_SharedCalendarContainer" style="display:none;">
+
+</div><div tabindex="0" id="ctl00_mainContent_rgBidList_rfltMenu">
+	<div class="RadMenu RadMenu_Proc RadMenu_Context RadMenu_Proc_Context">
+		<ul class="rmActive rmVertical rmGroup rmLevel1">
+			<li class="rmItem rmFirst"><a class="rmLink" href="#"><span class="rmText">NoFilter</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">Contains</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">DoesNotContain</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">StartsWith</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">EndsWith</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">EqualTo</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">NotEqualTo</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">GreaterThan</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">LessThan</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">GreaterThanOrEqualTo</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">LessThanOrEqualTo</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">Between</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">NotBetween</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">IsEmpty</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">NotIsEmpty</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">IsNull</span></a></li><li class="rmItem "><a class="rmLink" href="#"><span class="rmText">NotIsNull</span></a></li><li class="rmItem rmLast"><a class="rmLink" href="#"><span class="rmText">Custom</span></a></li>
+		</ul>
+	</div><input id="ctl00_mainContent_rgBidList_rfltMenu_ClientState" name="ctl00_mainContent_rgBidList_rfltMenu_ClientState" type="hidden" />
+</div><input id="ctl00_mainContent_rgBidList_ClientState" name="ctl00_mainContent_rgBidList_ClientState" type="hidden" />    </div>
+
+		</div>
+
+
+	
+
+<script type="text/javascript">
+//<![CDATA[
+window.__TsmHiddenField = $get('ctl00_ScriptManager_TSM');Sys.Application.add_init(function() {
+    $create(Telerik.Web.UI.RadToolBar, {"_cssClass":"","_postBackReference":"__doPostBack(\u0027ctl00$mainContent$rtb\u0027,\u0027{0}\u0027)","_simplePostBack":true,"_skin":"Default","attributes":{},"clientStateFieldID":"ctl00_mainContent_rtb_ClientState","collapseAnimation":"{\"duration\":450}","expandAnimation":"{\"duration\":450}","itemData":[{"value":"LOGIN","cssClass":"rtbWrap","spriteCssClass":"flaticon-toolbar_Return","enableImageSprite":true},{"value":"REGISTRATION","cssClass":"rtbWrap","spriteCssClass":"flaticon-toolbar_Supplier","enableImageSprite":true}]}, null, null, $get("ctl00_mainContent_rtb"));
+});
+
+var callBackFrameUrl='/WebResource.axd?d=beToSAE3vdsL1QUQUxjWda6K2zVtQLPAQUjphaJSkOzbk0Ku_PzW-1exbsEIi2MSaXf0z9S5Cbte9xSdzr7f9w2&t=639190653332169432';
+WebForm_InitCallback();Sys.Application.add_init(function() {
+    $create(Telerik.Web.UI.RadComboBox, {"_dropDownWidth":0,"_height":0,"_skin":"Proc","_text":"20","_uniqueId":"ctl00$mainContent$rgBidList$ctl00$ctl03$ctl01$PageSizeComboBox","_value":"20","clientStateFieldID":"ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_PageSizeComboBox_ClientState","collapseAnimation":"{\"duration\":450}","expandAnimation":"{\"duration\":450}","itemData":[{"value":"10","attributes":{"ownerTableViewId":"ctl00_mainContent_rgBidList_ctl00"}},{"value":"20","selected":true,"attributes":{"ownerTableViewId":"ctl00_mainContent_rgBidList_ctl00"}},{"value":"50","attributes":{"ownerTableViewId":"ctl00_mainContent_rgBidList_ctl00"}}],"localization":"{\"AllItemsCheckedString\":\"All items checked\",\"ItemsCheckedString\":\"items checked\",\"CheckAllString\":\"Check All\"}","selectedIndex":1}, {"selectedIndexChanged":Telerik.Web.UI.Grid.ChangePageSizeComboHandler,"selectedIndexChanging":Telerik.Web.UI.Grid.ChangingPageSizeComboHandler}, null, $get("ctl00_mainContent_rgBidList_ctl00_ctl03_ctl01_PageSizeComboBox"));
+});
+Sys.Application.add_init(function() {
+    $create(Telerik.Web.UI.RadContextMenu, {"_childListElementCssClass":null,"_skin":"Proc","clickToOpen":true,"clientStateFieldID":"ctl00_mainContent_rgBidList_rfltMenu_ClientState","collapseAnimation":"{\"duration\":450}","expandAnimation":"{\"duration\":450}","itemData":[{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"NoFilter"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"Contains"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"DoesNotContain"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"StartsWith"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"EndsWith"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"EqualTo"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"NotEqualTo"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"GreaterThan"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"LessThan"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"GreaterThanOrEqualTo"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"LessThanOrEqualTo"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"Between"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"NotBetween"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"IsEmpty"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"NotIsEmpty"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"IsNull"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"NotIsNull"},{"attributes":{"columnUniqueName":"","tableID":""},"postBack":0,"value":"Custom"}],"targets":[]}, null, null, $get("ctl00_mainContent_rgBidList_rfltMenu"));
+});
+Sys.Application.add_init(function() {
+    $create(Telerik.Web.UI.RadGrid, {"ClientID":"ctl00_mainContent_rgBidList","ClientSettings":{"AllowRowsDragDrop":true,"AllowAutoScrollOnDragDrop":true,"EnableRowHoverStyle":true,"EnablePostBackOnRowClick":true,"ShouldCreateRows":true,"DataBinding":{},"Selecting":{"CellSelectionMode":0},"Scrolling":{},"Resizing":{},"ClientMessages":{},"KeyboardNavigationSettings":{"AllowActiveRowCycle":false,"EnableKeyboardShortcuts":true,"FocusKey":89,"InitInsertKey":73,"RebindKey":82,"ExitEditInsertModeKey":27,"UpdateInsertItemKey":13,"DeleteActiveRow":127,"ExpandDetailTableKey":39,"CollapseDetailTableKey":37,"MoveDownKey":40,"MoveUpKey":38,"SaveChangesKey":85,"CancelChangesKey":81},"Animation":{},"Virtualization":{}},"Skin":"Proc","SortingSettings":{"SortToolTip":"Click here to sort","SortedAscToolTip":"Sorted asc","SortedDescToolTip":"Sorted desc","SortedBackColor":{"R":0,"G":0,"B":0,"A":0,"IsKnownColor":false,"IsEmpty":true,"IsNamedColor":false,"IsSystemColor":false,"Name":"0"},"EnableSkinSortStyles":true,"ShowNoSortIcons":false,"ViewState":{}},"UniqueID":"ctl00$mainContent$rgBidList","_activeRowIndex":"","_clientKeyValues":{"0":{"BidID":"1278"},"1":{"BidID":"1279"},"2":{"BidID":"1270"},"3":{"BidID":"1271"},"4":{"BidID":"1255"},"5":{"BidID":"1261"},"6":{"BidID":"1268"},"7":{"BidID":"1269"},"8":{"BidID":"1266"}},"_controlToFocus":"","_currentPageIndex":0,"_defaultDateTimeFormat":"M/d/yyyy h:mm:ss tt","_editIndexes":"[]","_embeddedSkin":false,"_freezeText":"Freeze","_gridTableViewsData":"[{\"ClientID\":\"ctl00_mainContent_rgBidList_ctl00\",\"UniqueID\":\"ctl00$mainContent$rgBidList$ctl00\",\"PageSize\":20,\"PageCount\":1,\"EditMode\":\"EditForms\",\"AllowPaging\":true,\"CurrentPageIndex\":0,\"VirtualItemCount\":0,\"AllowMultiColumnSorting\":false,\"AllowNaturalSort\":true,\"AllowFilteringByColumn\":true,\"PageButtonCount\":10,\"HasDetailTables\":false,\"HasMultiHeaders\":false,\"CheckListWebServicePath\":\"\",\"GroupLoadMode\":\"Server\",\"PagerAlwaysVisible\":true,\"IsItemInserted\":false,\"clientDataKeyNames\":[\"BidID\"],\"hasDetailItemTemplate\":false,\"_dataBindTemplates\":false,\"_selectedItemStyle\":\"\",\"_selectedItemStyleClass\":\"rgSelectedRow\",\"isFilterItemExpanded\":true,\"_columnsData\":[{\"UniqueName\":\"colCmdEdit\",\"Resizable\":true,\"Reorderable\":true,\"Selectable\":true,\"Groupable\":true,\"ColumnType\":\"GridTemplateColumn\",\"ColumnGroupName\":\"\",\"Editable\":false,\"DataTypeName\":\"System.String\",\"FilterListOptions\":0,\"CurrentFilterFunction\":0,\"CurrentFilterValue\":\"\",\"AndCurrnetFilterFunction\":0,\"AndCurrentFilterValue\":\"\",\"Acff\":\"Contains\",\"CurrentFilterFunctionName\":\"NoFilter\",\"AndCurrentFilterFunctionName\":\"NoFilter\",\"DataField\":\"\",\"Display\":true},{\"UniqueName\":\"colBidNumber\",\"Resizable\":true,\"Reorderable\":true,\"Selectable\":true,\"Groupable\":true,\"ColumnType\":\"GridBoundColumn\",\"ColumnGroupName\":\"\",\"Editable\":true,\"SortExpression\":\"BidNumber\",\"DataTypeName\":\"System.String\",\"FilterListOptions\":0,\"CurrentFilterFunction\":1,\"CurrentFilterValue\":\"\",\"AndCurrnetFilterFunction\":0,\"AndCurrentFilterValue\":\"\",\"Acff\":\"Contains\",\"FilterDelay\":1500,\"CurrentFilterFunctionName\":\"Contains\",\"AndCurrentFilterFunctionName\":\"NoFilter\",\"DataField\":\"BidNumber\",\"Display\":true},{\"UniqueName\":\"colTitle\",\"Resizable\":true,\"Reorderable\":true,\"Selectable\":true,\"Groupable\":true,\"ColumnType\":\"GridBoundColumn\",\"ColumnGroupName\":\"\",\"Editable\":true,\"SortExpression\":\"Title\",\"DataTypeName\":\"System.String\",\"FilterListOptions\":0,\"CurrentFilterFunction\":1,\"CurrentFilterValue\":\"\",\"AndCurrnetFilterFunction\":0,\"AndCurrentFilterValue\":\"\",\"Acff\":\"Contains\",\"FilterDelay\":1500,\"CurrentFilterFunctionName\":\"Contains\",\"AndCurrentFilterFunctionName\":\"NoFilter\",\"DataField\":\"Title\",\"Display\":true},{\"UniqueName\":\"colTypeTitle\",\"Resizable\":true,\"Reorderable\":true,\"Selectable\":true,\"Groupable\":true,\"ColumnType\":\"GridBoundColumn\",\"ColumnGroupName\":\"\",\"Editable\":true,\"SortExpression\":\"TypeTitle\",\"DataTypeName\":\"System.String\",\"FilterListOptions\":0,\"CurrentFilterFunction\":1,\"CurrentFilterValue\":\"\",\"AndCurrnetFilterFunction\":0,\"AndCurrentFilterValue\":\"\",\"Acff\":\"Contains\",\"FilterDelay\":1500,\"CurrentFilterFunctionName\":\"Contains\",\"AndCurrentFilterFunctionName\":\"NoFilter\",\"DataField\":\"TypeTitle\",\"Display\":true},{\"UniqueName\":\"colWorkGroupName\",\"Resizable\":true,\"Reorderable\":true,\"Selectable\":true,\"Groupable\":true,\"ColumnType\":\"GridBoundColumn\",\"ColumnGroupName\":\"\",\"Editable\":true,\"SortExpression\":\"WorkGroupName\",\"DataTypeName\":\"System.String\",\"FilterListOptions\":0,\"CurrentFilterFunction\":1,\"CurrentFilterValue\":\"\",\"AndCurrnetFilterFunction\":0,\"AndCurrentFilterValue\":\"\",\"Acff\":\"Contains\",\"FilterDelay\":1500,\"CurrentFilterFunctionName\":\"Contains\",\"AndCurrentFilterFunctionName\":\"NoFilter\",\"DataField\":\"WorkGroupName\",\"Display\":false},{\"UniqueName\":\"colOpenDate\",\"Resizable\":true,\"Reorderable\":true,\"Selectable\":true,\"Groupable\":true,\"ColumnType\":\"GridBoundColumn\",\"ColumnGroupName\":\"\",\"Editable\":true,\"SortExpression\":\"OpenDate\",\"DataTypeName\":\"System.DateTime\",\"FilterListOptions\":0,\"CurrentFilterFunction\":0,\"CurrentFilterValue\":\"\",\"AndCurrnetFilterFunction\":0,\"AndCurrentFilterValue\":\"\",\"Acff\":\"EqualTo\",\"CurrentFilterFunctionName\":\"NoFilter\",\"AndCurrentFilterFunctionName\":\"NoFilter\",\"DataField\":\"OpenDate\",\"DataFormatString\":\"{0:M/d/yyyy}\",\"Display\":true},{\"UniqueName\":\"colCloseDate\",\"Resizable\":true,\"Reorderable\":true,\"Selectable\":true,\"Groupable\":true,\"ColumnType\":\"GridBoundColumn\",\"ColumnGroupName\":\"\",\"Editable\":true,\"SortExpression\":\"CloseDate\",\"DataTypeName\":\"System.DateTime\",\"FilterListOptions\":0,\"CurrentFilterFunction\":0,\"CurrentFilterValue\":\"\",\"AndCurrnetFilterFunction\":0,\"AndCurrentFilterValue\":\"\",\"Acff\":\"EqualTo\",\"CurrentFilterFunctionName\":\"NoFilter\",\"AndCurrentFilterFunctionName\":\"NoFilter\",\"DataField\":\"CloseDate\",\"Display\":true}]}]","_masterClientID":"ctl00_mainContent_rgBidList_ctl00","_shouldFocusOnPage":false,"_unfreezeText":"Unfreeze","allowMultiRowSelection":false,"clientStateFieldID":"ctl00_mainContent_rgBidList_ClientState","expandItems":{},"renderMode":1}, null, null, $get("ctl00_mainContent_rgBidList"));
+});
+//]]>
+</script>
+</form>
+	<script type="text/javascript">
+
+	</script>
+</body>
+</html>

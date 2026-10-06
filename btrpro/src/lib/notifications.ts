@@ -2,6 +2,7 @@
 // (salesperson, estimator, or watching), @mentions, tasks due, and company updates.
 import { prisma } from "@/lib/db";
 import { prettyStages, stageMoveTitle } from "@/lib/projects/milestones";
+import { exemptForm } from "@/lib/company-profile";
 
 export type Note = {
   id: string;
@@ -132,7 +133,7 @@ export function activityTitle(kind: string) {
       created: "New lead",
       stage: "Job moved",
       intake: "Intake updated",
-      form17: "Form 17",
+      form17: exemptForm().short,
       details: "Job updated",
       contact: "Contact",
       override: "Override",
@@ -155,5 +156,9 @@ export async function topBarCounts(userId: string) {
   ]);
   const seen = user?.notificationsSeenAt ?? new Date(0);
   const feed = await notificationFeed(userId, 100);
-  return { bell: feed.filter((n) => n.at > seen && n.kind !== "task").length, mentions: mentions.length, tasks };
+  const { newBidCount } = await import("@/lib/bids/service");
+  const bids = await newBidCount().catch(() => 0);
+  // website requests nobody has assigned yet (everyone sees it; the sales manager also gets a task)
+  const webLeads = await prisma.webLead.count({ where: { status: "NEW" } });
+  return { bell: feed.filter((n) => n.at > seen && n.kind !== "task").length, mentions: mentions.length, tasks, bids, webLeads };
 }

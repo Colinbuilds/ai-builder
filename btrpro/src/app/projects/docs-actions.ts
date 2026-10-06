@@ -15,6 +15,10 @@ import {
 } from "@/lib/docs/confirm";
 import { importFromDrive } from "@/lib/integrations/drive";
 import { aiErrorMessage } from "@/lib/ai/claude";
+import { convertOldProposal, LegacyProposalError } from "@/lib/proposals/legacy";
+import { ContractReviewError, reviewContract } from "@/lib/docs/contract-review";
+import { redirect } from "next/navigation";
+import { appName } from "@/lib/company-profile";
 
 export type DocsResult = {
   problems: string[];
@@ -237,4 +241,34 @@ export async function planReviewAction(
     revalidatePath(`/projects/${doc.projectId}/plans`);
     return { problems: [aiErrorMessage(e)] };
   }
+}
+
+/** Reprints an old Drive proposal in BTR's current proposal layout (added next to the original). */
+export async function convertProposalAction(_: DocsResult, f: FormData): Promise<DocsResult> {
+  const u = await requireUser([...EDITORS]);
+  const id = String(f.get("id"));
+  const doc = await prisma.document.findUniqueOrThrow({ where: { id }, select: { projectId: true } });
+  try {
+    const r = await convertOldProposal(id, u);
+    revalidatePath(path(doc.projectId));
+    return { problems: [], ok: true, note: r.duplicate ? `Already converted — see the (${appName()} format) copy.` : `Added a copy in the ${appName()} layout. Check the amounts against the original.` };
+  } catch (e) {
+    return { problems: [e instanceof LegacyProposalError ? e.message : aiErrorMessage(e)] };
+  }
+}
+
+/** BTRbot reads a contract on the job and flags the risky clauses; opens the review. */
+export async function contractReviewAction(_: DocsResult, f: FormData): Promise<DocsResult> {
+  const u = await requireUser([...EDITORS]);
+  const id = String(f.get("id"));
+  let reviewId = "";
+  let projectId = "";
+  try {
+    const r = await reviewContract(id, u);
+    reviewId = r.id;
+    projectId = r.projectId;
+  } catch (e) {
+    return { problems: [e instanceof ContractReviewError ? e.message : aiErrorMessage(e)] };
+  }
+  redirect(`/projects/${projectId}/contract-review/${reviewId}`);
 }

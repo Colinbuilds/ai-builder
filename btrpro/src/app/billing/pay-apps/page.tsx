@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { payTotals, type SovLine } from "@/lib/billing/payapps";
+import { appName } from "@/lib/company-profile";
 
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -43,7 +44,7 @@ export default async function PayApps() {
               <td className="px-2 py-1.5 text-right tabular-nums">{usd(T.completed)}</td>
               <td className="px-2 py-1.5 text-right tabular-nums">{Math.round(T.pct * 100)}%</td>
               <td className="px-2 py-1.5 text-right tabular-nums">{usd(T.balance)}</td>
-              <td className="px-2 py-1.5 text-xs">{last ? `#${last.number} · ${last.status.toLowerCase()} · ${last.periodTo.toLocaleDateString("en-US")}` : c.retainagePct == null ? <span className="text-amber-700">set retainage</span> : "none yet in BTRpro"}</td>
+              <td className="px-2 py-1.5 text-xs">{last ? `#${last.number} · ${last.status.toLowerCase()} · ${last.periodTo.toLocaleDateString("en-US")}` : c.retainagePct == null ? <span className="text-amber-700">set retainage</span> : `none yet in ${appName()}`}</td>
               <td className="max-w-[16rem] truncate px-2 py-1.5 text-xs" title={c.submitVia ?? ""}>
                 {c.submitVia}
               </td>

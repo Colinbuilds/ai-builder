@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listSheets } from "@/lib/price";
-import { SUPPLIER } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { SheetStatusBadge } from "@/components/sheet-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { driveAvailable, serviceAccountEmail } from "@/lib/integrations/google-s
 type SP = Promise<{ applied?: string }>;
 
 export default async function SheetsPage({ searchParams }: { searchParams: SP }) {
+  const { supplier } = await getCompany();
   const user = await requireUser();
   const { applied } = await searchParams;
   const [sheets, drafts, history] = await Promise.all([
@@ -45,7 +46,7 @@ export default async function SheetsPage({ searchParams }: { searchParams: SP })
         <div>
           <h1 className="text-2xl font-semibold">Price sheets</h1>
           <p className="text-sm text-muted-foreground">
-            {SUPPLIER.name} · {SUPPLIER.phone}. {SUPPLIER.surchargeNote}
+            {supplier.name} · {supplier.phone}. {supplier.surchargeNote}
           </p>
         </div>
         {isAdmin && (

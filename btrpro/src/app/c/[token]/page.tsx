@@ -1,13 +1,16 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { crewPortal } from "@/lib/portal/crew";
 import { CrewLogForm, CrewTicketForm } from "@/components/portal/forms";
 
-export const metadata: Metadata = {
-  title: `Crew — ${BTR.name}`,
+export async function generateMetadata(): Promise<Metadata> {
+  const co = await getCompany();
+  return {
+  title: `Crew — ${co.name}`,
   robots: { index: false },
 };
+}
 const d = (x: Date) =>
   x.toLocaleDateString("en-US", {
     timeZone: "UTC",
@@ -24,6 +27,7 @@ export default async function CrewPage({
 }: {
   params: Promise<{ token: string }>;
 }) {
+  const co = await getCompany();
   const { token } = await params;
   const c = await crewPortal(token);
   if (!c) notFound();
@@ -37,9 +41,9 @@ export default async function CrewPage({
     <div className="mx-auto flex max-w-md flex-col gap-5 py-2 text-base">
       <header>
         <p className="text-sm text-muted-foreground">
-          {BTR.name} ·{" "}
-          <a href={`tel:${BTR.phone}`} className="underline">
-            {BTR.phone}
+          {co.name} ·{" "}
+          <a href={`tel:${co.phone}`} className="underline">
+            {co.phone}
           </a>
         </p>
         <h1 className="text-2xl font-semibold">{c.crew.name}</h1>

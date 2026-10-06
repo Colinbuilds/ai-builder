@@ -4,7 +4,7 @@
 import { createHash } from "node:crypto";
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from "pdf-lib";
 import { prisma } from "@/lib/db";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import type { Tab } from "@/lib/import/xlsx";
 import { norm, parseMoney } from "@/lib/import/schedule";
 import { safe } from "@/lib/pdf/writer";
@@ -124,6 +124,7 @@ export async function setPayAppStatus(id: string, status: "SUBMITTED" | "PAID" |
 
 // ---------- G702 / G703 PDF ----------
 export async function payAppPdf(id: string) {
+  const co = await getCompany();
   const p = await prisma.payApp.findUniqueOrThrow({ where: { id }, include: { contract: { include: { apps: { select: { number: true, lines: true, retainagePct: true } } } } } });
   const lines = p.lines as SovLine[];
   const T = payTotals(lines, p.retainagePct);
@@ -151,7 +152,7 @@ export async function payAppPdf(id: string) {
   const left = [
     ["To (contractor):", p.contract.gc ?? ""],
     ["Project:", p.contract.project],
-    ["From (subcontractor):", `${BTR.name}, ${BTR.proposalAddress.join(", ")}`],
+    ["From (subcontractor):", `${co.name}, ${co.proposalAddress.join(", ")}`],
   ];
   left.forEach(([k, v], i) => {
     txt(pg, k, 40, 708 - i * 14, { f: bold });
@@ -185,7 +186,7 @@ export async function payAppPdf(id: string) {
   y -= 80;
   pg.drawLine({ start: { x: 40, y }, end: { x: 300, y }, thickness: 1, color: rgb(0, 0, 0) });
   pg.drawLine({ start: { x: 330, y }, end: { x: 572, y }, thickness: 1, color: rgb(0, 0, 0) });
-  txt(pg, `${BTR.name} — authorized signature`, 40, y - 12, { size: 8 });
+  txt(pg, `${co.name} — authorized signature`, 40, y - 12, { size: 8 });
   txt(pg, "Date", 330, y - 12, { size: 8 });
 
   // G703 — continuation sheet

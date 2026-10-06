@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 import { requireCrew } from "@/lib/crew/auth";
 import { crewJobs, PHOTO_STAGES, REQUIRED_STAGES, STAGE_HINT, STAGE_LABEL } from "@/lib/crew/service";
 import { prisma } from "@/lib/db";
-import { CrewInvoiceForm, IssueForm, PhotoUploader } from "@/components/crew/forms";
+import { CrewInvoiceForm, ExtraWorkForm, IssueForm, PhotoUploader, TalkForm } from "@/components/crew/forms";
 import { CrewHeader } from "../../crew-header";
+import { shortName } from "@/lib/company-profile";
 
-export const metadata = { title: "BTR crew portal" };
+export const metadata = { title: `${shortName()} crew portal` };
 
 export default async function CrewJob({ params }: { params: Promise<{ id: string }> }) {
   const crew = await requireCrew();
@@ -49,6 +50,16 @@ export default async function CrewJob({ params }: { params: Promise<{ id: string
         <h2 className="text-lg font-semibold">Found a problem?</h2>
         <p className="text-sm text-muted-foreground">Rotted decking, extra layers, hidden damage — report it here with photos before doing extra work, so the office can price it.</p>
         <IssueForm projectId={id} />
+      </section>
+      <section className="flex flex-col gap-3 rounded-xl border border-btr-line bg-background p-4">
+        <h2 className="text-lg font-semibold">Extra work tag</h2>
+        <p className="text-sm text-muted-foreground">Did work beyond the contract because the super or builder asked? Log it the same day with hours, materials and photos, and have them sign. A signed tag gets paid.</p>
+        <ExtraWorkForm projectId={id} />
+      </section>
+      <section className="flex flex-col gap-3 rounded-xl border border-btr-line bg-background p-4">
+        <h2 className="text-lg font-semibold">Safety talk</h2>
+        <p className="text-sm text-muted-foreground">Five minutes before work starts. Log who was there — GCs ask for this.</p>
+        <TalkForm projectId={id} />
       </section>
       <section className="flex flex-col gap-3 rounded-xl border border-btr-line bg-background p-4">
         <h2 className="text-lg font-semibold">Send an invoice for this job</h2>

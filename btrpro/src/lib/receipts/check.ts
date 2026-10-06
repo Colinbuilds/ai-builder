@@ -2,6 +2,7 @@
 // No AI here — every number shown is either printed on the receipt or computed by this code with its formula.
 import { round } from "@/lib/calc/core";
 import { streetKey } from "@/lib/integrations/drive-photos";
+import { shortName } from "@/lib/company-profile";
 
 export type ReceiptLine = { itemNumber: string | null; description: string; quantity: number | null; uom: string | null; unitPrice: number | null; extendedPrice: number | null; orderedQuantity?: number | null; handwritten?: boolean };
 export type Receipt = {
@@ -153,10 +154,10 @@ export function priceCheckLine(
   if (scope.builderName) {
     compared = builderRow ?? (scope.fallback === "STANDARD" ? standard : null);
     if (!compared)
-      return { ...base, status: "NOT_ON_BUILDER", compared: null, note: `Not on ${scope.builderName}'s pricing${standard?.unitPrice != null ? ` (BTR standard is $${standard.unitPrice.toFixed(2)}/${standard.uom})` : ""}.` };
+      return { ...base, status: "NOT_ON_BUILDER", compared: null, note: `Not on ${scope.builderName}'s pricing${standard?.unitPrice != null ? ` (${shortName()} standard is $${standard.unitPrice.toFixed(2)}/${standard.uom})` : ""}.` };
   } else compared = standard;
   if (!compared) return { ...base, status: "NOT_ON_SHEETS", compared: null, note: "Only on a builder's pricing, and this isn't that builder's job." };
-  const tag = compared.builder ? `${scope.builderName} ${compared.code}` : `sheet ${compared.code}${scope.builderName ? " (BTR standard — builder falls back)" : ""}`;
+  const tag = compared.builder ? `${scope.builderName} ${compared.code}` : `sheet ${compared.code}${scope.builderName ? ` (${shortName()} standard — builder falls back)` : ""}`;
   if (compared.unitPrice == null) return { ...base, compared, status: "CALL", note: `CALL for price on ${tag} — get a quote.` };
   if (l.unitPrice == null) return { ...base, compared, status: "NO_PRICE", note: `No unit price printed. ${tag}: $${compared.unitPrice.toFixed(2)}/${compared.uom}.` };
   if (!l.uom || l.uom.trim().toUpperCase() !== compared.uom.trim().toUpperCase())

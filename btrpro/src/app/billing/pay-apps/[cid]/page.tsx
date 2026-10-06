@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { BILLING_ROLES } from "@/lib/roles";
 import { payTotals, type SovLine } from "@/lib/billing/payapps";
 import { ContractSettings, NewPayApp } from "@/components/billing/payapp-forms";
+import { appName } from "@/lib/company-profile";
 
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
@@ -51,7 +52,7 @@ export default async function Contract({ params }: { params: Promise<{ cid: stri
             })}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">No applications made in BTRpro yet. The first one starts from what&apos;s already billed on the sheet.</p>
+          <p className="text-sm text-muted-foreground">No applications made in {appName()} yet. The first one starts from what&apos;s already billed on the sheet.</p>
         )}
         {can && <NewPayApp id={c.id} />}
       </section>

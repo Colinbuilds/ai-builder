@@ -1,4 +1,5 @@
 // Small PDF layout helper on pdf-lib: wrapped text, tables that break across pages, header/footer.
+import { companySync } from "@/lib/company-profile";
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb, type RGB } from "pdf-lib";
 
 // Standard PDF fonts only encode WinAnsi (CP1252). Map common symbols; drop anything else.
@@ -28,7 +29,7 @@ export class PdfWriter {
     const w = new PdfWriter();
     w.doc = await PDFDocument.create();
     w.doc.setTitle(safe(opts.title));
-    w.doc.setProducer("BTRpro");
+    w.doc.setProducer(companySync().productName);
     w.font = await w.doc.embedFont(StandardFonts.Helvetica);
     w.bold = await w.doc.embedFont(StandardFonts.HelveticaBold);
     w.footer = opts.footer;

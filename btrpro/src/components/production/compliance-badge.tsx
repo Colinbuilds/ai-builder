@@ -1,10 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import type { Compliance } from "@/lib/production/rules";
+import { shortName } from "@/lib/company-profile";
 
 export function ComplianceBadge({ c }: { c: Compliance }) {
   if (!c.items.length)
     return (
-      <span className="text-xs text-muted-foreground">covered by BTR</span>
+      <span className="text-xs text-muted-foreground">covered by {shortName()}</span>
     );
   const v =
     c.status === "OK" ? "green" : c.status === "EXPIRING" ? "amber" : "red";

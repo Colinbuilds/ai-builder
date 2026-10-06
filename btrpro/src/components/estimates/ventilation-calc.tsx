@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { VENT_PRODUCTS, ventilation } from "@/lib/estimates/ventilation";
+import { useBrand } from "@/components/brand";
 
 const num = (s: string) => {
   const n = Number(s.replace(/[,\s]/g, ""));
@@ -10,6 +11,7 @@ const num = (s: string) => {
 
 /** Code ventilation count — Lomanco method. Ratings come from the product list (with sources) or are typed in. */
 export function VentilationCalc({ initialAttic, source }: { initialAttic: number | null; source: string | null }) {
+  const { shortName } = useBrand();
   const [attic, setAttic] = useState(initialAttic ? String(initialAttic) : "");
   const [ratio, setRatio] = useState<150 | 300>(300);
   const [ex, setEx] = useState("lomanco-135");
@@ -34,7 +36,7 @@ export function VentilationCalc({ initialAttic, source }: { initialAttic: number
         <fieldset className="flex flex-col gap-1">
           <legend className="mb-1 font-medium">Ratio</legend>
           <label className="flex items-center gap-2">
-            <input type="radio" name="ratio" checked={ratio === 300} onChange={() => setRatio(300)} /> 1/300 — balanced intake &amp; exhaust (BTR default)
+            <input type="radio" name="ratio" checked={ratio === 300} onChange={() => setRatio(300)} /> 1/300 — balanced intake &amp; exhaust ({shortName} default)
           </label>
           <label className="flex items-center gap-2">
             <input type="radio" name="ratio" checked={ratio === 150} onChange={() => setRatio(150)} /> 1/150 — when the 1/300 conditions aren&apos;t met

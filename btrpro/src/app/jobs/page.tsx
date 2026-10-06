@@ -15,6 +15,7 @@ import { unreadCounts } from "@/lib/comms/chat";
 import { BulkDelete } from "@/components/projects/delete-job";
 import { MILESTONES } from "@/lib/projects/milestones";
 import { MilestoneDot } from "@/components/shell/milestone-dot";
+import { exemptForm } from "@/lib/company-profile";
 
 type SP = Promise<{ stage?: string; q?: string; mine?: string; deleted?: string; m?: string; watch?: string; unassigned?: string; due?: string }>;
 const OPEN: Stage[] = ["LEAD", "ESTIMATING", "SUBMITTED", "SOLD", "SCHEDULED", "IN_PRODUCTION", "COMPLETE", "INVOICED"];
@@ -134,7 +135,7 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
                   <div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
                     {view === "ALL" && <Badge variant="outline">{p.market === "RESIDENTIAL" ? "Res" : "Com"}</Badge>}
                     {p.address}
-                    {showForm17Banner(p) && <Badge variant="red">Form 17 pending</Badge>}
+                    {showForm17Banner(p) && <Badge variant="red">{exemptForm().short} pending</Badge>}
                     {unread[p.id] && (
                       <Link href={`/projects/${p.id}/chat`}>
                         <Badge variant={unread[p.id].mentioned ? "red" : "blue"}>

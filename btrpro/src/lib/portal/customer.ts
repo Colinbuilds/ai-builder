@@ -2,7 +2,7 @@
 // change orders, invoices and payments, and can sign and pay online. No costs, margins, or internal notes.
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { BTR } from "@/lib/company";
+import { getCompany } from "@/lib/company-profile";
 import { balanceDue } from "@/lib/billing/math";
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 
@@ -31,6 +31,7 @@ export async function sharePortal(
   actor: Actor,
   opts: { email?: boolean } = {},
 ) {
+  const co = await getCompany();
   if (actor.role === "VIEWER")
     throw new PortalError("Viewers can't share the portal.");
   const p = await prisma.project.findUniqueOrThrow({
@@ -54,8 +55,8 @@ export async function sharePortal(
   if (opts.email && c?.email && emailConfigured()) {
     await sendEmail({
       to: c.email,
-      subject: `${BTR.name} — your project page for ${p.name}`,
-      text: `Hi ${c.firstName},\n\nEverything for your project is in one place — proposal, schedule, change orders, invoices and payments:\n${portalUrl(token)}\n\n${BTR.name} · ${BTR.phone}`,
+      subject: `${co.name} — your project page for ${p.name}`,
+      text: `Hi ${c.firstName},\n\nEverything for your project is in one place — proposal, schedule, change orders, invoices and payments:\n${portalUrl(token)}\n\n${co.name} · ${co.phone}`,
     }).then(
       () => (emailed = c.email),
       (e) => console.error("portal email failed", e),

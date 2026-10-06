@@ -8,6 +8,8 @@ import { recentJobs } from "@/lib/shell/recent";
 import { TopBar, type Tool } from "@/components/shell/top-bar";
 import { PagePanel } from "@/components/shell/page-panel";
 import { databasePersistence } from "@/lib/setup-check";
+import { appName, botName, brandCss, getCompany } from "@/lib/company-profile";
+import { BrandProvider } from "@/components/brand";
 
 function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href: string; label: string }[] } {
   const staff = role !== "VIEWER";
@@ -26,7 +28,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
               { href: "/customers/new?kind=contact", label: "New contact" },
               { href: "/customers/new", label: "New customer account" },
               { href: "/today#add-task", label: "New task" },
-              { href: "/ideas", label: "New idea for BTRpro" },
+              { href: "/ideas", label: `New idea for ${appName()}` },
               ...(admin ? [{ href: "/updates#post", label: "Company update" }] : []),
             ],
           },
@@ -41,6 +43,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
         { href: "/jobs", label: "All open jobs" },
         { href: "/jobs?mine=1", label: "My jobs" },
         { href: "/jobs?stage=LEAD", label: "Leads" },
+        { href: "/leads/web", label: "Website requests (customer form)" },
         { href: "/jobs?watch=1", label: "Watch list" },
         { heading: "By milestone" },
         { href: "/jobs?m=LEAD", label: "Lead" },
@@ -91,6 +94,12 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
             label: "Reports",
             icon: "FileText" as const,
             items: [
+              ...(admin || role === "OFFICE" ? [{ href: "/reports/scorecard", label: "Owner scorecard" }, { href: "/reports/wip", label: "WIP schedule (bank / surety)" }, { href: "/reports/cash", label: "13-week cash forecast" }, { href: "/reports/bonding", label: "Bonding capacity" }] : []),
+              { href: "/reports/risk", label: "Risk desk (insurance, lien deadlines)" },
+              { href: "/reports/extras", label: "Extra work desk (field tags → change orders)" },
+              { href: "/safety", label: "Safety & prequal packet" },
+              { href: "/playbook", label: "Playbook (how we do things, SOPs)" },
+              { href: "/reports/customers", label: "Customer relationships (who went quiet)" },
               ...(isOwner ? [{ href: "/audit", label: "Owner audit" }] : []),
               { href: "/reports/sales", label: "Sales & pipeline" },
               { href: "/reports/win-loss", label: "Win / loss & win-back" },
@@ -106,6 +115,8 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       label: "Estimating",
       icon: "Wrench",
       items: [
+        ...(staff ? [{ href: "/bids", label: "Public bids (county, city, SDI plan room)" }] : []),
+        { href: "/library/codes", label: `Code & spec library (${botName()} research)` },
         { href: "/library", label: "Price library" },
         { href: "/library/sheets", label: "Price sheets" },
         { href: "/settings/templates", label: "Estimate templates" },
@@ -120,10 +131,12 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
     admin: admin
       ? [
           { href: "/connections", label: "Connections (ABC, EagleView, QuickBooks)" },
+          { href: "/settings/drive-jobs", label: "Move jobs from Drive" },
           ...(staff ? [{ href: "/ideas", label: "Ideas board (office requests)" }] : []),
           { href: "/admin/users", label: "Users" },
           { href: "/updates", label: "Company updates" },
           { href: "/settings/company", label: "Company settings" },
+          { href: "/settings/profile", label: "Company profile & branding" },
           { href: "/settings/integrations", label: "Integrations" },
           { href: "/admin/setup", label: "Setup check" },
           { href: "/settings/import-jobs", label: "Import jobs (schedules)" },
@@ -135,23 +148,33 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
   };
 }
 
-export const metadata: Metadata = {
-  title: "BTRpro — BTR Contracting",
-  description:
-    "BTR Contracting operations: estimating, jobs, orders, and job costing",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const co = await getCompany();
+  return {
+    title: `${co.productName} — ${co.name}`,
+    description: `${co.name} operations: estimating, jobs, orders, and job costing`,
+  };
+}
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const [user, co] = await Promise.all([getCurrentUser(), getCompany()]);
   const db = user?.role === "ADMIN" ? databasePersistence() : null;
+  const css = brandCss(co);
   return (
     <html lang="en">
+      {/* brand colors from the company profile; nothing is injected for BTR's defaults */}
+      {css && (
+        <head>
+          <style dangerouslySetInnerHTML={{ __html: css }} />
+        </head>
+      )}
       <body className="min-h-screen bg-[var(--canvas)] antialiased">
-        {user && <Shell user={user} />}
+        <BrandProvider brand={{ productName: co.productName, assistantName: co.assistantName, companyName: co.name, shortName: co.shortName, address: co.address }}>
+        {user && <Shell user={user} brand={{ productName: co.productName, logo: !!co.logo }} />}
         <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-4 sm:py-5">
           {db && !db.persistent && (
             <div className="mb-3 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950/50 dark:text-red-200">
@@ -164,12 +187,13 @@ export default async function RootLayout({
           )}
           <PagePanel>{children}</PagePanel>
         </main>
+        </BrandProvider>
       </body>
     </html>
   );
 }
 
-async function Shell({ user }: { user: { id: string; name: string; role: string; isOwner?: boolean } }) {
+async function Shell({ user, brand }: { user: { id: string; name: string; role: string; isOwner?: boolean }; brand: { productName: string; logo: boolean } }) {
   const [counts, recent, watching, view] = await Promise.all([
     topBarCounts(user.id),
     recentJobs(user.id),
@@ -185,6 +209,7 @@ async function Shell({ user }: { user: { id: string; name: string; role: string;
       tools={tools}
       view={view}
       adminLinks={admin}
+      brand={brand}
     />
   );
 }

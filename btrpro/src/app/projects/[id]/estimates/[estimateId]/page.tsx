@@ -57,6 +57,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatUsd } from "@/lib/utils";
+import { shortName } from "@/lib/company-profile";
 
 const SECTION_LABEL: Record<string, string> = {
   MATERIAL_ROOFING: "Materials — roofing",
@@ -173,7 +174,7 @@ export default async function EstimatePage({
             "Items not on it: "
           )}
           {scope.fallback === "STANDARD"
-            ? "BTR standard price, flagged on the line."
+            ? `${shortName()} standard price, flagged on the line.`
             : "MISSING."}
         </p>
       )}
@@ -558,7 +559,7 @@ export default async function EstimatePage({
         <h3 className="font-semibold">Labor</h3>
         {standards.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            The labor standards library is empty. Enter BTR&apos;s rates once
+            The labor standards library is empty. Enter {shortName()}&apos;s rates once
             under{" "}
             <Link href="/settings/labor" className="underline">
               Settings → Labor standards

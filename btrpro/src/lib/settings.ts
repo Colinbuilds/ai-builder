@@ -37,8 +37,28 @@ export type CompanySettings = {
   abcBillTo: string | null; // ABC Supply bill-to account number (invoice history is read for it)
   abcSyncedAt: string | null; // ISO time of the last ABC background sync
   abcSyncError: string | null; // last ABC sync problem, cleared on success
+  jobsDriveId: string | null; // the shared drive (or folder) holding one folder per job; blank = BTR's jobs drive
+  driveImportMonths: number | null; // how far back the Drive job import looks; blank = 12
+  driveImportOn: boolean | null; // true while the background import is running
+  driveImportScannedAt: string | null;
+  cashOnHand: number | null; // bank balance for the 13-week forecast
+  cashAsOf: string | null; // when that balance was read (ISO date)
+  weeklyPayroll: number | null; // in-house payroll per week (office + W-2 crews), all-in
+  monthlyOverhead: number | null; // rent, insurance, trucks, software… per month
+  cashFloor: number | null; // the lowest balance you're comfortable with
+  suretyName: string | null; // bonding company / agent
+  bondSingleLimit: number | null; // largest single bonded job the surety will write (from their letter)
+  bondAggregateLimit: number | null; // total bonded work-in-progress allowed (from their letter)
+  workingCapital: number | null; // current assets − current liabilities, from the last CPA statement
+  netWorth: number | null; // equity, from the last CPA statement
+  financialsAsOf: string | null; // date of that statement (ISO)
+  bidRadiusMiles: number | null; // public bids: straight-line miles from Omaha or Lincoln (blank = 125, about 2 hours' drive)
+  bidsCheckedAt: string | null; // ISO time of the last full bid-board check
+  salesManagerId: string | null; // user who assigns website requests to salespeople (blank = every Admin)
+  companyProfile: { [k: string]: string | number | string[] | { [k: string]: string } | null } | null; // white-label profile (see company-profile.ts); blank = BTR
+  aiRules: string | null; // the company's own estimating rules for the AI; blank = CLAUDE.md (BTR)
 };
-const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError"];
+const KEYS: (keyof CompanySettings)[] = ["markupPct", "salesTaxPct", "depositPct", "proposalValidDays", "proposalTerms", "warrantyText", "overheadPct", "costVarianceThresholdPct", "supplierOrderEmail", "invoiceNetDays", "remitTo", "cardSurchargePct", "qboItemId", "qboExpenseAccountId", "qboPaymentAccountId", "receiptMarkupPct", "priceSheetFolder", "priceSheetSyncUserId", "priceSheetLastCheck", "iceWaterEavesFt", "iceWaterValleysFt", "companyCamDriveFolder", "takeoffAllowancePct", "billOwnerOver", "billNetDays", "estimatingSheet", "estimatingSyncedAt", "estimatingSheetOff", "prodResSheet", "prodCommSheet", "prodSyncedAt", "prodSheetOff", "abcBillTo", "abcSyncedAt", "abcSyncError", "jobsDriveId", "driveImportMonths", "driveImportOn", "driveImportScannedAt", "cashOnHand", "cashAsOf", "weeklyPayroll", "monthlyOverhead", "cashFloor", "suretyName", "bondSingleLimit", "bondAggregateLimit", "workingCapital", "netWorth", "financialsAsOf", "bidRadiusMiles", "bidsCheckedAt", "salesManagerId", "companyProfile", "aiRules"];
 
 export async function getSettings(): Promise<CompanySettings> {
   const rows = await prisma.companySetting.findMany({ where: { key: { in: KEYS } } });
