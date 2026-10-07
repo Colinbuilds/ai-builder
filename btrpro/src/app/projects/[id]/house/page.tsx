@@ -197,6 +197,11 @@ export default async function HousePage({ params, searchParams }: { params: Prom
               <Big label="Spent so far" value={formatUsd(spent)} />
               <Big label={spent > 0 ? "Profit if nothing else is spent" : "Profit so far"} value={spent > 0 ? formatUsd((costing?.pnl.revenue ?? sell) - spent) : "— no costs yet"} small={spent <= 0} />
             </div>
+            {spent > planned.materials + planned.tax + planned.labor + 0.005 && (
+              <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+                Costs so far are {formatUsd(spent - planned.materials - planned.tax - planned.labor)} over the plan book. Check the receipts and bills on this house.
+              </p>
+            )}
             <div className="grid gap-4 lg:grid-cols-2">
               <MoneyDonut title="The plan (from the plan book)" slices={plannedPie.slices} loss={plannedPie.loss} center={formatUsd(sell)} centerNote="sell" />
               {actualPie && spent > 0 ? (

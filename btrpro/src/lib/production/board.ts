@@ -106,7 +106,7 @@ export async function updateProdLine(id: string, i: ProdInput, a: Actor) {
 const today = () => new Date().toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "2-digit", timeZone: "America/Chicago" });
 
 /** Office people who get the "crew can be paid" note (Office role; admins if there are none). */
-async function officeUsers() {
+export async function officeUsers() {
   const office = await prisma.user.findMany({ where: { role: "OFFICE" }, select: { id: true } });
   return office.length ? office : prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
 }

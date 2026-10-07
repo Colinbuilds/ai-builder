@@ -18,6 +18,8 @@ export async function register() {
     startBidWatcher();
     const { startBillingWatcher } = await import("@/lib/billing/schedule");
     startBillingWatcher();
+    const { startBuilderWatcher } = await import("@/lib/builders/watch");
+    startBuilderWatcher();
     const { startBackupWatcher } = await import("@/lib/backup");
     startBackupWatcher();
     // receipts that were mid-read when the server restarted (a deploy) are read again

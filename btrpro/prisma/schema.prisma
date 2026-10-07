@@ -2247,16 +2247,18 @@ model BillingStep {
 // per trade what to order, what it sells for and what the crew is paid. Each import is a new version; the
 // newest active one is used. The data keeps the sheet's own numbers (sell, payout) next to the quantities.
 model BuilderPlanBook {
-  id         String   @id @default(cuid())
-  companyId  String
-  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  label      String
-  sourceUrl  String?
-  sourceName String?
-  data       Json
-  active     Boolean  @default(true)
-  importedBy String
-  importedAt DateTime @default(now())
+  id               String    @id @default(cuid())
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  label            String
+  sourceUrl        String?
+  sourceName       String?
+  data             Json
+  active           Boolean   @default(true)
+  importedBy       String
+  importedAt       DateTime  @default(now())
+  /// the Google Sheet's last-modified time when it was imported (for the nightly sync)
+  sourceModifiedAt DateTime?
 
   @@index([companyId, active])
 }
