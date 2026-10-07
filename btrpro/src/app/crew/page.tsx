@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireCrew } from "@/lib/crew/auth";
-import { crewJobs, STAGE_LABEL, REQUIRED_STAGES, PHOTO_STAGES } from "@/lib/crew/service";
+import { crewJobs, crewScheduleLines, STAGE_LABEL, REQUIRED_STAGES, PHOTO_STAGES } from "@/lib/crew/service";
 import { prisma } from "@/lib/db";
 import { CrewHeader } from "./crew-header";
 import { shortName } from "@/lib/company-profile";
@@ -9,9 +9,11 @@ export const metadata = { title: `${shortName()} crew portal` };
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 const STATUS: Record<string, string> = { SUBMITTED: "Waiting on the office", APPROVED: "Approved", REJECTED: "Sent back", PAID: "Paid" };
 
-export default async function CrewHome() {
+export default async function CrewHome({ searchParams }: { searchParams: Promise<{ done?: string; err?: string }> }) {
   const crew = await requireCrew();
-  const [jobs, invoices, flagged] = await Promise.all([
+  const sp = await searchParams;
+  const [lines, jobs, invoices, flagged] = await Promise.all([
+    crewScheduleLines(crew),
     crewJobs(crew.id),
     prisma.crewInvoice.findMany({ where: { crewId: crew.id }, include: { project: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 30 }),
     prisma.jobPhoto.findMany({ where: { crewId: crew.id, review: "ISSUE" }, include: { project: { select: { id: true, name: true } } }, orderBy: { reviewedAt: "desc" }, take: 10 }),
@@ -19,6 +21,29 @@ export default async function CrewHome() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-5">
       <CrewHeader name={crew.name} />
+      {sp.done && <p className="rounded-xl bg-green-50 p-3 text-green-800 dark:bg-green-950 dark:text-green-200">Marked done. The office has it.</p>}
+      {sp.err && <p className="rounded-xl bg-red-50 p-3 text-red-800 dark:bg-red-950 dark:text-red-200">{sp.err}</p>}
+      {lines.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">My schedule</h2>
+          <ul className="flex flex-col gap-2">
+            {lines.map((l) => (
+              <li key={l.id}>
+                <Link href={`/crew/line/${l.id}`} className="flex items-center gap-3 rounded-xl border border-btr-line bg-background p-4 active:bg-muted">
+                  <span className="w-14 shrink-0 text-center">
+                    <span className="block text-xs text-muted-foreground">{l.startDate ? l.startDate.toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short" }) : l.board === "CURRENT" ? "now" : "next"}</span>
+                    <span className="block text-lg font-semibold">{l.startDate ? l.startDate.toLocaleDateString("en-US", { timeZone: "UTC", month: "numeric", day: "numeric" }) : "—"}</span>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">{l.location ?? l.project}</span>
+                    <span className="block truncate text-sm text-muted-foreground">{[l.builder, l.model, l.type].filter(Boolean).join(" · ")}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {flagged.length > 0 && (
         <section className="rounded-xl border-2 border-btr-black p-4">
           <h2 className="font-semibold">The office flagged these</h2>

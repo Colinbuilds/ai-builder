@@ -23,14 +23,25 @@ export const STAGE_HINT: Record<PhotoStage, string> = {
 export const REQUIRED_STAGES: PhotoStage[] = ["FINISHED", "CLEANUP"];
 export const MAX_PHOTOS_PER_UPLOAD = 12;
 
+const sameName = (a: string | null, b: string) => !!a && a.trim().toLowerCase() === b.trim().toLowerCase();
 const ACTIVE_JOB = { status: { notIn: ["LOST", "CLOSED"] as never[] } };
 
 /** Jobs a crew can photograph and invoice: ones it's scheduled on or has a work order for. */
+/** A crew is on a job by a calendar event, a work order, or a production schedule line naming the crew. */
+async function onJob(crewId: string) {
+  const crew = await prisma.crew.findUnique({ where: { id: crewId }, select: { name: true } });
+  return [
+    { scheduleEvents: { some: { crewId, status: { not: "CANCELLED" as const } } } },
+    { workOrders: { some: { crewId, status: { not: "CANCELLED" as const } } } },
+    ...(crew ? [{ prodLines: { some: { crew: { in: await scheduleNames(crew.name) }, board: { not: "COMPLETED" } } } }] : []),
+  ];
+}
+
 export async function crewJobs(crewId: string) {
   const projects = await prisma.project.findMany({
     where: {
       ...ACTIVE_JOB,
-      OR: [{ scheduleEvents: { some: { crewId, status: { not: "CANCELLED" } } } }, { workOrders: { some: { crewId, status: { not: "CANCELLED" } } } }],
+      OR: await onJob(crewId),
     },
     select: { id: true, name: true, address: true, status: true },
     orderBy: { updatedAt: "desc" },
@@ -48,7 +59,7 @@ async function assertOnJob(crewId: string, projectId: string) {
     where: {
       id: projectId,
       ...ACTIVE_JOB,
-      OR: [{ scheduleEvents: { some: { crewId, status: { not: "CANCELLED" } } } }, { workOrders: { some: { crewId, status: { not: "CANCELLED" } } } }],
+      OR: await onJob(crewId),
     },
   });
   if (!ok) throw new CrewError("That job isn't assigned to your crew. Call the office.");
@@ -179,3 +190,39 @@ export async function markCrewInvoicePaid(id: string, actor: { name: string; rol
   return prisma.crewInvoice.update({ where: { id }, data: { status: "PAID", paidAt: new Date() } });
 }
 
+
+// ---------- the production schedule, for the crew ----------
+// Builder houses and most residential work live on the production schedule, where a line names its crew by text.
+// A crew sees its open lines (matched by its name, ignoring case), with the address, a map link and — for a builder
+// house — the material list (no prices), and marks a line done from the phone.
+
+/** How the schedule spells this crew's name (any case). */
+async function scheduleNames(name: string) {
+  return (await prisma.prodLine.groupBy({ by: ["crew"], where: { crew: { not: null }, board: { in: ["ADD", "UPCOMING", "CURRENT", "WARRANTY"] } } })).map((g) => g.crew!).filter((c) => sameName(c, name));
+}
+
+export async function crewScheduleLines(crew: { id: string; name: string }) {
+  const names = await scheduleNames(crew.name);
+  if (!names.length) return [];
+  return prisma.prodLine.findMany({
+    where: { crew: { in: names }, board: { in: ["ADD", "UPCOMING", "CURRENT", "WARRANTY"] }, completedAt: null },
+    select: { id: true, builder: true, location: true, project: true, model: true, type: true, superName: true, notes: true, startDate: true, board: true, projectId: true },
+    orderBy: [{ startDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+    take: 60,
+  });
+}
+
+/** A crew's own open schedule line (or an error a crew member can act on). */
+export async function crewLine(crew: { id: string; name: string }, lineId: string) {
+  const line = await prisma.prodLine.findUnique({ where: { id: lineId } });
+  if (!line || !sameName(line.crew, crew.name)) throw new CrewError("That job isn't on your crew's schedule. Call the office.");
+  return line;
+}
+
+/** "Done — tell the office": the same step as the office marking it complete (they get the pay / bill task). */
+export async function crewMarkDone(crew: { id: string; name: string }, lineId: string) {
+  const line = await crewLine(crew, lineId);
+  if (line.completedAt) return line;
+  const { stepProdLine } = await import("@/lib/production/board");
+  return stepProdLine(lineId, "complete", { id: `crew:${crew.id}`, name: `${crew.name} (crew)` });
+}

@@ -142,3 +142,16 @@ export async function crewTalkAction(_: CrewResult, f: FormData): Promise<CrewRe
     return { problems: [msg(e)] };
   }
 }
+
+export async function crewDoneAction(form: FormData) {
+  const crew = await requireCrew();
+  const id = String(form.get("id"));
+  try {
+    const { crewMarkDone } = await import("@/lib/crew/service");
+    await crewMarkDone(crew, id);
+  } catch (e) {
+    redirect(`/crew?err=${encodeURIComponent(msg(e))}`);
+  }
+  revalidatePath("/crew");
+  redirect(`/crew?done=1`);
+}
