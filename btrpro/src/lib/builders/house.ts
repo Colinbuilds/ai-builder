@@ -45,6 +45,7 @@ export type HouseJobInput = {
   color?: string | null;
   notes?: string | null;
   startId?: string | null;
+  startDate?: Date | null;
 };
 
 /** "Lot 12 Prairie View" / "123 Main St" — how the job and schedule name the house. */
@@ -134,7 +135,7 @@ export async function createHouseJob(bookId: string, planName: string, sel: Sele
     bookId,
     planName,
     sel,
-    { address: houseName(input), trades: input.trades, crew: input.crew, superName: input.superName, vpo: input.vpo, color: input.color, notes: [input.permit ? `Permit ${input.permit}` : null, input.notes].filter(Boolean).join(" · ") || null, projectId: project.id },
+    { address: houseName(input), trades: input.trades, crew: input.crew, superName: input.superName, vpo: input.vpo, color: input.color, notes: [input.permit ? `Permit ${input.permit}` : null, input.notes].filter(Boolean).join(" · ") || null, projectId: project.id, startDate: input.startDate ?? null },
     actor,
   );
   if (input.startId) await prisma.builderStart.update({ where: { id: input.startId }, data: { status: "SCHEDULED", scheduledAt: now, prodLineIds: lines.map((l) => l.id), companyId: book.companyId } });

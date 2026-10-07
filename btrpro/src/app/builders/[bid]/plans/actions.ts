@@ -39,7 +39,7 @@ export async function addHouseAction(form: FormData) {
   let projectId: string;
   try {
     const trades = form.getAll("trade").map(String).filter((t): t is "ROOFING" | "GUTTERS" => t === "ROOFING" || t === "GUTTERS");
-    ({ project: { id: projectId } } = await createHouseJob(book, plan, sel, { lot: s("lot"), subdivision: s("subdivision"), address: s("address") ?? "", city: s("city"), permit: s("permit"), trades, crew: s("crew"), superName: s("super"), vpo: s("po"), notes: s("notes"), color: s("color"), startId: s("startId") }, user));
+    ({ project: { id: projectId } } = await createHouseJob(book, plan, sel, { lot: s("lot"), subdivision: s("subdivision"), address: s("address") ?? "", city: s("city"), permit: s("permit"), trades, crew: s("crew"), superName: s("super"), vpo: s("po"), notes: s("notes"), color: s("color"), startId: s("startId"), startDate: s("startDate") ? new Date(`${s("startDate")}T12:00:00Z`) : null }, user));
   } catch (e) {
     return back(bid, qs, e instanceof Error ? e.message : String(e));
   }

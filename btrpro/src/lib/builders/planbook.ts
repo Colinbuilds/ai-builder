@@ -56,7 +56,7 @@ export async function housesPerYear(builderName: string) {
 }
 
 export type HouseTrade = "ROOFING" | "GUTTERS";
-export type HouseInput = { address: string; trades: HouseTrade[]; crew?: string | null; superName?: string | null; vpo?: string | null; notes?: string | null; color?: string | null };
+export type HouseInput = { address: string; trades: HouseTrade[]; crew?: string | null; superName?: string | null; vpo?: string | null; notes?: string | null; color?: string | null; startDate?: Date | null };
 
 /** The house as the plan book prices it, refusing anything not priced on the sheet. */
 export async function priceHouse(bookId: string, planName: string, sel: Selection, trades: HouseTrade[]) {
@@ -101,7 +101,8 @@ export async function scheduleHouse(bookId: string, planName: string, sel: Selec
       },
       actor,
     );
-    lines.push(input.projectId ? await prisma.prodLine.update({ where: { id: line.id }, data: { projectId: input.projectId } }) : line);
+    const link = { ...(input.projectId ? { projectId: input.projectId } : {}), ...(input.startDate ? { startDate: input.startDate } : {}) };
+    lines.push(Object.keys(link).length ? await prisma.prodLine.update({ where: { id: line.id }, data: link }) : line);
   }
   return { lines, label };
 }

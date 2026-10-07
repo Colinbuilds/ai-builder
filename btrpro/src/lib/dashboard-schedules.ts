@@ -43,7 +43,7 @@ export async function dashboardSchedules(opts: { userId: string; userName: strin
       where: prodWhere,
       orderBy: [{ startDate: { sort: "asc", nulls: "last" } }, { board: "asc" }, { sourceTab: "asc" }, { sourceRow: "asc" }],
       take: 80,
-      select: { id: true, board: true, market: true, builder: true, project: true, location: true, type: true, crew: true, superName: true, startDate: true, completed: true },
+      select: { id: true, board: true, market: true, builder: true, project: true, location: true, model: true, type: true, crew: true, superName: true, startDate: true, completed: true },
     }),
     prisma.prodLine.count({ where: prodWhere }),
   ]);

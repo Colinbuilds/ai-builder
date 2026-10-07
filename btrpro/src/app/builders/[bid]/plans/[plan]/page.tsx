@@ -49,7 +49,7 @@ export default async function ModelPage({ params, searchParams }: { params: Prom
       p: sel.porch ? "1" : "0",
       t: tab,
       // what a builder's start sheet filled in rides along while options are changed
-      ...Object.fromEntries((["start", "lot", "sub", "addr", "city", "permit", "color"] as const).filter((k) => sp[k]).map((k) => [k, sp[k]!])),
+      ...Object.fromEntries((["start", "lot", "sub", "addr", "city", "permit", "color", "when"] as const).filter((k) => sp[k]).map((k) => [k, sp[k]!])),
       ...patch,
     }).toString();
   const base = `/builders/${bid}/plans/${encodeURIComponent(plan.name)}`;
@@ -317,6 +317,10 @@ export default async function ModelPage({ params, searchParams }: { params: Prom
                 <Input name="permit" defaultValue={sp.permit ?? ""} className="h-11 text-base" />
               </label>
             </div>
+            <label className="text-sm">
+              Start date {sp.when ? <span className="text-btr-blue">(from what you typed)</span> : <span className="text-muted-foreground">(optional)</span>}
+              <Input name="startDate" type="date" defaultValue={sp.when ?? ""} className="h-11 w-56 text-base" />
+            </label>
             <div className="flex gap-6 text-base">
               <label className="flex items-center gap-2">
                 <input type="checkbox" name="trade" value="ROOFING" className="h-5 w-5" defaultChecked={out.roofing.picked.length > 0} disabled={!out.roofing.picked.length} /> Roofing ({formatUsd(out.roofing.sell)})

@@ -118,6 +118,7 @@ export default async function PlansPage({ params, searchParams }: { params: Prom
       </div>
       {sp.err && <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{sp.err}</p>}
       {sp.ok && <p className="text-sm text-green-700">Plan book imported — {sp.ok}.</p>}
+      {sp.go && <p className="rounded-md border border-btr-blue/40 bg-btr-blue-soft p-3 text-base">Tap the model to schedule{sp.when ? ` (start ${sp.when})` : ""}. You&apos;ll pick the elevation and options, then type the address.</p>}
 
       {books.length === 0 && <p className="text-sm text-muted-foreground">No plan book yet. Import {b.name}&apos;s master sheet below: each model, its elevations and options, the ordering list, sell and payout come from it.</p>}
 
@@ -143,7 +144,7 @@ export default async function PlansPage({ params, searchParams }: { params: Prom
               const elevs = p.roofing.filter((o) => o.kind === "ELEVATION");
               const sells = elevs.map((o) => o.sell ?? 0).filter(Boolean);
               return (
-                <Link key={p.name} href={`/builders/${b.id}/plans/${encodeURIComponent(p.name)}?book=${book.id}`} className="rounded-lg border p-3 hover:border-primary hover:bg-muted/40">
+                <Link key={p.name} href={`/builders/${b.id}/plans/${encodeURIComponent(p.name)}?book=${book.id}${sp.go ? `&t=schedule${sp.when ? `&when=${sp.when}` : ""}` : ""}`} className="rounded-lg border p-3 hover:border-primary hover:bg-muted/40">
                   <div className="font-medium">{p.name}</div>
                   <div className="text-xs text-muted-foreground">{[p.sqft && `${p.sqft.toLocaleString()} sq ft`, elevs.length && `Elev ${elevs.map((o) => o.label).join(", ")}`].filter(Boolean).join(" · ")}</div>
                   <div className="mt-1 text-sm">{sells.length ? `Roofing ${formatUsd(Math.min(...sells))}${sells.length > 1 ? `–${formatUsd(Math.max(...sells))}` : ""}` : <Badge variant="outline">no roofing price</Badge>}</div>
