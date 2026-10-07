@@ -6,6 +6,7 @@ import { summarizeEmail } from "@/lib/comms/summaries";
 import { aiConfigured } from "@/lib/ai/claude";
 import { isReceiptsAddress, receiptsFromEmail } from "@/lib/receipts/inbox";
 import { billsFromEmail, isBillsAddress } from "@/lib/bills/inbox";
+import { isHousesAddress, startsFromEmail } from "@/lib/builders/starts-inbox";
 
 // Inbound email webhook (Postmark JSON or generic JSON). Mail sent or CC'd to
 // job-<token>@<INBOUND_EMAIL_DOMAIN> lands on that job; receipts@<INBOUND_EMAIL_DOMAIN> goes to the receipt reader. Auth: ?secret= or x-webhook-secret header.
@@ -27,10 +28,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "expected JSON" }, { status: 400 });
   }
   const { recipients, email } = parseInboundPayload(payload);
+  // houses@… → builder start sheets wait on Add a builder house; start sheets sent to receipts@ by mistake go there too
+  let houses: { ids: string[]; consumed: string[]; ignored?: string } | null = null;
+  if (isHousesAddress(recipients) || isReceiptsAddress(recipients)) {
+    houses = await startsFromEmail(email, { onlyStartSheets: !isHousesAddress(recipients) });
+    if (houses.ignored && isHousesAddress(recipients)) console.warn("houses email ignored:", houses.ignored);
+  }
   // receipts@… → the receipt reader (only from BTR staff or crew emails)
   let receipts: { ids: string[]; ignored?: string } | null = null;
   if (isReceiptsAddress(recipients)) {
-    receipts = await receiptsFromEmail(email);
+    const rest = houses?.consumed.length ? { ...email, attachments: email.attachments.filter((a) => !houses!.consumed.includes(a.name)) } : email;
+    receipts = rest.attachments.length ? await receiptsFromEmail(rest) : { ids: [] };
     if (receipts.ignored) console.warn("receipt email ignored:", receipts.ignored);
   }
   // bills@… → supplier bills (accounts payable)
@@ -55,5 +63,5 @@ export async function POST(req: Request) {
       r.filter((x) => x.status === "rejected").forEach((x) => console.error("email summary failed", (x as PromiseRejectedResult).reason)),
     );
   // Always 200 for well-formed requests so the provider doesn't retry mail that matched no job.
-  return NextResponse.json({ matchedJobs: projects.length, stored: stored.length, ...(receipts ? { receipts: receipts.ids.length } : {}), ...(bills ? { bills: bills.ids.length } : {}) });
+  return NextResponse.json({ matchedJobs: projects.length, stored: stored.length, ...(receipts ? { receipts: receipts.ids.length } : {}), ...(bills ? { bills: bills.ids.length } : {}), ...(houses ? { houses: houses.ids.length } : {}) });
 }

@@ -6,6 +6,7 @@ import type { StartData } from "@/lib/builders/starts";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import { readStartsAction } from "./actions";
+import { housesAddress } from "@/lib/builders/starts-inbox";
 
 // Adding a builder house, for anyone: drop in the builder's PDF, or pick the builder and model with big buttons.
 export default async function AddHousePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -44,6 +45,11 @@ export default async function AddHousePage({ searchParams }: { searchParams: Pro
             </Button>
           </form>
           <p className="text-xs text-muted-foreground">You can pick several PDFs at once. The same sheet is never added twice.</p>
+          {housesAddress() && (
+            <p className="rounded-md bg-muted/50 p-2 text-sm">
+              Or just forward the builder&apos;s email to <span className="font-semibold">{housesAddress()}</span> — the sheets show up below, ready to add.
+            </p>
+          )}
         </section>
 
         <section className="flex flex-col gap-3 rounded-xl border-2 p-5">

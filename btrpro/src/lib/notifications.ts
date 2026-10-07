@@ -160,5 +160,7 @@ export async function topBarCounts(userId: string) {
   const bids = await newBidCount().catch(() => 0);
   // website requests nobody has assigned yet (everyone sees it; the sales manager also gets a task)
   const webLeads = await prisma.webLead.count({ where: { status: "NEW" } });
-  return { bell: feed.filter((n) => n.at > seen && n.kind !== "task").length, mentions: mentions.length, tasks, bids, webLeads };
+  // builder start sheets read (upload or houses@ email) and not added yet
+  const houses = await prisma.builderStart.count({ where: { status: "NEW" } });
+  return { bell: feed.filter((n) => n.at > seen && n.kind !== "task").length, mentions: mentions.length, tasks, bids, webLeads, houses };
 }
