@@ -58,3 +58,16 @@ describe("going places", () => {
     expect((await goto("", actor, now)).hits).toEqual([]);
   });
 });
+
+describe("builder names don't hijack requests", () => {
+  it("a builder called “… Receipt Homes” doesn't catch “scan a receipt”", async () => {
+    const co = await prisma.company.create({ data: { name: "ZQ Receipt Homes", type: "BUILDER" } });
+    try {
+      const actor = { id: "x", role: "ADMIN" };
+      expect((await goto("scan a receipt", actor)).hits[0].href).toBe("/receipts");
+      expect((await goto("zq receipt homes pricing", actor)).hits.some((h) => h.href.includes(co.id))).toBe(true);
+    } finally {
+      await prisma.company.delete({ where: { id: co.id } });
+    }
+  });
+});

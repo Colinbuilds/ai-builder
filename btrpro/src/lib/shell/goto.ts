@@ -10,6 +10,7 @@ export type Hit = { tag: string; label: string; href: string; note?: string };
 type Who = { id: string; role: string };
 
 const STOP = new Set("a an the for to of on in at and or i we need want have get go do make add put new next this that my our it is be please can you with from up some".split(" "));
+const GENERIC = new Set("homes home builders builder building construction contracting company companies inc llc co corp group custom development properties residential communities".split(" "));
 const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
 const initials = (s: string) => words(s).map((w) => w[0]).join("");
 
@@ -71,7 +72,9 @@ export async function goto(q: string, who: Who, now = new Date()): Promise<{ hit
   const bHits = builders.filter((b) => {
     const w = words(b.name).filter((x) => x.length > 1 && !STOP.has(x));
     if (!w.length) return false;
-    const names = new Set([w.join(""), initials(b.name), w[0] + w.slice(1).map((x) => x[0]).join(""), ...(w[0].length >= 2 ? [w[0]] : []), ...w.filter((x) => x.length >= 4)]);
+    // a single word only counts when it's distinctive: not "homes", and not a word people use for what to do ("receipt")
+    const own = (x: string) => !GENERIC.has(x) && !INTENTS.some((i) => i.re.test(` ${x} `));
+    const names = new Set([w.join(""), initials(b.name), w[0] + w.slice(1).map((x) => x[0]).join(""), ...(w[0].length >= 2 && own(w[0]) ? [w[0]] : []), ...w.filter((x) => x.length >= 4 && own(x))]);
     return lower.includes(` ${w.join(" ")} `) || toks.some((t) => t.length >= 2 && names.has(t));
   });
   for (const b of bHits) {
