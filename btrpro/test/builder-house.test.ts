@@ -56,14 +56,17 @@ describe("reading a start sheet", () => {
     expect(findStartPlan({ ...data, plans: [{ ...plan, name: "X999 TEST_ONLY Maple" }] }, "X999")?.name).toBe("X999 TEST_ONLY Maple");
     const a = startSelection(parseStartText(sheet())!, plan);
     expect(a.sel).toEqual({ elevation: "B", garage: "3", basement: "STANDARD", porch: false });
+    expect(a.blocking).toEqual([]);
     expect(a.flags.some((f) => /Deck/.test(f))).toBe(true); // the deck line mentions LOOK-OUT BSMNT but isn't the basement
     expect(a.flags.some((f) => /Look-out/.test(f))).toBe(false);
     expect(a.color).toMatch(/Pkg C - VINYL SIDING: PRIMARY SIDING - TEST GRAY/);
     expect(startSelection(parseStartText(sheet({ basement: "BASEMENT - WALK-OUT" }))!, plan).sel.basement).toBe("DLWO");
-    expect(startSelection(parseStartText(sheet({ basement: "OPTIONAL UNFINISHED BASEMENT -LOOK-OUT" }))!, plan).flags.some((f) => /Look-out basement/.test(f))).toBe(true);
+    // what changes the price and isn't settled by the sheet is never guessed: it blocks until a person picks
+    expect(startSelection(parseStartText(sheet({ basement: "OPTIONAL UNFINISHED BASEMENT -LOOK-OUT" }))!, plan).blocking.some((f) => /Look-out basement/.test(f))).toBe(true);
     const z = startSelection(parseStartText(sheet({ elev: "Z2" }))!, plan);
-    expect(z.flags.some((f) => /Elevation “Z2”/.test(f))).toBe(true);
-    expect(z.sel.garage).toBe("2");
+    expect(z.blocking.some((f) => /Elevation “Z2”/.test(f))).toBe(true);
+    expect(z.sel.elevation).toBe("");
+    expect(startSelection(parseStartText(sheet({ elev: "B" }))!, plan).blocking.some((f) => /garage size/.test(f))).toBe(true);
   });
 });
 
@@ -108,6 +111,9 @@ describe("start sheet → job", () => {
       ["Gutters", "ADD", NAME],
     ]);
     expect((await prisma.builderStart.findUniqueOrThrow({ where: { id: start.id } })).status).toBe("SCHEDULED");
+    // never twice: the same start sheet, or the same house again right away (double click / Back)
+    await expect(createHouseJob(v.book!.id, v.plan!.name, v.sel, { address: v.data.address!, trades: ["ROOFING"], startId: start.id }, actor)).rejects.toThrow(/already added/);
+    await expect(createHouseJob(v.book!.id, v.plan!.name, v.sel, { lot: v.data.lot, subdivision: v.data.subdivision, address: v.data.address!, trades: ["ROOFING"] }, actor)).rejects.toThrow(/just added/);
   });
 });
 
@@ -145,6 +151,28 @@ describe("same builder, several accounts", () => {
       expect(g.hits.some((h) => h.href.includes(cos[0].id))).toBe(false);
     } finally {
       await prisma.company.deleteMany({ where: { id: { in: cos.map((c) => c.id) } } });
+    }
+  });
+});
+
+describe("books for different markets on different accounts", () => {
+  it("a KANSAS CITY sheet gets the Kansas City book even when the matched account holds the Omaha book", async () => {
+    const { matchStart } = await import("@/lib/builders/starts");
+    const admin = await prisma.user.findFirstOrThrow({ where: { role: "ADMIN" } });
+    const actor = { id: admin.id, name: "TEST_ONLY house", role: "ADMIN" };
+    const plain = await prisma.company.create({ data: { name: "QV Market Homes", type: "BUILDER" } });
+    const kc = await prisma.company.create({ data: { name: "QV Market Homes (Kansas City)", type: "BUILDER" } });
+    try {
+      const bytes = await toXlsx(workbook());
+      await importPlanBook(plain.id, { bytes, label: "Omaha" }, actor);
+      const { book } = await importPlanBook(kc.id, { bytes, label: "Kansas City" }, actor);
+      const m = await matchStart({ ...parseStartText(sheet())!, builder: "Q.V. MARKET HOMES - KANSAS CITY" });
+      expect(m.book?.id).toBe(book.id);
+      expect(m.company?.id).toBe(kc.id);
+      const o = await matchStart({ ...parseStartText(sheet())!, builder: "Q.V. MARKET HOMES - OMAHA" });
+      expect(o.company?.id).toBe(plain.id);
+    } finally {
+      await prisma.company.deleteMany({ where: { id: { in: [plain.id, kc.id] } } });
     }
   });
 });

@@ -77,10 +77,10 @@ export async function priceHouse(bookId: string, planName: string, sel: Selectio
 }
 
 /** One click from a model pick: a schedule line per trade with the sell and payout from the plan book. */
-export async function scheduleHouse(bookId: string, planName: string, sel: Selection, input: HouseInput & { projectId?: string | null }, actor: Actor) {
+export async function scheduleHouse(bookId: string, planName: string, sel: Selection, input: HouseInput & { projectId?: string | null }, actor: Actor, priced?: Awaited<ReturnType<typeof priceHouse>>) {
   if (actor.role === "VIEWER") throw new PlanBookError("Viewers can't add to the schedule.");
   if (!input.address.trim()) throw new PlanBookError("Enter the lot / address.");
-  const { book, out, label } = await priceHouse(bookId, planName, sel, input.trades);
+  const { book, out, label } = priced ?? (await priceHouse(bookId, planName, sel, input.trades));
   const lines = [];
   for (const t of input.trades) {
     const tr = t === "ROOFING" ? out.roofing : out.gutters;

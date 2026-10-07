@@ -34,8 +34,25 @@ export async function addHouseAction(form: FormData) {
   const book = String(form.get("book"));
   const plan = String(form.get("plan"));
   const sel: Selection = { elevation: String(form.get("e")), garage: form.get("g") === "3" ? "3" : "2", basement: form.get("b") === "DLWO" ? "DLWO" : "STANDARD", porch: form.get("p") === "1" };
-  const qs = `/${encodeURIComponent(plan)}?book=${book}&e=${encodeURIComponent(sel.elevation)}&g=${sel.garage}&b=${sel.basement}&p=${sel.porch ? 1 : 0}&t=schedule`;
   const s = (k: string) => String(form.get(k) ?? "").trim() || null;
+  // on an error, come back with everything still filled in (incl. the start sheet it came from)
+  const keep = Object.fromEntries(
+    (
+      [
+        ["start", "startId"],
+        ["lot", "lot"],
+        ["sub", "subdivision"],
+        ["addr", "address"],
+        ["city", "city"],
+        ["permit", "permit"],
+        ["color", "color"],
+        ["when", "startDate"],
+      ] as const
+    )
+      .map(([q, f]) => [q, s(f)] as const)
+      .filter(([, v]) => v),
+  ) as Record<string, string>;
+  const qs = `/${encodeURIComponent(plan)}?${new URLSearchParams({ book, e: sel.elevation, g: sel.garage, b: sel.basement, p: sel.porch ? "1" : "0", t: "schedule", ...keep }).toString()}`;
   let projectId: string;
   try {
     const trades = form.getAll("trade").map(String).filter((t): t is "ROOFING" | "GUTTERS" => t === "ROOFING" || t === "GUTTERS");

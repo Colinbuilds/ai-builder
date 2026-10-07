@@ -15,7 +15,7 @@ export default async function StartPage({ params, searchParams }: { params: Prom
   const sp = await searchParams;
   const v = await startView(sid);
   if (!v) notFound();
-  const { data: d, company, book, plan, sel, flags, color } = v;
+  const { data: d, company, book, plan, sel, flags, blocking, color } = v;
   const out = book && plan ? buildOut(book.data, plan, sel) : null;
   const label = plan ? modelLabel(plan.name, sel) : null;
   const done = v.start.status === "SCHEDULED";
@@ -31,7 +31,7 @@ export default async function StartPage({ params, searchParams }: { params: Prom
     ["Address", [d.address, d.city].filter(Boolean).join(", ") || null],
     ["Permit", d.permit],
     ["Model", plan ? plan.name : d.planCode ? `${d.planCode} (not found in the plan book)` : null],
-    ["Elevation", d.elevationCode ? `${sel.elevation}  (sheet says ${d.elevationCode})` : sel.elevation],
+    ["Elevation", d.elevationCode ? `${sel.elevation || "?"}  (sheet says ${d.elevationCode})` : sel.elevation || "?"],
     ["Garage", sel.garage === "3" ? "3 car" : "2 car"],
     ["Basement", sel.basement === "DLWO" ? "Daylight / walkout" : (d.options.find((o) => /BASEMENT|BSMT/i.test(o.description) && !/DECK|PATIO/i.test(o.description))?.description.toLowerCase() ?? "standard")],
     ["Rear porch", sel.porch ? "Yes" : "No"],
@@ -73,6 +73,18 @@ export default async function StartPage({ params, searchParams }: { params: Prom
         </div>
       )}
 
+      {blocking.length > 0 && !done && (
+        <div className="rounded-xl border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
+          <div className="mb-1 font-semibold">Pick these before it can be added (they change the price):</div>
+          <ul className="list-disc pl-6">
+            {blocking.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-sm">Press “Something&apos;s wrong — change it” below — everything else from the sheet is already filled in.</p>
+        </div>
+      )}
+
       {flags.length > 0 && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
           <div className="mb-1 flex items-center gap-2 font-semibold">
@@ -88,7 +100,7 @@ export default async function StartPage({ params, searchParams }: { params: Prom
 
       {!done && user.role !== "VIEWER" && (
         <div className="flex flex-col gap-3">
-          {out && label && (
+          {out && label && !blocking.length && (
             <form action={addStartAction} className="flex flex-col gap-3">
               <input type="hidden" name="id" value={sid} />
               <div className="flex gap-6 text-base">

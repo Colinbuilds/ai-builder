@@ -83,28 +83,29 @@ const AiStart = z.object({
 /** A start sheet's elevation code + options → the plan-book pick, with anything uncertain flagged. */
 export function startSelection(d: StartData, plan: Plan | null) {
   const flags: string[] = [];
+  // things that change the price and the sheet doesn't settle: a person picks them before the house is added
+  const blocking: string[] = [];
   const elevs = plan ? [...new Set([...plan.roofing, ...plan.gutters].filter((o) => o.kind === "ELEVATION").map((o) => o.label))] : [];
   const code = (d.elevationCode ?? "").toUpperCase();
   const letter = code.match(/^[A-Z]/)?.[0] ?? null;
   const digit = code.match(/(\d)/)?.[1] ?? null;
-  let elevation = letter && elevs.includes(letter) ? letter : null;
-  if (!elevation) flags.push(code ? `Elevation “${d.elevationCode}” isn't in the plan book for this model — pick it.` : "The sheet doesn't show the elevation — pick it.");
-  if (!elevation) elevation = elevs[0] ?? "";
+  const elevation = letter && elevs.includes(letter) ? letter : "";
+  if (!elevation && plan) blocking.push(code ? `Elevation “${d.elevationCode}” isn't in the plan book for ${plan.name} — pick the elevation.` : "The sheet doesn't show the elevation — pick it.");
   const opt = (re: RegExp) => d.options.find((o) => re.test(o.description));
   const threeCar = digit === "3" || !!opt(/\b3[- ]?CAR\b/i);
-  if (!digit && !opt(/\b[23][- ]?CAR\b/i)) flags.push("Garage size isn't printed — check 2 or 3 car.");
+  if (!digit && !opt(/\b[23][- ]?CAR\b/i)) blocking.push("The garage size isn't on the sheet — pick 2 or 3 car.");
   const bsmt = d.options.find((o) => /BASEMENT|BSMNT|BSMT/i.test(o.description) && !/DECK|PATIO|PORCH/i.test(o.description));
   let basement: Selection["basement"] = "STANDARD";
   if (bsmt && /WALK-?\s?OUT|DAY-?\s?LIGHT/i.test(bsmt.description)) basement = "DLWO";
-  else if (bsmt && /LOOK-?\s?OUT/i.test(bsmt.description)) flags.push("Look-out basement — confirm whether it takes the daylight / walkout gutter add.");
-  else if (!bsmt) flags.push("No basement option on the sheet — priced as standard.");
+  else if (bsmt && /LOOK-?\s?OUT/i.test(bsmt.description)) blocking.push("Look-out basement — pick Standard or Daylight / walkout (the walkout adds downspouts and a charge).");
+  else if (!bsmt) flags.push("No basement option on the sheet — no basement add.");
   const porch = !!opt(/(COVERED|REAR)\s+(REAR\s+)?PORCH|PORCH\s+(ROOF|COVER)/i);
   const deck = opt(/\bDECK\b/i);
   if (deck) flags.push(`Deck: ${deck.description.toLowerCase()} — not roofing, noted for the crew.`);
   const exterior = opt(/EXTERIOR PACKAGE|EXTERIOR COLOR/i);
   const color = exterior ? clean([exterior.description.replace(/^EXTERIOR PACKAGE\s*/i, "Pkg "), exterior.note].filter(Boolean).join(": ")) : null;
   const sel: Selection = { elevation, garage: threeCar ? "3" : "2", basement, porch };
-  return { sel, flags, color };
+  return { sel, flags, blocking, color };
 }
 
 /** Which builder, plan book and model a start sheet is for. */
@@ -112,20 +113,26 @@ export async function matchStart(d: StartData) {
   const builders = await prisma.company.findMany({ where: { type: "BUILDER" }, select: { id: true, name: true, type: true } });
   // "D.R. HORTON - KANSAS CITY" → try as printed, without periods, then just the name before the market
   const tries = d.builder ? [d.builder, d.builder.replace(/\./g, ""), d.builder.replace(/\./g, "").split(/\s+-\s+/)[0]] : [];
-  let company = tries.map((t) => matchAccount(t, builders).account).find(Boolean) ?? null;
-  let books = company ? await activeBooks(company.id) : [];
-  // the same builder can have several accounts ("DR Horton", "DR Horton (Kansas City)", "DR Horton (Omaha)"):
-  // when the matched one has no plan book, use the same-name account that does — the market on the sheet decides
-  if (company && !books.length) {
-    const core = (n: string) => n.replace(/\([^)]*\)/g, " ").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase();
-    const same = builders.filter((b) => b.id !== company!.id && core(b.name) === core(company!.name));
-    const withBooks = (await Promise.all(same.map(async (b) => ({ b, books: await activeBooks(b.id) })))).filter((x) => x.books.length);
-    const text = (d.builder ?? "").toLowerCase();
-    const pick = withBooks.find((x) => x.books.some((bk) => text.includes(bk.label.toLowerCase())) || text.includes((x.b.name.match(/\(([^)]*)\)/)?.[1] ?? "~~").toLowerCase())) ?? (withBooks.length === 1 ? withBooks[0] : null);
-    if (pick) ({ b: company, books } = { b: { ...pick.b }, books: pick.books });
-  }
-  // a builder with books in several markets: the one named on the sheet ("D.R. HORTON - KANSAS CITY")
-  const book = books.find((b) => d.builder && new RegExp(`\\b${b.label.replace(/[^\w ]/g, "")}\\b`, "i").test(d.builder)) ?? books[0] ?? null;
+  const results = tries.map((t) => matchAccount(t, builders));
+  // a tie between same-name accounts isn't a dead end: they're one family, and the plan book's market decides below
+  const matched = results.map((r) => r.account).find(Boolean) ?? results.find((r) => r.ambiguous.length)?.ambiguous[0] ?? null;
+  // the same builder can have several accounts ("DR Horton", "DR Horton (Kansas City)", "DR Horton (Omaha)") and the
+  // plan books can sit on any of them: look at all of them and take the book for the market printed on the sheet
+  const core = (n: string) => n.replace(/\([^)]*\)/g, " ").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase();
+  const family = matched ? builders.filter((b) => core(b.name) === core(matched.name)) : [];
+  const withBooks = (await Promise.all(family.map(async (b) => ({ b, books: await activeBooks(b.id) })))).filter((x) => x.books.length);
+  const text = (d.builder ?? "").toLowerCase();
+  const all = withBooks.flatMap((x) => x.books.map((bk) => ({ b: x.b, bk })));
+  const pick =
+    all.find((x) => text.includes(x.bk.label.toLowerCase())) ??
+    all.find((x) => {
+      const mkt = x.b.name.match(/\(([^)]*)\)/)?.[1]?.toLowerCase();
+      return !!mkt && text.includes(mkt);
+    }) ??
+    all.find((x) => x.b.id === matched?.id) ??
+    (withBooks.length === 1 && withBooks[0].books.length === 1 ? all[0] : null);
+  const company = pick?.b ?? matched;
+  const book = pick?.bk ?? null;
   const plan = book ? findStartPlan(book.data, d.planCode) : null;
   return { company, book, plan };
 }
@@ -173,11 +180,11 @@ export async function startView(id: string) {
   if (!s) return null;
   const d = s.data as unknown as StartData;
   const { company, book, plan } = await matchStart(d);
-  const { sel, flags, color } = startSelection(d, plan);
+  const { sel, flags, blocking, color } = startSelection(d, plan);
   if (!company) flags.unshift(`Builder “${d.builder ?? "?"}” isn't set up as a builder in BTRpro.`);
   else if (!book) flags.unshift(`${company.name} has no plan book loaded — import it on the builder's Plans & models tab.`);
   else if (!plan) flags.unshift(`Plan “${d.planCode ?? "?"}” isn't in the ${book.label} plan book — pick the model.`);
-  return { start: s, data: d, company, book, plan, sel, flags, color };
+  return { start: s, data: d, company, book, plan, sel, flags, blocking, color };
 }
 
 export async function dismissStart(id: string) {

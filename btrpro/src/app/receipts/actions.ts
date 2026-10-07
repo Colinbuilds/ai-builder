@@ -20,6 +20,7 @@ export async function scanReceiptAction(_: RResult, f: FormData): Promise<RResul
   const u = await requireUser(STAFF_ROLES);
   let id: string;
   let startRedirect: string | null = null;
+  let startsRead = 0;
   try {
     const files = await Promise.all(
       f
@@ -33,10 +34,13 @@ export async function scanReceiptAction(_: RResult, f: FormData): Promise<RResul
     for (const file of files) {
       const pdf = file.bytes[0] === 0x25 && file.bytes[1] === 0x50 && file.bytes[2] === 0x44 && file.bytes[3] === 0x46;
       const text = pdf ? await pdfToText(file.bytes).catch(() => "") : "";
-      if (pdf && looksLikeStartSheet(text)) starts.push((await readStartSheet(file, u, text)).start.id);
+      // a sheet that can't be read as a start sheet is treated as a receipt — never fail the whole upload over it
+      const sid = pdf && looksLikeStartSheet(text) ? await readStartSheet(file, u, text).then((r) => r.start.id).catch(() => null) : null;
+      if (sid) starts.push(sid);
       else rest.push(file);
     }
     if (starts.length && !rest.length) startRedirect = starts.length === 1 ? `/builders/add-house/${starts[0]}` : `/builders/add-house?read=${starts.length}`;
+    startsRead = starts.length;
     if (startRedirect) id = "";
     else id = await saveReceiptFiles(rest, { source: "UPLOAD", employeeId: u.id, employee: u.name, message: String(f.get("note") ?? "").trim() || null }, u.id);
   } catch (e) {
@@ -45,7 +49,7 @@ export async function scanReceiptAction(_: RResult, f: FormData): Promise<RResul
   if (startRedirect) redirect(startRedirect);
   // read after the page answers: the receipt page shows "Reading…" and refreshes itself instead of the upload hanging
   after(() => readReceipt(id).catch((e) => console.error("receipt read failed", id, e)));
-  redirect(`/receipts/${id}`);
+  redirect(`/receipts/${id}${startsRead ? `?starts=${startsRead}` : ""}`);
 }
 
 export async function approveReceiptAction(_: RResult, f: FormData): Promise<RResult> {

@@ -33,7 +33,8 @@ export async function addStartAction(form: FormData) {
   let projectId = "";
   try {
     const v = await startView(id);
-    if (!v || !v.book || !v.plan) throw new StartError("Pick the model first (Change something).");
+    if (!v || !v.book || !v.plan) throw new StartError("Pick the model first (Something's wrong — change it).");
+    if (v.blocking.length) throw new StartError(`${v.blocking[0]} Use “Something's wrong — change it”.`);
     const d = v.data;
     ({ project: { id: projectId } } = await createHouseJob(
       v.book.id,

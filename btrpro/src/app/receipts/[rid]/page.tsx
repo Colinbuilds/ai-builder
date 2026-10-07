@@ -33,11 +33,11 @@ const STATUS: Record<string, [string, "green" | "red" | "amber" | "outline" | "b
 };
 const OUTCOME: Record<string, string> = { COST_ONLY: "Filed to job costs", CHANGE_ORDER: "Change order drafted", INVOICE: "Invoice drafted" };
 
-export default async function ReceiptPage({ params, searchParams }: { params: Promise<{ rid: string }>; searchParams: Promise<{ job?: string }> }) {
+export default async function ReceiptPage({ params, searchParams }: { params: Promise<{ rid: string }>; searchParams: Promise<{ job?: string; starts?: string }> }) {
   const co = await getCompany();
   const user = await requireUser(STAFF_ROLES);
   const { rid } = await params;
-  const { job } = await searchParams;
+  const { job, starts } = await searchParams;
   const scan = await prisma.receiptScan.findUnique({ where: { id: rid }, include: { bill: { select: { id: true } } } });
   if (!scan) notFound();
   if (scan.bill) redirect(`/bills/${scan.bill.id}`);
@@ -65,6 +65,11 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   );
   const head = (
     <div className="flex flex-col gap-1">
+      {starts && (
+        <Link href="/builders/add-house" className="rounded-md border border-btr-blue/40 bg-btr-blue-soft p-3 text-sm">
+          Also read {starts} builder start sheet{starts === "1" ? "" : "s"} from this upload — they&apos;re waiting on <span className="font-medium underline">Add a builder house</span>.
+        </Link>
+      )}
       <Link href="/receipts" className="text-sm text-muted-foreground">
         ← Receipts
       </Link>

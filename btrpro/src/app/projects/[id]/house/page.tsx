@@ -145,7 +145,7 @@ export default async function HousePage({ params, searchParams }: { params: Prom
             <form action={billHouseAction}>
               <input type="hidden" name="id" value={id} />
               <Button type="submit" size="lg">
-                Make the {h.builder} invoice for this house ({formatUsd(sell)})
+                {billed ? `Invoice the balance (${formatUsd(sell - billed)})` : `Make the ${h.builder} invoice for this house (${formatUsd(sell)})`}
               </Button>
               <p className="mt-1 text-xs text-muted-foreground">One line per trade at the plan book price. It&apos;s saved as a draft — you send it from Invoices &amp; payments.</p>
             </form>

@@ -57,7 +57,18 @@ export function houseName(i: { lot?: string | null; subdivision?: string | null;
 export async function createHouseJob(bookId: string, planName: string, sel: Selection, input: HouseJobInput, actor: Actor) {
   if (!["ADMIN", "ESTIMATOR", "OFFICE", "PURCHASING"].includes(actor.role)) throw new PlanBookError("Your role can't add jobs.");
   if (!input.address.trim()) throw new PlanBookError("Enter the house address (or lot).");
-  const { book, plan, out, label } = await priceHouse(bookId, planName, sel, input.trades);
+  // never the same house twice: a start sheet already added, or the same house added in the last hour (double click, Back)
+  if (input.startId) {
+    const st = await prisma.builderStart.findUnique({ where: { id: input.startId }, select: { status: true, prodLineIds: true } });
+    if (st?.status === "SCHEDULED") {
+      const line = await prisma.prodLine.findFirst({ where: { id: { in: (st.prodLineIds as string[] | null) ?? [] } }, select: { projectId: true } });
+      throw new PlanBookError(`This start sheet was already added${line?.projectId ? ` — it's job /projects/${line.projectId}` : ""}.`);
+    }
+  }
+  const priced = await priceHouse(bookId, planName, sel, input.trades);
+  const { book, plan, out, label } = priced;
+  const dupe = await prisma.project.findFirst({ where: { clientCompanyId: book.companyId, name: `${houseName(input)} — ${label}`, createdAt: { gte: new Date(Date.now() - 3_600_000) } }, select: { id: true } });
+  if (dupe) throw new PlanBookError(`That house was just added — it's job /projects/${dupe.id}.`);
   const R = book.data.rates.roofing;
 
   const trades: HouseData["trades"] = {};
@@ -131,13 +142,22 @@ export async function createHouseJob(bookId: string, planName: string, sel: Sele
       costBaselineAt: now,
     },
   });
-  const { lines } = await scheduleHouse(
-    bookId,
-    planName,
-    sel,
-    { address: houseName(input), trades: input.trades, crew: input.crew, superName: input.superName, vpo: input.vpo, color: input.color, notes: [input.permit ? `Permit ${input.permit}` : null, input.notes].filter(Boolean).join(" · ") || null, projectId: project.id, startDate: input.startDate ?? null },
-    actor,
-  );
+  let lines: Awaited<ReturnType<typeof scheduleHouse>>["lines"];
+  try {
+    ({ lines } = await scheduleHouse(
+      bookId,
+      planName,
+      sel,
+      { address: houseName(input), trades: input.trades, crew: input.crew, superName: input.superName, vpo: input.vpo, color: input.color, notes: [input.permit ? `Permit ${input.permit}` : null, input.notes].filter(Boolean).join(" · ") || null, projectId: project.id, startDate: input.startDate ?? null },
+      actor,
+      priced,
+    ));
+  } catch (e) {
+    // don't leave a sold job behind with nothing on the schedule
+    await prisma.prodLine.deleteMany({ where: { projectId: project.id } });
+    await prisma.project.delete({ where: { id: project.id } }).catch(() => null);
+    throw e;
+  }
   if (input.startId) await prisma.builderStart.update({ where: { id: input.startId }, data: { status: "SCHEDULED", scheduledAt: now, prodLineIds: lines.map((l) => l.id), companyId: book.companyId } });
   return { project, lines, label, sell };
 }

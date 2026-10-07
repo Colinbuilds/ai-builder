@@ -25,6 +25,11 @@ describe("dates", () => {
     expect(whenFrom("monday", now)?.date).toBe("2026-10-12");
     expect(whenFrom("start 10/20", now)?.date).toBe("2026-10-20");
     expect(whenFrom("invoice the smith job", now)).toBeNull();
+    // sizes aren't dates
+    expect(whenFrom("order 3/4 plywood for 1234 maple", now)).toBeNull();
+    expect(whenFrom("need 1/2 inch osb", now)).toBeNull();
+    expect(whenFrom("schedule it 13/45", now)).toBeNull();
+    expect(whenFrom("schedule for 10/14", now)?.date).toBe("2026-10-14");
   });
 });
 
@@ -68,6 +73,25 @@ describe("builder names don't hijack requests", () => {
       expect((await goto("zq receipt homes pricing", actor)).hits.some((h) => h.href.includes(co.id))).toBe(true);
     } finally {
       await prisma.company.delete({ where: { id: co.id } });
+    }
+  });
+});
+
+describe("review fixes", () => {
+  it("date numbers don't search for jobs; two different builders both stay", async () => {
+    const actor = { id: "x", role: "ADMIN" };
+    const a = await prisma.company.create({ data: { name: "QQ Alpha Homes", type: "BUILDER" } });
+    const b = await prisma.company.create({ data: { name: "QQ Bravo Homes (Metro)", type: "BUILDER" } });
+    const job = await prisma.project.create({ data: { name: "TEST_ONLY goto 1014 Elm", address: "1014 Elm", status: "LEAD" } });
+    try {
+      const r = await goto("move the alpha lot to bravo next week", actor);
+      expect(r.hits.some((h) => h.href.includes(a.id))).toBe(true);
+      expect(r.hits.some((h) => h.href.includes(b.id))).toBe(true);
+      const d = await goto("schedule alpha for 10/14", actor);
+      expect(d.hits.some((h) => h.href.includes(job.id))).toBe(false);
+    } finally {
+      await prisma.project.delete({ where: { id: job.id } });
+      await prisma.company.deleteMany({ where: { id: { in: [a.id, b.id] } } });
     }
   });
 });

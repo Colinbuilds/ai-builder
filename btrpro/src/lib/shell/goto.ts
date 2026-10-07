@@ -27,8 +27,11 @@ export function whenFrom(q: string, now = new Date()): { date: string; said: str
   if (/\btomorrow\b/.test(t)) return { date: iso(plus(1)), said: "tomorrow" };
   if (/\bnext week\b/.test(t)) return { date: iso(plus(((8 - base.getUTCDay()) % 7) || 7)), said: "next week (Monday)" };
   if (/\bthis week\b/.test(t)) return { date: iso(base), said: "this week" };
-  const md = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
-  if (md) {
+  // m/d only when it reads as a date: a real month/day, not a size ("3/4 plywood", "1/2 inch"), and with a
+  // year or a scheduling word nearby
+  const md = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b(?!\s*(?:"|in\b|inch|ply|plywood|osb|sheet|board|x\b))/);
+  const datey = md && Number(md[1]) >= 1 && Number(md[1]) <= 12 && Number(md[2]) >= 1 && Number(md[2]) <= 31 && (!!md[3] || /\b(on|for|by|start\w*|due|schedul\w*|week of|date)\s+(\w+\s+)?$/.test(t.slice(0, md.index)) || /\b(on|for|by|start\w*|due|schedul\w*)\b/.test(t));
+  if (md && datey) {
     const y = md[3] ? (md[3].length === 2 ? 2000 + Number(md[3]) : Number(md[3])) : base.getUTCFullYear();
     const d = new Date(Date.UTC(y, Number(md[1]) - 1, Number(md[2]), 12));
     if (!md[3] && d < plus(-30)) d.setUTCFullYear(y + 1);
@@ -85,8 +88,9 @@ export async function goto(q: string, who: Who, now = new Date()): Promise<{ hit
   };
   const fullName = (b: (typeof builders)[number]) => lower.includes(` ${words(b.name.replace(/\([^)]*\)/g, " ")).join(" ")} `);
   const rank = (b: (typeof builders)[number]) => (fullName(b) ? 4 : 0) + (market(b) ? 2 : 0) + (b.planBooks.length ? 1 : 0);
-  const topRank = Math.max(-1, ...bHits.map(rank));
-  bHits = bHits.filter((b) => rank(b) === topRank);
+  // choose only among accounts of the same builder; two different builders named in one request both stay
+  const coreName = (b: (typeof builders)[number]) => words(b.name.replace(/\([^)]*\)/g, " ")).join(" ");
+  bHits = bHits.filter((b) => rank(b) === Math.max(...bHits.filter((x) => coreName(x) === coreName(b)).map(rank)));
   for (const b of bHits) {
     const books = b.planBooks.filter((pb) => lower.includes(` ${words(pb.label).join(" ")} `) || toks.includes(initials(pb.label)) || toks.some((t) => words(pb.label).includes(t)));
     const book = books[0] ?? (b.planBooks.length === 1 ? b.planBooks[0] : null);
@@ -101,7 +105,9 @@ export async function goto(q: string, who: Who, now = new Date()): Promise<{ hit
   }
 
   // a job by its name or address ("1234 maple", "smith reroof")
-  const keys = toks.filter((t) => /^\d{2,6}$/.test(t) || (t.length >= 4 && !INTENTS.some((i) => i.re.test(` ${t} `)) && !bHits.some((b) => words(b.name).includes(t))));
+  // job search words: not the date ("10", "14", "week", "monday"), not action words, not the builder's name
+  const dateWords = new Set(["today", "tomorrow", "week", "weeks", "next", "this", "month", ...DAYS, ...(when ? (text.match(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/)?.[0].split("/") ?? []) : [])]);
+  const keys = toks.filter((t) => !dateWords.has(t) && (/^\d{2,6}$/.test(t) || (t.length >= 4 && !INTENTS.some((i) => i.re.test(` ${t} `)) && !bHits.some((b) => words(b.name).includes(t)))));
   if (keys.length) {
     const cands = await prisma.project.findMany({
       where: { status: { notIn: ["LOST"] }, OR: keys.slice(0, 4).flatMap((k) => [{ name: { contains: k } }, { address: { contains: k } }]) },
