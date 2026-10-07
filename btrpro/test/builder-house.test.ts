@@ -125,3 +125,26 @@ describe("builder names on start sheets", () => {
     }
   });
 });
+
+describe("same builder, several accounts", () => {
+  it("uses the market's account that has the plan book (“… (Omaha)”, “… (Metro)”, plain)", async () => {
+    const { matchStart } = await import("@/lib/builders/starts");
+    const admin = await prisma.user.findFirstOrThrow({ where: { role: "ADMIN" } });
+    const actor = { id: admin.id, name: "TEST_ONLY house", role: "ADMIN" };
+    const names = ["QX Twin Homes (Omaha)", "QX Twin Homes (Metro)", "QX Twin Homes"];
+    const cos = await Promise.all(names.map((name) => prisma.company.create({ data: { name, type: "BUILDER" } })));
+    try {
+      // the plan book sits on the plain account; the sheet says METRO
+      await importPlanBook(cos[2].id, { bytes: await toXlsx(workbook()), label: "Metro" }, actor);
+      const m = await matchStart({ ...parseStartText(sheet())!, builder: "Q.X. TWIN HOMES - METRO" });
+      expect(m.company?.id).toBe(cos[2].id);
+      expect(m.plan?.name).toBe("TEST_ONLY Aspen");
+      const { goto } = await import("@/lib/shell/goto");
+      const g = await goto("schedule a model for QX metro", { id: admin.id, role: "ADMIN" });
+      expect(g.hits[0].href).toContain(`/builders/${cos[2].id}/plans`);
+      expect(g.hits.some((h) => h.href.includes(cos[0].id))).toBe(false);
+    } finally {
+      await prisma.company.deleteMany({ where: { id: { in: cos.map((c) => c.id) } } });
+    }
+  });
+});

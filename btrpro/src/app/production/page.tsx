@@ -11,7 +11,7 @@ import { stepAction } from "./actions";
 import { NavSelect } from "@/components/dashboard/tab-select";
 import { appName, shortName } from "@/lib/company-profile";
 
-type Search = { v?: string; m?: string; who?: string; q?: string; all?: string };
+type Search = { v?: string; m?: string; who?: string; q?: string; all?: string; g?: string };
 const VIEWS = [
   ["mine", "My schedule"],
   ["full", "Full schedule"],
@@ -23,6 +23,7 @@ const VIEWS = [
 
 const usd = (n: number | null | undefined) => (n == null ? "" : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }));
 const day = (d: Date | null) => (d ? `${d.getUTCMonth() + 1}/${d.getUTCDate()}` : "");
+const groupOf = (l: { market: string; grp: string | null; project: string | null; section: string | null }) => (l.market === "COMMERCIAL" ? `Commercial · ${l.grp ?? ""} · ${l.project ?? ""}` : `${l.grp ?? "Residential"}${l.section ? ` · ${l.section}` : ""}`);
 const OPEN: Prisma.ProdLineWhereInput = { board: { in: ["ADD", "UPCOMING", "CURRENT", "WARRANTY"] } };
 
 function search(q: string): Prisma.ProdLineWhereInput {
@@ -171,10 +172,17 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
   if (view === "full" || view === "mine") {
     const rows = await prisma.prodLine.findMany({ where: { AND: [OPEN, ...base, ...(view === "mine" && scope ? [mineWhere(scope)] : [])] }, orderBy: order, take: q ? 400 : 3000 });
     const newOnes = rows.filter((r) => r.board === "ADD");
+    // a big schedule shows its larger groups as one line each, so the page stays quick
+    const collapseAt = rows.length > 600 ? 12 : 40;
     const sections = (["UPCOMING", "CURRENT", "WARRANTY"] as const).map((b) => [b, rows.filter((r) => r.board === b)] as const);
     body = (
       <>
-        {newOnes.length > 0 && (
+        {sp.g && (
+          <Link href={`/production?${new URLSearchParams({ ...(sp.v ? { v: sp.v } : {}), ...(sp.m ? { m: sp.m } : {}) }).toString()}`} className="text-sm text-btr-link">
+            ← Whole schedule (showing only {sp.g})
+          </Link>
+        )}
+        {newOnes.length > 0 && !sp.g && (
           <section className="flex flex-col gap-1.5">
             <h2 className="font-semibold text-amber-800">New — to be placed on the schedule ({newOnes.length})</h2>
             <Table rows={newOnes} billing={billing} showGroup />
@@ -184,14 +192,24 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
           list.length ? (
             <section key={b} className="flex flex-col gap-2">
               <h2 className="font-semibold">{b === "UPCOMING" ? "Upcoming" : b === "CURRENT" ? "Current" : "Warranty & service"}</h2>
-              {grouped(list, (l) => (l.market === "COMMERCIAL" ? `Commercial · ${l.grp ?? ""} · ${l.project ?? ""}` : `${l.grp ?? "Residential"}${l.section ? ` · ${l.section}` : ""}`)).map(([g, rs]) => (
-                <details key={g} open={!q ? rs.length <= 40 : true} className="rounded-md">
-                  <summary className="cursor-pointer py-1 text-sm font-medium">
-                    {g} <span className="text-muted-foreground">({rs.length})</span>
-                  </summary>
-                  <Table rows={rs} billing={billing} />
-                </details>
-              ))}
+              {grouped(list, groupOf)
+                .filter(([g]) => !sp.g || g === sp.g)
+                .map(([g, rs]) =>
+                  // a big group is one line until it's opened (thousands of rows on one page are slow, worst on a phone)
+                  rs.length > collapseAt && !q && !sp.g ? (
+                    <Link key={g} href={`/production?${new URLSearchParams({ ...(sp.v ? { v: sp.v } : {}), ...(sp.m ? { m: sp.m } : {}), g }).toString()}`} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-muted/50">
+                      <span className="font-medium">{g}</span>
+                      <span className="text-muted-foreground">{rs.length} lines — open →</span>
+                    </Link>
+                  ) : (
+                    <details key={g} open className="rounded-md">
+                      <summary className="cursor-pointer py-1 text-sm font-medium">
+                        {g} <span className="text-muted-foreground">({rs.length})</span>
+                      </summary>
+                      <Table rows={rs} billing={billing} />
+                    </details>
+                  ),
+                )}
             </section>
           ) : null,
         )}

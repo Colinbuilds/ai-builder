@@ -69,7 +69,7 @@ export async function goto(q: string, who: Who, now = new Date()): Promise<{ hit
   // builders, their plan books (KC = Kansas City) and models, by name, initials or code
   const builders = await prisma.company.findMany({ where: { type: "BUILDER" }, select: { id: true, name: true, planBooks: { where: { active: true }, select: { id: true, label: true, data: true } } } });
   // "DR Horton" answers to "dr horton", "horton", "dr", "drh", "drhorton"
-  const bHits = builders.filter((b) => {
+  let bHits = builders.filter((b) => {
     const w = words(b.name).filter((x) => x.length > 1 && !STOP.has(x));
     if (!w.length) return false;
     // a single word only counts when it's distinctive: not "homes", and not a word people use for what to do ("receipt")
@@ -77,6 +77,16 @@ export async function goto(q: string, who: Who, now = new Date()): Promise<{ hit
     const names = new Set([w.join(""), initials(b.name), w[0] + w.slice(1).map((x) => x[0]).join(""), ...(w[0].length >= 2 && own(w[0]) ? [w[0]] : []), ...w.filter((x) => x.length >= 4 && own(x))]);
     return lower.includes(` ${w.join(" ")} `) || toks.some((t) => t.length >= 2 && names.has(t));
   });
+  // several accounts can answer to "DR" (Omaha / Kansas City / plain): keep the ones whose market or plan book was
+  // named ("KC", "kansas city"), else the ones with a plan book
+  const market = (b: (typeof builders)[number]) => {
+    const tags = [b.name.match(/\(([^)]*)\)/)?.[1] ?? "", ...b.planBooks.map((pb) => pb.label)].filter(Boolean);
+    return tags.some((t) => lower.includes(` ${words(t).join(" ")} `) || (initials(t).length >= 2 && toks.includes(initials(t))));
+  };
+  const fullName = (b: (typeof builders)[number]) => lower.includes(` ${words(b.name.replace(/\([^)]*\)/g, " ")).join(" ")} `);
+  const rank = (b: (typeof builders)[number]) => (fullName(b) ? 4 : 0) + (market(b) ? 2 : 0) + (b.planBooks.length ? 1 : 0);
+  const topRank = Math.max(-1, ...bHits.map(rank));
+  bHits = bHits.filter((b) => rank(b) === topRank);
   for (const b of bHits) {
     const books = b.planBooks.filter((pb) => lower.includes(` ${words(pb.label).join(" ")} `) || toks.includes(initials(pb.label)) || toks.some((t) => words(pb.label).includes(t)));
     const book = books[0] ?? (b.planBooks.length === 1 ? b.planBooks[0] : null);

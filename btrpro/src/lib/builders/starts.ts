@@ -112,8 +112,18 @@ export async function matchStart(d: StartData) {
   const builders = await prisma.company.findMany({ where: { type: "BUILDER" }, select: { id: true, name: true, type: true } });
   // "D.R. HORTON - KANSAS CITY" → try as printed, without periods, then just the name before the market
   const tries = d.builder ? [d.builder, d.builder.replace(/\./g, ""), d.builder.replace(/\./g, "").split(/\s+-\s+/)[0]] : [];
-  const company = tries.map((t) => matchAccount(t, builders).account).find(Boolean) ?? null;
-  const books = company ? await activeBooks(company.id) : [];
+  let company = tries.map((t) => matchAccount(t, builders).account).find(Boolean) ?? null;
+  let books = company ? await activeBooks(company.id) : [];
+  // the same builder can have several accounts ("DR Horton", "DR Horton (Kansas City)", "DR Horton (Omaha)"):
+  // when the matched one has no plan book, use the same-name account that does — the market on the sheet decides
+  if (company && !books.length) {
+    const core = (n: string) => n.replace(/\([^)]*\)/g, " ").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase();
+    const same = builders.filter((b) => b.id !== company!.id && core(b.name) === core(company!.name));
+    const withBooks = (await Promise.all(same.map(async (b) => ({ b, books: await activeBooks(b.id) })))).filter((x) => x.books.length);
+    const text = (d.builder ?? "").toLowerCase();
+    const pick = withBooks.find((x) => x.books.some((bk) => text.includes(bk.label.toLowerCase())) || text.includes((x.b.name.match(/\(([^)]*)\)/)?.[1] ?? "~~").toLowerCase())) ?? (withBooks.length === 1 ? withBooks[0] : null);
+    if (pick) ({ b: company, books } = { b: { ...pick.b }, books: pick.books });
+  }
   // a builder with books in several markets: the one named on the sheet ("D.R. HORTON - KANSAS CITY")
   const book = books.find((b) => d.builder && new RegExp(`\\b${b.label.replace(/[^\w ]/g, "")}\\b`, "i").test(d.builder)) ?? books[0] ?? null;
   const plan = book ? findStartPlan(book.data, d.planCode) : null;
