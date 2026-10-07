@@ -70,11 +70,19 @@ export async function builderStatement(companyId: string, month: string) {
   const billed = rows.filter((r) => inMonth(r.billedOn)).sort((a, b) => a.billedOn!.getTime() - b.billedOn!.getTime());
   const paid = rows.filter((r) => inMonth(r.paidOn)).sort((a, b) => a.paidOn!.getTime() - b.paidOn!.getTime());
   // owed as of the end of the month: billed by then and not paid by then (a payment with no date counts as paid)
-  const open = rows.filter((r) => r.billedOn && r.billedOn < to && (!r.paidOn || (r.paidOn.getTime() > 0 && r.paidOn >= to))).sort((a, b) => a.billedOn!.getTime() - b.billedOn!.getTime());
+  // a line marked billed with no readable date still counts (oldest first; aged as "no date")
+  const billedBy = (r: StatementRow) => (r.billedOn ? r.billedOn < to : r.source === "SCHEDULE");
+  const open = rows
+    .filter((r) => billedBy(r) && (!r.paidOn || (r.paidOn.getTime() > 0 && r.paidOn >= to)))
+    .sort((a, b) => (a.billedOn?.getTime() ?? 0) - (b.billedOn?.getTime() ?? 0));
   const sum = (xs: StatementRow[]) => r2(xs.reduce((a, r) => a + r.amount, 0));
   const days = (r: StatementRow) => Math.floor((to.getTime() - r.billedOn!.getTime()) / 86_400_000);
-  const aging = { "0–30": 0, "31–60": 0, "61–90": 0, "90+": 0 };
+  const aging = { "0–30": 0, "31–60": 0, "61–90": 0, "90+": 0, "no date": 0 };
   for (const r of open) {
+    if (!r.billedOn) {
+      aging["no date"] = r2(aging["no date"] + r.amount);
+      continue;
+    }
     const d = days(r);
     aging[d <= 30 ? "0–30" : d <= 60 ? "31–60" : d <= 90 ? "61–90" : "90+"] = r2(aging[d <= 30 ? "0–30" : d <= 60 ? "31–60" : d <= 90 ? "61–90" : "90+"] + r.amount);
   }

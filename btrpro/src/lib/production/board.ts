@@ -143,6 +143,8 @@ export async function stepProdLine(id: string, step: "complete" | "approve" | "b
     // the office gets a task: the crew can be paid, and the builder can be billed
     const what = [line.builder, line.location, line.type].filter(Boolean).join(" · ");
     const pay = line.payout != null ? ` — payout $${line.payout.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "";
+    // once per line, however many times "done" is pressed
+    if (!(await prisma.task.findFirst({ where: { auto: `PROD:pay:${line.id}` } })))
     for (const u of await officeUsers())
       await prisma.task.create({
         data: { title: `Crew can be paid: ${line.crew ?? "crew"} finished ${what}${pay}. Then bill it.`, assigneeId: u.id, dueDate: now, projectId: line.projectId, auto: `PROD:pay:${line.id}`, createdBy: a.name },

@@ -1,6 +1,7 @@
 // Crew portal: job photos (before, progress, finished, cleanup) and crew invoices, plus the office's review of both.
 // Finished-work and site-cleanup photos from the crew are required before the crew can invoice the job.
 import type { Role } from "@/lib/session";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { crewNotice } from "./notice";
 import { readUpload, saveUpload } from "@/lib/storage";
@@ -197,15 +198,16 @@ export async function markCrewInvoicePaid(id: string, actor: { name: string; rol
 // house — the material list (no prices), and marks a line done from the phone.
 
 /** How the schedule spells this crew's name (any case). */
-async function scheduleNames(name: string) {
+const scheduleNames = cache(async (name: string) => {
   return (await prisma.prodLine.groupBy({ by: ["crew"], where: { crew: { not: null }, board: { in: ["ADD", "UPCOMING", "CURRENT", "WARRANTY"] } } })).map((g) => g.crew!).filter((c) => sameName(c, name));
-}
+});
 
 export async function crewScheduleLines(crew: { id: string; name: string }) {
   const names = await scheduleNames(crew.name);
   if (!names.length) return [];
   return prisma.prodLine.findMany({
-    where: { crew: { in: names }, board: { in: ["ADD", "UPCOMING", "CURRENT", "WARRANTY"] }, completedAt: null },
+    // open = not marked done by date or by the sheet's text ("Paid out in full", "x")
+    where: { crew: { in: names }, board: { in: ["ADD", "UPCOMING", "CURRENT", "WARRANTY"] }, completedAt: null, completed: null },
     select: { id: true, builder: true, location: true, project: true, model: true, type: true, superName: true, notes: true, startDate: true, board: true, projectId: true },
     orderBy: [{ startDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
     take: 60,
@@ -215,14 +217,17 @@ export async function crewScheduleLines(crew: { id: string; name: string }) {
 /** A crew's own open schedule line (or an error a crew member can act on). */
 export async function crewLine(crew: { id: string; name: string }, lineId: string) {
   const line = await prisma.prodLine.findUnique({ where: { id: lineId } });
-  if (!line || !sameName(line.crew, crew.name)) throw new CrewError("That job isn't on your crew's schedule. Call the office.");
+  if (!line || !sameName(line.crew, crew.name) || line.board === "COMPLETED") throw new CrewError("That job isn't on your crew's schedule. Call the office.");
   return line;
 }
 
 /** "Done — tell the office": the same step as the office marking it complete (they get the pay / bill task). */
 export async function crewMarkDone(crew: { id: string; name: string }, lineId: string) {
   const line = await crewLine(crew, lineId);
-  if (line.completedAt) return line;
+  if (line.completedAt || line.completed) return line;
+  // claim it first so a double tap on a slow phone can't do it twice
+  const claimed = await prisma.prodLine.updateMany({ where: { id: lineId, completedAt: null, completed: null }, data: { completedAt: new Date() } });
+  if (!claimed.count) return line;
   const { stepProdLine } = await import("@/lib/production/board");
   return stepProdLine(lineId, "complete", { id: `crew:${crew.id}`, name: `${crew.name} (crew)` });
 }

@@ -18,16 +18,19 @@ describe("crew schedule on the phone", () => {
     const job = await prisma.project.create({ data: { name: "TEST_ONLY phone house", status: "SOLD", market: "RESIDENTIAL" } });
     const mine = await prisma.prodLine.create({ data: { market: "RESIDENTIAL", board: "UPCOMING", builder: "TEST_ONLY Phone Builder", location: "TEST_ONLY 1 Oak", crew: NAME.toUpperCase(), type: "Roofing", startDate: new Date("2026-10-12T12:00:00Z"), projectId: job.id, payout: 1000 } });
     const other = await prisma.prodLine.create({ data: { market: "RESIDENTIAL", board: "UPCOMING", builder: "TEST_ONLY Phone Builder", location: "TEST_ONLY 2 Oak", crew: "TEST_ONLY Someone Else", type: "Roofing" } });
+    // finished on the sheet by text only ("Paid out in full") isn't open work
+    await prisma.prodLine.create({ data: { market: "RESIDENTIAL", board: "CURRENT", builder: "TEST_ONLY Phone Builder", location: "TEST_ONLY 3 Oak", crew: NAME, type: "Roofing", completed: "Paid out in full" } });
     const lines = await crewScheduleLines(crew);
     expect(lines.map((l) => l.id)).toEqual([mine.id]);
     await expect(crewLine(crew, other.id)).rejects.toThrow(/isn't on your crew's schedule/);
     // the house job is open for this crew's photos
     expect((await crewJobs(crew.id)).map((j) => j.id)).toContain(job.id);
-    await crewMarkDone(crew, mine.id);
+    await Promise.all([crewMarkDone(crew, mine.id), crewMarkDone(crew, mine.id)]); // a double tap
     const done = await prisma.prodLine.findUniqueOrThrow({ where: { id: mine.id } });
     expect(done.completedAt).not.toBeNull();
     expect(done.completed).toMatch(/Done .*TEST_ONLY/);
     expect(await crewScheduleLines(crew)).toEqual([]);
-    expect(await prisma.task.count({ where: { auto: `PROD:pay:${mine.id}` } })).toBeGreaterThan(0);
+    const office = (await prisma.user.count({ where: { role: "OFFICE" } })) || (await prisma.user.count({ where: { role: "ADMIN" } }));
+    expect(await prisma.task.count({ where: { auto: `PROD:pay:${mine.id}` } })).toBe(office); // once per office person, not twice
   });
 });

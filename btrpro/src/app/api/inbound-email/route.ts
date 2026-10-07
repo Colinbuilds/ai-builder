@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   }
   const { recipients, email } = parseInboundPayload(payload);
   // houses@… → builder start sheets wait on Add a builder house; start sheets sent to receipts@ by mistake go there too
-  let houses: { ids: string[]; consumed: string[]; ignored?: string } | null = null;
+  let houses: { ids: string[]; consumed: number[]; ignored?: string } | null = null;
   if (isHousesAddress(recipients) || isReceiptsAddress(recipients)) {
     houses = await startsFromEmail(email, { onlyStartSheets: !isHousesAddress(recipients) });
     if (houses.ignored && isHousesAddress(recipients)) console.warn("houses email ignored:", houses.ignored);
@@ -37,8 +37,8 @@ export async function POST(req: Request) {
   // receipts@… → the receipt reader (only from BTR staff or crew emails)
   let receipts: { ids: string[]; ignored?: string } | null = null;
   if (isReceiptsAddress(recipients)) {
-    const rest = houses?.consumed.length ? { ...email, attachments: email.attachments.filter((a) => !houses!.consumed.includes(a.name)) } : email;
-    receipts = rest.attachments.length ? await receiptsFromEmail(rest) : { ids: [] };
+    const rest = houses?.consumed.length ? { ...email, attachments: email.attachments.filter((_, i) => !houses!.consumed.includes(i)) } : email;
+    receipts = rest.attachments.length || !houses?.consumed.length ? await receiptsFromEmail(rest) : { ids: [] };
     if (receipts.ignored) console.warn("receipt email ignored:", receipts.ignored);
   }
   // bills@… → supplier bills (accounts payable)

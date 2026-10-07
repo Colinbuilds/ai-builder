@@ -44,17 +44,12 @@ export async function syncPlanBooks(deps: { modified?: (link: string) => Promise
     try {
       const m = await modified(b.sourceUrl!);
       if (!m) continue;
-      if (!b.sourceModifiedAt) {
-        // first look: remember the sheet's time; it was imported from this version (or close to it)
-        if (m <= b.importedAt) await prisma.builderPlanBook.update({ where: { id: b.id }, data: { sourceModifiedAt: m } });
-        else if (!(b.data as unknown as PlanBookData).edits?.length) {
-          const r = await importPlanBook(b.companyId, { bytes: await download(b.sourceUrl!), link: b.sourceUrl!, label: b.label }, SYSTEM);
-          await prisma.builderPlanBook.update({ where: { id: r.book.id }, data: { sourceModifiedAt: m } });
-          out.updated.push(name);
-        }
+      // first look: a sheet no newer than the import is the version we have — remember its time
+      if (!b.sourceModifiedAt && m <= b.importedAt) {
+        await prisma.builderPlanBook.update({ where: { id: b.id }, data: { sourceModifiedAt: m } });
         continue;
       }
-      if (m <= b.sourceModifiedAt) continue;
+      if (b.sourceModifiedAt && m <= b.sourceModifiedAt) continue;
       if ((b.data as unknown as PlanBookData).edits?.length) {
         await tellOffice(`The ${name} plan book sheet changed, but it was also edited in BTRpro — re-import it by hand (Builders → ${b.company.name} → Plans & models) after copying those edits to the sheet.`, `PLANBOOK:held:${b.id}:${m.toISOString()}`);
         out.heldForEdits.push(name);
@@ -103,12 +98,12 @@ export function startBuilderWatcher(everyMs = 60 * 60_000) {
     const day = centralDay(now);
     const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hour12: false }).format(now));
     if (day === lastDay || hour < 4) return;
-    lastDay = day;
     try {
       const r = await syncPlanBooks();
       if (r.updated.length || r.heldForEdits.length || r.failed.length) console.log(`[builders] plan books updated: ${r.updated.join(", ") || "none"}; held: ${r.heldForEdits.join(", ") || "none"}; failed: ${r.failed.join(" | ") || "none"}`);
       const over = await housesOverPlan();
       if (over.length) console.log(`[builders] houses over plan: ${over.join(", ")}`);
+      lastDay = day; // a failed night is tried again next hour
     } catch (e) {
       console.error("[builders] nightly check failed:", e instanceof Error ? e.message : e);
     }

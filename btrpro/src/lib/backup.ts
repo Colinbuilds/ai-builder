@@ -20,19 +20,21 @@ export function dbFile(): string | null {
 }
 export const backupDir = () => process.env.BACKUP_DIR ?? path.join(path.dirname(dbFile() ?? "/data/x"), "backups");
 
+// off-site only to a bucket of its own (never the uploads bucket, which may serve files publicly)
 const offsite = () => {
-  const bucket = process.env.BACKUP_S3_BUCKET || (process.env.STORAGE_DRIVER === "s3" ? process.env.S3_BUCKET : "");
+  const bucket = process.env.BACKUP_S3_BUCKET;
   if (!bucket) return null;
   return {
     bucket,
-    client: new S3Client({
+    client: (client ??= new S3Client({
       region: process.env.S3_REGION || "auto",
       endpoint: process.env.S3_ENDPOINT || undefined,
       forcePathStyle: !!process.env.S3_ENDPOINT,
       credentials: { accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "", secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "" },
-    }),
+    })),
   };
 };
+let client: S3Client | null = null;
 export const offsiteConfigured = () => !!offsite();
 
 export type BackupFile = { name: string; bytes: number; at: Date };
@@ -91,8 +93,11 @@ export function backupDue(latest: Date | null, now = new Date()) {
 }
 
 let watching = false;
+/** Nightly backups run only for the server's database on its volume (or where BACKUP_DIR says) — never a local copy. */
+export const backupsOn = () => !!dbFile() && (!!process.env.BACKUP_DIR || dbFile()!.startsWith("/data/"));
+
 export function startBackupWatcher(everyMs = 30 * 60_000) {
-  if (watching || !dbFile()) return;
+  if (watching || !backupsOn()) return;
   watching = true;
   const run = async () => {
     try {

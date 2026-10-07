@@ -18,7 +18,7 @@ const FREE_MAIL = /@(gmail|yahoo|outlook|hotmail|icloud|aol|live|msn)\./i;
 async function sender(from: string) {
   const addr = senderEmail(from);
   const user = await prisma.user.findUnique({ where: { email: addr }, select: { id: true, name: true, role: true } });
-  if (user) return { id: user.id, name: user.name, role: user.role === "VIEWER" ? "OFFICE" : user.role };
+  if (user) return user.role === "VIEWER" ? null : { id: user.id, name: user.name, role: user.role };
   const crew = await prisma.crew.findFirst({ where: { active: true, OR: [{ loginEmail: addr }, { email: addr }] }, select: { name: true } });
   if (crew) return { id: "email", name: crew.name, role: "OFFICE" };
   const domain = addr.split("@")[1];
@@ -30,12 +30,12 @@ async function sender(from: string) {
 }
 
 /** Reads every start-sheet PDF on the email. `onlyStartSheets` skips other PDFs silently (for receipts@). */
-export async function startsFromEmail(email: NormalizedEmail, opts: { onlyStartSheets?: boolean } = {}): Promise<{ ids: string[]; consumed: string[]; ignored?: string }> {
+export async function startsFromEmail(email: NormalizedEmail, opts: { onlyStartSheets?: boolean } = {}): Promise<{ ids: string[]; consumed: number[]; ignored?: string }> {
   const who = await sender(email.from);
   if (!who) return { ids: [], consumed: [], ignored: `sender ${senderEmail(email.from)} isn't staff, a crew, or at a builder's email domain` };
   const ids: string[] = [];
-  const consumed: string[] = [];
-  for (const a of email.attachments) {
+  const consumed: number[] = [];
+  for (const [i, a] of email.attachments.entries()) {
     const bytes = new Uint8Array(a.bytes);
     if (!isPdf(bytes)) continue;
     const text = await pdfToText(bytes).catch(() => "");
@@ -43,7 +43,7 @@ export async function startsFromEmail(email: NormalizedEmail, opts: { onlyStartS
     try {
       const r = await readStartSheet({ bytes, name: a.name || "start.pdf" }, { id: who.id, name: who.name, role: who.role }, text || undefined);
       ids.push(r.start.id);
-      consumed.push(a.name);
+      consumed.push(i);
     } catch (e) {
       console.warn("start sheet on email not read:", a.name, e instanceof Error ? e.message : e);
     }

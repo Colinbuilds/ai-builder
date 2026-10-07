@@ -26,16 +26,18 @@ describe("builder statement", () => {
     await mk(NAME, "TEST_ONLY 3 Elm", 250, "x 7/1/26", null); // old, owed 90+ by end of Oct
     await mk(NAME, "TEST_ONLY 4 Elm", 99, null, null); // not billed: not on the statement
     await mk("TEST_ONLY Other Builder", "TEST_ONLY 5 Elm", 777, "x 10/3/26", null); // someone else
+    await mk(NAME, "TEST_ONLY 6 Elm", 40, "x", null); // billed, no readable date: still owed, aged as "no date"
     const s = await builderStatement(co.id, "2026-10");
     expect(s.billed.map((r) => r.where)).toEqual(["TEST_ONLY 1 Elm"]);
     expect(s.paid.map((r) => r.where)).toEqual(["TEST_ONLY 2 Elm"]);
-    expect(s.open.map((r) => r.where)).toEqual(["TEST_ONLY 3 Elm", "TEST_ONLY 1 Elm"]);
-    expect(s.totals).toEqual({ billed: 1000, paid: 500, open: 1250 });
+    expect(s.open.map((r) => r.where)).toEqual(["TEST_ONLY 6 Elm", "TEST_ONLY 3 Elm", "TEST_ONLY 1 Elm"]);
+    expect(s.totals).toEqual({ billed: 1000, paid: 500, open: 1290 });
+    expect(s.aging["no date"]).toBe(40);
     expect(s.aging["90+"]).toBe(250);
-    expect(s.open[1].what).toBe(`${NAME} Lakeview · Roofing`);
-    expect(statementCsv(s).split("\n")).toHaveLength(1 + 1 + 1 + 2);
+    expect(s.open[2].what).toBe(`${NAME} Lakeview · Roofing`);
+    expect(statementCsv(s).split("\n")).toHaveLength(1 + 1 + 1 + 3);
     // September: the Oct-billed house isn't owed yet then
     const sep = await builderStatement(co.id, "2026-09");
-    expect(sep.open.map((r) => r.where)).toEqual(["TEST_ONLY 3 Elm", "TEST_ONLY 2 Elm"]);
+    expect(sep.open.map((r) => r.where)).toEqual(["TEST_ONLY 6 Elm", "TEST_ONLY 3 Elm", "TEST_ONLY 2 Elm"]);
   });
 });

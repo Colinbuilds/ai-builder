@@ -51,7 +51,7 @@ export default async function StatementPage({ params, searchParams }: { params: 
               <td className="py-1.5 pr-2">{r.ref ?? ""}</td>
               <td className="py-1.5 pr-2 tabular-nums">{day(r.billedOn)}</td>
               {cols === "paid" && <td className="py-1.5 pr-2 tabular-nums">{day(r.paidOn)}</td>}
-              {cols === "open" && <td className="py-1.5 pr-2 text-right tabular-nums">{Math.floor((s.to.getTime() - r.billedOn!.getTime()) / 86_400_000)}</td>}
+              {cols === "open" && <td className="py-1.5 pr-2 text-right tabular-nums">{r.billedOn ? Math.floor((s.to.getTime() - r.billedOn.getTime()) / 86_400_000) : "?"}</td>}
               <td className="py-1.5 text-right tabular-nums">{formatUsd(r.amount)}</td>
             </tr>
           ))}
@@ -97,10 +97,10 @@ export default async function StatementPage({ params, searchParams }: { params: 
         ))}
       </div>
       {s.totals.open > 0 && (
-        <div className="grid grid-cols-4 gap-2 text-center text-sm">
+        <div className="grid grid-cols-5 gap-2 text-center text-sm">
           {Object.entries(s.aging).map(([k, v]) => (
             <div key={k} className={`rounded-md border px-2 py-1.5 ${k === "90+" && v > 0 ? "border-red-300 text-red-800 dark:text-red-300" : ""}`}>
-              <div className="text-xs text-muted-foreground">{k} days</div>
+              <div className="text-xs text-muted-foreground">{k === "no date" ? "billed, no date" : `${k} days`}</div>
               <div className="font-medium tabular-nums">{formatUsd(v)}</div>
             </div>
           ))}

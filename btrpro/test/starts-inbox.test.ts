@@ -55,6 +55,8 @@ describe("start sheets by email", () => {
     const fromBuilder = await startsFromEmail((await mail("Jo <jo@inbox-homes.test>", [{ name: "TEST_ONLY b.pdf", lines: LINES.map((l) => l.replace("77", "78")) }])) as never);
     expect(fromBuilder.ids).toHaveLength(1);
 
+    const viewer = await prisma.user.findFirst({ where: { role: "VIEWER" } });
+    if (viewer) expect((await startsFromEmail((await mail(viewer.email, [{ name: "TEST_ONLY v.pdf", lines: LINES }])) as never)).ids).toHaveLength(0);
     const stranger = await startsFromEmail((await mail("x@gmail.com", [{ name: "TEST_ONLY c.pdf", lines: LINES }])) as never);
     expect(stranger.ids).toHaveLength(0);
     expect(stranger.ignored).toMatch(/isn't staff/);
@@ -63,6 +65,6 @@ describe("start sheets by email", () => {
   it("receipts@ only takes the start sheets and leaves other PDFs for the receipt reader", async () => {
     const admin = await prisma.user.findFirstOrThrow({ where: { role: "ADMIN" } });
     const r = await startsFromEmail((await mail(admin.email, [{ name: "TEST_ONLY start.pdf", lines: LINES.map((l) => l.replace("77", "79")) }, { name: "TEST_ONLY receipt.pdf", lines: ["ABC SUPPLY", "INVOICE 12345", "TOTAL 99.00"] }])) as never, { onlyStartSheets: true });
-    expect(r.consumed).toEqual(["TEST_ONLY start.pdf"]);
+    expect(r.consumed).toEqual([0]); // the first attachment; the receipt stays for the receipt reader
   });
 });
