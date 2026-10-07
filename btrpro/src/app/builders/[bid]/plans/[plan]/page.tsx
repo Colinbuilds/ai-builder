@@ -305,7 +305,7 @@ export default async function ModelPage({ params, searchParams }: { params: Prom
             </div>
             <label className="text-sm">
               House address <span className="text-red-700">*</span>
-              <Input name="address" required defaultValue={sp.addr ?? ""} placeholder="e.g. 713 Fallen Leaf Dr" className="h-11 text-base" />
+              <Input name="address" required defaultValue={sp.addr ?? ""} placeholder="e.g. 123 Main St" className="h-11 text-base" />
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="text-sm">

@@ -47,7 +47,7 @@ export type HouseJobInput = {
   startId?: string | null;
 };
 
-/** "Lot 208 Autumn Ridge" / "713 Fallen Leaf Dr" — how the job and schedule name the house. */
+/** "Lot 12 Prairie View" / "123 Main St" — how the job and schedule name the house. */
 export function houseName(i: { lot?: string | null; subdivision?: string | null; address: string }) {
   const lot = i.lot?.trim() ? `Lot ${i.lot.trim().replace(/^lot\s*/i, "")}` : null;
   return [lot && [lot, i.subdivision?.trim()].filter(Boolean).join(" "), i.address.trim()].filter(Boolean).join(" · ");
