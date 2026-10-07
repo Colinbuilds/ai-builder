@@ -11,3 +11,10 @@ playwright-report/
 prisma/test-uploads/
 prisma/e2e.db*
 prisma/e2e-uploads/
+
+# database backups and copies (never commit data)
+prisma/backups/
+backups/
+*.db
+*.db-journal
+*.sqlite
