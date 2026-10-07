@@ -18,6 +18,8 @@ export async function register() {
     startBidWatcher();
     const { startBillingWatcher } = await import("@/lib/billing/schedule");
     startBillingWatcher();
+    const { startBackupWatcher } = await import("@/lib/backup");
+    startBackupWatcher();
     // receipts that were mid-read when the server restarted (a deploy) are read again
     const { resumeStuckReads } = await import("@/lib/receipts/service");
     void resumeStuckReads().catch((e) => console.error("resume receipt reads failed", e));

@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth";
-import { setupChecks } from "@/lib/setup-check";
+import { setupChecks, type Check } from "@/lib/setup-check";
+import { dbFile, listBackups, offsiteConfigured } from "@/lib/backup";
 
 const STYLE = {
   ok: ["✓", "text-green-700 dark:text-green-400"],
@@ -11,6 +12,16 @@ const STYLE = {
 export default async function SetupPage() {
   await requireUser(["ADMIN"]);
   const checks = setupChecks();
+  if (dbFile() && process.env.NODE_ENV === "production") {
+    const latest = (await listBackups())[0];
+    const fresh = latest && Date.now() - latest.at.getTime() < 36 * 3_600_000;
+    const c: Check = !fresh
+      ? { name: "Backups", status: "missing", what: latest ? "The last backup is more than a day and a half old." : "No backup yet.", fix: "Settings → Backups → Back up now, and check the server log for “[backup] failed”." }
+      : offsiteConfigured()
+        ? { name: "Backups", status: "ok", what: "Nightly, kept 14 days, copied off-site." }
+        : { name: "Backups", status: "problem", what: "Nightly, kept 14 days — but only on the same disk as the database.", fix: "Add an off-site bucket: BACKUP_S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY (Cloudflare R2 works)." };
+    checks.push(c);
+  }
   const order = { missing: 0, problem: 1, optional: 2, ok: 3 };
   checks.sort((a, b) => order[a.status] - order[b.status]);
   return (
