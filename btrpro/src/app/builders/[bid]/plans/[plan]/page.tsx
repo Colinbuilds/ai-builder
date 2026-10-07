@@ -7,13 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatUsd } from "@/lib/utils";
-import { saveTakeoffAction, scheduleHouseAction } from "../actions";
+import { addHouseAction, saveTakeoffAction } from "../actions";
 
 const fmtQty = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 const TABS = [
   ["takeoff", "Takeoff"],
   ["order", "Order"],
-  ["schedule", "Add to schedule"],
+  ["schedule", "Add this house"],
 ] as const;
 // unit shown on the order: the sheet lists LF items by length, everything else by count
 const unitFor = (name: string, trade: Trade) => (trade === "GUTTERS" && /gutter|downspout|accessor/i.test(name) ? "LF" : "EA");
@@ -41,7 +41,17 @@ export default async function ModelPage({ params, searchParams }: { params: Prom
   const out = buildOut(book.data, plan, sel);
   const label = modelLabel(plan.name, sel);
   const query = (patch: Partial<Record<"e" | "g" | "b" | "p" | "t", string>> = {}) =>
-    new URLSearchParams({ book: book.id, e: sel.elevation, g: sel.garage, b: sel.basement, p: sel.porch ? "1" : "0", t: tab, ...patch }).toString();
+    new URLSearchParams({
+      book: book.id,
+      e: sel.elevation,
+      g: sel.garage,
+      b: sel.basement,
+      p: sel.porch ? "1" : "0",
+      t: tab,
+      // what a builder's start sheet filled in rides along while options are changed
+      ...Object.fromEntries((["start", "lot", "sub", "addr", "city", "permit", "color"] as const).filter((k) => sp[k]).map((k) => [k, sp[k]!])),
+      ...patch,
+    }).toString();
   const base = `/builders/${bid}/plans/${encodeURIComponent(plan.name)}`;
   const backPath = `/${encodeURIComponent(plan.name)}?${query()}`;
   const chip = (on: boolean, to: string, text: string) => (
@@ -68,7 +78,7 @@ export default async function ModelPage({ params, searchParams }: { params: Prom
         </div>
         {user.role !== "VIEWER" && tab !== "schedule" && (
           <Link href={`${base}?${query({ t: "schedule" })}`}>
-            <Button>Add to schedule</Button>
+            <Button size="lg">Add this house</Button>
           </Link>
         )}
       </div>
@@ -267,9 +277,9 @@ export default async function ModelPage({ params, searchParams }: { params: Prom
         (user.role === "VIEWER" ? (
           <p className="text-sm text-muted-foreground">Viewers can&apos;t add to the schedule.</p>
         ) : (
-          <form action={scheduleHouseAction} className="flex max-w-2xl flex-col gap-2 rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">
-              Adds “{label}” to the residential ADD board — one line per trade with the sell and payout above.
+          <form action={addHouseAction} className="flex max-w-2xl flex-col gap-3 rounded-lg border p-4">
+            <p className="text-sm">
+              Makes a <strong>job</strong> for this house — sold to {book.company.name} for <strong>{formatUsd((out.roofing.picked.length ? out.roofing.sell : 0) + (out.gutters.picked.length ? out.gutters.sell : 0))}</strong>, with the materials, tax and crew pay planned — and puts it on the production schedule. You land on the job&apos;s Estimate · Invoice · Profit page.
             </p>
             {[
               ["bid", bid],
@@ -279,45 +289,69 @@ export default async function ModelPage({ params, searchParams }: { params: Prom
               ["g", sel.garage],
               ["b", sel.basement],
               ["p", sel.porch ? "1" : "0"],
+              ["startId", sp.start ?? ""],
             ].map(([k, v]) => (
               <input key={k} type="hidden" name={k} value={v} />
             ))}
-            <label className="text-sm">
-              Lot / address
-              <Input name="address" required placeholder="e.g. Lot 14 · 1234 Main St" />
-            </label>
-            <div className="flex gap-4 text-sm">
-              <label className="flex items-center gap-1">
-                <input type="checkbox" name="trade" value="ROOFING" defaultChecked={out.roofing.picked.length > 0} disabled={!out.roofing.picked.length} /> Roofing ({formatUsd(out.roofing.sell)})
-              </label>
-              <label className="flex items-center gap-1">
-                <input type="checkbox" name="trade" value="GUTTERS" defaultChecked={out.gutters.picked.length > 0} disabled={!out.gutters.picked.length} /> Gutters ({formatUsd(out.gutters.sell)})
-              </label>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-[8rem_1fr] gap-3">
               <label className="text-sm">
-                PO / VPO
-                <Input name="po" />
+                Lot #
+                <Input name="lot" defaultValue={sp.lot ?? ""} className="h-11 text-base" />
               </label>
               <label className="text-sm">
-                Color
-                <Input name="color" />
-              </label>
-              <label className="text-sm">
-                Crew
-                <Input name="crew" />
-              </label>
-              <label className="text-sm">
-                Super
-                <Input name="super" />
+                Subdivision
+                <Input name="subdivision" defaultValue={sp.sub ?? ""} className="h-11 text-base" />
               </label>
             </div>
             <label className="text-sm">
-              Notes
-              <Input name="notes" />
+              House address <span className="text-red-700">*</span>
+              <Input name="address" required defaultValue={sp.addr ?? ""} placeholder="e.g. 713 Fallen Leaf Dr" className="h-11 text-base" />
             </label>
-            <Button type="submit" className="self-start">
-              Add to schedule
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-sm">
+                City, state
+                <Input name="city" defaultValue={sp.city ?? ""} className="h-11 text-base" />
+              </label>
+              <label className="text-sm">
+                Permit #
+                <Input name="permit" defaultValue={sp.permit ?? ""} className="h-11 text-base" />
+              </label>
+            </div>
+            <div className="flex gap-6 text-base">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" name="trade" value="ROOFING" className="h-5 w-5" defaultChecked={out.roofing.picked.length > 0} disabled={!out.roofing.picked.length} /> Roofing ({formatUsd(out.roofing.sell)})
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" name="trade" value="GUTTERS" className="h-5 w-5" defaultChecked={out.gutters.picked.length > 0} disabled={!out.gutters.picked.length} /> Gutters ({formatUsd(out.gutters.sell)})
+              </label>
+            </div>
+            <details className="text-sm">
+              <summary className="cursor-pointer text-muted-foreground">More (PO, color, crew, super, notes) — optional</summary>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <label>
+                  PO / VPO
+                  <Input name="po" />
+                </label>
+                <label>
+                  Color
+                  <Input name="color" defaultValue={sp.color ?? ""} />
+                </label>
+                <label>
+                  Crew
+                  <Input name="crew" />
+                </label>
+                <label>
+                  Super
+                  <Input name="super" />
+                </label>
+                <label className="col-span-2">
+                  Notes
+                  <Input name="notes" />
+                </label>
+              </div>
+            </details>
+            <Button type="submit" size="lg" className="self-start">
+              Add this house
             </Button>
           </form>
         ))}

@@ -1,381 +1,153 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, Camera, Receipt, Wallet, FileSignature, History, Ruler, ShoppingCart, Signature, DollarSign, ListChecks, Megaphone, HardHat, FileText, Send, Search, CheckCircle2 } from "lucide-react";
+import { CalendarDays, ChevronRight, ClipboardList, Home, Megaphone, PlusCircle, Receipt } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getMarketView } from "@/lib/market";
-import { activityCounts, activityFeed, dashboardData, leaderboard, workSchedule, type Period } from "@/lib/dashboard";
-import { SheetDateBanner } from "@/components/sheet-banner";
-import { MilestoneDot } from "@/components/shell/milestone-dot";
-import { Panel, axLink } from "@/components/shell/panel";
-import { Markdown } from "@/components/markdown";
-import { NavSelect } from "@/components/dashboard/tab-select";
+import { activityCounts, dashboardData, workSchedule } from "@/lib/dashboard";
 import { dashboardSchedules } from "@/lib/dashboard-schedules";
-import { shortName } from "@/lib/company-profile";
+import { SheetDateBanner } from "@/components/sheet-banner";
+import { Panel, axLink } from "@/components/shell/panel";
 
+// The front page: only what someone needs to start the day. Everything else (pipeline, leaderboard, activity feed,
+// A/R aging) is on Company overview, one click away.
 const usd0 = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const usd2 = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 const short = (n: number) => (n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3)}K` : usd0(n));
-function ago(d: Date) {
-  const s = (Date.now() - d.getTime()) / 1000;
-  if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min`;
-  if (s < 86400) return `${Math.round(s / 3600)} hr`;
-  const n = Math.round(s / 86400);
-  return n === 1 ? "a day" : `${n} days`;
-}
+const md = (d: Date) => `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
 
-const ICON = {
-  OI: History,
-  LB: DollarSign,
-  CO: FileSignature,
-  OR: ShoppingCart,
-  MR: Ruler,
-  PS: Signature,
-  TK: ListChecks,
-  CI: Wallet,
-  RC: Receipt,
-  PH: Camera,
-  PP: HardHat,
-  PB: FileText,
-  DI: Send,
-  SL: Search,
-  SA: CheckCircle2,
-} as const;
-
-export default async function Dashboard({ searchParams }: { searchParams: Promise<{ lb?: string; denied?: string; dash?: string; es?: string; pc?: string }> }) {
+export default async function Home_({ searchParams }: { searchParams: Promise<{ denied?: string; dash?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
-  // the office and purchasing start on their own to-do lists (the dashboard is one click away)
-  if (!sp.lb && !sp.denied && !sp.dash && (user.role === "OFFICE" || user.role === "PURCHASING")) redirect(user.role === "OFFICE" ? "/desk/office" : "/desk/purchasing");
+  // the office and purchasing start on their own to-do lists (this page is one click away)
+  if (!sp.denied && !sp.dash && (user.role === "OFFICE" || user.role === "PURCHASING")) redirect(user.role === "OFFICE" ? "/desk/office" : "/desk/purchasing");
   const view = await getMarketView();
   const staff = user.role !== "VIEWER";
   const admin = user.role === "ADMIN";
-  const period: Period = sp.lb === "week" || sp.lb === "ytd" ? sp.lb : "month";
-  const [data, feed, board, sched, counts, updates, sq] = await Promise.all([
+  const [data, sched, counts, update, sq] = await Promise.all([
     dashboardData(view),
-    activityFeed(view),
-    staff ? leaderboard(view, period) : Promise.resolve([]),
     workSchedule(view),
     activityCounts(view),
-    prisma.companyUpdate.findMany({ include: { author: { select: { name: true } } }, orderBy: [{ pinned: "desc" }, { createdAt: "desc" }], take: 3 }),
-    dashboardSchedules({ userId: user.id, userName: user.name, view, es: sp.es, pc: sp.pc }),
+    prisma.companyUpdate.findFirst({ include: { author: { select: { name: true } } }, orderBy: [{ pinned: "desc" }, { createdAt: "desc" }] }),
+    dashboardSchedules({ userId: user.id, userName: user.name, view, es: undefined, pc: undefined }),
   ]);
-  // tab links keep the other square's tab (and the leaderboard period); dash=1 keeps the office on the dashboard
-  const tabHref = (k: "es" | "pc", v: string) => {
-    const q = new URLSearchParams({ dash: "1", es: sq.es, pc: sq.pc ?? "all", ...(sp.lb ? { lb: sp.lb } : {}) });
-    q.set(k, v);
-    return `/?${q.toString()}`;
-  };
-  const top = Math.max(1, ...board.map((b) => b.amount));
-  const lt30 = data.aging["Current"] + data.aging["1–30"];
-  const bars = [
-    { label: "<30", v: lt30, color: "var(--btr-future)" },
-    { label: "31-60", v: data.aging["31–60"], color: "#7fb0ea" },
-    { label: "61-90", v: data.aging["61–90"], color: "var(--btr-blue)" },
-    { label: ">90", v: data.aging["90+"], color: "var(--btr-black)" },
-  ];
-  const maxBar = Math.max(1, ...bars.map((b) => b.v));
-  const monthName = new Date().toLocaleString("en-US", { month: "long" });
+  const todo = [...(staff ? data.actions.office : []), ...data.actions.ordering].filter((a) => a.n > 0).sort((a, b) => b.n - a.n);
+  const hour = Number(new Date().toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: "America/Chicago" }));
+  const hello = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const first = user.name.split(" ")[0];
+
+  const buttons = [
+    staff && { href: "/builders/add-house", label: "Add a builder house", note: "Pick the model, or drop in the builder's PDF", Icon: Home },
+    staff && { href: "/projects/new", label: "New job or lead", note: "Customer, address, what they need", Icon: PlusCircle },
+    staff && { href: "/receipts", label: "Scan a receipt", note: "Photo or PDF — it reads it for you", Icon: Receipt },
+    { href: "/production", label: "Production schedule", note: `${sq.prodCount} on the board`, Icon: CalendarDays },
+  ].filter(Boolean) as { href: string; label: string; note: string; Icon: typeof Home }[];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-[28px] font-light">Dashboard</h1>
-        <span className="text-sm text-muted-foreground">
-          {view === "ALL" ? "All jobs" : view === "RESIDENTIAL" ? "Residential" : "Commercial"} · change in the menu under your name
-        </span>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <h1 className="text-[28px] font-light">
+          {hello}, {first}
+        </h1>
+        <Link href="/overview" className="text-sm text-btr-link hover:underline">
+          Company overview — pipeline, leaderboard, activity →
+        </Link>
       </div>
       {sp.denied && <p className="border-l-4 border-l-btr-blue bg-background p-3 text-sm">Your role can&apos;t open that page.</p>}
       <SheetDateBanner />
 
-      <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)_minmax(0,1fr)]">
-        <Panel title="Pipeline" right={<span>{data.active} active</span>} className="flex flex-col lg:h-[440px]" bodyClass="min-h-0 flex-1 overflow-y-auto">
-          <ol className="divide-y">
-            {data.pipeline.map((p) => (
-              <li key={p.key}>
-                <Link href={`/jobs?m=${p.key}`} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/60">
-                  <MilestoneDot stage={p.stage} size={26} />
-                  <span className="min-w-0 flex-1 text-xs leading-tight">
-                    {p.label}
-                    <span className="block text-muted-foreground tabular-nums">{p.value ? short(p.value) : "--"}</span>
-                  </span>
-                  <span className="text-lg text-btr-blue tabular-nums">{p.count}</span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </Panel>
-
-        <Panel title="Estimating schedule" right={<Link className={axLink} href="/estimating/schedule">Open ({sq.esCount})</Link>} className="flex h-[440px] flex-col" bodyClass="flex min-h-0 flex-1 flex-col">
-          <Tabs>
-            {sq.esTabs.map(([k, l]) => (
-              <TabLink key={k} href={tabHref("es", k)} on={sq.es === k}>
-                {l}
-              </TabLink>
-            ))}
-          </Tabs>
-          <ol className="min-h-0 flex-1 divide-y overflow-y-auto">
-            {sq.estimates.length === 0 && <li className="p-3 text-sm text-muted-foreground">Nothing being bid here right now.</li>}
-            {sq.estimates.map((e) => {
-              const late = e.dueAt && e.dueAt.getTime() < Date.now() - 86_400_000;
-              return (
-                <li key={e.id}>
-                  <Link href={`/estimating/schedule/${e.id}`} className="flex gap-3 px-3 py-2 hover:bg-muted/60">
-                    <span className={`w-12 shrink-0 text-xs tabular-nums ${late ? "font-semibold text-red-700" : "text-muted-foreground"}`}>{e.dueAt ? `${e.dueAt.getUTCMonth() + 1}/${e.dueAt.getUTCDate()}` : "no due"}</span>
-                    <span className="min-w-0 flex-1 text-[13px]">
-                      <span className="block truncate font-medium text-btr-link">
-                        {e.priority === "ASAP" && <span className="mr-1 text-red-700">ASAP</span>}
-                        {e.project}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">{[e.customer, e.scope, e.estimator].filter(Boolean).join(" · ")}</span>
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-        </Panel>
-
-        <Panel title="Production schedule" right={<Link className={axLink} href="/production">Open ({sq.prodCount})</Link>} className="flex h-[440px] flex-col" bodyClass="flex min-h-0 flex-1 flex-col">
-          <div className="flex shrink-0 items-center gap-2 border-b px-3 py-1.5 text-xs text-muted-foreground">
-            Showing
-            <NavSelect
-              label="Crew"
-              value={tabHref("pc", sq.pc ?? "all")}
-              className="h-7 min-w-0 flex-1 text-xs"
-              options={[
-                ...(sq.pm ? [{ label: "My crews & builders", href: tabHref("pc", "mine") }] : []),
-                { label: "All crews", href: tabHref("pc", "all") },
-                ...sq.crewTabs.map((c) => ({ label: c, href: tabHref("pc", c), group: sq.pm ? "My crews" : "Busiest crews" })),
-                ...sq.moreCrews.map((c) => ({ label: c, href: tabHref("pc", c), group: "All other crews" })),
-              ]}
-            />
-          </div>
-          <ol className="min-h-0 flex-1 divide-y overflow-y-auto">
-            {sq.lines.length === 0 && <li className="p-3 text-sm text-muted-foreground">Nothing on this schedule right now.</li>}
-            {sq.lines.map((l) => (
-              <li key={l.id}>
-                <Link href={`/production/${l.id}`} className="flex gap-3 px-3 py-2 hover:bg-muted/60">
-                  <span className="w-12 shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {l.startDate ? `${l.startDate.getUTCMonth() + 1}/${l.startDate.getUTCDate()}` : l.board === "ADD" ? <span className="text-amber-700">new</span> : l.board === "UPCOMING" ? "next" : "now"}
-                  </span>
-                  <span className="min-w-0 flex-1 text-[13px]">
-                    <span className="block truncate font-medium text-btr-link">{l.location ?? l.project ?? l.builder}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{[l.market === "COMMERCIAL" ? l.project : l.builder, l.type, sq.pc === "all" || sq.pc === "mine" ? l.crew : null, l.superName].filter(Boolean).join(" · ")}</span>
-                  </span>
-                  {l.completed && <span className="shrink-0 text-xs text-green-700">done</span>}
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </Panel>
+      {/* the four things people do most, as big buttons */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {buttons.map(({ href, label, note, Icon }) => (
+          <Link key={href} href={href} className="flex items-center gap-3 rounded-lg border bg-background p-4 shadow-sm hover:border-btr-blue hover:bg-btr-blue-soft">
+            <Icon size={30} className="shrink-0 text-btr-blue" />
+            <span className="min-w-0">
+              <span className="block text-base font-semibold">{label}</span>
+              <span className="block text-xs text-muted-foreground">{note}</span>
+            </span>
+          </Link>
+        ))}
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-4">
-          {updates.length > 0 && (
-            <Panel title="Company updates" right={<Link className={axLink} href="/updates">All updates</Link>} bodyClass="divide-y">
-              {updates.map((u) => (
-                <article key={u.id} className="flex gap-3 px-4 py-3">
-                  <Megaphone size={18} className="mt-0.5 shrink-0 text-btr-blue" />
-                  <div className="min-w-0 text-sm">
-                    <Link href={`/updates#${u.id}`} className="font-medium hover:underline">
-                      {u.pinned && <span className="mr-1 text-btr-blue">Pinned ·</span>}
-                      {u.title}
-                    </Link>
-                    <div className="line-clamp-2 text-muted-foreground">
-                      <Markdown text={u.body} />
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {u.author.name} · {ago(u.createdAt)} ago
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </Panel>
+      {/* a few numbers, plain words */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[
+          ["On a roof today", String(sched.working), "/schedule"],
+          ["Next 30 days", String(sched.outlook), "/schedule"],
+          ["Jobs sold (30 days)", String(counts.sold), "/jobs"],
+          admin ? ["Owed to us", short(data.arTotal), "/reports/ar"] : ["New leads (30 days)", String(counts.leads), "/jobs"],
+        ].map(([label, n, href]) => (
+          <Link key={label} href={href} className="rounded-lg border bg-background px-4 py-3 hover:bg-muted/50">
+            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="text-2xl font-semibold tabular-nums text-btr-ink">{n}</div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <Panel title="Needs you" right={<ClipboardList size={16} className="text-btr-blue" />} bodyClass="divide-y">
+          {todo.length === 0 ? (
+            <p className="p-4 text-sm text-muted-foreground">All caught up. Nothing waiting on anyone.</p>
+          ) : (
+            todo.slice(0, 8).map((a) => (
+              <Link key={a.key} href={a.href} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/60">
+                <span className="w-8 text-lg font-semibold text-btr-blue tabular-nums">{a.n}</span>
+                <span className="flex-1 text-sm">{a.label}</span>
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </Link>
+            ))
           )}
+          {todo.length > 8 && (
+            <Link href="/overview" className="block px-4 py-2 text-xs text-btr-link">
+              {todo.length - 8} more →
+            </Link>
+          )}
+        </Panel>
 
-          <Panel title={`Action items (${[...(staff ? data.actions.office : []), ...data.actions.ordering].filter((a) => a.n > 0).length})`} bodyClass="grid gap-4 p-3 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            {staff && (
-              <Group label="Office" cols="sm:grid-cols-2">
-                {data.actions.office.map((a) => (
-                  <Tile key={a.key} n={a.n} label={a.label} href={a.href} k={a.key} />
-                ))}
-              </Group>
-            )}
-            <div className="flex flex-col gap-3">
-              <Group label="Ordering" cols="sm:grid-cols-2 xl:grid-cols-1">
-                {data.actions.ordering.map((a) => (
-                  <Tile key={a.key} n={a.n} label={a.label} href={a.href} k={a.key} />
-                ))}
-              </Group>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Link href="/deliveries" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
-                  <span className="font-medium text-btr-link">{shortName()} material orders</span>
-                  <span className="text-xs text-muted-foreground">Orders from estimates, deliveries</span>
-                </Link>
-                <Outbound href="https://www.abcsupply.com/" name="ABC Supply" note="Branch #112 · 402-734-1414" />
-                <Outbound href="https://www.eagleview.com/" name="EagleView" note="Roof & wall reports" />
-                <Outbound href="https://www.gaf.com/en-us/for-professionals/tools/quickmeasure" name="GAF QuickMeasure" note="Roof reports" />
-              </div>
-            </div>
-          </Panel>
-
-          {staff && (
-            <Panel
-              title="Leaderboard"
-              right={
-                <span>
-                  {(["week", "month", "ytd"] as Period[]).map((p, i) => (
-                    <span key={p}>
-                      {i > 0 && " | "}
-                      <Link href={`/?lb=${p}`} className={period === p ? "font-semibold" : axLink}>
-                        {p === "ytd" ? "YTD" : p[0].toUpperCase() + p.slice(1)}
-                      </Link>
-                    </span>
-                  ))}
+        <Panel title="Estimating schedule" right={<Link className={axLink} href="/estimating/schedule">Open ({sq.esCount})</Link>} bodyClass="divide-y">
+          {sq.estimates.length === 0 && <p className="p-4 text-sm text-muted-foreground">Nothing being bid right now.</p>}
+          {sq.estimates.slice(0, 7).map((e) => {
+            const late = e.dueAt && e.dueAt.getTime() < Date.now() - 86_400_000;
+            return (
+              <Link key={e.id} href={`/estimating/schedule/${e.id}`} className="flex gap-3 px-4 py-2 hover:bg-muted/60">
+                <span className={`w-12 shrink-0 text-xs tabular-nums ${late ? "font-semibold text-red-700" : "text-muted-foreground"}`}>{e.dueAt ? md(e.dueAt) : "no due"}</span>
+                <span className="min-w-0 flex-1 text-sm">
+                  <span className="block truncate font-medium text-btr-link">
+                    {e.priority === "ASAP" && <span className="mr-1 text-red-700">ASAP</span>}
+                    {e.project}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">{[e.customer, e.estimator].filter(Boolean).join(" · ")}</span>
                 </span>
-              }
-            >
-              {board.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No sales for {period === "month" ? monthName : period === "week" ? "this week" : "this year"} yet. Jobs count here when a signed contract date and amount are entered.
-                </p>
-              ) : (
-                <ol className="flex flex-col gap-2">
-                  {board.map((b, i) => (
-                    <li key={b.name} className="grid grid-cols-[1.5rem_minmax(0,10rem)_1fr] items-center gap-3 text-sm">
-                      <span className="text-lg text-muted-foreground tabular-nums">{i + 1}</span>
-                      <span className="truncate">
-                        {b.name}
-                        <span className="block text-xs text-muted-foreground">
-                          {usd0(b.amount)} · {b.jobs} job{b.jobs === 1 ? "" : "s"}
-                        </span>
-                      </span>
-                      <span className="h-6 bg-btr-blue" style={{ width: `${Math.max(2, (b.amount / top) * 100)}%`, opacity: i === 0 ? 1 : 0.55 }} />
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </Panel>
-          )}
+              </Link>
+            );
+          })}
+        </Panel>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Panel title="Work schedule" right={<Link className={axLink} href="/schedule">Schedule</Link>}>
-              <div className="grid grid-cols-3 divide-x text-center">
-                {[
-                  ["Finished yesterday", sched.done, "text-muted-foreground"],
-                  ["On a roof today", sched.working, "text-btr-blue"],
-                  ["Next 30 days", sched.outlook, "text-btr-ink"],
-                ].map(([l, n, c]) => (
-                  <Link key={l as string} href="/schedule" className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-muted/50">
-                    <span className={`text-4xl font-semibold tabular-nums ${c}`}>{n}</span>
-                    <span className="text-xs text-muted-foreground">{l}</span>
-                  </Link>
-                ))}
-              </div>
-            </Panel>
-            {admin ? (
-              <Panel title="Accounts receivable" right={<Link className={axLink} href="/reports/ar">Aging report</Link>}>
-                <p className="mb-2 text-sm">
-                  <span className="font-medium">{short(data.arTotal)}</span> <span className="text-muted-foreground">open on sent invoices</span>
-                </p>
-                <div className="grid h-32 grid-cols-4 items-end gap-2">
-                  {bars.map((b) => (
-                    <div key={b.label} className="flex h-full flex-col justify-end text-center text-[11px]">
-                      {b.v > 0 && <span className="mb-0.5 tabular-nums">{usd2(b.v)}</span>}
-                      <div style={{ height: `${b.v ? Math.max(4, (b.v / maxBar) * 80) : 1}%`, background: b.color }} />
-                      <span className="mt-1 border-t pt-0.5 text-muted-foreground">{b.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-            ) : (
-              <Panel title="My day" right={<Link className={axLink} href="/today">Open</Link>}>
-                <p className="text-sm text-muted-foreground">Your tasks, bids due and jobs to follow up are on My day.</p>
-              </Panel>
-            )}
-          </div>
-
-          <Panel title="Activity count: last 30 days" bodyClass="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 xl:grid-cols-6">
-            {[
-              ["New leads", counts.leads],
-              ["Jobs sold", counts.sold],
-              ["Jobs completed", counts.completed],
-              ...(staff ? [["Money collected", usd0(counts.collected)]] : []),
-              ["Invoices sent", counts.invoiced],
-              ["Jobs closed", counts.closed],
-            ].map(([l, n]) => (
-              <div key={l as string} className="border px-2 py-2 text-center">
-                <div className="text-xs">{l}</div>
-                <div className="text-xl text-btr-blue tabular-nums">{n}</div>
-              </div>
-            ))}
-          </Panel>
-        </div>
-
-        <Panel title="Activity feed" className="lg:sticky lg:top-28" bodyClass="max-h-[calc(100vh-10rem)] overflow-y-auto">
-          {feed.length === 0 && <p className="p-4 text-sm text-muted-foreground">Nothing yet.</p>}
-          <ol>
-            {feed.map((f) => (
-              <li key={f.id} className={`border-b ${f.sold ? "bg-btr-blue-soft" : ""}`}>
-                <Link href={f.href} className="flex gap-3 px-3 py-2.5 hover:bg-muted/50">
-                  <span className="flex w-10 shrink-0 flex-col items-center gap-1 text-[10px] text-muted-foreground">
-                    <MilestoneDot stage={f.job.status} size={18} />
-                    {ago(f.at)}
-                  </span>
-                  <span className="min-w-0 text-[13px]">
-                    <span className="font-semibold text-btr-ink">{f.title}:</span> {f.by ?? ""}
-                    <span className="block truncate text-btr-link">{f.job.name}</span>
-                    {f.text && <span className="line-clamp-2 block text-muted-foreground">{f.text}</span>}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ol>
+        <Panel title="Production schedule" right={<Link className={axLink} href="/production">Open ({sq.prodCount})</Link>} bodyClass="divide-y">
+          {sq.lines.length === 0 && <p className="p-4 text-sm text-muted-foreground">Nothing on the schedule right now.</p>}
+          {sq.lines.slice(0, 7).map((l) => (
+            <Link key={l.id} href={`/production/${l.id}`} className="flex gap-3 px-4 py-2 hover:bg-muted/60">
+              <span className="w-12 shrink-0 text-xs text-muted-foreground tabular-nums">
+                {l.startDate ? md(l.startDate) : l.board === "ADD" ? <span className="text-amber-700">new</span> : l.board === "UPCOMING" ? "next" : "now"}
+              </span>
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="block truncate font-medium text-btr-link">{l.location ?? l.project ?? l.builder}</span>
+                <span className="block truncate text-xs text-muted-foreground">{[l.market === "COMMERCIAL" ? l.project : l.builder, l.type, l.crew].filter(Boolean).join(" · ")}</span>
+              </span>
+            </Link>
+          ))}
         </Panel>
       </div>
+
+      {update && (
+        <Link href={`/updates#${update.id}`} className="flex items-center gap-3 rounded-lg border bg-background px-4 py-3 text-sm hover:bg-muted/50">
+          <Megaphone size={18} className="shrink-0 text-btr-blue" />
+          <span className="min-w-0 flex-1 truncate">
+            <span className="font-medium">{update.title}</span>
+            <span className="text-muted-foreground"> · {update.author.name}</span>
+          </span>
+          <span className="text-xs text-btr-link">All updates →</span>
+        </Link>
+      )}
     </div>
-  );
-}
-
-function Tabs({ children }: { children: React.ReactNode }) {
-  return <div className="flex shrink-0 items-center gap-1 overflow-x-auto border-b px-2 py-1.5">{children}</div>;
-}
-
-function TabLink({ href, on, children }: { href: string; on: boolean; children: React.ReactNode }) {
-  return (
-    <Link href={href} scroll={false} className={`shrink-0 rounded-md px-2 py-1 text-xs whitespace-nowrap ${on ? "bg-btr-blue text-white" : "text-muted-foreground hover:bg-muted"}`}>
-      {children}
-    </Link>
-  );
-}
-
-function Group({ label, cols, children }: { label: string; cols: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h3 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</h3>
-      <div className={`grid grid-cols-1 gap-2 ${cols}`}>{children}</div>
-    </div>
-  );
-}
-
-function Tile({ n, label, href, k }: { n: number; label: string; href: string; k: string }) {
-  const Icon = ICON[k as keyof typeof ICON] ?? AlertTriangle;
-  return (
-    <Link href={href} className={`flex items-center gap-3 border bg-background px-3 py-2.5 hover:bg-muted/60 ${n ? "" : "text-muted-foreground"}`}>
-      <span className={`w-8 text-lg tabular-nums ${n ? "text-btr-blue" : ""}`}>{n}</span>
-      <span className={`flex-1 text-center text-xs leading-tight ${n ? "text-foreground" : "opacity-60"}`}>{label}</span>
-      <Icon size={22} className={n ? "text-btr-blue" : "opacity-40"} />
-    </Link>
-  );
-}
-
-function Outbound({ href, name, note }: { href: string; name: string; note: string }) {
-  return (
-    <a href={href} target="_blank" rel="noreferrer" className="flex flex-col justify-center border bg-background px-3 py-2 hover:bg-muted/60">
-      <span className="font-medium text-btr-link">{name}</span>
-      <span className="text-xs text-muted-foreground">{note}</span>
-    </a>
   );
 }

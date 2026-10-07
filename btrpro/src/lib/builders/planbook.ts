@@ -55,45 +55,53 @@ export async function housesPerYear(builderName: string) {
   return new Set(lines.map((l) => (l.location ?? "").trim().toLowerCase()).filter(Boolean)).size || null;
 }
 
-/** One click from a model pick: a schedule line per trade with the sell and payout from the plan book. */
-export async function scheduleHouse(bookId: string, planName: string, sel: Selection, input: { address: string; trades: ("ROOFING" | "GUTTERS")[]; crew?: string | null; superName?: string | null; vpo?: string | null; notes?: string | null; color?: string | null }, actor: Actor) {
-  if (actor.role === "VIEWER") throw new PlanBookError("Viewers can't add to the schedule.");
-  if (!input.address.trim()) throw new PlanBookError("Enter the lot / address.");
-  if (!input.trades.length) throw new PlanBookError("Pick roofing, gutters or both.");
+export type HouseTrade = "ROOFING" | "GUTTERS";
+export type HouseInput = { address: string; trades: HouseTrade[]; crew?: string | null; superName?: string | null; vpo?: string | null; notes?: string | null; color?: string | null };
+
+/** The house as the plan book prices it, refusing anything not priced on the sheet. */
+export async function priceHouse(bookId: string, planName: string, sel: Selection, trades: HouseTrade[]) {
+  if (!trades.length) throw new PlanBookError("Pick roofing, gutters or both.");
   const book = await getBook(bookId);
   if (!book) throw new PlanBookError("That plan book is gone.");
   const plan = findPlan(book.data.plans, planName);
   if (!plan) throw new PlanBookError("That model isn't in the plan book.");
   const out = buildOut(book.data, plan, sel);
   const label = modelLabel(plan.name, sel);
-  for (const t of input.trades) {
+  for (const t of trades) {
     const tr = t === "ROOFING" ? out.roofing : out.gutters;
     const name = t === "ROOFING" ? "Roofing" : "Gutters";
     if (!tr.picked.length) throw new PlanBookError(`${name} isn't priced for ${label}.`);
     if (tr.missing.length) throw new PlanBookError(`${name}: ${tr.missing.join("; ")} — fix the plan book or pick a different option.`);
   }
+  return { book, plan, out, label };
+}
+
+/** One click from a model pick: a schedule line per trade with the sell and payout from the plan book. */
+export async function scheduleHouse(bookId: string, planName: string, sel: Selection, input: HouseInput & { projectId?: string | null }, actor: Actor) {
+  if (actor.role === "VIEWER") throw new PlanBookError("Viewers can't add to the schedule.");
+  if (!input.address.trim()) throw new PlanBookError("Enter the lot / address.");
+  const { book, out, label } = await priceHouse(bookId, planName, sel, input.trades);
   const lines = [];
   for (const t of input.trades) {
     const tr = t === "ROOFING" ? out.roofing : out.gutters;
-    lines.push(
-      await addProdLine(
-        {
-          market: "RESIDENTIAL",
-          board: "ADD",
-          builder: book.company.name,
-          location: input.address,
-          model: label,
-          type: t === "ROOFING" ? "Roofing" : "Gutters",
-          crew: input.crew ?? null,
-          superName: input.superName ?? null,
-          vpo: input.vpo ?? null,
-          sell: tr.sell,
-          payout: tr.payout,
-          notes: [input.color ? `Color: ${input.color}` : null, input.notes, `From ${book.company.name} ${book.label} plan book`].filter(Boolean).join(" · "),
-        },
-        actor,
-      ),
+    const line = await addProdLine(
+      {
+        market: "RESIDENTIAL",
+        board: "ADD",
+        builder: book.company.name,
+        location: input.address,
+        model: label,
+        type: t === "ROOFING" ? "Roofing" : "Gutters",
+        crew: input.crew ?? null,
+        superName: input.superName ?? null,
+        vpo: input.vpo ?? null,
+        sell: tr.sell,
+        payout: tr.payout,
+        notes: [input.color ? `Color: ${input.color}` : null, input.notes, `From ${book.company.name} ${book.label} plan book`].filter(Boolean).join(" · "),
+      },
+      actor,
     );
+    lines.push(input.projectId ? await prisma.prodLine.update({ where: { id: line.id }, data: { projectId: input.projectId } }) : line);
   }
   return { lines, label };
 }

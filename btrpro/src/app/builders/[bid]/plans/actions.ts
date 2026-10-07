@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { STAFF_ROLES } from "@/lib/roles";
-import { importPlanBook, PlanBookError, saveTakeoffEdit, scheduleHouse } from "@/lib/builders/planbook";
+import { importPlanBook, PlanBookError, saveTakeoffEdit } from "@/lib/builders/planbook";
+import { createHouseJob } from "@/lib/builders/house";
 import type { Selection } from "@/lib/builders/plans";
 
 const back = (bid: string, path: string, msg: string) => redirect(`/builders/${bid}/plans${path}${path.includes("?") ? "&" : "?"}err=${encodeURIComponent(msg)}`);
@@ -26,23 +27,24 @@ export async function importPlanBookAction(form: FormData) {
   redirect(`/builders/${bid}/plans?ok=${encodeURIComponent(done)}`);
 }
 
-export async function scheduleHouseAction(form: FormData) {
-  const user = await requireUser();
+/** "Add this house": a job sold to the builder at the plan book price, with its costs planned, on the schedule. */
+export async function addHouseAction(form: FormData) {
+  const user = await requireUser(STAFF_ROLES);
   const bid = String(form.get("bid"));
   const book = String(form.get("book"));
   const plan = String(form.get("plan"));
   const sel: Selection = { elevation: String(form.get("e")), garage: form.get("g") === "3" ? "3" : "2", basement: form.get("b") === "DLWO" ? "DLWO" : "STANDARD", porch: form.get("p") === "1" };
   const qs = `/${encodeURIComponent(plan)}?book=${book}&e=${encodeURIComponent(sel.elevation)}&g=${sel.garage}&b=${sel.basement}&p=${sel.porch ? 1 : 0}&t=schedule`;
   const s = (k: string) => String(form.get(k) ?? "").trim() || null;
-  let n = 0;
+  let projectId: string;
   try {
     const trades = form.getAll("trade").map(String).filter((t): t is "ROOFING" | "GUTTERS" => t === "ROOFING" || t === "GUTTERS");
-    ({ lines: { length: n } } = await scheduleHouse(book, plan, sel, { address: s("address") ?? "", trades, crew: s("crew"), superName: s("super"), vpo: s("po"), notes: s("notes"), color: s("color") }, user));
+    ({ project: { id: projectId } } = await createHouseJob(book, plan, sel, { lot: s("lot"), subdivision: s("subdivision"), address: s("address") ?? "", city: s("city"), permit: s("permit"), trades, crew: s("crew"), superName: s("super"), vpo: s("po"), notes: s("notes"), color: s("color"), startId: s("startId") }, user));
   } catch (e) {
     return back(bid, qs, e instanceof Error ? e.message : String(e));
   }
   revalidatePath("/production");
-  redirect(`/builders/${bid}/plans${qs}&scheduled=${n}`);
+  redirect(`/projects/${projectId}/house?ok=${encodeURIComponent("House added: it's a job now, sold to the builder, and on the production schedule (ADD board).")}`);
 }
 
 export async function saveTakeoffAction(form: FormData) {

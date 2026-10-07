@@ -27,6 +27,8 @@ import {
   NoneExpectedToggle,
 } from "@/components/costing/forms";
 import { Badge } from "@/components/ui/badge";
+import { MoneyDonut, moneySlices } from "@/components/charts/money-donut";
+import { actualSplit, plannedSplit } from "@/lib/costing/split";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 
@@ -111,6 +113,26 @@ export default async function CostsPage({
           Job costing closed by {p.costClosedBy} on {formatDate(p.costClosedAt)}
           . The final P&amp;L is locked; changes need an Admin and are logged.
         </p>
+      )}
+
+      {pnl.revenue != null && (
+        <section className="grid gap-4 lg:grid-cols-2">
+          {baseline ? (
+            (() => {
+              const m = moneySlices({ revenue: pnl.revenue!, ...plannedSplit(baseline) });
+              return <MoneyDonut title="The plan (estimate)" slices={m.slices} loss={m.loss} center={usdText(pnl.revenue!)} centerNote="contract" />;
+            })()
+          ) : (
+            <div className="flex items-center rounded-lg border p-4 text-sm text-muted-foreground">No estimate frozen yet, so there&apos;s no planned split to show.</div>
+          )}
+          {(() => {
+            const a = actualSplit(p.costs);
+            const spent = a.materials + a.tax + a.labor + a.other;
+            if (spent <= 0) return <div className="flex items-center rounded-lg border p-4 text-sm text-muted-foreground">No costs entered yet. Receipts, bills and crew pay show up here.</div>;
+            const m = moneySlices({ revenue: pnl.revenue!, ...a });
+            return <MoneyDonut title="Actual so far" slices={m.slices} loss={m.loss} center={usdText(pnl.revenue!)} centerNote="contract" />;
+          })()}
+        </section>
       )}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -604,3 +626,5 @@ export default async function CostsPage({
     </div>
   );
 }
+
+const usdText = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });

@@ -112,6 +112,9 @@ export default async function PlansPage({ params, searchParams }: { params: Prom
             Profit audit →
           </Link>
         )}
+        <Link href="/builders/add-house" className="ml-auto rounded-md bg-btr-blue px-4 py-2 text-sm font-medium text-white">
+          Add a house from the builder&apos;s PDF
+        </Link>
       </div>
       {sp.err && <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{sp.err}</p>}
       {sp.ok && <p className="text-sm text-green-700">Plan book imported — {sp.ok}.</p>}

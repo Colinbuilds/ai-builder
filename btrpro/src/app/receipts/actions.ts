@@ -10,6 +10,8 @@ import { prisma } from "@/lib/db";
 import { BillingError } from "@/lib/billing/service";
 import { CostError } from "@/lib/costing/service";
 import { aiErrorMessage } from "@/lib/ai/claude";
+import { pdfToText } from "@/lib/sheets/extract";
+import { looksLikeStartSheet, readStartSheet } from "@/lib/builders/starts";
 
 export type RResult = { problems: string[]; ok?: boolean; note?: string } | null;
 const msg = (e: unknown) => (e instanceof ReceiptError || e instanceof CostError || e instanceof BillingError ? e.message : aiErrorMessage(e));
@@ -17,6 +19,7 @@ const msg = (e: unknown) => (e instanceof ReceiptError || e instanceof CostError
 export async function scanReceiptAction(_: RResult, f: FormData): Promise<RResult> {
   const u = await requireUser(STAFF_ROLES);
   let id: string;
+  let startRedirect: string | null = null;
   try {
     const files = await Promise.all(
       f
@@ -24,10 +27,22 @@ export async function scanReceiptAction(_: RResult, f: FormData): Promise<RResul
         .filter((x): x is File => x instanceof File && x.size > 0)
         .map(async (x) => ({ bytes: new Uint8Array(await x.arrayBuffer()), name: x.name || "receipt" })),
     );
-    id = await saveReceiptFiles(files, { source: "UPLOAD", employeeId: u.id, employee: u.name, message: String(f.get("note") ?? "").trim() || null }, u.id);
+    // a builder's start / option sheet dropped in here isn't a receipt: it goes to Add a builder house
+    const starts: string[] = [];
+    const rest: typeof files = [];
+    for (const file of files) {
+      const pdf = file.bytes[0] === 0x25 && file.bytes[1] === 0x50 && file.bytes[2] === 0x44 && file.bytes[3] === 0x46;
+      const text = pdf ? await pdfToText(file.bytes).catch(() => "") : "";
+      if (pdf && looksLikeStartSheet(text)) starts.push((await readStartSheet(file, u, text)).start.id);
+      else rest.push(file);
+    }
+    if (starts.length && !rest.length) startRedirect = starts.length === 1 ? `/builders/add-house/${starts[0]}` : `/builders/add-house?read=${starts.length}`;
+    if (startRedirect) id = "";
+    else id = await saveReceiptFiles(rest, { source: "UPLOAD", employeeId: u.id, employee: u.name, message: String(f.get("note") ?? "").trim() || null }, u.id);
   } catch (e) {
     return { problems: [msg(e)] };
   }
+  if (startRedirect) redirect(startRedirect);
   // read after the page answers: the receipt page shows "Reading…" and refreshes itself instead of the upload hanging
   after(() => readReceipt(id).catch((e) => console.error("receipt read failed", id, e)));
   redirect(`/receipts/${id}`);

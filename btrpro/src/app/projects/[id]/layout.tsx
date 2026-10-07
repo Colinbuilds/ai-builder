@@ -150,6 +150,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
             invoices: project._count.invoices,
             events: project._count.scheduleEvents,
             photos: !!project.photoFolderId,
+            house: project.builderHouse != null,
           }}
         />
       </div>

@@ -22,6 +22,7 @@ import {
   ShoppingCart,
   Ruler,
   Users,
+  Home as HomeIcon,
 } from "lucide-react";
 import { Dropdown } from "@/components/shell/dropdown";
 import { useBrand } from "@/components/brand";
@@ -37,6 +38,7 @@ export type JobCounts = {
   invoices: number;
   events: number;
   photos: boolean;
+  house?: boolean;
 };
 
 type Item = { href: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; n?: number | string; hot?: boolean };
@@ -48,6 +50,7 @@ export function jobMenu(id: string, c: JobCounts, showCosts: boolean, bot = "BTR
       { href: `${b}/chat`, label: "Messages", icon: MessageSquare, n: c.chat, hot: c.mentioned },
       { href: `${b}/email`, label: "Communications", icon: Mail, n: c.email },
     ],
+    ...(c.house ? [[{ href: `${b}/house`, label: "Builder house", icon: HomeIcon }]] : []),
     [
       { href: `${b}/production`, label: "Schedule & crews", icon: CalendarDays, n: c.events },
       { href: `${b}/estimates`, label: "Estimates", icon: Calculator, n: c.estimates },
@@ -78,6 +81,7 @@ export function jobMenu(id: string, c: JobCounts, showCosts: boolean, bot = "BTR
 }
 
 const labels = (bot: string): [RegExp, string][] => [
+  [/\/house/, "Builder house"],
   [/\/chat/, "Messages"],
   [/\/email/, "Communications"],
   [/\/production/, "Schedule & crews"],

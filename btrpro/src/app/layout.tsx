@@ -24,6 +24,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
             orange: true,
             items: [
               { href: "/projects/new", label: "New job / lead" },
+              { href: "/builders/add-house", label: "Builder house (PDF or pick the model)" },
               { href: "/receipts", label: "Scan a receipt" },
               { href: "/customers/new?kind=contact", label: "New contact" },
               { href: "/customers/new", label: "New customer account" },
@@ -34,7 +35,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
           },
         ]
       : []),
-    { key: "dashboard", label: "Dashboard", icon: "Gauge", href: "/" },
+    { key: "dashboard", label: "Home", icon: "Gauge", href: "/" },
     {
       key: "jobs",
       label: "Jobs",
@@ -72,6 +73,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       icon: "CalendarDays",
       items: [
         { href: "/schedule", label: "Calendar" },
+        { href: "/builders/add-house", label: "Add a builder house" },
         { href: "/takeoff", label: "Blueprint measurer" },
         { href: "/billing/pay-apps", label: "Pay applications (AIA)" },
         { href: "/deliveries", label: "Deliveries" },
@@ -94,6 +96,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
             label: "Reports",
             icon: "FileText" as const,
             items: [
+              { href: "/overview", label: "Company overview (pipeline, leaderboard, activity)" },
               ...(admin || role === "OFFICE" ? [{ href: "/reports/scorecard", label: "Owner scorecard" }, { href: "/reports/wip", label: "WIP schedule (bank / surety)" }, { href: "/reports/cash", label: "13-week cash forecast" }, { href: "/reports/bonding", label: "Bonding capacity" }] : []),
               { href: "/reports/risk", label: "Risk desk (insurance, lien deadlines)" },
               { href: "/reports/extras", label: "Extra work desk (field tags → change orders)" },

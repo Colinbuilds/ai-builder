@@ -247,6 +247,8 @@ model Project {
   firstContactAt     DateTime?
   readiness          Readiness         @default(NOT_READY)
   contractAmount     Float?
+  /// a builder house made from a plan book: model, options, lot, and the plan's per-trade numbers
+  builderHouse       Json?
   contractSignedAt   DateTime?
   // Residential insurance restoration
   isInsuranceClaim   Boolean           @default(false)
