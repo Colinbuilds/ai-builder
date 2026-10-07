@@ -95,3 +95,10 @@ describe("review fixes", () => {
     }
   });
 });
+
+describe("help", () => {
+  it("“how do I add a house” offers the guides", async () => {
+    const r = await goto("how do I add a house", { id: "x", role: "ADMIN" });
+    expect(r.hits.some((h) => h.href === "/help")).toBe(true);
+  });
+});

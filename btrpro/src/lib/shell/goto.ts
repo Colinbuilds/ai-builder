@@ -145,6 +145,7 @@ export async function goto(q: string, who: Who, now = new Date()): Promise<{ hit
   if (intents.has("invoice") && !hits.some((h) => h.label === "Invoice it")) add({ tag: "Billing", label: "Pick the job to invoice", href: "/jobs" });
   if ((intents.has("house") || when) && !hits.some((h) => h.href.startsWith("/production"))) add({ tag: "Schedule", label: "Production schedule", href: "/production" });
 
+  if (/\bhow (do|can|should) (i|we)\b|\bhelp\b/.test(lower)) add({ tag: "Help", label: "How do I…? step-by-step guides", href: "/help" });
   if (hits.length) return { hits: hits.slice(0, 6), when, by: "MATCH" };
   if (!aiConfigured()) return { hits: [], when, by: "NONE" };
   return { hits: await aiPick(text, builders.map((b) => ({ id: b.id, name: b.name }))), when, by: "AI" };
@@ -167,6 +168,7 @@ const SCREENS: [string, string][] = [
   ["/bids", "Public bids"],
   ["/reports/ar", "Money owed to us (A/R)"],
   ["/overview", "Company overview"],
+  ["/help", "How do I…? step-by-step guides"],
   ["/builders", "Builders and their pricing"],
 ];
 async function aiPick(text: string, builders: { id: string; name: string }[]): Promise<Hit[]> {

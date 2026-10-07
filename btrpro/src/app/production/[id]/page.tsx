@@ -4,7 +4,8 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { pickers, PROD_BOARDS } from "@/lib/production/board";
 import { ProdForm } from "@/components/production/prod-forms";
-import { deleteProdAction } from "../actions";
+import { deleteProdAction, stepAction } from "../actions";
+import { BILLING_ROLES } from "@/lib/roles";
 import { appName } from "@/lib/company-profile";
 
 export default async function ProdLinePage({ params }: { params: Promise<{ id: string }> }) {
@@ -25,6 +26,48 @@ export default async function ProdLinePage({ params }: { params: Promise<{ id: s
           {l.source === "SHEET" ? ` · from the sheet (${l.sourceTab}, row ${l.sourceRow})` : l.sourceKey ? ` · edited in ${appName()} (the sheet sync leaves it alone)` : ` · added in ${appName()}`}
         </span>
       </div>
+      {(() => {
+        // where this house / job is: done → crew paid → billed → paid, with one button for the next step
+        const steps = [
+          { key: "complete", label: "Work done", at: l.completed },
+          { key: "approve", label: "Crew paid", at: l.approved },
+          { key: "bill", label: "Billed", at: l.billed },
+          { key: "paid", label: "Paid to us", at: l.btrPaid },
+        ] as const;
+        const next = steps.find((x) => !x.at);
+        const canStep = next && (next.key === "complete" ? user.role !== "VIEWER" : (BILLING_ROLES as readonly string[]).includes(user.role));
+        return (
+          <div className="flex flex-col gap-3 rounded-xl border p-4">
+            <ol className="grid grid-cols-4 gap-2 text-center text-sm">
+              {steps.map((x, i) => (
+                <li key={x.key} className={`rounded-lg border px-2 py-2 ${x.at ? "border-green-600 bg-green-50 dark:bg-green-950" : x === next ? "border-btr-blue" : "text-muted-foreground"}`}>
+                  <div className="font-medium">
+                    {i + 1}. {x.label}
+                  </div>
+                  <div className="truncate text-xs">{x.at ?? "—"}</div>
+                </li>
+              ))}
+            </ol>
+            <div className="flex flex-wrap items-center gap-3">
+              {next && canStep && (
+                <form action={stepAction}>
+                  <input type="hidden" name="id" value={l.id} />
+                  <input type="hidden" name="step" value={next.key} />
+                  <button type="submit" className="rounded-lg bg-btr-blue px-5 py-3 text-base font-semibold text-white hover:opacity-90">
+                    Mark “{next.label}”
+                  </button>
+                </form>
+              )}
+              {!next && <span className="font-medium text-green-700">All four steps are done.</span>}
+              {l.projectId && (
+                <Link href={`/projects/${l.projectId}`} className="text-sm text-btr-link underline">
+                  Open the job →
+                </Link>
+              )}
+            </div>
+          </div>
+        );
+      })()}
       {user.role === "VIEWER" ? (
         <p className="text-sm text-muted-foreground">View only.</p>
       ) : (

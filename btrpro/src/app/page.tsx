@@ -59,9 +59,14 @@ export default async function Home_({ searchParams }: { searchParams: Promise<{ 
         <h1 className="text-[28px] font-light">
           {hello}, {first}
         </h1>
-        <Link href="/overview" className="text-sm text-btr-link hover:underline">
-          Company overview — pipeline, leaderboard, activity →
-        </Link>
+        <span className="flex gap-4 text-sm">
+          <Link href="/help" className="font-medium text-btr-link hover:underline">
+            How do I…?
+          </Link>
+          <Link href="/overview" className="text-btr-link hover:underline">
+            Company overview →
+          </Link>
+        </span>
       </div>
       {sp.denied && <p className="border-l-4 border-l-btr-blue bg-background p-3 text-sm">Your role can&apos;t open that page.</p>}
       <SheetDateBanner />
