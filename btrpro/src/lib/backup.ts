@@ -118,3 +118,39 @@ export function backupPath(name: string) {
   if (!NAME.test(name)) return null;
   return path.join(backupDir(), name);
 }
+
+// ---------- how much room the data takes ----------
+async function folderBytes(dir: string, budget = { files: 200_000 }): Promise<{ bytes: number; files: number }> {
+  let bytes = 0;
+  let files = 0;
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+  for (const e of entries) {
+    if (budget.files-- <= 0) break;
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      const sub = await folderBytes(p, budget);
+      bytes += sub.bytes;
+      files += sub.files;
+    } else if (e.isFile()) {
+      bytes += (await stat(p).catch(() => null))?.size ?? 0;
+      files++;
+    }
+  }
+  return { bytes, files };
+}
+
+/** Database, uploaded files, backups, and the disk they're on. Null parts aren't on this server (e.g. uploads in a bucket). */
+export async function storageUse() {
+  const db = dbFile();
+  const dbBytes = db ? ((await stat(db).catch(() => null))?.size ?? 0) : null;
+  const uploads = process.env.STORAGE_DRIVER === "s3" ? null : await folderBytes(path.resolve(process.env.UPLOAD_DIR ?? "uploads"));
+  const backups = (await listBackups()).reduce((a, b) => a + b.bytes, 0);
+  const { statfs } = await import("node:fs/promises");
+  const fs = await statfs(path.dirname(db ?? process.cwd())).catch(() => null);
+  return {
+    database: dbBytes,
+    uploads,
+    backups,
+    disk: fs ? { total: fs.blocks * fs.bsize, free: fs.bavail * fs.bsize } : null,
+  };
+}

@@ -1,27 +1,40 @@
 import { requireUser } from "@/lib/auth";
-import { KEEP, backupDir, dbFile, listBackups, offsiteConfigured } from "@/lib/backup";
+import { KEEP, backupDir, dbFile, listBackups, offsiteConfigured, storageUse } from "@/lib/backup";
 import { Button } from "@/components/ui/button";
 import { backupNowAction } from "./actions";
 
-const size = (b: number) => (b > 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
+const size = (b: number) => (b > 1e9 ? `${(b / 1e9).toFixed(1)} GB` : b > 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/Chicago", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export default async function BackupsPage({ searchParams }: { searchParams: Promise<{ msg?: string }> }) {
   await requireUser(["ADMIN"]);
   const { msg } = await searchParams;
-  const list = await listBackups();
+  const [list, use] = await Promise.all([listBackups(), storageUse()]);
   const latest = list[0];
   const stale = !latest || Date.now() - latest.at.getTime() > 36 * 3_600_000;
   return (
     <div className="flex max-w-3xl flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-semibold">Backups</h1>
+        <h1 className="text-2xl font-semibold">Storage &amp; backups</h1>
         <p className="text-sm text-muted-foreground">
           A full copy of the database every night after 2 AM (Central). The newest {KEEP} are kept in {backupDir()}
           {offsiteConfigured() ? ", and each one is also copied to the off-site bucket." : "."}
         </p>
       </div>
       {msg && <p className="rounded-md border bg-muted/40 p-3 text-sm">{msg}</p>}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          ["Database", use.database != null ? size(use.database) : "—"],
+          ["Uploaded files", use.uploads ? `${size(use.uploads.bytes)} · ${use.uploads.files.toLocaleString()} files` : "in the cloud bucket"],
+          ["Backups", size(use.backups)],
+          ["Disk free", use.disk ? `${size(use.disk.free)} of ${size(use.disk.total)}` : "—"],
+        ].map(([k, v]) => (
+          <div key={k} className="rounded-lg border px-3 py-2">
+            <div className="text-xs text-muted-foreground">{k}</div>
+            <div className="font-semibold">{v}</div>
+          </div>
+        ))}
+      </div>
       {!dbFile() && <p className="text-sm">This server doesn&apos;t run on SQLite, so these backups don&apos;t apply — use the database host&apos;s backups.</p>}
       <div className={`rounded-lg border p-4 ${stale ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950" : ""}`}>
         <div className="text-sm text-muted-foreground">Last backup</div>

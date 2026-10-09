@@ -42,3 +42,13 @@ describe("backups", () => {
     expect(backupPath(r.file.name)).toBe(path.join(dir, r.file.name));
   });
 });
+
+describe("storage use", () => {
+  it("reports the database, uploads, backups and the disk", async () => {
+    const { storageUse } = await import("@/lib/backup");
+    const u = await storageUse();
+    expect(u.database).toBeGreaterThan(0);
+    expect(u.backups).toBeGreaterThan(0);
+    expect(u.disk?.total).toBeGreaterThan(u.disk?.free ?? 0);
+  });
+});

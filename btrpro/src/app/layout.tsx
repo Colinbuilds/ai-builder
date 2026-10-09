@@ -142,7 +142,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
           { href: "/settings/profile", label: "Company profile & branding" },
           { href: "/settings/integrations", label: "Integrations" },
           { href: "/admin/setup", label: "Setup check" },
-          { href: "/admin/backups", label: "Backups" },
+          { href: "/admin/backups", label: "Storage & backups" },
           { href: "/settings/import-jobs", label: "Import jobs (schedules)" },
           { href: "/settings/acculynx", label: "Import from AccuLynx (one-time)" },
         ]
