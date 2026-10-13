@@ -1838,6 +1838,9 @@ model ProdLine {
   notes        String?
   // Home Company Schedule status: WAITING | IN_PROGRESS | DONE | BILLING (blank = read from the board and completed/billed)
   scopeStatus  String?
+  // this scope's material list for the house: [{ name, qty, unit }], and where it came from (plan book or typed in)
+  materials    Json?
+  materialsSrc String?
   completed    String?
   completedAt  DateTime?
   payout       Float?

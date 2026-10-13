@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { requireUser } from "@/lib/auth";
 import { pickers } from "@/lib/production/board";
-import { builderNames, HOME_SCOPES, homeSchedule, modelsByBuilder, SCOPE_STATUS, statusOf, type House } from "@/lib/production/homes";
+import { builderNames, HOME_SCOPES, homeSchedule, materialsOf, modelsByBuilder, SCOPE_STATUS, statusOf, type House } from "@/lib/production/homes";
+import { ScopeMaterials } from "@/components/production/scope-materials";
 import { ScopeStatusSelect } from "@/components/production/scope-status";
 import { addScopeAction } from "./actions";
 import { HouseForm } from "@/components/production/house-form";
@@ -9,6 +11,35 @@ import { Collapsible } from "@/components/collapsible";
 import { NavSelect } from "@/components/dashboard/tab-select";
 
 const day = (d: Date | null) => (d ? `${d.getUTCMonth() + 1}/${d.getUTCDate()}` : "");
+
+const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+function HouseDetails({ h, canEdit }: { h: House; canEdit: boolean }) {
+  const lines = HOME_SCOPES.flatMap((sc) => (h.scopes[sc] ?? []).map((l) => [sc, l] as const));
+  const sell = lines.reduce((a, [, l]) => a + (l.sell ?? 0), 0);
+  const payout = lines.reduce((a, [, l]) => a + (l.payout ?? 0), 0);
+  const noList = lines.filter(([, l]) => !materialsOf(l).length).map(([sc]) => sc);
+  return (
+    <details className="group">
+      <summary className="cursor-pointer list-none text-xs text-btr-link select-none hover:underline">
+        <span className="inline-block transition-transform group-open:rotate-90">▸</span> Materials, sell &amp; pay out
+        <span className="ml-2 text-muted-foreground">
+          sell {usd(sell)} · pay out {usd(payout)}
+          {noList.length > 0 && ` · no material list: ${noList.join(", ")}`}
+        </span>
+      </summary>
+      {lines.length ? (
+        <div className="mt-2 grid gap-3 lg:grid-cols-2">
+          {lines.map(([sc, l]) => (
+            <ScopeMaterials key={l.id} id={l.id} scope={sc} materials={materialsOf(l)} sell={l.sell} payout={l.payout} source={l.materialsSrc} canEdit={canEdit} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">No scopes on this house yet.</p>
+      )}
+    </details>
+  );
+}
 
 const STATUS_OPTIONS = Object.entries(SCOPE_STATUS) as [string, string][];
 
@@ -103,24 +134,31 @@ export default async function HomeCompanySchedule({ searchParams }: { searchPara
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="[&>tr:nth-child(odd):not(:first-child)]:border-t">
               {houses.map((h) => (
-                <tr key={h.key} className="align-top">
-                  <td className="min-w-48 px-2 py-1.5">
-                    <span className="font-medium">{h.address}</span>
-                    <div className="text-xs text-muted-foreground">{[!builder && h.builder, h.start && `starts ${day(h.start)}`, h.superName].filter(Boolean).join(" · ")}</div>
-                    {h.other.length > 0 && <div className="text-xs text-muted-foreground">Also: {h.other.map((l) => l.type).join(", ")}</div>}
-                  </td>
-                  <td className="px-2 py-1.5 text-sm">
-                    {h.model}
-                    {h.elevation && <div className="text-xs text-muted-foreground">Elevation {h.elevation}</div>}
-                  </td>
-                  {HOME_SCOPES.map((sc) => (
-                    <td key={sc} className="px-2 py-1.5">
-                      <ScopeCell h={h} scope={sc} canEdit={canEdit} />
+                <Fragment key={h.key}>
+                  <tr className="align-top">
+                    <td className="min-w-48 px-2 py-1.5">
+                      <span className="font-medium">{h.address}</span>
+                      <div className="text-xs text-muted-foreground">{[!builder && h.builder, h.start && `starts ${day(h.start)}`, h.superName].filter(Boolean).join(" · ")}</div>
+                      {h.other.length > 0 && <div className="text-xs text-muted-foreground">Also: {h.other.map((l) => l.type).join(", ")}</div>}
                     </td>
-                  ))}
-                </tr>
+                    <td className="px-2 py-1.5 text-sm">
+                      {h.model}
+                      {h.elevation && <div className="text-xs text-muted-foreground">Elevation {h.elevation}</div>}
+                    </td>
+                    {HOME_SCOPES.map((sc) => (
+                      <td key={sc} className="px-2 py-1.5">
+                        <ScopeCell h={h} scope={sc} canEdit={canEdit} />
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-t-0 bg-muted/20">
+                    <td colSpan={2 + HOME_SCOPES.length} className="px-2 pt-0 pb-2">
+                      <HouseDetails h={h} canEdit={canEdit} />
+                    </td>
+                  </tr>
+                </Fragment>
               ))}
             </tbody>
             <tfoot className="bg-muted/30 text-xs">

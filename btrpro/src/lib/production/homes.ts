@@ -4,6 +4,7 @@
 import type { ProdLine } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { activeBooks } from "@/lib/builders/planbook";
+import { buildOut, findPlan, modelLabel, unitFor, type Selection } from "@/lib/builders/plans";
 import { addProdLine, ProdError, stepProdLine } from "./board";
 
 export const HOME_SCOPES = ["Roofing", "Siding", "Gutters", "Roof Seal", "Columns"] as const;
@@ -119,26 +120,30 @@ export async function createHouse(i: HouseInput, actor: Actor) {
   const dupes = scopes.filter((s) => already.has(s));
   if (dupes.length) throw new ProdError(`${address} already has ${dupes.join(", ")} on the schedule for ${builder}. Open that house to change it.`);
 
+  const fill = await planBookFill(builder, model, elevation);
   const lines = [];
-  for (const scope of scopes)
-    lines.push(
-      await addProdLine(
-        {
-          market: "RESIDENTIAL",
-          board: "ADD",
-          grp: builder,
-          builder,
-          location: address,
-          model,
-          elevation,
-          type: scope,
-          superName: i.superName ?? null,
-          vpo: i.vpo ?? null,
-          notes: i.notes ?? null,
-        },
-        actor,
-      ),
+  for (const scope of scopes) {
+    const f = scope === "Roofing" ? fill?.roofing : scope === "Gutters" ? fill?.gutters : null;
+    const line = await addProdLine(
+      {
+        market: "RESIDENTIAL",
+        board: "ADD",
+        grp: builder,
+        builder,
+        location: address,
+        model,
+        elevation,
+        type: scope,
+        superName: i.superName ?? null,
+        vpo: i.vpo ?? null,
+        notes: i.notes ?? null,
+        sell: f?.sell ?? null,
+        payout: f?.payout ?? null,
+      },
+      actor,
     );
+    lines.push(f ? await prisma.prodLine.update({ where: { id: line.id }, data: { materials: f.materials, materialsSrc: f.src } }) : line);
+  }
   if (i.startDate) await prisma.prodLine.updateMany({ where: { id: { in: lines.map((l) => l.id) } }, data: { startDate: i.startDate } });
   return lines;
 }
@@ -189,4 +194,75 @@ export async function modelsByBuilder() {
     if (names.length) out[b.name] = [...new Set(names)].sort();
   }
   return out;
+}
+
+// ---------- material lists, sell and pay out per scope ----------
+export type MatLine = { name: string; qty: number; unit: string };
+
+export const materialsOf = (l: Pick<ProdLine, "materials">): MatLine[] => (Array.isArray(l.materials) ? (l.materials as MatLine[]) : []);
+
+const elevKey = (e: string) => e.replace(/^\s*elev(ation)?\.?\s*/i, "").trim().toUpperCase();
+
+/**
+ * Roofing and gutters from the builder's plan book, when the model and elevation are in it (standard 2-car,
+ * no porch, standard basement): the material list, sell and pay out exactly as the sheet has them. Anything the
+ * book doesn't cover comes back empty, so it's typed in, never guessed.
+ */
+export async function planBookFill(builder: string, model: string, elevation: string) {
+  const company = (await prisma.company.findMany({ where: { type: "BUILDER" }, select: { id: true, name: true } })).find((c) => key(c.name) === key(builder));
+  if (!company) return null;
+  for (const book of await activeBooks(company.id)) {
+    const plan = findPlan(book.data.plans, model);
+    if (!plan) continue;
+    const label = [...plan.roofing, ...plan.gutters].find((o) => o.kind === "ELEVATION" && elevKey(o.label) === elevKey(elevation))?.label;
+    if (!label) continue;
+    const sel: Selection = { elevation: label, garage: "2", basement: "STANDARD", porch: false };
+    const out = buildOut(book.data, plan, sel);
+    const src = `${company.name} ${book.label} plan book: ${modelLabel(plan.name, sel)}`;
+    const trade = (t: typeof out.roofing, tr: "ROOFING" | "GUTTERS") =>
+      t.picked.length && !t.missing.length ? { materials: t.materials.map((m) => ({ name: m.name, qty: m.qty, unit: unitFor(m.name, tr) })), sell: t.sell, payout: t.payout, src } : null;
+    return { roofing: trade(out.roofing, "ROOFING"), gutters: trade(out.gutters, "GUTTERS") };
+  }
+  return null;
+}
+
+/** Save one scope's material list, sell and pay out from the house's drop-down. */
+export async function saveScopeDetails(id: string, input: { materials: { name: string; qty: string | number; unit: string }[]; sell: string; payout: string }, actor: Actor) {
+  if (actor.role === "VIEWER") throw new ProdError("Viewers can't change the schedule.");
+  const line = await prisma.prodLine.findUnique({ where: { id } });
+  if (!line) throw new ProdError("That scope is no longer on the schedule.");
+  const problems: string[] = [];
+  const materials: MatLine[] = [];
+  for (const [n, m] of input.materials.entries()) {
+    const name = m.name.trim();
+    const qtyText = String(m.qty).trim();
+    if (!name && !qtyText) continue;
+    const qty = Number(qtyText.replace(/,/g, ""));
+    if (!name) problems.push(`Line ${n + 1}: enter the material.`);
+    else if (!qtyText || !Number.isFinite(qty) || qty <= 0) problems.push(`${name}: enter a quantity above 0.`);
+    else materials.push({ name, qty, unit: m.unit.trim() });
+  }
+  const money = (v: string, label: string) => {
+    const t = v.replace(/[$,\s]/g, "");
+    if (!t) return null;
+    const n = Number(t);
+    if (!Number.isFinite(n) || n < 0) problems.push(`${label}: enter a dollar amount.`);
+    return Math.round(n * 100) / 100;
+  };
+  const sell = money(input.sell, "Sell");
+  const payout = money(input.payout, "Pay out");
+  if (problems.length) throw new ProdError(problems.join(" "));
+  const before = materialsOf(line);
+  const changed = JSON.stringify(before) !== JSON.stringify(materials);
+  return prisma.prodLine.update({
+    where: { id },
+    data: {
+      materials,
+      sell,
+      payout,
+      ...(changed ? { materialsSrc: line.materialsSrc ? `${line.materialsSrc.replace(/ · edited by .*$/, "")} · edited by ${actor.name}` : `Entered by ${actor.name}` } : {}),
+      source: "APP",
+      updatedBy: actor.name,
+    },
+  });
 }

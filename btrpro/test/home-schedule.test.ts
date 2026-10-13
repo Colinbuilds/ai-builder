@@ -2,16 +2,36 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { ProdError, stepProdLine } from "@/lib/production/board";
-import { createHouse, homeSchedule, scopeOf, setScopeStatus, statusOf } from "@/lib/production/homes";
+import { createHouse, homeSchedule, materialsOf, saveScopeDetails, scopeOf, setScopeStatus, statusOf } from "@/lib/production/homes";
+import type { PlanBookData, PlanOption } from "@/lib/builders/plans";
 
 const actor = { id: "", name: "TEST_ONLY Office", role: "OFFICE" };
 const BUILDER = "TEST_ONLY Home Co";
+const PB_BUILDER = "TEST_ONLY Plan Book Homes";
+
+// a made-up plan book: one model, elevation A, roofing and gutters (no real pricing)
+const opt = (o: Partial<PlanOption>): PlanOption => ({ label: "A", kind: "ELEVATION", onlyWith: null, materials: [], materialCost: null, tax: null, squares: null, payout: null, sell: null, profit: null, ...o });
+const BOOK: PlanBookData = {
+  version: 1,
+  warnings: [],
+  rates: { roofing: { taxPct: null, markupPct: null, laborPerSq: null, laborMarkupPerSq: null, bootTrip: null, bootTripMarkup: null, fuelSurcharge: null, catalog: [] }, gutters: { catalog: [], dlwoDownspoutLf: null, dlwoPrice: null }, siding: { catalog: [], priced: false } },
+  plans: [
+    {
+      name: "Test Model",
+      sqft: null,
+      oldRoofing: {},
+      roofing: [opt({ materials: [{ name: "TEST_ONLY Shingle", qty: 30, cost: 300 }, { name: "TEST_ONLY Ridge", qty: 2, cost: 20 }], sell: 1000, payout: 400, profit: 280 })],
+      gutters: [opt({ materials: [{ name: "TEST_ONLY Gutter", qty: 120, cost: 240 }], sell: 500, payout: 240, profit: 260 })],
+    },
+  ],
+};
 
 afterAll(async () => {
   const ids = (await prisma.prodLine.findMany({ where: { builder: BUILDER }, select: { id: true } })).map((l) => l.id);
   await prisma.task.deleteMany({ where: { auto: { in: ids.flatMap((id) => [`PROD:pay:${id}`, `PROD:bill:${id}`]) } } });
   await prisma.prodLine.deleteMany({ where: { builder: BUILDER } });
   await prisma.user.deleteMany({ where: { email: "test-only-office@example.test" } });
+  await prisma.company.deleteMany({ where: { name: PB_BUILDER } });
   await prisma.$disconnect();
 });
 
@@ -73,5 +93,36 @@ describe("home company schedule", () => {
     expect(statusOf(await stepProdLine(seal.id, "bill", actor))).toBe("BILLING");
     await expect(setScopeStatus(seal.id, "WAITING", actor)).rejects.toThrow(/already billed/);
     await expect(setScopeStatus(seal.id, "Finished", actor)).rejects.toThrow(/Pick Waiting/);
+  });
+
+  it("fills roofing and gutters from the builder's plan book; other scopes start empty", async () => {
+    const co = await prisma.company.create({ data: { name: PB_BUILDER, type: "BUILDER" } });
+    await prisma.builderPlanBook.create({ data: { companyId: co.id, label: "Test", data: BOOK as never, importedBy: "TEST_ONLY" } });
+    const lines = await createHouse({ builder: PB_BUILDER, address: "9 Test Lot St", model: "test model", elevation: "Elevation a", scopes: ["Roofing", "Gutters", "Siding"] }, actor);
+    const [roof, gut, siding] = ["Roofing", "Gutters", "Siding"].map((t) => lines.find((l) => l.type === t)!);
+    expect(materialsOf(roof)).toEqual([{ name: "TEST_ONLY Shingle", qty: 30, unit: "EA" }, { name: "TEST_ONLY Ridge", qty: 2, unit: "EA" }]);
+    expect(roof).toMatchObject({ sell: 1000, payout: 400 });
+    expect(roof.materialsSrc).toMatch(/plan book: Test Model · Elev A/);
+    expect(materialsOf(gut)).toEqual([{ name: "TEST_ONLY Gutter", qty: 120, unit: "LF" }]);
+    expect(gut).toMatchObject({ sell: 500, payout: 240 });
+    expect(materialsOf(siding)).toEqual([]);
+    expect(siding).toMatchObject({ sell: null, payout: null, materialsSrc: null });
+    // an elevation the book doesn't have is left empty, never guessed
+    const [z] = await createHouse({ builder: PB_BUILDER, address: "10 Test Lot St", model: "Test Model", elevation: "Z", scopes: ["Roofing"] }, actor);
+    expect(materialsOf(z)).toEqual([]);
+    expect(z.sell).toBeNull();
+    await prisma.prodLine.deleteMany({ where: { builder: PB_BUILDER } });
+  });
+
+  it("saves a scope's material list, sell and pay out", async () => {
+    const [house] = await homeSchedule(BUILDER);
+    const siding = house.scopes.Siding![0];
+    const saved = await saveScopeDetails(siding.id, { materials: [{ name: "TEST_ONLY Lap siding", qty: "42", unit: "SQ" }, { name: "", qty: "", unit: "" }, { name: "TEST_ONLY Trim", qty: "1,200", unit: "LF" }], sell: "$6,672.65", payout: "4869.12" }, actor);
+    expect(materialsOf(saved)).toEqual([{ name: "TEST_ONLY Lap siding", qty: 42, unit: "SQ" }, { name: "TEST_ONLY Trim", qty: 1200, unit: "LF" }]);
+    expect(saved).toMatchObject({ sell: 6672.65, payout: 4869.12, materialsSrc: "Entered by TEST_ONLY Office" });
+    await expect(saveScopeDetails(siding.id, { materials: [{ name: "TEST_ONLY Trim", qty: "0", unit: "LF" }], sell: "", payout: "" }, actor)).rejects.toThrow(/quantity above 0/);
+    await expect(saveScopeDetails(siding.id, { materials: [{ name: "", qty: "4", unit: "" }], sell: "", payout: "" }, actor)).rejects.toThrow(/enter the material/);
+    await expect(saveScopeDetails(siding.id, { materials: [], sell: "abc", payout: "" }, actor)).rejects.toThrow(/Sell: enter a dollar amount/);
+    await expect(saveScopeDetails(siding.id, { materials: [], sell: "", payout: "" }, { ...actor, role: "VIEWER" })).rejects.toThrow(/Viewers/);
   });
 });

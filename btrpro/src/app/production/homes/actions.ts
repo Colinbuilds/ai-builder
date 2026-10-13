@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { STAFF_ROLES } from "@/lib/roles";
 import { ProdError } from "@/lib/production/board";
-import { createHouse, setScopeStatus } from "@/lib/production/homes";
+import { createHouse, saveScopeDetails, setScopeStatus } from "@/lib/production/homes";
 
 export type HouseResult = { problems: string[] } | null;
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -53,4 +53,16 @@ export async function addScopeAction(f: FormData) {
   const u = await requireUser(STAFF_ROLES);
   await createHouse({ builder: s(f, "builder"), address: s(f, "address"), model: s(f, "model"), elevation: s(f, "elevation"), scopes: [s(f, "scope")], superName: s(f, "superName") || null }, u);
   revalidatePath("/production", "layout");
+}
+
+export async function scopeDetailsAction(id: string, input: { materials: { name: string; qty: string; unit: string }[]; sell: string; payout: string }): Promise<{ error?: string }> {
+  const u = await requireUser(STAFF_ROLES);
+  try {
+    await saveScopeDetails(id, input, u);
+  } catch (e) {
+    if (e instanceof ProdError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/production", "layout");
+  return {};
 }

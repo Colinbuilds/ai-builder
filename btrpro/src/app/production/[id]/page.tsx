@@ -29,7 +29,7 @@ export default async function ProdLinePage({ params }: { params: Promise<{ id: s
         <p className="text-sm text-muted-foreground">View only.</p>
       ) : (
         <>
-          <ProdForm v={l} back="/production" crews={crews} supers={supers} boards={Object.entries(PROD_BOARDS)} />
+          <ProdForm v={{ ...l, materials: undefined }} back="/production" crews={crews} supers={supers} boards={Object.entries(PROD_BOARDS)} />
           <form action={deleteProdAction} className="border-t pt-3">
             <input type="hidden" name="id" value={l.id} />
             <button className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50">Delete line</button>
