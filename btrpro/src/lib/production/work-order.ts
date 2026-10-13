@@ -9,7 +9,7 @@ import { z } from "zod";
 import { aiErrorMessage, aiParse } from "@/lib/ai/claude";
 import { pdfPages } from "@/lib/sheets/extract";
 import { saveUpload } from "@/lib/storage";
-import { ADD_ONS, BASEMENTS, scopeOf, type AddOn, type Basement, type HomeScope } from "./homes";
+import { ADD_ONS, BASEMENTS, FIXED_SELL, scopeOf, type AddOn, type Basement, type HomeScope } from "./homes";
 
 export class WorkOrderError extends Error {}
 
@@ -234,7 +234,7 @@ export async function readPacket(files: { bytes: Uint8Array; name: string }[], a
       if (wo.lot) info(`Block / lot ${wo.lot}${wo.development ? ` · ${wo.development}` : ""}`);
       add([...wo.options, ...wo.otherOptions].flatMap(addOnsIn));
       if (!wo.scope) p.problems.push(`${f.name}: work order ${wo.number} is for "${wo.costLine ?? "?"}", not roofing, siding, gutters, roof seal or columns — not added.`);
-      else addScope({ scope: wo.scope, workOrder: wo.number, sell: wo.total, notes: wo.options.join(" · "), fileUrl });
+      else addScope({ scope: wo.scope, workOrder: wo.number, sell: FIXED_SELL[wo.scope] ?? wo.total, notes: wo.options.join(" · "), fileUrl });
       p.read.push(`${f.name}: work order ${wo.number}${wo.scope ? ` · ${wo.scope}` : ""}${wo.total != null ? ` · ${fmt(wo.total)}` : ""}`);
       continue;
     }
@@ -273,7 +273,7 @@ export async function readPacket(files: { bytes: Uint8Array; name: string }[], a
       p.basement ??= data.basement;
       add([...data.add_ons, ...data.options.flatMap(addOnsIn)]);
       if (data.lot) info(`Lot ${data.lot}`);
-      if (data.scope) addScope({ scope: data.scope, workOrder: data.number, sell: data.total, notes: data.options.join(" · "), fileUrl });
+      if (data.scope) addScope({ scope: data.scope, workOrder: data.number, sell: FIXED_SELL[data.scope] ?? data.total, notes: data.options.join(" · "), fileUrl });
       else p.problems.push(`${f.name}: couldn't tell which scope this work order is for — not added.`);
       p.read.push(`${f.name}: work order${data.number ? ` ${data.number}` : ""}${data.scope ? ` · ${data.scope}` : ""} (read by AI — check it)`);
     } catch (e) {

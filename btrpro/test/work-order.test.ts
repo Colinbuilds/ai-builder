@@ -97,7 +97,7 @@ describe("work orders", () => {
     expect(seen[0]).toContain("SELECTIONS:");
     expect(p).toMatchObject({ builder: BUILDER, street: "100 Test Lane", city: "Papillion, NE 68046", model: "Testmodel", elevation: "C", elevationType: "C (Extended Porch)", basement: "WALKOUT" });
     expect(p.addOns.sort()).toEqual(["Cantilevered Pantry", "Covered Rear Deck", "Ext Front Porch"]);
-    expect(p.scopes.map((s) => [s.scope, s.workOrder, s.sell])).toEqual([["Roofing", "00000101", 1100], ["Roof Seal", "00000102", 0]]);
+    expect(p.scopes.map((s) => [s.scope, s.workOrder, s.sell])).toEqual([["Roofing", "00000101", 1100], ["Roof Seal", "00000102", 150]]);
     expect(p.planUrl).toMatch(/^local:work-orders\//);
     expect(p.houseInfo).toEqual(["Block / lot 2 / 7 · Test Creek", "Deck/patio: B (Upgraded Patio)", "Garage: 3-car"]);
     expect(p.problems.join(" ")).toMatch(/Framing Labor/);
@@ -111,7 +111,7 @@ describe("work orders", () => {
     const roof = h.scopes.Roofing![0];
     expect(roof).toMatchObject({ sell: 1100, vpo: "00000101", basement: "WALKOUT", elevationType: "C (Extended Porch)", notes: "COVERED DECK/PATIO ($100.00) · SHINGLE COLOR: Test Gray" });
     expect(roof.workOrderUrl).toBe(p.scopes[0].fileUrl);
-    expect(h.scopes["Roof Seal"]![0]).toMatchObject({ sell: 0, vpo: "00000102" });
+    expect(h.scopes["Roof Seal"]![0]).toMatchObject({ sell: 150, vpo: "00000102" }); // roof seal is always $150
     expect(h.addOns).toBe("Covered Rear Deck, Cantilevered Pantry, Ext Front Porch");
     expect(houseDescription(h)).toBe("Testmodel · Elevation C (Extended Porch) · Walkout basement · Covered Rear Deck, Cantilevered Pantry, Ext Front Porch");
     // a scope added later keeps the house's basement, add-ons and plan set

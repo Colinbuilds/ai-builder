@@ -43,6 +43,9 @@ describe("home company schedule", () => {
     expect(saved).toHaveLength(3);
     for (const l of saved) expect(l).toMatchObject({ market: "RESIDENTIAL", board: "ADD", location: "1 Test Lot St", model: "Sienna", elevation: "B", source: "APP" });
     expect(saved.every((l) => l.startDate?.toISOString().startsWith("2026-11-02"))).toBe(true);
+    // roof seal is always $150; other scopes start with no sell unless a work order or plan book gives one
+    expect(saved.find((l) => l.type === "Roof Seal")!.sell).toBe(150);
+    expect(saved.find((l) => l.type === "Columns")!.sell).toBeNull();
   });
 
   it("groups the scopes under one house and adds new scopes to it", async () => {

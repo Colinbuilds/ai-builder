@@ -10,6 +10,9 @@ import { BASEMENTS } from "./house-text";
 
 export const HOME_SCOPES = ["Roofing", "Siding", "Gutters", "Roof Seal", "Columns"] as const;
 export type HomeScope = (typeof HOME_SCOPES)[number];
+/** Scopes with one set price on every house, whatever the work order shows (Hubbell's roof seal work order prints $0). */
+export const FIXED_SELL: Partial<Record<HomeScope, number>> = { "Roof Seal": 150 };
+
 export const ADD_ONS = ["Covered Rear Deck", "Cantilevered Pantry", "In-Law Suite", "Ext Front Porch"] as const;
 export type AddOn = (typeof ADD_ONS)[number];
 export { BASEMENTS, type Basement } from "./house-text";
@@ -159,7 +162,7 @@ export async function createHouse(i: HouseInput, actor: Actor) {
         vpo: wo?.workOrder?.trim() || i.vpo || null,
         notes: [wo?.notes?.trim(), i.notes].filter(Boolean).join(" · ") || null,
         // the builder's work order is what they'll pay; the plan book's sell is the fallback
-        sell: woSell ?? f?.sell ?? null,
+        sell: FIXED_SELL[scope] ?? woSell ?? f?.sell ?? null,
         payout: f?.payout ?? null,
       },
       actor,
