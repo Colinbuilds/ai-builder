@@ -61,6 +61,9 @@ export function ProdForm({ v, back, crews, supers, boards }: { v: ProdValues; ba
         {f("model", "Model / plan")}
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
+        {f("elevation", "Elevation", { ph: "A, B, Craftsman…" })}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-4">
         {f("type", "Type of work", { ph: "Siding Labor, Gutters, Roofing L&M…" })}
         {f("crew", "Crew", { list: "crews" })}
         {f("superName", "Super / PM", { list: "supers" })}

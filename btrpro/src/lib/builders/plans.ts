@@ -253,6 +253,9 @@ export function buildOut(data: PlanBookData, plan: Plan, sel: Selection) {
   return { roofing, gutters, total: { sell, payout: r2(roofing.payout + gutters.payout), profit, marginPct: sell ? r2((profit / sell) * 100) : null }, oldRoofing: old ? { key: oldKey, ...old } : null, dlwoNote: dl ? `Daylight / walkout basement: +${dl.mats[0]?.qty ?? 0} LF downspouts, +$${dl.sell} sell and +$${dl.payout} payout (as the sheet does it)` : null };
 }
 
+/** Unit shown on an order: the sheet lists LF items by length, everything else by count. */
+export const unitFor = (name: string, trade: Trade) => (trade === "GUTTERS" && /gutter|downspout|accessor/i.test(name) ? "LF" : "EA");
+
 export const modelLabel = (plan: string, sel: Selection) => [plan, `Elev ${sel.elevation}`, sel.garage === "3" ? "3 Car" : null, sel.porch ? "Rear Porch" : null, sel.basement === "DLWO" ? "DL/WO" : null].filter(Boolean).join(" · ");
 
 // ---------- profit audit ----------
