@@ -1829,11 +1829,15 @@ model ProdLine {
   builder      String?
   location     String?
   model        String?
+  // builder house elevation ("A", "B", "Craftsman")
+  elevation    String?
   type         String?
   crew         String?
   superName    String?
   salesRep     String?
   notes        String?
+  // Home Company Schedule status: WAITING | IN_PROGRESS | DONE | BILLING (blank = read from the board and completed/billed)
+  scopeStatus  String?
   completed    String?
   completedAt  DateTime?
   payout       Float?

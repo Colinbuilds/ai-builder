@@ -93,7 +93,7 @@ function Table({ rows, billing, showGroup }: { rows: ProdLine[]; billing: boolea
                     {l.location ?? l.builder}
                   </Link>
                   <div className="text-xs text-muted-foreground">
-                    {[l.market === "COMMERCIAL" ? l.project : l.builder, l.model, showGroup ? l.grp : null].filter(Boolean).join(" · ")}
+                    {[l.market === "COMMERCIAL" ? l.project : l.builder, l.model, l.elevation && `Elev ${l.elevation}`, showGroup ? l.grp : null].filter(Boolean).join(" · ")}
                   </div>
                   {l.notes && (
                     <div className="line-clamp-1 text-xs text-muted-foreground" title={l.notes}>
@@ -282,6 +282,10 @@ export default async function ProductionBoard({ searchParams }: { searchParams: 
               ? `${appName()} is the schedule.`
               : `Synced from the Residential and Commercial live sheets${synced ? ` · last ${synced.toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : " · not synced yet"}.`}{" "}
             Press <b>Completed</b> when the crew is done — the office gets a note that the crew can be paid.{" "}
+            <Link href="/production/homes" className="text-btr-link hover:underline">
+              Home Company Schedule
+            </Link>{" "}
+            ·{" "}
             <Link href="/schedule" className="text-btr-link hover:underline">
               Calendar view
             </Link>{" "}

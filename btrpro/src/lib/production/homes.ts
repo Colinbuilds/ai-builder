@@ -1,0 +1,192 @@
+// Home Company Schedule: new-construction houses for home builders. A house is one address from the builder
+// with its model and elevation; each scope picked (roofing, siding, gutters, roof seal, columns) is its own
+// line on the production board, so crews, pay out, sell and billing work the same as every other line.
+import type { ProdLine } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { activeBooks } from "@/lib/builders/planbook";
+import { addProdLine, ProdError, stepProdLine } from "./board";
+
+export const HOME_SCOPES = ["Roofing", "Siding", "Gutters", "Roof Seal", "Columns"] as const;
+export type HomeScope = (typeof HOME_SCOPES)[number];
+
+export const SCOPE_STATUS = { WAITING: "Waiting", IN_PROGRESS: "In progress", DONE: "Job Done", BILLING: "Sent to Billing" } as const;
+export type ScopeStatus = keyof typeof SCOPE_STATUS;
+
+/** Which of the five scopes a board line is ("Roofing L&M" is Roofing, "Siding Labor" is Siding); null for other work. */
+export function scopeOf(type: string | null | undefined): HomeScope | null {
+  const t = (type ?? "").toLowerCase();
+  if (/seal/.test(t)) return "Roof Seal";
+  if (/column/.test(t)) return "Columns";
+  if (/gutter/.test(t)) return "Gutters";
+  if (/siding/.test(t)) return "Siding";
+  if (/roof/.test(t)) return "Roofing";
+  return null;
+}
+
+/**
+ * The status shown for a line, read from the same fields the main schedule uses so both pages always agree:
+ * billed to the builder (or Sent to Billing here) → Sent to Billing; completed → Job Done; Current → In progress.
+ */
+export function statusOf(l: Pick<ProdLine, "scopeStatus" | "board" | "completed" | "billed" | "btrPaid">): ScopeStatus {
+  if (l.billed || l.btrPaid) return "BILLING";
+  if (l.completed) return l.scopeStatus === "BILLING" ? "BILLING" : "DONE";
+  return l.board === "CURRENT" ? "IN_PROGRESS" : "WAITING";
+}
+
+/** Office people who bill the builder (Office role; admins if there are none). */
+async function billers() {
+  const office = await prisma.user.findMany({ where: { role: "OFFICE" }, select: { id: true } });
+  return office.length ? office : prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+}
+
+/**
+ * Change one scope's status. In progress moves it to Current; Job Done marks it completed (the office gets the
+ * "crew can be paid" task, same as the board's Completed button); Sent to Billing also gives the office a "bill it"
+ * task. Moving back clears completed and closes those tasks. A scope already billed to the builder can't move back.
+ */
+export async function setScopeStatus(id: string, status: string, actor: Actor) {
+  if (actor.role === "VIEWER") throw new ProdError("Viewers can't change the schedule.");
+  if (!(status in SCOPE_STATUS)) throw new ProdError("Pick Waiting, In progress, Job Done or Sent to Billing.");
+  const line = await prisma.prodLine.findUnique({ where: { id } });
+  if (!line) throw new ProdError("That scope is no longer on the schedule.");
+  const back = status === "WAITING" || status === "IN_PROGRESS";
+  if (back && (line.billed || line.btrPaid)) throw new ProdError(`${line.type} at ${line.location} is already billed to the builder. Change it on the main schedule if that's wrong.`);
+  const now = new Date();
+  if (!back && !line.completed) await stepProdLine(id, "complete", actor);
+  if (back) {
+    await prisma.task.updateMany({ where: { auto: { in: [`PROD:pay:${id}`, `PROD:bill:${id}`] }, doneAt: null }, data: { doneAt: now, doneBy: `${actor.name} (moved back to ${SCOPE_STATUS[status as ScopeStatus]})` } });
+  }
+  if (status === "BILLING" && line.scopeStatus !== "BILLING") {
+    const what = [line.builder, line.location, line.type].filter(Boolean).join(" · ");
+    for (const u of await billers())
+      await prisma.task.create({ data: { title: `Bill the builder: ${what}${line.sell != null ? ` — sell $${line.sell.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : ""}`, assigneeId: u.id, dueDate: now, projectId: line.projectId, auto: `PROD:bill:${id}`, createdBy: actor.name } });
+  }
+  if (status === "DONE") await prisma.task.updateMany({ where: { auto: `PROD:bill:${id}`, doneAt: null }, data: { doneAt: now, doneBy: `${actor.name} (moved back to Job Done)` } });
+  return prisma.prodLine.update({
+    where: { id },
+    data: {
+      scopeStatus: status,
+      source: "APP",
+      updatedBy: actor.name,
+      ...(status === "IN_PROGRESS" ? { board: "CURRENT" } : {}),
+      ...(status === "WAITING" && line.board === "CURRENT" ? { board: "UPCOMING" } : {}),
+      ...(back ? { completed: null, completedAt: null } : {}),
+    },
+  });
+}
+
+export type HouseInput = {
+  builder: string;
+  address: string;
+  model: string;
+  elevation: string;
+  scopes: string[];
+  superName?: string | null;
+  vpo?: string | null;
+  startDate?: Date | null;
+  notes?: string | null;
+};
+
+type Actor = { id: string; name: string; role: string };
+
+const key = (s: string | null | undefined) => (s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+export const houseKey = (l: Pick<ProdLine, "builder" | "location">) => `${key(l.builder)}|${key(l.location)}`;
+
+/** Open board lines (not completed) for this builder + address, matched loosely on spacing and punctuation. */
+async function openLinesAt(builder: string, address: string) {
+  const lines = await prisma.prodLine.findMany({ where: { market: "RESIDENTIAL", board: { not: "COMPLETED" }, location: { not: null } } });
+  return lines.filter((l) => houseKey(l) === houseKey({ builder, location: address }));
+}
+
+/** Put a builder's house on the schedule: one "New — to be placed" line per scope picked. */
+export async function createHouse(i: HouseInput, actor: Actor) {
+  if (actor.role === "VIEWER") throw new ProdError("Viewers can't add jobs to the schedule.");
+  const builder = i.builder.trim();
+  const address = i.address.trim();
+  const model = i.model.trim();
+  const elevation = i.elevation.trim();
+  const problems = [
+    !builder && "Pick the builder.",
+    !address && "Enter the address from the builder.",
+    !model && "Enter the model.",
+    !elevation && "Enter the elevation.",
+  ].filter(Boolean) as string[];
+  const scopes = HOME_SCOPES.filter((s) => i.scopes.includes(s));
+  if (!scopes.length) problems.push("Pick at least one scope.");
+  if (problems.length) throw new ProdError(problems.join(" "));
+
+  const already = new Set((await openLinesAt(builder, address)).map((l) => scopeOf(l.type)));
+  const dupes = scopes.filter((s) => already.has(s));
+  if (dupes.length) throw new ProdError(`${address} already has ${dupes.join(", ")} on the schedule for ${builder}. Open that house to change it.`);
+
+  const lines = [];
+  for (const scope of scopes)
+    lines.push(
+      await addProdLine(
+        {
+          market: "RESIDENTIAL",
+          board: "ADD",
+          grp: builder,
+          builder,
+          location: address,
+          model,
+          elevation,
+          type: scope,
+          superName: i.superName ?? null,
+          vpo: i.vpo ?? null,
+          notes: i.notes ?? null,
+        },
+        actor,
+      ),
+    );
+  if (i.startDate) await prisma.prodLine.updateMany({ where: { id: { in: lines.map((l) => l.id) } }, data: { startDate: i.startDate } });
+  return lines;
+}
+
+export type House = { key: string; builder: string; address: string; model: string | null; elevation: string | null; superName: string | null; start: Date | null; lines: ProdLine[]; scopes: Partial<Record<HomeScope, ProdLine[]>>; other: ProdLine[] };
+
+/** Open residential builder houses, one entry per address with its scope lines. */
+export async function homeSchedule(builder?: string | null) {
+  const lines = await prisma.prodLine.findMany({
+    where: { market: "RESIDENTIAL", board: { in: ["ADD", "UPCOMING", "CURRENT"] }, location: { not: null }, builder: builder ? builder : { not: null } },
+    orderBy: [{ startDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+    take: 3000,
+  });
+  const houses = new Map<string, House>();
+  for (const l of lines) {
+    const k = houseKey(l);
+    const h = houses.get(k) ?? { key: k, builder: l.builder!, address: l.location!, model: null, elevation: null, superName: null, start: null, lines: [], scopes: {}, other: [] };
+    h.lines.push(l);
+    const sc = scopeOf(l.type);
+    if (sc) (h.scopes[sc] ??= []).push(l);
+    else h.other.push(l);
+    h.model ??= l.model;
+    h.elevation ??= l.elevation;
+    h.superName ??= l.superName;
+    if (l.startDate && (!h.start || l.startDate < h.start)) h.start = l.startDate;
+    houses.set(k, h);
+  }
+  return [...houses.values()];
+}
+
+/** Builder names for the picker: builders under Contacts, plus any builder already on the schedule. */
+export async function builderNames() {
+  const [companies, onBoard] = await Promise.all([
+    prisma.company.findMany({ where: { type: "BUILDER" }, select: { name: true } }),
+    prisma.prodLine.groupBy({ by: ["builder"], where: { market: "RESIDENTIAL", builder: { not: null } } }),
+  ]);
+  const seen = new Map<string, string>();
+  for (const n of [...companies.map((c) => c.name), ...onBoard.map((b) => b.builder!)]) if (!seen.has(key(n))) seen.set(key(n), n.trim());
+  return [...seen.values()].sort((a, b) => a.localeCompare(b));
+}
+
+/** Model names from each builder's active plan books, for the model box's suggestions. */
+export async function modelsByBuilder() {
+  const builders = await prisma.company.findMany({ where: { type: "BUILDER" }, select: { id: true, name: true } });
+  const out: Record<string, string[]> = {};
+  for (const b of builders) {
+    const names = (await activeBooks(b.id)).flatMap((book) => book.data.plans.map((p) => p.name));
+    if (names.length) out[b.name] = [...new Set(names)].sort();
+  }
+  return out;
+}

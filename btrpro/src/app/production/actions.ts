@@ -23,7 +23,7 @@ const day = (v: string | undefined) => {
 
 function input(f: FormData): ProdInput & { startDate?: Date | null; endDate?: Date | null } {
   const o: Record<string, unknown> = {};
-  for (const k of ["market", "board", "grp", "section", "project", "estimateNo", "vpo", "builder", "location", "model", "type", "crew", "superName", "salesRep", "notes", "completed", "approved", "billed", "btrPaid", "billingNotes"]) {
+  for (const k of ["market", "board", "grp", "section", "project", "estimateNo", "vpo", "builder", "location", "model", "elevation", "type", "crew", "superName", "salesRep", "notes", "completed", "approved", "billed", "btrPaid", "billingNotes"]) {
     const v = s(f, k);
     if (v !== undefined) o[k] = v;
   }
