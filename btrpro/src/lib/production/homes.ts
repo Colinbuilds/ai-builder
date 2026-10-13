@@ -6,9 +6,13 @@ import { prisma } from "@/lib/db";
 import { activeBooks } from "@/lib/builders/planbook";
 import { buildOut, findPlan, modelLabel, unitFor, type Selection } from "@/lib/builders/plans";
 import { addProdLine, ProdError, stepProdLine } from "./board";
+import { BASEMENTS } from "./house-text";
 
 export const HOME_SCOPES = ["Roofing", "Siding", "Gutters", "Roof Seal", "Columns"] as const;
 export type HomeScope = (typeof HOME_SCOPES)[number];
+export const ADD_ONS = ["Covered Rear Deck", "Cantilevered Pantry", "In-Law Suite", "Ext Front Porch"] as const;
+export type AddOn = (typeof ADD_ONS)[number];
+export { BASEMENTS, type Basement } from "./house-text";
 
 export const SCOPE_STATUS = { WAITING: "Waiting", IN_PROGRESS: "In progress", DONE: "Job Done", BILLING: "Sent to Billing" } as const;
 export type ScopeStatus = keyof typeof SCOPE_STATUS;
@@ -86,6 +90,13 @@ export type HouseInput = {
   vpo?: string | null;
   startDate?: Date | null;
   notes?: string | null;
+  basement?: string | null;
+  addOns?: string[];
+  elevationType?: string | null;
+  houseInfo?: string | null;
+  planUrl?: string | null;
+  /** from the builder's work orders: per scope, its number, sell, options and the PDF */
+  workOrders?: { scope: string; workOrder?: string | null; sell?: number | null; notes?: string | null; fileUrl?: string | null }[];
 };
 
 type Actor = { id: string; name: string; role: string };
@@ -114,16 +125,26 @@ export async function createHouse(i: HouseInput, actor: Actor) {
   ].filter(Boolean) as string[];
   const scopes = HOME_SCOPES.filter((s) => i.scopes.includes(s));
   if (!scopes.length) problems.push("Pick at least one scope.");
+  const addOns = ADD_ONS.filter((a) => i.addOns?.includes(a));
+  const uploaded = (u: string | null | undefined) => !u || /^(local|s3):work-orders\/[\w.\- ]+$/.test(u);
+  if (![i.planUrl, ...(i.workOrders ?? []).map((w) => w.fileUrl)].every(uploaded)) problems.push("A work order file isn't one uploaded here. Drop it again.");
   if (problems.length) throw new ProdError(problems.join(" "));
 
-  const already = new Set((await openLinesAt(builder, address)).map((l) => scopeOf(l.type)));
+  const existing = await openLinesAt(builder, address);
+  const already = new Set(existing.map((l) => scopeOf(l.type)));
   const dupes = scopes.filter((s) => already.has(s));
   if (dupes.length) throw new ProdError(`${address} already has ${dupes.join(", ")} on the schedule for ${builder}. Open that house to change it.`);
 
-  const fill = await planBookFill(builder, model, elevation);
+  // a scope added to a house already on the schedule keeps the house's details and plan set
+  const house = existing.find((l) => l.basement || l.addOns || l.elevationType || l.houseInfo || l.planUrl);
+  const keep = (v: string | null | undefined, from: string | null | undefined) => v || from || null;
+  const basement = i.basement && i.basement in BASEMENTS ? i.basement : (house?.basement ?? "FULL_DIG");
+  const fill = await planBookFill(builder, model, elevation, basement);
   const lines = [];
   for (const scope of scopes) {
     const f = scope === "Roofing" ? fill?.roofing : scope === "Gutters" ? fill?.gutters : null;
+    const wo = i.workOrders?.find((w) => w.scope === scope);
+    const woSell = wo?.sell != null && Number.isFinite(wo.sell) ? Math.round(wo.sell * 100) / 100 : null;
     const line = await addProdLine(
       {
         market: "RESIDENTIAL",
@@ -135,20 +156,34 @@ export async function createHouse(i: HouseInput, actor: Actor) {
         elevation,
         type: scope,
         superName: i.superName ?? null,
-        vpo: i.vpo ?? null,
-        notes: i.notes ?? null,
-        sell: f?.sell ?? null,
+        vpo: wo?.workOrder?.trim() || i.vpo || null,
+        notes: [wo?.notes?.trim(), i.notes].filter(Boolean).join(" · ") || null,
+        // the builder's work order is what they'll pay; the plan book's sell is the fallback
+        sell: woSell ?? f?.sell ?? null,
         payout: f?.payout ?? null,
       },
       actor,
     );
-    lines.push(f ? await prisma.prodLine.update({ where: { id: line.id }, data: { materials: f.materials, materialsSrc: f.src } }) : line);
+    lines.push(
+      await prisma.prodLine.update({
+        where: { id: line.id },
+        data: {
+          basement,
+          addOns: keep(addOns.join(", "), house?.addOns),
+          elevationType: keep(i.elevationType?.trim(), house?.elevationType),
+          houseInfo: keep(i.houseInfo?.trim(), house?.houseInfo),
+          planUrl: keep(i.planUrl, house?.planUrl),
+          workOrderUrl: wo?.fileUrl || null,
+          ...(f ? { materials: f.materials, materialsSrc: f.src } : {}),
+        },
+      }),
+    );
   }
   if (i.startDate) await prisma.prodLine.updateMany({ where: { id: { in: lines.map((l) => l.id) } }, data: { startDate: i.startDate } });
   return lines;
 }
 
-export type House = { key: string; builder: string; address: string; model: string | null; elevation: string | null; superName: string | null; start: Date | null; lines: ProdLine[]; scopes: Partial<Record<HomeScope, ProdLine[]>>; other: ProdLine[] };
+export type House = { key: string; builder: string; address: string; model: string | null; elevation: string | null; superName: string | null; start: Date | null; basement: string | null; addOns: string | null; elevationType: string | null; houseInfo: string | null; plan: string | null; lines: ProdLine[]; scopes: Partial<Record<HomeScope, ProdLine[]>>; other: ProdLine[] };
 
 /** Open residential builder houses, one entry per address with its scope lines. */
 export async function homeSchedule(builder?: string | null) {
@@ -160,7 +195,7 @@ export async function homeSchedule(builder?: string | null) {
   const houses = new Map<string, House>();
   for (const l of lines) {
     const k = houseKey(l);
-    const h = houses.get(k) ?? { key: k, builder: l.builder!, address: l.location!, model: null, elevation: null, superName: null, start: null, lines: [], scopes: {}, other: [] };
+    const h = houses.get(k) ?? { key: k, builder: l.builder!, address: l.location!, model: null, elevation: null, superName: null, start: null, basement: null, addOns: null, elevationType: null, houseInfo: null, plan: null, lines: [], scopes: {}, other: [] };
     h.lines.push(l);
     const sc = scopeOf(l.type);
     if (sc) (h.scopes[sc] ??= []).push(l);
@@ -168,6 +203,11 @@ export async function homeSchedule(builder?: string | null) {
     h.model ??= l.model;
     h.elevation ??= l.elevation;
     h.superName ??= l.superName;
+    h.basement ??= l.basement;
+    h.addOns ??= l.addOns;
+    h.elevationType ??= l.elevationType;
+    h.houseInfo ??= l.houseInfo;
+    if (!h.plan && l.planUrl) h.plan = l.id;
     if (l.startDate && (!h.start || l.startDate < h.start)) h.start = l.startDate;
     houses.set(k, h);
   }
@@ -205,10 +245,10 @@ const elevKey = (e: string) => e.replace(/^\s*elev(ation)?\.?\s*/i, "").trim().t
 
 /**
  * Roofing and gutters from the builder's plan book, when the model and elevation are in it (standard 2-car,
- * no porch, standard basement): the material list, sell and pay out exactly as the sheet has them. Anything the
+ * no porch; a walkout or daylight basement takes the book's daylight / walkout gutter add): the material list, sell and pay out exactly as the sheet has them. Anything the
  * book doesn't cover comes back empty, so it's typed in, never guessed.
  */
-export async function planBookFill(builder: string, model: string, elevation: string) {
+export async function planBookFill(builder: string, model: string, elevation: string, basement: string = "FULL_DIG") {
   const company = (await prisma.company.findMany({ where: { type: "BUILDER" }, select: { id: true, name: true } })).find((c) => key(c.name) === key(builder));
   if (!company) return null;
   for (const book of await activeBooks(company.id)) {
@@ -216,7 +256,7 @@ export async function planBookFill(builder: string, model: string, elevation: st
     if (!plan) continue;
     const label = [...plan.roofing, ...plan.gutters].find((o) => o.kind === "ELEVATION" && elevKey(o.label) === elevKey(elevation))?.label;
     if (!label) continue;
-    const sel: Selection = { elevation: label, garage: "2", basement: "STANDARD", porch: false };
+    const sel: Selection = { elevation: label, garage: "2", basement: basement === "WALKOUT" || basement === "DAYLIGHT" ? "DLWO" : "STANDARD", porch: false };
     const out = buildOut(book.data, plan, sel);
     const src = `${company.name} ${book.label} plan book: ${modelLabel(plan.name, sel)}`;
     const trade = (t: typeof out.roofing, tr: "ROOFING" | "GUTTERS") =>

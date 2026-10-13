@@ -6,9 +6,31 @@ import { requireUser } from "@/lib/auth";
 import { STAFF_ROLES } from "@/lib/roles";
 import { ProdError } from "@/lib/production/board";
 import { createHouse, saveScopeDetails, setScopeStatus } from "@/lib/production/homes";
+import { readPacket, WorkOrderError, type Packet } from "@/lib/production/work-order";
 
 export type HouseResult = { problems: string[] } | null;
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
+
+const workOrdersOf = (json: string) => {
+  try {
+    const v = json ? JSON.parse(json) : [];
+    return Array.isArray(v) ? (v as { scope: string; workOrder: string | null; sell: number | null; notes: string; fileUrl: string }[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+/** Drop zone on Create job: read the work orders and plan set into the form. */
+export async function readPacketAction(f: FormData): Promise<{ packet?: Packet; error?: string }> {
+  await requireUser(STAFF_ROLES);
+  const files = await Promise.all(f.getAll("file").filter((x): x is File => x instanceof File && x.size > 0).map(async (x) => ({ name: x.name, bytes: new Uint8Array(await x.arrayBuffer()) })));
+  try {
+    return { packet: await readPacket(files) };
+  } catch (e) {
+    if (e instanceof WorkOrderError) return { error: e.message };
+    throw e;
+  }
+}
 
 export async function createHouseAction(_: HouseResult, f: FormData): Promise<HouseResult> {
   const u = await requireUser(STAFF_ROLES);
@@ -25,6 +47,12 @@ export async function createHouseAction(_: HouseResult, f: FormData): Promise<Ho
         vpo: s(f, "vpo") || null,
         startDate: start ? new Date(Date.UTC(+start[1], +start[2] - 1, +start[3], 12)) : null,
         notes: s(f, "notes") || null,
+        basement: s(f, "basement") || null,
+        addOns: f.getAll("addOn").map(String),
+        elevationType: s(f, "elevationType") || null,
+        houseInfo: s(f, "houseInfo") || null,
+        planUrl: s(f, "planUrl") || null,
+        workOrders: workOrdersOf(s(f, "workOrders")),
       },
       u,
     );

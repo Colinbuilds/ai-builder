@@ -2,8 +2,9 @@ import Link from "next/link";
 import { Fragment } from "react";
 import { requireUser } from "@/lib/auth";
 import { pickers } from "@/lib/production/board";
-import { builderNames, HOME_SCOPES, homeSchedule, materialsOf, modelsByBuilder, SCOPE_STATUS, statusOf, type House } from "@/lib/production/homes";
+import { ADD_ONS, builderNames, HOME_SCOPES, homeSchedule, materialsOf, modelsByBuilder, SCOPE_STATUS, statusOf, type House } from "@/lib/production/homes";
 import { ScopeMaterials } from "@/components/production/scope-materials";
+import { houseDescription } from "@/lib/production/house-text";
 import { ScopeStatusSelect } from "@/components/production/scope-status";
 import { addScopeAction } from "./actions";
 import { HouseForm } from "@/components/production/house-form";
@@ -31,7 +32,7 @@ function HouseDetails({ h, canEdit }: { h: House; canEdit: boolean }) {
       {lines.length ? (
         <div className="mt-2 grid gap-3 lg:grid-cols-2">
           {lines.map(([sc, l]) => (
-            <ScopeMaterials key={l.id} id={l.id} scope={sc} materials={materialsOf(l)} sell={l.sell} payout={l.payout} source={l.materialsSrc} canEdit={canEdit} />
+            <ScopeMaterials key={l.id} id={l.id} scope={sc} materials={materialsOf(l)} sell={l.sell} payout={l.payout} source={l.materialsSrc} notes={l.notes} canEdit={canEdit} />
           ))}
         </div>
       ) : (
@@ -72,9 +73,16 @@ function ScopeCell({ h, scope, canEdit }: { h: House; scope: (typeof HOME_SCOPES
       {lines.map((l) => (
         <div key={l.id} className="flex flex-col gap-0.5">
           <ScopeStatusSelect id={l.id} value={statusOf(l)} options={STATUS_OPTIONS} label={`${scope} at ${h.address}`} disabled={!canEdit} />
-          <Link href={`/production/${l.id}`} className="max-w-36 truncate text-xs text-muted-foreground hover:underline" title={l.type ?? scope}>
-            {l.crew ?? "No crew"}
-          </Link>
+          <span className="flex max-w-40 gap-1.5 text-xs text-muted-foreground">
+            <Link href={`/production/${l.id}`} className="truncate hover:underline" title={l.type ?? scope}>
+              {l.crew ?? "No crew"}
+            </Link>
+            {l.workOrderUrl && (
+              <a href={`/api/production/file/${l.id}/wo`} target="_blank" rel="noreferrer" className="shrink-0 text-btr-link hover:underline" title="Builder's work order">
+                WO {l.vpo ?? ""}
+              </a>
+            )}
+          </span>
         </div>
       ))}
     </div>
@@ -114,7 +122,7 @@ export default async function HomeCompanySchedule({ searchParams }: { searchPara
       {canEdit && (
         <Collapsible title={<span className="font-semibold">+ Create job</span>} defaultOpen={!!sp.new} className="rounded-md border p-3">
           <div className="mt-3">
-            <HouseForm builders={builders} models={models} supers={supers} scopes={HOME_SCOPES} builder={builder ?? undefined} />
+            <HouseForm builders={builders} models={models} supers={supers} scopes={HOME_SCOPES} addOnNames={ADD_ONS} builder={builder ?? undefined} />
           </div>
         </Collapsible>
       )}
@@ -143,9 +151,15 @@ export default async function HomeCompanySchedule({ searchParams }: { searchPara
                       <div className="text-xs text-muted-foreground">{[!builder && h.builder, h.start && `starts ${day(h.start)}`, h.superName].filter(Boolean).join(" · ")}</div>
                       {h.other.length > 0 && <div className="text-xs text-muted-foreground">Also: {h.other.map((l) => l.type).join(", ")}</div>}
                     </td>
-                    <td className="px-2 py-1.5 text-sm">
-                      {h.model}
-                      {h.elevation && <div className="text-xs text-muted-foreground">Elevation {h.elevation}</div>}
+                    <td className="max-w-64 min-w-48 px-2 py-1.5 text-sm">
+                      <span className="font-medium">{h.model}</span>
+                      <div className="text-xs text-muted-foreground">{houseDescription({ elevation: h.elevation, elevationType: h.elevationType, basement: h.basement, addOns: h.addOns })}</div>
+                      {h.houseInfo && <div className="text-xs text-muted-foreground">{h.houseInfo}</div>}
+                      {h.plan && (
+                        <a href={`/api/production/file/${h.plan}/plan`} target="_blank" rel="noreferrer" className="text-xs text-btr-link hover:underline">
+                          Plans
+                        </a>
+                      )}
                     </td>
                     {HOME_SCOPES.map((sc) => (
                       <td key={sc} className="px-2 py-1.5">

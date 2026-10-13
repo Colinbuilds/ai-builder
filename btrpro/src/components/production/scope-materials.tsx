@@ -8,7 +8,7 @@ const cell = "h-8 w-full rounded-md border border-input bg-background px-2 text-
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 /** One scope's material list, sell and pay out inside a house's drop-down. */
-export function ScopeMaterials({ id, scope, materials, sell, payout, source, canEdit }: { id: string; scope: string; materials: { name: string; qty: number; unit: string }[]; sell: number | null; payout: number | null; source: string | null; canEdit: boolean }) {
+export function ScopeMaterials({ id, scope, materials, sell, payout, source, notes, canEdit }: { id: string; scope: string; notes?: string | null; materials: { name: string; qty: number; unit: string }[]; sell: number | null; payout: number | null; source: string | null; canEdit: boolean }) {
   const [rows, setRows] = useState<Row[]>(materials.length ? materials.map((m) => ({ name: m.name, qty: String(m.qty), unit: m.unit })) : [{ name: "", qty: "", unit: "" }]);
   const [s, setSell] = useState(sell == null ? "" : String(sell));
   const [p, setPayout] = useState(payout == null ? "" : String(payout));
@@ -27,6 +27,7 @@ export function ScopeMaterials({ id, scope, materials, sell, payout, source, can
         <h3 className="font-semibold">{scope}</h3>
         <span className="text-xs text-muted-foreground">{source ?? "No material list yet — type it in."}</span>
       </div>
+      {notes && <p className="text-xs text-muted-foreground">{notes}</p>}
       <table className="w-full text-sm">
         <thead className="text-left text-xs text-muted-foreground">
           <tr>
