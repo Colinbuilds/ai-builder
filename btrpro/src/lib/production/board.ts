@@ -81,7 +81,7 @@ export function startProductionWatcher(everyMs = 30 * 60_000) {
 
 // ---------- editing ----------
 const NUM = ["payout", "paidToDate", "payoutWeek", "sell"] as const;
-const TXT = ["grp", "section", "project", "estimateNo", "vpo", "builder", "location", "model", "type", "crew", "superName", "salesRep", "notes", "completed", "approved", "billed", "btrPaid", "billingNotes"] as const;
+const TXT = ["grp", "section", "project", "estimateNo", "vpo", "builder", "location", "model", "elevation", "type", "crew", "superName", "salesRep", "notes", "completed", "approved", "billed", "btrPaid", "billingNotes"] as const;
 export type ProdInput = Partial<Record<(typeof TXT)[number], string | null> & Record<(typeof NUM)[number], number | null>> & { market?: string; board?: string; dateAdded?: Date | null };
 
 function clean(i: ProdInput) {

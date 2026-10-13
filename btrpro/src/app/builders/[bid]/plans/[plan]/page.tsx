@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getBook } from "@/lib/builders/planbook";
-import { buildOut, findPlan, modelLabel, type PlanOption, type Selection, type Trade } from "@/lib/builders/plans";
+import { buildOut, findPlan, modelLabel, unitFor, type PlanOption, type Selection, type Trade } from "@/lib/builders/plans";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,6 @@ const TABS = [
   ["order", "Order"],
   ["schedule", "Add this house"],
 ] as const;
-// unit shown on the order: the sheet lists LF items by length, everything else by count
-const unitFor = (name: string, trade: Trade) => (trade === "GUTTERS" && /gutter|downspout|accessor/i.test(name) ? "LF" : "EA");
 
 export default async function ModelPage({ params, searchParams }: { params: Promise<{ bid: string; plan: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await requireUser();

@@ -72,6 +72,7 @@ function toolsFor(role: string, isOwner = false): { tools: Tool[]; admin: { href
       label: "Production",
       icon: "CalendarDays",
       items: [
+        { href: "/production/homes", label: "Home Company Schedule" },
         { href: "/schedule", label: "Calendar" },
         { href: "/builders/add-house", label: "Add a builder house" },
         { href: "/takeoff", label: "Blueprint measurer" },

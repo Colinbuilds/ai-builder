@@ -1834,11 +1834,28 @@ model ProdLine {
   builder      String?
   location     String?
   model        String?
+  // builder house elevation ("A", "B", "Craftsman")
+  elevation    String?
+  // builder house basement (FULL_DIG | WALKOUT | DAYLIGHT; blank = full dig) and add-ons ("Covered Rear Deck, Ext Front Porch")
+  basement     String?
+  addOns       String?
+  // elevation type from the plan set ("B (Extended Porch w/ Shed Dormer)") and the rest of the house's
+  // selections worth knowing (lot, deck/patio, basement finish, garage)
+  elevationType String?
+  houseInfo    String?
+  // this scope's work order PDF, and the house's plan set
+  workOrderUrl String?
+  planUrl      String?
   type         String?
   crew         String?
   superName    String?
   salesRep     String?
   notes        String?
+  // Home Company Schedule status: WAITING | IN_PROGRESS | DONE | BILLING (blank = read from the board and completed/billed)
+  scopeStatus  String?
+  // this scope's material list for the house: [{ name, qty, unit }], and where it came from (plan book or typed in)
+  materials    Json?
+  materialsSrc String?
   completed    String?
   completedAt  DateTime?
   payout       Float?
